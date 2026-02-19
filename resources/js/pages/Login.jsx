@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 
 export default function Login({ setUser }) {
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
 
     const divisions = ["IT", "SERVICE", "KONTRAKTOR", "SALES"];
     const [currentDivision, setCurrentDivision] = useState(0);
@@ -10,6 +12,7 @@ export default function Login({ setUser }) {
 
     useEffect(() => {
         const interval = setInterval(() => {
+
             setAnimate(false);
 
             setTimeout(() => {
@@ -25,12 +28,17 @@ export default function Login({ setUser }) {
     const handleLogin = async (e) => {
         e.preventDefault();
 
+        if (loading) return;
+
+        setLoading(true);
+
         try {
+
             const response = await fetch("/api/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    Accept: "application/json"
+                    "Accept": "application/json"
                 },
                 body: JSON.stringify({ email, password })
             });
@@ -38,14 +46,28 @@ export default function Login({ setUser }) {
             const data = await response.json();
 
             if (response.ok && data.success) {
+
+                console.log("Login success:", data.user);
+
+                // Simpan user ke state App.jsx
                 setUser(data.user);
+
             } else {
+
                 alert(data.message || "Login gagal");
+                setPassword("");
+
             }
 
         } catch (error) {
+
             console.error("Login error:", error);
             alert("Terjadi error server");
+
+        } finally {
+
+            setLoading(false);
+
         }
     };
 
@@ -57,13 +79,12 @@ export default function Login({ setUser }) {
                 Inspection Preventive Maintenance
             </h1>
 
-            {/* DIVISION TEXT (SEJAJAR DENGAN CARD) */}
+            {/* DIVISION TEXT */}
             <div className="w-[320px] mb-8">
 
                 <div className="flex items-center gap-2 text-lg font-medium">
                     <span>Login Sesuai Divisi :</span>
 
-                    {/* FIXED WIDTH ANIMATION CONTAINER */}
                     <div className="relative w-[150px] h-6 overflow-hidden">
 
                         <span
@@ -118,12 +139,18 @@ export default function Login({ setUser }) {
 
                     <button
                         type="submit"
-                        className="w-full bg-gradient-to-r from-pink-500 to-pink-600 hover:opacity-90 text-white py-2 rounded-lg font-semibold transition"
+                        disabled={loading}
+                        className={`w-full py-2 rounded-lg font-semibold text-white transition ${
+                            loading
+                                ? "bg-gray-400 cursor-not-allowed"
+                                : "bg-gradient-to-r from-pink-500 to-pink-600 hover:opacity-90"
+                        }`}
                     >
-                        LOGIN
+                        {loading ? "Loading..." : "LOGIN"}
                     </button>
 
                 </form>
+
             </div>
 
         </div>

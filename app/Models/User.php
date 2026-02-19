@@ -14,11 +14,12 @@ class User extends Authenticatable
      * Mass assignable attributes
      */
     protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'role', // ✅ WAJIB ADA INI
-    ];
+    'name',
+    'email',
+    'password',
+    'role',
+    'divisi'
+];
 
     /**
      * Hidden attributes
