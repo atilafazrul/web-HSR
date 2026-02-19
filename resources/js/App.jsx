@@ -9,24 +9,19 @@ export default function App() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        try {
-            const savedUser = localStorage.getItem("user");
+        const savedUser = localStorage.getItem("user");
 
-            if (savedUser) {
-                const parsedUser = JSON.parse(savedUser);
+        if (savedUser) {
+            const parsedUser = JSON.parse(savedUser);
 
-                if (
-                    parsedUser.role === "super_admin" ||
-                    parsedUser.role === "admin"
-                ) {
-                    setUser(parsedUser);
-                } else {
-                    localStorage.removeItem("user");
-                }
+            if (
+                parsedUser.role === "super_admin" ||
+                parsedUser.role === "admin"
+            ) {
+                setUser(parsedUser);
+            } else {
+                localStorage.removeItem("user");
             }
-        } catch (error) {
-            console.error("Error parsing user:", error);
-            localStorage.removeItem("user");
         }
 
         setLoading(false);
@@ -37,7 +32,6 @@ export default function App() {
             userData.role === "super_admin" ||
             userData.role === "admin"
         ) {
-            console.log("LOGIN ROLE:", userData.role); // Debug
             setUser(userData);
             localStorage.setItem("user", JSON.stringify(userData));
         } else {
@@ -50,9 +44,7 @@ export default function App() {
         localStorage.removeItem("user");
     };
 
-    if (loading) {
-        return <div style={{ padding: 40 }}>Loading...</div>;
-    }
+    if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
 
     if (!user) {
         return <Login setUser={handleSetUser} />;
@@ -76,7 +68,6 @@ export default function App() {
         );
     }
 
-    // fallback safety
     handleLogout();
     return <Login setUser={handleSetUser} />;
 }
