@@ -45,6 +45,39 @@ export default function Profile({ user, logout, onProfileUpdate, setCurrentPage 
     profile_photo: user?.profile_photo || null
   });
 
+  // Cek apakah user super admin (divisi null)
+  const isSuperAdmin = user?.role === 'super_admin' || !user?.divisi;
+
+  // Get divisi page untuk navigasi
+  const getDivisiPage = (divisiName) => {
+    const map = {
+      'IT': 'it',
+      'SERVICE': 'service',
+      'KONTRAKTOR': 'kontraktor',
+      'SALES': 'sales'
+    };
+    return map[divisiName?.toUpperCase()] || 'service';
+  };
+
+  // Get icon untuk divisi
+  const getDivisiIcon = (divisiName) => {
+    const map = {
+      'IT': <Monitor size={16} />,
+      'SERVICE': <Wrench size={16} />,
+      'KONTRAKTOR': <Hammer size={16} />,
+      'SALES': <BarChart3 size={16} />
+    };
+    return map[divisiName?.toUpperCase()] || <Wrench size={16} />;
+  };
+
+  // Daftar semua divisi untuk super admin
+  const allDivisis = [
+    { name: 'IT', icon: <Monitor size={16} /> },
+    { name: 'Service', icon: <Wrench size={16} /> },
+    { name: 'Kontraktor', icon: <Hammer size={16} /> },
+    { name: 'Sales', icon: <BarChart3 size={16} /> }
+  ];
+
   // Load profile data dari server (di background, tanpa blocking UI)
   useEffect(() => {
     const fetchProfile = async () => {
@@ -304,38 +337,55 @@ export default function Profile({ user, logout, onProfileUpdate, setCurrentPage 
               />
             </div>
 
-            <div
-              className="flex items-center justify-between px-4 py-2 rounded-lg hover:bg-slate-800 cursor-pointer transition"
-              onClick={() => setOpenDivisi(!openDivisi)}
-            >
-              <div className="flex items-center gap-3">
-                <Folder size={18} />
-                Divisi
-              </div>
-              {openDivisi ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-            </div>
-
-            {openDivisi && (
-              <div className="ml-6 space-y-1 text-sm">
-                <div onClick={() => setCurrentPage && setCurrentPage("it")}>
-                  <SidebarItem
-                    icon={<Monitor size={16} />}
-                    text="IT"
-                    active={false}
-                  />
+            {/* SECTION DIVISI */}
+            {!isSuperAdmin ? (
+              // ADMIN biasa - hanya tampilkan divisi sendiri
+              <>
+                <div className="flex items-center gap-3 px-4 py-2 bg-slate-800 rounded-lg">
+                  <Folder size={18} />
+                  Divisi
+                </div>
+                <div className="ml-6">
+                  <div onClick={() => setCurrentPage && setCurrentPage(getDivisiPage(user?.divisi))}>
+                    <SidebarItem
+                      icon={getDivisiIcon(user?.divisi)}
+                      text={user?.divisi}
+                      active={false}
+                    />
+                  </div>
+                </div>
+              </>
+            ) : (
+              // SUPER ADMIN - tampilkan semua divisi dengan dropdown
+              <>
+                <div
+                  className="flex items-center justify-between px-4 py-2 rounded-lg hover:bg-slate-800 cursor-pointer transition"
+                  onClick={() => setOpenDivisi(!openDivisi)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Folder size={18} />
+                    Divisi
+                  </div>
+                  {openDivisi ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                 </div>
 
-                <div onClick={() => setCurrentPage && setCurrentPage("service")}>
-                  <SidebarItem
-                    icon={<Wrench size={16} />}
-                    text="Service"
-                    active={false}
-                  />
-                </div>
-
-                <SidebarItem icon={<Hammer size={16} />} text="Kontraktor" />
-                <SidebarItem icon={<BarChart3 size={16} />} text="Sales" />
-              </div>
+                {openDivisi && (
+                  <div className="ml-6 space-y-1 text-sm">
+                    {allDivisis.map((divisi) => (
+                      <div
+                        key={divisi.name}
+                        onClick={() => setCurrentPage && setCurrentPage(getDivisiPage(divisi.name))}
+                      >
+                        <SidebarItem
+                          icon={divisi.icon}
+                          text={divisi.name}
+                          active={false}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
             <SidebarItem

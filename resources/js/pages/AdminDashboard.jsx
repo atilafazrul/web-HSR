@@ -20,6 +20,7 @@ import ITPage from "./ITPage";
 import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
+import Profile from "./Profile.jsx";
 
 export default function AdminDashboard({ user, logout }) {
 
@@ -42,6 +43,21 @@ export default function AdminDashboard({ user, logout }) {
 
   const photoUrl = getPhotoUrl(currentUser?.profile_photo);
   const initialLetter = currentUser?.name?.charAt(0);
+
+  // Normalize divisi to uppercase for icon lookup
+  const divisiUpper = currentDivisi.toUpperCase();
+
+  /* ================= PROFILE PAGE ================= */
+  if (currentPage === "profile") {
+    return (
+      <Profile
+        user={currentUser}
+        logout={logout}
+        onProfileUpdate={handleProfileUpdate}
+        setCurrentPage={setCurrentPage}
+      />
+    );
+  }
 
   /* ================= HELPER ================= */
 
@@ -105,11 +121,11 @@ export default function AdminDashboard({ user, logout }) {
 
             <div className="ml-6">
 
-              <div onClick={() => setCurrentPage(divisi.toLowerCase())}>
+              <div onClick={() => setCurrentPage(getDivisiPage())}>
                 <SidebarItem
-                  icon={icons[divisi]}
-                  text={divisi}
-                  active={currentPage === divisi.toLowerCase()}
+                  icon={icons[divisiUpper] || <Wrench size={18} />}
+                  text={currentDivisi}
+                  active={currentPage === getDivisiPage()}
                 />
               </div>
 
@@ -197,9 +213,9 @@ export default function AdminDashboard({ user, logout }) {
                 <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
 
                   <DivisiCard
-                    title={divisi}
-                    image={`/images/${divisi.toLowerCase()}.jpg`}
-                    onClick={() => setCurrentPage(divisi.toLowerCase())}
+                    title={currentDivisi}
+                    image={getDivisiImage()}
+                    onClick={() => setCurrentPage(getDivisiPage())}
                   />
 
                 </div>
@@ -237,15 +253,6 @@ export default function AdminDashboard({ user, logout }) {
 
                     </tr>
                   </thead>
-
-                  <tbody>
-
-                    <Row divisi={divisi} tugas="Setup Sistem" nama="Andi" lokasi="Jakarta" status="Selesai" />
-                    <Row divisi={divisi} tugas="Maintenance" nama="Budi" lokasi="Bandung" status="Proses" />
-                    <Row divisi={divisi} tugas="Upgrade" nama="Sari" lokasi="Surabaya" status="Terlambat" />
-
-                  </tbody>
-
                 </table>
 
               </div>
