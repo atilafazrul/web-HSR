@@ -18,7 +18,7 @@ Route::post('/login', function (Request $request) {
         // Cari user berdasarkan email
         $user = User::where('email', $validated['email'])->first();
 
-        // Cek user dan password
+        // Jika user tidak ditemukan atau password salah
         if (!$user || !Hash::check($validated['password'], $user->password)) {
             return response()->json([
                 'success' => false,
@@ -26,14 +26,15 @@ Route::post('/login', function (Request $request) {
             ], 401);
         }
 
-        // Return data user (tanpa password)
+        // Return data user (TANPA password)
         return response()->json([
             'success' => true,
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role
+                'role' => $user->role,
+                'divisi' => $user->divisi
             ]
         ]);
 

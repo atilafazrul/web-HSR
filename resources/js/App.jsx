@@ -8,15 +8,16 @@ export default function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Ambil user dari localStorage saat pertama load
+    // Load user dari localStorage saat pertama kali buka
     useEffect(() => {
-        try {
-            const savedUser = localStorage.getItem("user");
 
-            if (savedUser) {
+        const savedUser = localStorage.getItem("user");
+
+        if (savedUser) {
+            try {
                 const parsedUser = JSON.parse(savedUser);
 
-                // Jika role tidak valid → hapus
+                // Validasi role
                 if (
                     parsedUser.role === "super_admin" ||
                     parsedUser.role === "admin"
@@ -25,17 +26,20 @@ export default function App() {
                 } else {
                     localStorage.removeItem("user");
                 }
+
+            } catch (error) {
+                console.error("Error parsing user:", error);
+                localStorage.removeItem("user");
             }
-        } catch (error) {
-            console.error("Error parsing user:", error);
-            localStorage.removeItem("user");
         }
 
         setLoading(false);
+
     }, []);
 
-    // Simpan user saat login
+    // Saat login berhasil
     const handleSetUser = (userData) => {
+
         if (
             userData.role === "super_admin" ||
             userData.role === "admin"
@@ -53,6 +57,7 @@ export default function App() {
         localStorage.removeItem("user");
     };
 
+    // Loading state
     if (loading) {
         return <div style={{ padding: 40 }}>Loading...</div>;
     }
@@ -62,27 +67,20 @@ export default function App() {
         return <Login setUser={handleSetUser} />;
     }
 
-    // Super Admin
-    if (user.role === "super_admin") {
-        return (
-            <SuperAdminDashboard
-                user={user}
-                logout={handleLogout}
-            />
-        );
-    }
+    // =========================
+    // ROLE BASED RENDERING
+    // =========================
 
-    // Admin
-    if (user.role === "admin") {
-        return (
-            <AdminDashboard
-                user={user}
-                logout={handleLogout}
-            />
-        );
-    }
+    return user.role === "super_admin" ? (
+        <SuperAdminDashboard
+            user={user}
+            logout={handleLogout}
+        />
+    ) : (
+        <AdminDashboard
+            user={user}
+            logout={handleLogout}
+        />
+    );
 
-    // Jika role aneh → reset
-    handleLogout();
-    return <Login setUser={handleSetUser} />;
 }
