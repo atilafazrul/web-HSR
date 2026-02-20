@@ -10,18 +10,48 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        User::create([
-            'name' => 'Super Admin',
-            'email' => 'super@admin.com',
-            'password' => Hash::make('123456'),
-            'role' => 'super_admin',
-        ]);
+        // Super Admin
+        User::updateOrCreate(
+            ['email' => 'super@admin.com'],
+            [
+                'name'   => 'Super Admin',
+                'password' => Hash::make('123456'),
+                'role'   => 'super_admin',
+                'divisi' => null,
+            ]
+        );
 
-        User::create([
-            'name' => 'Admin',
-            'email' => 'admin@admin.com',
-            'password' => Hash::make('123456'),
-            'role' => 'admin',
-        ]);
+        // Admin Utama
+        User::updateOrCreate(
+            ['email' => 'admin@admin.com'],
+            [
+                'name'   => 'Admin',
+                'password' => Hash::make('123456'),
+                'role'   => 'admin',
+                'divisi' => null,
+            ]
+        );
+
+        // ATILA - Service
+        User::updateOrCreate(
+            ['email' => 'ATILA@admin.com'],
+            [
+                'name'   => 'ATILA',
+                'password' => Hash::make('123456'),
+                'role'   => 'admin',
+                'divisi' => 'Service',
+            ]
+        );
+
+        // Aqila - IT
+        User::updateOrCreate(
+            ['email' => 'aqila@admin.com'],
+            [
+                'name'   => 'Aqila',
+                'password' => Hash::make('123456'),
+                'role'   => 'admin',
+                'divisi' => 'IT',
+            ]
+        );
     }
 }
