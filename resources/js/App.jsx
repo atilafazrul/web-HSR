@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+
 import Login from "./pages/Login.jsx";
 import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
@@ -8,7 +10,7 @@ export default function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Load user dari localStorage saat pertama kali buka
+    // Load user dari localStorage
     useEffect(() => {
 
         const savedUser = localStorage.getItem("user");
@@ -17,7 +19,6 @@ export default function App() {
             try {
                 const parsedUser = JSON.parse(savedUser);
 
-                // Validasi role
                 if (
                     parsedUser.role === "super_admin" ||
                     parsedUser.role === "admin"
@@ -27,8 +28,7 @@ export default function App() {
                     localStorage.removeItem("user");
                 }
 
-            } catch (error) {
-                console.error("Error parsing user:", error);
+            } catch {
                 localStorage.removeItem("user");
             }
         }
@@ -37,7 +37,7 @@ export default function App() {
 
     }, []);
 
-    // Saat login berhasil
+    // Login
     const handleSetUser = (userData) => {
 
         if (
@@ -57,30 +57,46 @@ export default function App() {
         localStorage.removeItem("user");
     };
 
-    // Loading state
     if (loading) {
         return <div style={{ padding: 40 }}>Loading...</div>;
     }
 
-    // Jika belum login
-    if (!user) {
-        return <Login setUser={handleSetUser} />;
-    }
+    return (
+        <Routes>
 
-    // =========================
-    // ROLE BASED RENDERING
-    // =========================
+            {/* LOGIN */}
+            <Route
+                path="/"
+                element={
+                    !user
+                        ? <Login setUser={handleSetUser} />
+                        : <Navigate to={`/${user.role}`} />
+                }
+            />
 
-    return user.role === "super_admin" ? (
-        <SuperAdminDashboard
-            user={user}
-            logout={handleLogout}
-        />
-    ) : (
-        <AdminDashboard
-            user={user}
-            logout={handleLogout}
-        />
+            {/* SUPER ADMIN */}
+            <Route
+                path="/super_admin/*"
+                element={
+                    user?.role === "super_admin"
+                        ? <SuperAdminDashboard user={user} logout={handleLogout} />
+                        : <Navigate to="/" />
+                }
+            />
+
+            {/* ADMIN */}
+            <Route
+                path="/admin/*"
+                element={
+                    user?.role === "admin"
+                        ? <AdminDashboard user={user} logout={handleLogout} />
+                        : <Navigate to="/" />
+                }
+            />
+
+            {/* DEFAULT */}
+            <Route path="*" element={<Navigate to="/" />} />
+
+        </Routes>
     );
-
 }

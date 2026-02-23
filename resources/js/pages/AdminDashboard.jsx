@@ -1,4 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation
+} from "react-router-dom";
+
 import {
   ListTodo,
   CheckCircle,
@@ -7,7 +15,7 @@ import {
   MapPin,
 } from "lucide-react";
 
-/* IMPORT PAGE ASLI */
+/* IMPORT PAGE */
 import ITPage from "./ITPage";
 import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
@@ -20,37 +28,43 @@ export default function AdminDashboard({ user, logout }) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [currentPage, setCurrentPage] = useState("dashboard");
   const [currentUser, setCurrentUser] = useState(user);
+
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const currentDivisi = user?.divisi || "Service";
 
-  const handleProfileUpdate = (updatedUser) => {
-    setCurrentUser(updatedUser);
+
+  /* ================= AUTO TITLE ================= */
+
+  const getPageTitle = () => {
+
+    const path = location.pathname;
+
+    if (path.includes("dashboard")) return "Dashboard";
+    if (path.includes("it")) return "Divisi IT";
+    if (path.includes("service")) return "Divisi Service";
+    if (path.includes("sales")) return "Divisi Sales";
+    if (path.includes("kontraktor")) return "Divisi Kontraktor";
+    if (path.includes("profile")) return "Profile";
+
+    return "Admin";
   };
 
-  /* ================= PROFILE PAGE ================= */
-  if (currentPage === "profile") {
-    return (
-      <Profile
-        user={currentUser}
-        logout={logout}
-        onProfileUpdate={handleProfileUpdate}
-        setCurrentPage={setCurrentPage}
-        sidebarExpanded={sidebarExpanded}
-        setSidebarExpanded={setSidebarExpanded}
-      />
-    );
-  }
+  useEffect(() => {
+    document.title = `WEB HSR - ${getPageTitle()}`;
+  }, [location.pathname]);
+
 
   /* ================= HELPER ================= */
 
   const getDivisiPage = () => {
-    if (currentDivisi === "IT") return "it";
-    if (currentDivisi === "Service" || currentDivisi === "SERVICE") return "service";
-    if (currentDivisi === "Kontraktor") return "kontraktor";
-    if (currentDivisi === "Sales") return "sales";
-    return "service";
+    if (currentDivisi === "IT") return "/admin/it";
+    if (currentDivisi === "Service" || currentDivisi === "SERVICE") return "/admin/service";
+    if (currentDivisi === "Kontraktor") return "/admin/kontraktor";
+    if (currentDivisi === "Sales") return "/admin/sales";
+    return "/admin/service";
   };
 
   const getDivisiImage = () => {
@@ -61,7 +75,6 @@ export default function AdminDashboard({ user, logout }) {
     return "/images/service.jpg";
   };
 
-  /* ================= LAYOUT ================= */
 
   return (
     <div className="flex min-h-screen bg-[#f4f6fb]">
@@ -69,109 +82,171 @@ export default function AdminDashboard({ user, logout }) {
       {/* SIDEBAR */}
       <Sidebar
         user={currentUser}
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
         logout={logout}
         isExpanded={sidebarExpanded}
         setIsExpanded={setSidebarExpanded}
+        navigate={navigate}
+        role="admin"
       />
+
 
       {/* MAIN */}
       <main
-        className={`flex-1 flex flex-col transition-all duration-300 ease-in-out
+        className={`flex-1 flex flex-col transition-all duration-300
         ${sidebarExpanded ? "lg:ml-72" : "lg:ml-20"}`}
       >
 
         {/* HEADER */}
         <Header
           user={currentUser}
-          currentPage={currentPage}
           showBell={false}
+          title={getPageTitle()}
         />
+
 
         {/* CONTENT */}
         <div className="flex-1 p-8 overflow-y-auto">
 
-          {/* DASHBOARD */}
-          {currentPage === "dashboard" && (
-            <>
-              <h2 className="text-3xl font-bold mb-2">
-                Selamat Datang, {currentUser?.name}
-              </h2>
+          <Routes>
 
-              <p className="text-gray-500 mb-10">
-                Selamat datang, {user?.name}
-              </p>
+            {/* DEFAULT */}
+            <Route path="/" element={<Navigate to="dashboard" />} />
 
-              {/* CARD DIVISI (BALIK) */}
-              <div className="bg-white rounded-3xl shadow p-8 mb-10">
 
-                <h3 className="text-xl font-semibold mb-6">
-                  Divisi
-                </h3>
+            {/* ================= DASHBOARD ================= */}
+            <Route
+              path="dashboard"
+              element={
+                <>
 
-                <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                  {/* WELCOME */}
+                  <h2 className="text-3xl font-bold mb-2">
+                    Selamat Datang, {currentUser?.name}
+                  </h2>
 
-                  <DivisiCard
-                    title={currentDivisi}
-                    image={getDivisiImage()}
-                    onClick={() => setCurrentPage(getDivisiPage())}
-                  />
+                  <p className="text-gray-500 mb-10">
+                    Selamat datang, {currentUser?.name}
+                  </p>
 
-                </div>
 
-              </div>
+                  {/* DIVISI CARD */}
+                  <div className="bg-white rounded-3xl shadow p-8 mb-10">
 
-              {/* SUMMARY */}
-              <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
+                    <h3 className="text-xl font-semibold mb-6">
+                      Divisi
+                    </h3>
 
-                <SummaryCard title="Total Tugas" value="120" icon={<ListTodo />} color="blue" />
-                <SummaryCard title="Selesai" value="90" icon={<CheckCircle />} color="green" />
-                <SummaryCard title="Proses" value="20" icon={<Clock />} color="yellow" />
-                <SummaryCard title="Terlambat" value="10" icon={<AlertTriangle />} color="red" />
+                    <DivisiCard
+                      title={currentDivisi}
+                      image={getDivisiImage()}
+                      onClick={() => navigate(getDivisiPage())}
+                    />
 
-              </div>
+                  </div>
 
-              {/* TABLE */}
-              <div className="bg-white rounded-3xl shadow p-8">
 
-                <h3 className="text-xl font-semibold mb-6">
-                  Aktivitas
-                </h3>
+                  {/* SUMMARY */}
+                  <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
 
-                <table className="w-full text-sm border-collapse">
+                    <SummaryCard title="Total Tugas" value="120" icon={<ListTodo />} color="blue" />
+                    <SummaryCard title="Selesai" value="90" icon={<CheckCircle />} color="green" />
+                    <SummaryCard title="Proses" value="20" icon={<Clock />} color="yellow" />
+                    <SummaryCard title="Terlambat" value="10" icon={<AlertTriangle />} color="red" />
 
-                  <thead>
-                    <tr className="border-b text-gray-500">
+                  </div>
 
-                      <th className="py-3 px-3 text-left">Divisi</th>
-                      <th className="py-3 px-3 text-left">Tugas</th>
-                      <th className="py-3 px-3 text-left">Karyawan</th>
-                      <th className="py-3 px-3 text-left">Lokasi</th>
-                      <th className="py-3 px-3 text-center">Status</th>
-                      <th className="py-3 px-3 text-center">Tanggal</th>
 
-                    </tr>
-                  </thead>
-                </table>
+                  {/* ================= AKTIVITAS ================= */}
+                  <div className="bg-white rounded-3xl shadow p-8 mb-10">
 
-              </div>
-            </>
-          )}
+                    <h3 className="text-xl font-semibold mb-6">
+                      Aktivitas Pekerjaan
+                    </h3>
 
-          {/* PAGE ASLI */}
-          {currentPage === "it" && <ITPage goBack={() => setCurrentPage("dashboard")} />}
-          {currentPage === "service" && <ServicePage goBack={() => setCurrentPage("dashboard")} />}
-          {currentPage === "sales" && <SalesPage goBack={() => setCurrentPage("dashboard")} />}
-          {currentPage === "kontraktor" && <KontraktorPage goBack={() => setCurrentPage("dashboard")} />}
+                    <table className="w-full text-sm border-collapse">
+
+                      <thead>
+                        <tr className="border-b text-gray-500">
+
+                          <th className="py-3 px-3 text-left">Divisi</th>
+                          <th className="py-3 px-3 text-left">Tugas</th>
+                          <th className="py-3 px-3 text-left">Karyawan</th>
+                          <th className="py-3 px-3 text-left">Lokasi</th>
+                          <th className="py-3 px-3 text-center">Status</th>
+                          <th className="py-3 px-3 text-center">Tanggal</th>
+
+                        </tr>
+                      </thead>
+
+                      <tbody>
+
+                        <ActivityRow
+                          divisi="IT"
+                          tugas="Setup Server"
+                          nama="Sandi"
+                          lokasi="Jakarta"
+                          status="Selesai"
+                          tanggal="2025-01-10"
+                        />
+
+                        <ActivityRow
+                          divisi="Service"
+                          tugas="Service AC"
+                          nama="Indra"
+                          lokasi="Bandung"
+                          status="Proses"
+                          tanggal="2025-01-12"
+                        />
+
+                        <ActivityRow
+                          divisi="Kontraktor"
+                          tugas="Instalasi Panel"
+                          nama="Budi"
+                          lokasi="Tangerang"
+                          status="Terlambat"
+                          tanggal="2025-01-15"
+                        />
+
+                      </tbody>
+
+                    </table>
+
+                  </div>
+
+                </>
+              }
+            />
+
+
+            {/* PAGE ROUTE */}
+            <Route path="it" element={<ITPage />} />
+            <Route path="service" element={<ServicePage />} />
+            <Route path="sales" element={<SalesPage />} />
+            <Route path="kontraktor" element={<KontraktorPage />} />
+
+
+            {/* PROFILE */}
+            <Route
+              path="profile"
+              element={
+                <Profile
+                  user={currentUser}
+                  logout={logout}
+                />
+              }
+            />
+
+          </Routes>
 
         </div>
       </main>
     </div>
   );
 }
+
+
 
 /* ================= COMPONENT ================= */
 
@@ -200,7 +275,10 @@ const SummaryCard = ({ title, value, icon, color }) => {
   );
 };
 
+
+
 const DivisiCard = ({ title, image, onClick }) => (
+
   <div
     onClick={onClick}
     className="relative rounded-3xl overflow-hidden shadow cursor-pointer group"
@@ -222,10 +300,22 @@ const DivisiCard = ({ title, image, onClick }) => (
       </button>
 
     </div>
+
   </div>
 );
 
-const Row = ({ divisi, tugas, nama, lokasi, status, tanggal = "2025" }) => {
+
+
+/* ================= ACTIVITY ROW ================= */
+
+const ActivityRow = ({
+  divisi,
+  tugas,
+  nama,
+  lokasi,
+  status,
+  tanggal
+}) => {
 
   const map = {
     Selesai: "bg-green-100 text-green-600",

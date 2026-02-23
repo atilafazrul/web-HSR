@@ -1,13 +1,19 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Monitor, FileText, History } from "lucide-react";
 
-const ITPage = ({ goBack }) => {
+const ITPage = () => {
+
+  const navigate = useNavigate();
+
   return (
     <div>
 
+      {/* HEADER */}
       <div className="flex items-center gap-4 mb-6">
+
         <button
-          onClick={goBack}
+          onClick={() => navigate("/super_admin/dashboard")}
           className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg"
         >
           ← Kembali
@@ -16,10 +22,13 @@ const ITPage = ({ goBack }) => {
         <h2 className="text-3xl font-bold">Divisi IT</h2>
       </div>
 
+
       <p className="text-gray-500 mb-8">
         Kelola aset, dokumentasi, dan riwayat pekerjaan IT
       </p>
 
+
+      {/* CARD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         <Card
@@ -41,10 +50,14 @@ const ITPage = ({ goBack }) => {
         />
 
       </div>
+
     </div>
   );
 };
 
+
+
+/* CARD COMPONENT */
 const Card = ({ icon, title, desc }) => (
   <div className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition">
 

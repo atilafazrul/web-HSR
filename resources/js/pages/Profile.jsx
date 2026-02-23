@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+
 import {
   User,
   Mail,
@@ -10,17 +11,17 @@ import {
   Camera,
   Trash2,
 } from "lucide-react";
-import Sidebar from "../components/layout/Sidebar";
-import Header from "../components/layout/Header";
 
-export default function Profile({ user, logout, onProfileUpdate, setCurrentPage, sidebarExpanded, setSidebarExpanded }) {
+export default function Profile({ user, logout, onProfileUpdate }) {
 
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const fileInputRef = useRef(null);
+
+
+  /* ================= FORM DATA ================= */
 
   const [formData, setFormData] = useState({
     name: user?.name || "",
@@ -37,19 +38,22 @@ export default function Profile({ user, logout, onProfileUpdate, setCurrentPage,
     profile_photo: user?.profile_photo || null
   });
 
-  // Cek apakah user super admin (divisi null)
-  const isSuperAdmin = user?.role === 'super_admin' || !user?.divisi;
 
-  // Load profile data dari server (di background, tanpa blocking UI)
+  /* ================= FETCH PROFILE ================= */
+
   useEffect(() => {
+
     const fetchProfile = async () => {
+
       if (!user?.id) return;
 
       try {
-        const response = await fetch(`/api/profile?user_id=${user.id}`);
-        const data = await response.json();
+
+        const res = await fetch(`/api/profile?user_id=${user.id}`);
+        const data = await res.json();
 
         if (data.success) {
+
           const newData = {
             name: data.user.name || "",
             email: data.user.email || "",
@@ -57,16 +61,22 @@ export default function Profile({ user, logout, onProfileUpdate, setCurrentPage,
             address: data.user.address || "",
             profile_photo: data.user.profile_photo || null
           };
+
           setProfileData(newData);
           setFormData(newData);
         }
-      } catch (error) {
-        console.error("Error fetching profile:", error);
+
+      } catch (err) {
+        console.error("Fetch profile error:", err);
       }
     };
 
     fetchProfile();
+
   }, [user?.id]);
+
+
+  /* ================= HANDLER ================= */
 
   const handleEdit = () => {
     setFormData(profileData);
@@ -78,64 +88,6 @@ export default function Profile({ user, logout, onProfileUpdate, setCurrentPage,
     setIsEditing(false);
   };
 
-  const handleSave = async () => {
-    if (loading) return;
-
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          ...formData
-        })
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setProfileData(formData);
-        setIsEditing(false);
-
-        // Update user data di parent component
-        if (onProfileUpdate) {
-          onProfileUpdate({
-            ...user,
-            name: data.user.name,
-            email: data.user.email,
-            phone: data.user.phone,
-            address: data.user.address
-          });
-        }
-
-        // Update localStorage
-        const savedUser = localStorage.getItem("user");
-        if (savedUser) {
-          const parsedUser = JSON.parse(savedUser);
-          localStorage.setItem("user", JSON.stringify({
-            ...parsedUser,
-            name: data.user.name,
-            email: data.user.email
-          }));
-        }
-
-        alert("Profile berhasil diupdate!");
-      } else {
-        alert(data.message || "Gagal mengupdate profile");
-      }
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      alert("Terjadi error server");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleChange = (field, value) => {
     setFormData(prev => ({
       ...prev,
@@ -143,41 +95,101 @@ export default function Profile({ user, logout, onProfileUpdate, setCurrentPage,
     }));
   };
 
+
+  /* ================= SAVE ================= */
+
+  const handleSave = async () => {
+
+    if (loading) return;
+
+    setLoading(true);
+
+    try {
+
+      const res = await fetch("/api/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          ...formData
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+
+        setProfileData(formData);
+        setIsEditing(false);
+
+        if (onProfileUpdate) {
+          onProfileUpdate({ ...user, ...formData });
+        }
+
+        const saved = localStorage.getItem("user");
+
+        if (saved) {
+          localStorage.setItem("user", JSON.stringify({
+            ...JSON.parse(saved),
+            ...formData
+          }));
+        }
+
+        alert("Profile berhasil diupdate!");
+
+      } else {
+        alert(data.message || "Gagal update profile");
+      }
+
+    } catch {
+      alert("Server error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  /* ================= PHOTO ================= */
+
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e) => {
+
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validasi tipe file
-    if (!file.type.startsWith('image/')) {
-      alert('Harap pilih file gambar');
+    if (!file.type.startsWith("image/")) {
+      alert("File harus gambar");
       return;
     }
 
-    // Validasi ukuran file (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
-      alert('Ukuran file maksimal 2MB');
+      alert("Max 2MB");
       return;
     }
 
     setUploadingPhoto(true);
 
     try {
-      const formData = new FormData();
-      formData.append('user_id', user.id);
-      formData.append('photo', file);
 
-      const response = await fetch('/api/profile/photo', {
-        method: 'POST',
-        body: formData
+      const fd = new FormData();
+      fd.append("user_id", user.id);
+      fd.append("photo", file);
+
+      const res = await fetch("/api/profile/photo", {
+        method: "POST",
+        body: fd
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok && data.success) {
+      if (res.ok && data.success) {
+
         setProfileData(prev => ({
           ...prev,
           profile_photo: data.profile_photo
@@ -190,307 +202,281 @@ export default function Profile({ user, logout, onProfileUpdate, setCurrentPage,
           });
         }
 
-        alert('Foto profile berhasil diupdate!');
+        alert("Foto berhasil diupdate");
+
       } else {
-        alert(data.message || 'Gagal mengupload foto');
+        alert(data.message || "Upload gagal");
       }
-    } catch (error) {
-      console.error('Error uploading photo:', error);
-      alert('Terjadi error server');
+
+    } catch {
+      alert("Server error");
     } finally {
+
       setUploadingPhoto(false);
-      // Reset file input
+
       if (fileInputRef.current) {
-        fileInputRef.current.value = '';
+        fileInputRef.current.value = "";
       }
     }
   };
 
+
   const handleDeletePhoto = async () => {
-    if (!confirm('Apakah Anda yakin ingin menghapus foto profile?')) return;
+
+    if (!confirm("Hapus foto profile?")) return;
 
     try {
-      const response = await fetch('/api/profile/photo', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+
+      const res = await fetch("/api/profile/photo", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.id })
       });
 
-      const data = await response.json();
+      const data = await res.json();
 
-      if (response.ok && data.success) {
+      if (res.ok && data.success) {
+
         setProfileData(prev => ({
           ...prev,
           profile_photo: null
         }));
 
         if (onProfileUpdate) {
-          onProfileUpdate({
-            ...user,
-            profile_photo: null
-          });
+          onProfileUpdate({ ...user, profile_photo: null });
         }
 
-        alert('Foto profile berhasil dihapus!');
+        alert("Foto dihapus");
+
       } else {
-        alert(data.message || 'Gagal menghapus foto');
+        alert(data.message || "Gagal hapus");
       }
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      alert('Terjadi error server');
+
+    } catch {
+      alert("Server error");
     }
   };
 
-  // Get photo URL
-  const getPhotoUrl = (photoPath) => {
-    if (!photoPath) return null;
-    if (photoPath.startsWith('http')) return photoPath;
-    return `/storage/${photoPath}`;
+
+  /* ================= PHOTO URL ================= */
+
+  const getPhotoUrl = (path) => {
+    if (!path) return null;
+    if (path.startsWith("http")) return path;
+    return `/storage/${path}`;
   };
 
   const photoUrl = getPhotoUrl(profileData.profile_photo);
-  const initialLetter = profileData.name?.charAt(0) || user?.name?.charAt(0);
+  const initial = profileData.name?.charAt(0) || user?.name?.charAt(0);
+
 
   return (
-    <div className="flex min-h-screen bg-[#f4f6fb] relative">
-      {/* Input file tersembunyi */}
+    <div className="min-h-screen bg-[#f4f6fb]">
+
+      {/* FILE INPUT */}
       <input
         ref={fileInputRef}
         type="file"
+        hidden
         accept="image/*"
         onChange={handleFileChange}
-        className="hidden"
       />
 
-      {/* ================= SIDEBAR ================= */}
-      <Sidebar
-        user={user}
-        currentPage="profile"
-        setCurrentPage={setCurrentPage}
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        logout={logout}
-        isExpanded={sidebarExpanded}
-        setIsExpanded={setSidebarExpanded}
-      />
 
-      {/* ================= MAIN ================= */}
-      <main
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out
-        ${sidebarExpanded ? "lg:ml-72" : "lg:ml-20"}`}
-      >
-        {/* HEADER */}
-        <Header
-          user={{
-            ...user,
-            name: profileData.name || user?.name,
-            profile_photo: profileData.profile_photo
-          }}
-          currentPage="profile"
-          showBell={false}
-        />
+      {/* MAIN CONTENT */}
+      <main className="p-6 md:p-10">
 
-        {/* CONTENT */}
-        <div className="flex-1 p-6 md:p-10 overflow-y-auto">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold mb-2">Profile Saya</h2>
-            <p className="text-gray-500 mb-10">
-              Kelola informasi profil Anda
-            </p>
+        <div className="max-w-3xl mx-auto">
 
-            {/* PROFILE CARD */}
-            <div className="bg-white rounded-3xl shadow-lg p-8 pt-16">
-              {/* AVATAR SECTION */}
-              <div className="flex flex-col items-center mb-10">
-                <div className="relative">
-                  {photoUrl ? (
-                    <img
-                      src={photoUrl}
-                      alt="Profile"
-                      className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
-                    />
-                  ) : (
-                    <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
-                      {initialLetter}
-                    </div>
-                  )}
+          {/* TITLE */}
+          <h2 className="text-3xl font-bold mb-2">
+            Profile Saya
+          </h2>
 
-                  {/* Tombol Upload Foto */}
-                  <button
-                    onClick={handlePhotoClick}
-                    disabled={uploadingPhoto}
-                    className="absolute bottom-0 right-0 bg-blue-600 text-white p-2.5 rounded-full hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-                    title="Upload foto"
-                  >
-                    {uploadingPhoto ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Camera size={18} />
-                    )}
-                  </button>
+          <p className="text-gray-500 mb-10">
+            Kelola informasi profil Anda
+          </p>
 
-                  {/* Tombol Hapus Foto (hanya jika ada foto) */}
-                  {photoUrl && !uploadingPhoto && (
-                    <button
-                      onClick={handleDeletePhoto}
-                      className="absolute bottom-0 left-0 bg-red-500 text-white p-2.5 rounded-full hover:bg-red-600 transition shadow-lg"
-                      title="Hapus foto"
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>
 
-                <h3 className="mt-4 text-xl font-semibold">
-                  {profileData.name || user?.name}
-                </h3>
+          {/* CARD */}
+          <div className="bg-white rounded-3xl shadow-lg p-8 pt-16">
 
-                <span className="text-gray-500 capitalize">
-                  {user?.role?.replace("_", " ")} • {user?.divisi}
-                </span>
-              </div>
+            {/* AVATAR */}
+            <div className="flex flex-col items-center mb-10">
 
-              {/* FORM FIELDS */}
-              <div className="space-y-6">
-                {/* NAME */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600 flex-shrink-0">
-                    <User size={20} />
-                  </div>
+              <div className="relative">
 
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-700">Nama Lengkap</label>
-
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => handleChange("name", e.target.value)}
-                        className="w-full mt-2 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Masukkan nama lengkap"
-                      />
-                    ) : (
-                      <p className="mt-1 text-gray-900 font-medium">
-                        {profileData.name || "-"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* EMAIL */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center text-green-600 flex-shrink-0">
-                    <Mail size={20} />
-                  </div>
-
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-700">Email</label>
-
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        value={formData.email}
-                        onChange={(e) => handleChange("email", e.target.value)}
-                        className="w-full mt-2 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Masukkan email"
-                      />
-                    ) : (
-                      <p className="mt-1 text-gray-900 font-medium">
-                        {profileData.email || "-"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* PHONE */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center text-purple-600 flex-shrink-0">
-                    <Phone size={20} />
-                  </div>
-
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-700">Nomor HP</label>
-
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={formData.phone}
-                        onChange={(e) => handleChange("phone", e.target.value)}
-                        className="w-full mt-2 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Masukkan nomor HP"
-                      />
-                    ) : (
-                      <p className="mt-1 text-gray-900 font-medium">
-                        {profileData.phone || "-"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* ADDRESS */}
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center text-orange-600 flex-shrink-0 mt-1">
-                    <MapPin size={20} />
-                  </div>
-
-                  <div className="flex-1">
-                    <label className="text-sm font-medium text-gray-700">Alamat</label>
-
-                    {isEditing ? (
-                      <textarea
-                        value={formData.address}
-                        onChange={(e) => handleChange("address", e.target.value)}
-                        rows={3}
-                        className="w-full mt-2 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                        placeholder="Masukkan alamat lengkap"
-                      />
-                    ) : (
-                      <p className="mt-1 text-gray-900 font-medium">
-                        {profileData.address || "-"}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ACTION BUTTONS */}
-              <div className="mt-10 pt-6 border-t flex justify-end gap-3">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={handleCancel}
-                      disabled={loading}
-                      className="px-6 py-3 rounded-xl font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition flex items-center gap-2"
-                    >
-                      <X size={18} />
-                      Batal
-                    </button>
-
-                    <button
-                      onClick={handleSave}
-                      disabled={loading}
-                      className="px-6 py-3 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Save size={18} />
-                      {loading ? "Menyimpan..." : "Simpan"}
-                    </button>
-                  </>
+                {photoUrl ? (
+                  <img
+                    src={photoUrl}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-white shadow"
+                  />
                 ) : (
+                  <div className="w-32 h-32 bg-blue-600 rounded-full flex items-center justify-center text-white text-4xl font-bold">
+                    {initial}
+                  </div>
+                )}
+
+
+                {/* UPLOAD */}
+                <button
+                  onClick={handlePhotoClick}
+                  disabled={uploadingPhoto}
+                  className="absolute bottom-0 right-0 bg-blue-600 text-white p-2 rounded-full"
+                >
+                  {uploadingPhoto
+                    ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <Camera size={18} />
+                  }
+                </button>
+
+
+                {/* DELETE */}
+                {photoUrl && !uploadingPhoto && (
                   <button
-                    onClick={handleEdit}
-                    className="px-6 py-3 rounded-xl font-medium text-white bg-blue-600 hover:bg-blue-700 transition flex items-center gap-2 cursor-pointer"
+                    onClick={handleDeletePhoto}
+                    className="absolute bottom-0 left-0 bg-red-500 text-white p-2 rounded-full"
                   >
-                    <Edit2 size={18} />
-                    Edit Profile
+                    <Trash2 size={18} />
                   </button>
                 )}
+
               </div>
+
+
+              <h3 className="mt-4 text-xl font-semibold">
+                {profileData.name}
+              </h3>
+
+              <span className="text-gray-500 capitalize">
+                {user?.role?.replace("_", " ")} • {user?.divisi}
+              </span>
+
             </div>
+
+
+            {/* FORM */}
+            <div className="space-y-6">
+
+              <Field icon={<User size={20} />} label="Nama Lengkap"
+                editing={isEditing}
+                value={formData.name}
+                display={profileData.name}
+                onChange={(v) => handleChange("name", v)}
+              />
+
+              <Field icon={<Mail size={20} />} label="Email"
+                editing={isEditing}
+                value={formData.email}
+                display={profileData.email}
+                onChange={(v) => handleChange("email", v)}
+              />
+
+              <Field icon={<Phone size={20} />} label="Nomor HP"
+                editing={isEditing}
+                value={formData.phone}
+                display={profileData.phone}
+                onChange={(v) => handleChange("phone", v)}
+              />
+
+              <Field icon={<MapPin size={20} />} label="Alamat"
+                editing={isEditing}
+                value={formData.address}
+                display={profileData.address}
+                textarea
+                onChange={(v) => handleChange("address", v)}
+              />
+
+            </div>
+
+
+            {/* BUTTON */}
+            <div className="mt-10 pt-6 border-t flex justify-end gap-3">
+
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleCancel}
+                    className="px-6 py-3 bg-gray-100 rounded-xl flex gap-2"
+                  >
+                    <X size={18} /> Batal
+                  </button>
+
+                  <button
+                    onClick={handleSave}
+                    disabled={loading}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-xl flex gap-2"
+                  >
+                    <Save size={18} />
+                    {loading ? "Menyimpan..." : "Simpan"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={handleEdit}
+                  className="px-6 py-3 bg-blue-600 text-white rounded-xl flex gap-2"
+                >
+                  <Edit2 size={18} /> Edit Profile
+                </button>
+              )}
+
+            </div>
+
           </div>
         </div>
       </main>
     </div>
   );
 }
+
+
+
+/* ================= FIELD ================= */
+
+const Field = ({
+  icon,
+  label,
+  editing,
+  value,
+  display,
+  onChange,
+  textarea = false
+}) => (
+
+  <div className="flex items-start gap-4">
+
+    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center text-blue-600">
+      {icon}
+    </div>
+
+    <div className="flex-1">
+
+      <label className="text-sm font-medium text-gray-700">
+        {label}
+      </label>
+
+      {editing ? (
+        textarea ? (
+          <textarea
+            value={value}
+            rows={3}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full mt-2 px-4 py-3 border rounded-xl"
+          />
+        ) : (
+          <input
+            type="text"
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            className="w-full mt-2 px-4 py-3 border rounded-xl"
+          />
+        )
+      ) : (
+        <p className="mt-1 font-medium text-gray-900">
+          {display || "-"}
+        </p>
+      )}
+
+    </div>
+  </div>
+);
