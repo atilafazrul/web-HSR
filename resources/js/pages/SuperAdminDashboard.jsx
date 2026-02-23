@@ -25,7 +25,8 @@ import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
 
-const SuperAdminDashboard = ({ user, logout }) => {
+
+export default function SuperAdminDashboard({ user, logout }) {
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
@@ -34,7 +35,9 @@ const SuperAdminDashboard = ({ user, logout }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+
   /* ================= AUTO TITLE ================= */
+
   const getPageTitle = () => {
 
     const path = location.pathname;
@@ -49,19 +52,21 @@ const SuperAdminDashboard = ({ user, logout }) => {
     return "Super Admin";
   };
 
-  /* OPTIONAL: Ganti title tab browser */
+
   useEffect(() => {
     document.title = `WEB HSR - ${getPageTitle()}`;
   }, [location.pathname]);
+
 
   const handleProfileUpdate = (updatedUser) => {
     setCurrentUser(updatedUser);
   };
 
+
   return (
     <div className="flex min-h-screen bg-[#f4f6fb] relative">
 
-      {/* ================= SIDEBAR ================= */}
+      {/* SIDEBAR */}
       <Sidebar
         user={currentUser}
         sidebarOpen={sidebarOpen}
@@ -73,7 +78,8 @@ const SuperAdminDashboard = ({ user, logout }) => {
         role="super_admin"
       />
 
-      {/* ================= MAIN ================= */}
+
+      {/* MAIN */}
       <main
         className={`flex-1 flex flex-col min-w-0 transition-all duration-300
         ${sidebarExpanded ? "lg:ml-72" : "lg:ml-20"}`}
@@ -83,10 +89,11 @@ const SuperAdminDashboard = ({ user, logout }) => {
         <Header
           user={currentUser}
           showBell={true}
-          title={getPageTitle()}   // 👈 AUTO TITLE
+          title={getPageTitle()}
         />
 
-        {/* ================= CONTENT ================= */}
+
+        {/* CONTENT */}
         <div className="flex-1 p-6 md:p-10 overflow-y-auto">
 
           <Routes>
@@ -95,7 +102,7 @@ const SuperAdminDashboard = ({ user, logout }) => {
             <Route path="/" element={<Navigate to="dashboard" />} />
 
 
-            {/* DASHBOARD */}
+            {/* ================= DASHBOARD ================= */}
             <Route
               path="dashboard"
               element={<Dashboard navigate={navigate} />}
@@ -127,10 +134,7 @@ const SuperAdminDashboard = ({ user, logout }) => {
       </main>
     </div>
   );
-};
-
-export default SuperAdminDashboard;
-
+}
 
 
 
@@ -141,6 +145,7 @@ const Dashboard = ({ navigate }) => {
 
   return (
     <>
+      {/* TITLE */}
       <h2 className="text-3xl md:text-4xl font-bold mb-2">
         Dashboard
       </h2>
@@ -150,10 +155,12 @@ const Dashboard = ({ navigate }) => {
       </p>
 
 
-      {/* DIVISI */}
+      {/* ================= DIVISI ================= */}
       <div className="bg-white rounded-3xl shadow-md p-8 mb-12">
 
-        <h3 className="text-xl font-semibold mb-6">Divisi</h3>
+        <h3 className="text-xl font-semibold mb-6">
+          Divisi
+        </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
 
@@ -193,7 +200,7 @@ const Dashboard = ({ navigate }) => {
       </div>
 
 
-      {/* SUMMARY */}
+      {/* ================= SUMMARY ================= */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-12">
 
         <SummaryCard title="Total Tugas" value="235" icon={<ListTodo />} color="blue" />
@@ -204,22 +211,64 @@ const Dashboard = ({ navigate }) => {
       </div>
 
 
-      {/* TABLE */}
+      {/* ================= AKTIVITAS ================= */}
       <div className="bg-white rounded-3xl shadow-md p-8">
 
         <h3 className="text-xl font-semibold mb-6">
           Aktivitas Pekerjaan
         </h3>
 
-        <table className="w-full text-sm">
+        <table className="w-full text-sm border-collapse">
 
+          {/* HEADER TABLE */}
+          <thead>
+            <tr className="text-gray-500 border-b">
+
+              <th className="py-3 text-left">Divisi</th>
+              <th className="py-3 text-left">Tugas</th>
+              <th className="py-3 text-left">Karyawan</th>
+              <th className="py-3 text-left">Lokasi</th>
+              <th className="py-3 text-left">Status</th>
+              <th className="py-3 text-left">Tanggal</th>
+
+            </tr>
+          </thead>
+
+
+          {/* BODY */}
           <tbody>
-            <ReportRow divisi="IT" tugas="Set Up Server" karyawan="Sandi" lokasi="Jakarta" status="Selesai" tanggal="24 April 2024" />
-            <ReportRow divisi="Service" tugas="Service AC" karyawan="Indra" lokasi="Bandung" status="Proses" tanggal="23 April 2024" />
-            <ReportRow divisi="Kontraktor" tugas="Panel Listrik" karyawan="Budi" lokasi="Tangerang" status="Terlambat" tanggal="22 April 2024" />
+
+            <ReportRow
+              divisi="IT"
+              tugas="Set Up Server"
+              karyawan="Sandi"
+              lokasi="Jakarta"
+              status="Selesai"
+              tanggal="24 April 2024"
+            />
+
+            <ReportRow
+              divisi="Service"
+              tugas="Service AC"
+              karyawan="Indra"
+              lokasi="Bandung"
+              status="Proses"
+              tanggal="23 April 2024"
+            />
+
+            <ReportRow
+              divisi="Kontraktor"
+              tugas="Panel Listrik"
+              karyawan="Budi"
+              lokasi="Tangerang"
+              status="Terlambat"
+              tanggal="22 April 2024"
+            />
+
           </tbody>
 
         </table>
+
       </div>
     </>
   );
@@ -238,6 +287,7 @@ const Card = ({ title, desc, image, to, navigate }) => {
       onClick={() => navigate(to)}
       className="relative rounded-3xl overflow-hidden shadow-lg cursor-pointer"
     >
+
       <img
         src={image}
         alt={title}
@@ -248,9 +298,13 @@ const Card = ({ title, desc, image, to, navigate }) => {
 
       <div className="absolute bottom-0 p-6 text-white w-full">
 
-        <h3 className="text-2xl font-bold">{title}</h3>
+        <h3 className="text-2xl font-bold">
+          {title}
+        </h3>
 
-        <p className="text-sm mb-4">{desc}</p>
+        <p className="text-sm mb-4">
+          {desc}
+        </p>
 
         <button className="bg-white/20 px-4 py-2 rounded-xl">
           Masuk →
