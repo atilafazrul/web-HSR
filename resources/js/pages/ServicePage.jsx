@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, History, ListTodo } from "lucide-react";
+import { Package, FileText, ListTodo } from "lucide-react";
 
 export default function ServicePage() {
 
@@ -68,11 +68,11 @@ export default function ServicePage() {
         />
 
 
-        {/* RIWAYAT */}
+        {/* DOKUMENTASI */}
         <Card
-          icon={<History size={30} className="text-purple-600" />}
-          title="Riwayat"
-          desc="Histori servis"
+          icon={<FileText size={30} className="text-purple-600" />}
+          title="Dokumentasi"
+          desc="Dokumentasi servis"
           onClick={() => navigate(`${basePath}/service/riwayat`)}
         />
 

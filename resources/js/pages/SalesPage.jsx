@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, History, ListTodo } from "lucide-react";
+import { BarChart3, FileText, ListTodo } from "lucide-react";
 
 const SalesPage = () => {
 
@@ -61,11 +61,11 @@ const SalesPage = () => {
           onClick={() => navigate(`${basePath}/sales/projek`)}
         />
 
-        {/* RIWAYAT */}
+        {/* DOKUMENTASI */}
         <Card
-          icon={<History size={30} className="text-purple-600" />}
-          title="Riwayat"
-          desc="Histori transaksi dan penjualan"
+          icon={<FileText size={30} className="text-purple-600" />}
+          title="Dokumentasi"
+          desc="Dokumentasi penjualan"
           onClick={() => navigate(`${basePath}/sales/riwayat`)}
         />
 

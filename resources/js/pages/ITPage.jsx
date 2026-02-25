@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Monitor, History, ListTodo } from "lucide-react";
+import { Monitor, FileText, ListTodo } from "lucide-react";
 
 const ITPage = () => {
 
@@ -56,11 +56,11 @@ const ITPage = () => {
           onClick={() => navigate(`${basePath}/it/projek`)}
         />
 
-        {/* RIWAYAT */}
+        {/* DOKUMENTASI */}
         <Card
-          icon={<History size={30} className="text-purple-600" />}
-          title="Riwayat"
-          desc="Histori pekerjaan IT"
+          icon={<FileText size={30} className="text-purple-600" />}
+          title="Dokumentasi"
+          desc="Dokumentasi pekerjaan IT"
           onClick={() => navigate(`${basePath}/it/riwayat`)}
         />
 
