@@ -1,14 +1,15 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Monitor, History, ListTodo } from "lucide-react";
+import { 
+  Package, 
+  ListTodo, 
+  FileText 
+} from "lucide-react";
 
 const ITPage = () => {
 
   const navigate = useNavigate();
 
-  // =============================
-  // AMBIL USER LANGSUNG
-  // =============================
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
 
@@ -30,22 +31,25 @@ const ITPage = () => {
           ← Kembali
         </button>
 
-        <h2 className="text-3xl font-bold">Divisi IT</h2>
+        <h2 className="text-3xl font-bold">
+          Divisi IT
+        </h2>
+
       </div>
 
       <p className="text-gray-500 mb-8">
-        Kelola aset, progres pekerjaan, dan riwayat pekerjaan IT
+        Kelola aset dan progres pekerjaan IT
       </p>
 
       {/* CARD */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        {/* ASET */}
+        {/* INVENTORY */}
         <Card
-          icon={<Monitor size={30} className="text-blue-600" />}
-          title="ASET IT"
-          desc="Kelola perangkat, server, dan jaringan"
-          onClick={() => navigate(`${basePath}/it/aset`)}
+          icon={<Package size={30} className="text-blue-600" />}
+          title="Inventory"
+          desc="Kelola perangkat, server, dan stok barang IT"
+          onClick={() => navigate(`${basePath}/it/inventory`)}
         />
 
         {/* PROGRES */}
@@ -56,12 +60,12 @@ const ITPage = () => {
           onClick={() => navigate(`${basePath}/it/projek`)}
         />
 
-        {/* RIWAYAT */}
+        {/* BUAT PDF */}
         <Card
-          icon={<History size={30} className="text-purple-600" />}
-          title="Riwayat"
-          desc="Histori pekerjaan IT"
-          onClick={() => navigate(`${basePath}/it/riwayat`)}
+          icon={<FileText size={30} className="text-pink-600" />}
+          title="Buat PDF"
+          desc="Buat PDF pekerjaan IT"
+          onClick={() => navigate(`${basePath}/it/buat-pdf`)}
         />
 
       </div>
@@ -77,8 +81,9 @@ const Card = ({ icon, title, desc, onClick }) => (
     onClick={onClick}
     className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition cursor-pointer"
   >
-
-    <div className="mb-4">{icon}</div>
+    <div className="mb-4">
+      {icon}
+    </div>
 
     <h3 className="text-xl font-semibold mb-2">
       {title}
@@ -87,7 +92,6 @@ const Card = ({ icon, title, desc, onClick }) => (
     <p className="text-gray-500 text-sm">
       {desc}
     </p>
-
   </div>
 );
 

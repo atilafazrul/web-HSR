@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
+/* ================= PAGES ================= */
 import Login from "./pages/Login.jsx";
 
 import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
@@ -10,8 +11,7 @@ import ITPage from "./pages/ITPage.jsx";
 import ServicePage from "./pages/ServicePage.jsx";
 import KontraktorPage from "./pages/KontraktorPage.jsx";
 
-import FotoProjekPage from "./pages/FotoProjekPage.jsx"; // <<< TAMBAHAN
-
+import FotoProjekPage from "./pages/FotoProjekPage.jsx";
 
 export default function App() {
 
@@ -31,11 +31,8 @@ export default function App() {
         const parsedUser = JSON.parse(savedUser);
 
         if (
-          parsedUser.role === "super_admin" ||
-          parsedUser.role === "admin" ||
-          parsedUser.role === "it" ||
-          parsedUser.role === "service" ||
-          parsedUser.role === "kontraktor"
+          ["super_admin", "admin", "it", "service", "kontraktor"]
+            .includes(parsedUser.role)
         ) {
           setUser(parsedUser);
         } else {
@@ -56,11 +53,8 @@ export default function App() {
   const handleSetUser = (userData) => {
 
     if (
-      userData.role === "super_admin" ||
-      userData.role === "admin" ||
-      userData.role === "it" ||
-      userData.role === "service" ||
-      userData.role === "kontraktor"
+      ["super_admin", "admin", "it", "service", "kontraktor"]
+        .includes(userData.role)
     ) {
 
       setUser(userData);
@@ -84,8 +78,13 @@ export default function App() {
   };
 
 
+  /* ================= LOADING ================= */
   if (loading) {
-    return <div style={{ padding: 40 }}>Loading...</div>;
+    return (
+      <div className="p-10 text-center">
+        Loading...
+      </div>
+    );
   }
 
 
@@ -98,31 +97,23 @@ export default function App() {
         element={
           !user ? (
             <Login setUser={handleSetUser} />
-          ) : user.role === "super_admin" ? (
-            <Navigate to="/super_admin/dashboard" />
-          ) : user.role === "admin" ? (
-            <Navigate to="/admin/dashboard" />
-          ) : user.role === "it" ? (
-            <Navigate to="/it" />
-          ) : user.role === "service" ? (
-            <Navigate to="/service" />
-          ) : user.role === "kontraktor" ? (
-            <Navigate to="/kontraktor" />
           ) : (
-            <Navigate to="/" />
-          )
-        }
-      />
-
-
-      {/* ================= SUPER ADMIN FOTO ================= */}
-      <Route
-        path="/super_admin/projek-kerja/foto/:id"
-        element={
-          user?.role === "super_admin" ? (
-            <FotoProjekPage />
-          ) : (
-            <Navigate to="/" />
+            <Navigate
+              to={
+                user.role === "super_admin"
+                  ? "/super_admin/dashboard"
+                  : user.role === "admin"
+                  ? "/admin/dashboard"
+                  : user.role === "it"
+                  ? "/it/dashboard"
+                  : user.role === "service"
+                  ? "/service/dashboard"
+                  : user.role === "kontraktor"
+                  ? "/kontraktor/dashboard"
+                  : "/"
+              }
+              replace
+            />
           )
         }
       />
@@ -132,24 +123,9 @@ export default function App() {
       <Route
         path="/super_admin/*"
         element={
-          user?.role === "super_admin" ? (
-            <SuperAdminDashboard user={user} logout={handleLogout} />
-          ) : (
-            <Navigate to="/" />
-          )
-        }
-      />
-
-
-      {/* ================= ADMIN FOTO ================= */}
-      <Route
-        path="/admin/projek-kerja/foto/:id"
-        element={
-          user?.role === "admin" ? (
-            <FotoProjekPage />
-          ) : (
-            <Navigate to="/" />
-          )
+          user?.role === "super_admin"
+            ? <SuperAdminDashboard user={user} logout={handleLogout} />
+            : <Navigate to="/" replace />
         }
       />
 
@@ -158,11 +134,9 @@ export default function App() {
       <Route
         path="/admin/*"
         element={
-          user?.role === "admin" ? (
-            <AdminDashboard user={user} logout={handleLogout} />
-          ) : (
-            <Navigate to="/" />
-          )
+          user?.role === "admin"
+            ? <AdminDashboard user={user} logout={handleLogout} />
+            : <Navigate to="/" replace />
         }
       />
 
@@ -171,11 +145,9 @@ export default function App() {
       <Route
         path="/it/*"
         element={
-          user?.role === "it" ? (
-            <ITPage user={user} logout={handleLogout} />
-          ) : (
-            <Navigate to="/" />
-          )
+          user?.role === "it"
+            ? <ITPage user={user} logout={handleLogout} />
+            : <Navigate to="/" replace />
         }
       />
 
@@ -184,11 +156,9 @@ export default function App() {
       <Route
         path="/service/*"
         element={
-          user?.role === "service" ? (
-            <ServicePage user={user} logout={handleLogout} />
-          ) : (
-            <Navigate to="/" />
-          )
+          user?.role === "service"
+            ? <ServicePage user={user} logout={handleLogout} />
+            : <Navigate to="/" replace />
         }
       />
 
@@ -197,17 +167,29 @@ export default function App() {
       <Route
         path="/kontraktor/*"
         element={
-          user?.role === "kontraktor" ? (
-            <KontraktorPage user={user} logout={handleLogout} />
-          ) : (
-            <Navigate to="/" />
-          )
+          user?.role === "kontraktor"
+            ? <KontraktorPage user={user} logout={handleLogout} />
+            : <Navigate to="/" replace />
+        }
+      />
+
+
+      {/* ================= FOTO (GLOBAL) ================= */}
+      <Route
+        path="/projek-kerja/foto/:id"
+        element={
+          user
+            ? <FotoProjekPage />
+            : <Navigate to="/" replace />
         }
       />
 
 
       {/* ================= FALLBACK ================= */}
-      <Route path="*" element={<Navigate to="/" />} />
+      <Route
+        path="*"
+        element={<Navigate to="/" replace />}
+      />
 
     </Routes>
   );

@@ -1,25 +1,22 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, History, ListTodo } from "lucide-react";
+import { 
+  Package, 
+  ListTodo, 
+  FileText 
+} from "lucide-react";
 
-export default function ServicePage() {
+const ServicePage = () => {
 
   const navigate = useNavigate();
 
-  // =============================
-  // AMBIL USER DARI LOCALSTORAGE
-  // =============================
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
 
-  // =============================
-  // DETEKSI ROLE
-  // =============================
   const basePath =
     role === "super_admin"
       ? "/super_admin"
       : "/admin";
-
 
   return (
     <div>
@@ -40,15 +37,12 @@ export default function ServicePage() {
 
       </div>
 
-
       <p className="text-gray-500 mb-8">
-        Kelola inventory, progres pekerjaan, dan riwayat servis
+        Kelola inventory dan pekerjaan servis
       </p>
 
-
       {/* CARD */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* INVENTORY */}
         <Card
@@ -58,55 +52,47 @@ export default function ServicePage() {
           onClick={() => navigate(`${basePath}/service/inventory`)}
         />
 
-
         {/* PROGRES */}
         <Card
           icon={<ListTodo size={30} className="text-green-600" />}
           title="Progres Pekerjaan"
-          desc="Pantau status pekerjaan"
+          desc="Pantau status pekerjaan servis"
           onClick={() => navigate(`${basePath}/service/projek`)}
         />
 
-
-        {/* RIWAYAT */}
+        {/* BUAT PDF */}
         <Card
-          icon={<History size={30} className="text-purple-600" />}
-          title="Riwayat"
-          desc="Histori servis"
-          onClick={() => navigate(`${basePath}/service/riwayat`)}
+          icon={<FileText size={30} className="text-pink-600" />}
+          title="Buat PDF"
+          desc="Buat PDF pekerjaan servis"
+          onClick={() => navigate(`${basePath}/service/buat-pdf`)}
         />
 
-
       </div>
-
-    </div>
-  );
-}
-
-
-
-/* CARD */
-const Card = ({ icon, title, desc, onClick }) => {
-
-  return (
-    <div
-      onClick={onClick}
-      className="bg-white p-6 rounded-2xl shadow
-      hover:shadow-xl transition cursor-pointer select-none"
-    >
-
-      <div className="mb-4">
-        {icon}
-      </div>
-
-      <h3 className="text-xl font-semibold mb-2">
-        {title}
-      </h3>
-
-      <p className="text-gray-500 text-sm">
-        {desc}
-      </p>
 
     </div>
   );
 };
+
+
+/* CARD COMPONENT */
+const Card = ({ icon, title, desc, onClick }) => (
+  <div
+    onClick={onClick}
+    className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition cursor-pointer"
+  >
+    <div className="mb-4">
+      {icon}
+    </div>
+
+    <h3 className="text-xl font-semibold mb-2">
+      {title}
+    </h3>
+
+    <p className="text-gray-500 text-sm">
+      {desc}
+    </p>
+  </div>
+);
+
+export default ServicePage;

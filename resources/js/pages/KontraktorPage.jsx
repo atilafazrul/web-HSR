@@ -1,14 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Hammer, History, ListTodo } from "lucide-react";
+import { Package, ListTodo, FileText } from "lucide-react";
 
 const KontraktorPage = () => {
 
   const navigate = useNavigate();
 
-  // =============================
-  // AMBIL USER LANGSUNG
-  // =============================
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
 
@@ -16,7 +13,6 @@ const KontraktorPage = () => {
     role === "super_admin"
       ? "/super_admin"
       : "/admin";
-
 
   return (
     <div>
@@ -36,21 +32,19 @@ const KontraktorPage = () => {
         </h2>
       </div>
 
-
       <p className="text-gray-500 mb-8">
-        Kelola proyek, progres pekerjaan, dan riwayat kontraktor
+        Kelola inventory dan progres pekerjaan kontraktor
       </p>
-
 
       {/* CARD */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        {/* PROYEK */}
+        {/* INVENTORY */}
         <Card
-          icon={<Hammer size={30} className="text-blue-600" />}
-          title="Proyek"
-          desc="Kelola data dan pekerjaan proyek"
-          onClick={() => navigate(`${basePath}/kontraktor/proyek`)}
+          icon={<Package size={30} className="text-blue-600" />}
+          title="Inventory"
+          desc="Kelola stok dan peralatan kontraktor"
+          onClick={() => navigate(`${basePath}/kontraktor/inventory`)}
         />
 
         {/* PROGRES */}
@@ -61,12 +55,12 @@ const KontraktorPage = () => {
           onClick={() => navigate(`${basePath}/kontraktor/projek`)}
         />
 
-        {/* RIWAYAT */}
+        {/* BUAT PDF */}
         <Card
-          icon={<History size={30} className="text-purple-600" />}
-          title="Riwayat"
-          desc="Histori proyek kontraktor"
-          onClick={() => navigate(`${basePath}/kontraktor/riwayat`)}
+          icon={<FileText size={30} className="text-purple-600" />}
+          title="Buat PDF"
+          desc="Buat PDF pekerjaan kontraktor"
+          onClick={() => navigate(`${basePath}/kontraktor/buat-pdf`)}
         />
 
       </div>
@@ -75,14 +69,12 @@ const KontraktorPage = () => {
 };
 
 
-
 /* CARD */
 const Card = ({ icon, title, desc, onClick }) => (
   <div
     onClick={onClick}
     className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition cursor-pointer"
   >
-
     <div className="mb-4">{icon}</div>
 
     <h3 className="text-xl font-semibold mb-2">
@@ -92,7 +84,6 @@ const Card = ({ icon, title, desc, onClick }) => (
     <p className="text-gray-500 text-sm">
       {desc}
     </p>
-
   </div>
 );
 

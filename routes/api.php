@@ -5,9 +5,14 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 
+/* ================= MODEL ================= */
 use App\Models\User;
-use App\Http\Controllers\ProjekKerjaController;
 
+/* ================= CONTROLLER ================= */
+use App\Http\Controllers\ProjekKerjaController;
+use App\Http\Controllers\FormPekerjaanController;
+use App\Http\Controllers\BarangController;
+use App\Http\Controllers\ServiceReportController;
 
 /*
 |--------------------------------------------------------------------------
@@ -26,7 +31,6 @@ Route::post('/login', function (Request $request) {
     $user = User::where('email', $validated['email'])->first();
 
     if (!$user || !Hash::check($validated['password'], $user->password)) {
-
         return response()->json([
             'success' => false,
             'message' => 'Email atau password salah'
@@ -35,6 +39,7 @@ Route::post('/login', function (Request $request) {
 
     return response()->json([
         'success' => true,
+        'message' => 'Login berhasil',
         'user' => $user
     ]);
 });
@@ -52,7 +57,6 @@ Route::get('/profile', function (Request $request) {
     $user = User::find($request->query('user_id'));
 
     if (!$user) {
-
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
@@ -80,7 +84,6 @@ Route::put('/profile', function (Request $request) {
     $user = User::find($validated['user_id']);
 
     if (!$user) {
-
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
@@ -97,13 +100,7 @@ Route::put('/profile', function (Request $request) {
 });
 
 
-/*
-|--------------------------------------------------------------------------
-| PROFILE PHOTO API
-|--------------------------------------------------------------------------
-*/
-
-// ================= UPLOAD PHOTO =================
+// ================= PROFILE PHOTO =================
 Route::post('/profile/photo', function (Request $request) {
 
     $validated = $request->validate([
@@ -114,7 +111,6 @@ Route::post('/profile/photo', function (Request $request) {
     $user = User::find($validated['user_id']);
 
     if (!$user) {
-
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
@@ -136,14 +132,11 @@ Route::post('/profile/photo', function (Request $request) {
     ]);
 });
 
-
-// ================= DELETE PHOTO =================
 Route::delete('/profile/photo', function (Request $request) {
 
     $user = User::find($request->user_id);
 
     if (!$user) {
-
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
@@ -166,45 +159,66 @@ Route::delete('/profile/photo', function (Request $request) {
 
 /*
 |--------------------------------------------------------------------------
-| PROJEK KERJA API
+| INVENTORY BARANG
 |--------------------------------------------------------------------------
 */
 
+// LIST
+Route::get('/barang', [BarangController::class, 'index']);
 
-// ================= READ =================
+// DETAIL
+Route::get('/barang/{id}', [BarangController::class, 'show']);
+
+// CREATE
+Route::post('/barang', [BarangController::class, 'store']);
+
+// UPDATE
+Route::match(['put', 'patch'], '/barang/{id}', [
+    BarangController::class,
+    'update'
+]);
+
+// DELETE
+Route::delete('/barang/{id}', [
+    BarangController::class,
+    'destroy'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| PROJEK KERJA
+|--------------------------------------------------------------------------
+*/
+
+// READ
 Route::get('/projek-kerja', [ProjekKerjaController::class, 'index']);
 Route::get('/projek-kerja/{id}', [ProjekKerjaController::class, 'show']);
 
-
-// ================= CREATE =================
+// CREATE
 Route::post('/projek-kerja', [ProjekKerjaController::class, 'store']);
 
-
-// ================= UPDATE FULL =================
+// UPDATE FULL
 Route::put('/projek-kerja/{id}', [ProjekKerjaController::class, 'update']);
 
-
-// ================= UPDATE STATUS =================
+// UPDATE STATUS
 Route::patch('/projek-kerja/{id}/status', [
     ProjekKerjaController::class,
     'updateStatus'
 ]);
 
-
-// ================= UPDATE DESKRIPSI =================
+// UPDATE DESKRIPSI
 Route::patch('/projek-kerja/{id}/deskripsi', [
     ProjekKerjaController::class,
     'updateDescription'
 ]);
 
-
-// ================= PHOTO =================
+// FOTO
 Route::post('/projek-kerja/{id}/add-photo', [
     ProjekKerjaController::class,
     'addPhoto'
 ]);
 
-// ======= GET FOTO (BARU - UNTUK ADMIN & SUPER ADMIN) =======
 Route::get('/projek-kerja/{id}/photos', [
     ProjekKerjaController::class,
     'getPhotos'
@@ -215,9 +229,46 @@ Route::delete('/projek-kerja/photo/{photoId}', [
     'deletePhoto'
 ]);
 
-
-// ================= DELETE =================
+// DELETE
 Route::delete('/projek-kerja/{id}', [
     ProjekKerjaController::class,
     'destroy'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| FORM → PDF
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/form-pekerjaan/pdf', [
+    FormPekerjaanController::class,
+    'generatePdf'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| SERVICE REPORT
+|--------------------------------------------------------------------------
+*/
+
+// READ
+Route::get('/service-reports', [ServiceReportController::class, 'index']);
+Route::get('/service-reports/{id}', [ServiceReportController::class, 'show']);
+
+// CREATE
+Route::post('/service-reports', [ServiceReportController::class, 'store']);
+
+// UPDATE
+Route::put('/service-reports/{id}', [ServiceReportController::class, 'update']);
+
+// DELETE
+Route::delete('/service-reports/{id}', [ServiceReportController::class, 'destroy']);
+
+// PDF
+Route::get('/service-reports/{id}/pdf', [
+    ServiceReportController::class,
+    'generatePDF'
 ]);

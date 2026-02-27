@@ -16,13 +16,21 @@ import {
   MapPin,
 } from "lucide-react";
 
-/* IMPORT PAGE */
+/* ================= IMPORT PAGE ================= */
+
 import ITPage from "./ITPage";
 import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
-import Profile from "./Profile.jsx";
+import Profile from "./Profile";
+import FormPekerjaanPage from "./FormPekerjaanPage";
+import GeneratePDFPage from "./GeneratePDFPage";
+
+/* INVENTORY */
+import InventoryPage from "./InventoryPage";
+import FormBarangPage from "./FormBarangPage";
+import EditBarangPage from "./EditBarangPage";
 
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
@@ -32,7 +40,6 @@ export default function AdminDashboard({ user, logout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [currentUser] = useState(user);
-
   const [dashboardData, setDashboardData] = useState([]);
 
   const navigate = useNavigate();
@@ -55,22 +62,31 @@ export default function AdminDashboard({ user, logout }) {
   const fetchDashboardData = async () => {
     try {
       const res = await api.get("/projek-kerja");
-      setDashboardData(res.data);
+      let data = res.data;
+      if (data?.data) data = data.data;
+      setDashboardData(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Gagal load dashboard data", err);
     }
   };
 
-  /* ================= AUTO TITLE ================= */
+  /* ================= TITLE ================= */
 
   const getPageTitle = () => {
     const path = location.pathname;
+
+    if (path.includes("inventory")) return "Inventory";
+    if (path.includes("/it/buat-pdf")) return "Buat PDF - IT";
+    if (path.includes("/service/buat-pdf")) return "Buat PDF - Service";
+    if (path.includes("/sales/buat-pdf")) return "Buat PDF - Sales";
+    if (path.includes("/kontraktor/buat-pdf")) return "Buat PDF - Kontraktor";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("it")) return "Divisi IT";
     if (path.includes("service")) return "Divisi Service";
     if (path.includes("sales")) return "Divisi Sales";
     if (path.includes("kontraktor")) return "Divisi Kontraktor";
     if (path.includes("profile")) return "Profile";
+
     return "Admin";
   };
 
@@ -137,10 +153,9 @@ export default function AdminDashboard({ user, logout }) {
                   </h2>
 
                   <p className="text-gray-500 mb-10">
-                    Selamat datang, {currentUser?.name}
+                    Selamat datang di sistem HSR
                   </p>
 
-                  {/* DIVISI */}
                   <div className="bg-white rounded-3xl shadow p-8 mb-10">
                     <h3 className="text-xl font-semibold mb-6">
                       Divisi
@@ -153,7 +168,6 @@ export default function AdminDashboard({ user, logout }) {
                     />
                   </div>
 
-                  {/* SUMMARY */}
                   <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-6 mb-10">
 
                     <SummaryCard
@@ -186,7 +200,6 @@ export default function AdminDashboard({ user, logout }) {
 
                   </div>
 
-                  {/* ================= TABLE ================= */}
                   <div className="bg-white rounded-3xl shadow p-8 mb-10">
 
                     <h3 className="text-xl font-semibold mb-6">
@@ -207,7 +220,6 @@ export default function AdminDashboard({ user, logout }) {
                       </thead>
 
                       <tbody>
-
                         {dashboardData.map((item) => (
                           <ActivityRow
                             key={item.id}
@@ -219,7 +231,6 @@ export default function AdminDashboard({ user, logout }) {
                             tanggal={item.start_date}
                           />
                         ))}
-
                       </tbody>
 
                     </table>
@@ -228,17 +239,44 @@ export default function AdminDashboard({ user, logout }) {
               }
             />
 
+            {/* ================= INVENTORY ================= */}
+
+            <Route path="it/inventory" element={<InventoryPage />} />
+            <Route path="it/inventory/tambah" element={<FormBarangPage />} />
+            <Route path="it/inventory/edit/:id" element={<EditBarangPage />} />
+
+            <Route path="service/inventory" element={<InventoryPage />} />
+            <Route path="service/inventory/tambah" element={<FormBarangPage />} />
+            <Route path="service/inventory/edit/:id" element={<EditBarangPage />} />
+
+            {/* ================= DIVISI ================= */}
+
             <Route path="it" element={<ITPage user={user} />} />
             <Route path="service" element={<ServicePage user={user} />} />
+            <Route path="service/form-pekerjaan" element={<FormPekerjaanPage />} />
             <Route path="sales" element={<SalesPage user={user} />} />
             <Route path="kontraktor" element={<KontraktorPage user={user} />} />
+
+            {/* ================= PROJEK ================= */}
 
             <Route path="it/projek" element={<ProjekKerjaPage />} />
             <Route path="service/projek" element={<ProjekKerjaPage />} />
             <Route path="sales/projek" element={<ProjekKerjaPage />} />
             <Route path="kontraktor/projek" element={<ProjekKerjaPage />} />
 
-            <Route path="profile" element={<Profile user={currentUser} logout={logout} />} />
+            {/* ================= PDF ================= */}
+
+            <Route path="it/buat-pdf" element={<GeneratePDFPage user={user} />} />
+            <Route path="service/buat-pdf" element={<GeneratePDFPage user={user} />} />
+            <Route path="sales/buat-pdf" element={<GeneratePDFPage user={user} />} />
+            <Route path="kontraktor/buat-pdf" element={<GeneratePDFPage user={user} />} />
+
+            {/* ================= PROFILE ================= */}
+
+            <Route
+              path="profile"
+              element={<Profile user={currentUser} logout={logout} />}
+            />
 
             <Route path="*" element={<Navigate to="dashboard" replace />} />
 
@@ -249,7 +287,6 @@ export default function AdminDashboard({ user, logout }) {
     </div>
   );
 }
-
 
 /* ================= COMPONENT ================= */
 
@@ -267,14 +304,12 @@ const SummaryCard = ({ title, value, icon, color }) => {
         <p className="text-gray-500">{title}</p>
         <h2 className="text-3xl font-bold">{value}</h2>
       </div>
-
       <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${map[color]}`}>
         {icon}
       </div>
     </div>
   );
 };
-
 
 const DivisiCard = ({ title, image, onClick }) => (
   <div
@@ -286,9 +321,7 @@ const DivisiCard = ({ title, image, onClick }) => (
       className="h-56 w-full object-cover group-hover:scale-110 transition"
       alt={title}
     />
-
     <div className="absolute inset-0 bg-black/50"></div>
-
     <div className="absolute bottom-0 p-6 text-white">
       <h3 className="text-2xl font-bold">{title}</h3>
       <button className="bg-white/20 px-4 py-2 rounded-xl mt-2">
@@ -298,16 +331,7 @@ const DivisiCard = ({ title, image, onClick }) => (
   </div>
 );
 
-
-const ActivityRow = ({
-  divisi,
-  tugas,
-  nama,
-  lokasi,
-  status,
-  tanggal
-}) => {
-
+const ActivityRow = ({ divisi, tugas, nama, lokasi, status, tanggal }) => {
   const map = {
     Selesai: "bg-green-100 text-green-600",
     Proses: "bg-yellow-100 text-yellow-600",
@@ -319,20 +343,17 @@ const ActivityRow = ({
       <td className="py-4 px-3 font-medium">{divisi}</td>
       <td className="py-4 px-3">{tugas}</td>
       <td className="py-4 px-3">{nama}</td>
-
       <td className="py-4 px-3">
         <div className="flex items-center gap-1 text-gray-600">
           <MapPin size={14} />
           <span>{lokasi}</span>
         </div>
       </td>
-
       <td className="py-4 px-3 text-center">
         <span className={`px-3 py-1 rounded-full text-xs ${map[status]}`}>
           {status}
         </span>
       </td>
-
       <td className="py-4 px-3 text-center text-gray-500">
         {new Date(tanggal).toLocaleDateString("id-ID")}
       </td>
