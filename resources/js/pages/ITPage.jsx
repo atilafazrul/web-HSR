@@ -5,7 +5,6 @@ import {
   ListTodo,
   FileText
 } from "lucide-react";
-import { Monitor, FileText, ListTodo } from "lucide-react";
 
 const ITPage = () => {
 
