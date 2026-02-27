@@ -169,8 +169,10 @@ class ServiceReportController extends Controller
             if (!empty($validated['partsList'])) {
                 foreach ($validated['partsList'] as $part) {
                     // Only save if at least one field has value
-                    if (!empty($part['name']) || !empty($part['part_no']) ||
-                        !empty($part['in']) || !empty($part['out']) || !empty($part['qty'])) {
+                    if (
+                        !empty($part['name']) || !empty($part['part_no']) ||
+                        !empty($part['in']) || !empty($part['out']) || !empty($part['qty'])
+                    ) {
                         ServiceReportPart::create([
                             'service_report_id' => $report->id,
                             'part_name' => $part['name'] ?? null,
@@ -357,8 +359,4 @@ class ServiceReportController extends Controller
             'Content-Disposition' => 'attachment; filename="' . $filename . '"'
         ]);
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de

@@ -23,7 +23,6 @@ import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
-<<<<<<< HEAD
 import Profile from "./Profile";
 import FormPekerjaanPage from "./FormPekerjaanPage";
 import GeneratePDFPage from "./GeneratePDFPage";
@@ -32,10 +31,6 @@ import GeneratePDFPage from "./GeneratePDFPage";
 import InventoryPage from "./InventoryPage";
 import FormBarangPage from "./FormBarangPage";
 import EditBarangPage from "./EditBarangPage";
-=======
-import Profile from "./Profile.jsx";
-import GeneratePDFPage from "./GeneratePDFPage";
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de
 
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";

@@ -272,24 +272,3 @@ Route::get('/service-reports/{id}/pdf', [
     ServiceReportController::class,
     'generatePDF'
 ]);
-=======
-| SERVICE REPORT API
-|--------------------------------------------------------------------------
-*/
-
-// ================= READ =================
-Route::get('/service-reports', [ServiceReportController::class, 'index']);
-Route::get('/service-reports/{id}', [ServiceReportController::class, 'show']);
-
-// ================= CREATE =================
-Route::post('/service-reports', [ServiceReportController::class, 'store']);
-
-// ================= UPDATE =================
-Route::put('/service-reports/{id}', [ServiceReportController::class, 'update']);
-
-// ================= DELETE =================
-Route::delete('/service-reports/{id}', [ServiceReportController::class, 'destroy']);
-
-// ================= PDF =================
-Route::get('/service-reports/{id}/pdf', [ServiceReportController::class, 'generatePDF']);
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de

@@ -1,14 +1,11 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-<<<<<<< HEAD
-import { 
-  Package, 
-  ListTodo, 
-  FileText 
+import {
+  Package,
+  ListTodo,
+  FileText
 } from "lucide-react";
-=======
 import { Monitor, FileText, ListTodo } from "lucide-react";
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de
 
 const ITPage = () => {
 
@@ -66,11 +63,7 @@ const ITPage = () => {
 
         {/* BUAT PDF */}
         <Card
-<<<<<<< HEAD
           icon={<FileText size={30} className="text-pink-600" />}
-=======
-          icon={<FileText size={30} className="text-purple-600" />}
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de
           title="Buat PDF"
           desc="Buat PDF pekerjaan IT"
           onClick={() => navigate(`${basePath}/it/buat-pdf`)}

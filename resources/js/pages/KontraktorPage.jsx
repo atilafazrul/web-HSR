@@ -1,10 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-<<<<<<< HEAD
 import { Package, ListTodo, FileText } from "lucide-react";
-=======
-import { Hammer, FileText, ListTodo } from "lucide-react";
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de
 
 const KontraktorPage = () => {
 

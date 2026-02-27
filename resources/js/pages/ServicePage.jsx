@@ -1,14 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-<<<<<<< HEAD
-import { 
-  Package, 
-  ListTodo, 
-  FileText 
+import {
+  Package,
+  ListTodo,
+  FileText
 } from "lucide-react";
-=======
-import { Package, FileText, ListTodo } from "lucide-react";
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de
 
 const ServicePage = () => {
 
@@ -64,16 +60,10 @@ const ServicePage = () => {
           onClick={() => navigate(`${basePath}/service/projek`)}
         />
 
-<<<<<<< HEAD
-        {/* BUAT PDF */}
-        <Card
-          icon={<FileText size={30} className="text-pink-600" />}
-=======
 
         {/* BUAT PDF */}
         <Card
           icon={<FileText size={30} className="text-purple-600" />}
->>>>>>> a7703d7d77dc671bc8c5d1e33e430d84fd52d0de
           title="Buat PDF"
           desc="Buat PDF pekerjaan servis"
           onClick={() => navigate(`${basePath}/service/buat-pdf`)}
