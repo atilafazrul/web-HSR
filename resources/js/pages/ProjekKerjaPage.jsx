@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Download, Eye, Trash2 } from "lucide-react";
 
 export default function ProjekKerjaPage() {
 
@@ -10,13 +11,9 @@ export default function ProjekKerjaPage() {
   const role = user?.role;
   const divisiUser = user?.divisi;
 
-
   useEffect(() => {
     if (!user) navigate("/");
   }, [user, navigate]);
-
-
-  /* ================= FORM ================= */
 
   const initialForm = {
     divisi: "",
@@ -34,39 +31,25 @@ export default function ProjekKerjaPage() {
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(false);
 
-
-  /* ================= MODAL ================= */
-
   const [showDesc, setShowDesc] = useState(false);
   const [descText, setDescText] = useState("");
   const [editDesc, setEditDesc] = useState(false);
   const [currentId, setCurrentId] = useState(null);
   const [newDesc, setNewDesc] = useState("");
 
-
-  /* ================= API ================= */
-
   const api = axios.create({
     baseURL: "http://127.0.0.1:8000/api",
   });
-
-
-  /* ================= FETCH ================= */
 
   useEffect(() => {
     fetchData();
   }, []);
 
-
   const fetchData = async () => {
-
     try {
-
       const res = await api.get("/projek-kerja");
-
       let data = res.data;
 
-      // FILTER ADMIN SESUAI DIVISI
       if (role === "admin") {
         data = data.filter(
           (item) => item.divisi === divisiUser
@@ -80,16 +63,12 @@ export default function ProjekKerjaPage() {
     }
   };
 
-
-  /* ================= FORM ================= */
-
   const handleChange = (e) => {
     setForm(prev => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
   };
-
 
   const handleFileUpload = (e) => {
     if (e.target.files[0]) {
@@ -100,7 +79,6 @@ export default function ProjekKerjaPage() {
     }
   };
 
-
   const handlePhotoUpload = (e) => {
     if (e.target.files) {
       setForm(prev => ({
@@ -109,9 +87,6 @@ export default function ProjekKerjaPage() {
       }));
     }
   };
-
-
-  /* ================= SUBMIT ================= */
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -124,7 +99,6 @@ export default function ProjekKerjaPage() {
     setLoading(true);
 
     try {
-
       const formData = new FormData();
 
       Object.entries({
@@ -139,11 +113,9 @@ export default function ProjekKerjaPage() {
         formData.append(key, val || "");
       });
 
-
       if (form.file) {
         formData.append("file", form.file);
       }
-
 
       if (form.photos.length > 0) {
         Array.from(form.photos).forEach(photo => {
@@ -151,101 +123,63 @@ export default function ProjekKerjaPage() {
         });
       }
 
-
       await api.post("/projek-kerja", formData);
 
       alert("Data berhasil disimpan");
-
       setForm(initialForm);
       fetchData();
 
     } catch (err) {
-
       console.error(err);
       alert("Gagal simpan data");
-
     } finally {
       setLoading(false);
     }
   };
 
-
-  /* ================= STATUS COLOR ================= */
-
   const getStatusColor = (status) => {
-
     if (status === "Selesai")
       return "bg-green-100 text-green-700 border-green-400";
-
     if (status === "Terlambat")
       return "bg-red-100 text-red-700 border-red-400";
-
     return "bg-yellow-100 text-yellow-700 border-yellow-400";
   };
 
-
-  /* ================= STATUS ================= */
-
   const handleStatusChange = async (id, status) => {
-
     try {
-
-      await api.patch(`/projek-kerja/${id}/status`, {
-        status
-      });
-
+      await api.patch(`/projek-kerja/${id}/status`, { status });
       fetchData();
-
-    } catch (err) {
+    } catch {
       alert("Gagal update status");
     }
   };
 
-
-  /* ================= DESKRIPSI ================= */
-
   const handleUpdateDesc = async () => {
-
     try {
-
       await api.patch(`/projek-kerja/${currentId}/deskripsi`, {
         problem_description: newDesc
       });
 
       alert("Deskripsi berhasil diupdate");
-
       setEditDesc(false);
       setShowDesc(false);
-
       fetchData();
-
-    } catch (err) {
+    } catch {
       alert("Gagal update deskripsi");
     }
   };
 
-
-  /* ================= DELETE ================= */
-
   const handleDelete = async (id) => {
-
     if (!window.confirm("Yakin hapus project ini?")) return;
-
     try {
-
       await api.delete(`/projek-kerja/${id}`);
-
       fetchData();
-
-    } catch (err) {
+    } catch {
       alert("Gagal hapus data");
     }
   };
 
-
-  /* ================= NAVIGATE FOTO ================= */
   const handleViewPhoto = (id) => {
-
     const base =
       role === "super_admin"
         ? "/super_admin"
@@ -254,15 +188,10 @@ export default function ProjekKerjaPage() {
     navigate(`${base}/projek-kerja/foto/${id}`);
   };
 
-
   return (
     <div className="space-y-12 p-6">
 
-
-      {/* ================= FORM ================= */}
-
       {(role === "admin" || role === "super_admin") && (
-
         <div className="bg-white rounded-2xl shadow-lg p-8 border">
 
           <h2 className="text-2xl font-bold mb-6">
@@ -275,10 +204,7 @@ export default function ProjekKerjaPage() {
             encType="multipart/form-data"
           >
 
-
-            {/* DIVISI */}
             {role === "super_admin" ? (
-
               <select
                 name="divisi"
                 value={form.divisi}
@@ -292,17 +218,13 @@ export default function ProjekKerjaPage() {
                 <option value="Kontraktor">Kontraktor</option>
                 <option value="Sales">Sales</option>
               </select>
-
             ) : (
-
               <input
                 value={divisiUser}
                 disabled
                 className="border p-3 rounded-xl bg-gray-100"
               />
-
             )}
-
 
             <input
               name="jenis_pekerjaan"
@@ -313,7 +235,6 @@ export default function ProjekKerjaPage() {
               required
             />
 
-
             <input
               name="karyawan"
               value={form.karyawan}
@@ -321,7 +242,6 @@ export default function ProjekKerjaPage() {
               placeholder="Karyawan"
               className="border p-3 rounded-xl"
             />
-
 
             <input
               name="alamat"
@@ -331,7 +251,6 @@ export default function ProjekKerjaPage() {
               className="border p-3 rounded-xl"
             />
 
-
             <input
               type="date"
               name="start_date"
@@ -340,7 +259,6 @@ export default function ProjekKerjaPage() {
               className="border p-3 rounded-xl"
               required
             />
-
 
             <select
               name="status"
@@ -353,30 +271,21 @@ export default function ProjekKerjaPage() {
               <option value="Terlambat">Terlambat</option>
             </select>
 
-
-            {/* FILE */}
             <div className="md:col-span-2 bg-blue-50 p-4 rounded-xl border">
-
               <label className="font-semibold text-sm text-blue-700">
                 📄 Upload File
               </label>
-
               <input
                 type="file"
                 onChange={handleFileUpload}
                 className="mt-2 w-full"
               />
-
             </div>
 
-
-            {/* FOTO */}
             <div className="md:col-span-2 bg-green-50 p-4 rounded-xl border">
-
               <label className="font-semibold text-sm text-green-700">
                 🖼 Upload Foto
               </label>
-
               <input
                 type="file"
                 multiple
@@ -384,9 +293,7 @@ export default function ProjekKerjaPage() {
                 onChange={handlePhotoUpload}
                 className="mt-2 w-full"
               />
-
             </div>
-
 
             <textarea
               name="problem_description"
@@ -396,7 +303,6 @@ export default function ProjekKerjaPage() {
               className="border p-3 rounded-xl md:col-span-2"
             />
 
-
             <button
               disabled={loading}
               className="bg-blue-600 text-white py-3 rounded-xl md:col-span-2"
@@ -405,12 +311,10 @@ export default function ProjekKerjaPage() {
             </button>
 
           </form>
-
         </div>
       )}
 
-
-      {/* ================= TABLE ================= */}
+      {/* ================= TABLE UPDATED ================= */}
 
       <div className="bg-white rounded-2xl shadow-md p-8 border">
 
@@ -420,9 +324,7 @@ export default function ProjekKerjaPage() {
 
         <table className="min-w-full text-sm text-center">
 
-
           <thead className="bg-gray-100">
-
             <tr>
               <th className="p-3">Divisi</th>
               <th className="p-3">Tugas</th>
@@ -431,18 +333,12 @@ export default function ProjekKerjaPage() {
               <th className="p-3">Tanggal</th>
               <th className="p-3">Deskripsi</th>
               <th className="p-3">Status</th>
-              <th className="p-3">File</th>
-              <th className="p-3">Foto</th>
               <th className="p-3">Aksi</th>
             </tr>
-
           </thead>
 
-
           <tbody>
-
             {dataList.map((item) => (
-
               <tr key={item.id} className="border-b hover:bg-gray-50">
 
                 <td className="p-3">{item.divisi}</td>
@@ -454,12 +350,8 @@ export default function ProjekKerjaPage() {
                   {new Date(item.start_date).toLocaleDateString("id-ID")}
                 </td>
 
-
-                {/* DESKRIPSI */}
                 <td className="p-3">
-
                   {item.problem_description ? (
-
                     <button
                       onClick={() => {
                         setDescText(item.problem_description);
@@ -472,15 +364,10 @@ export default function ProjekKerjaPage() {
                     >
                       📄 Lihat
                     </button>
-
                   ) : "-"}
-
                 </td>
 
-
-                {/* STATUS */}
                 <td className="p-3">
-
                   <select
                     value={item.status}
                     onChange={(e) =>
@@ -488,147 +375,71 @@ export default function ProjekKerjaPage() {
                     }
                     className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(item.status)}`}
                   >
-
                     <option value="Proses">Proses</option>
                     <option value="Selesai">Selesai</option>
                     <option value="Terlambat">Terlambat</option>
-
                   </select>
-
                 </td>
 
-
-                {/* FILE */}
                 <td className="p-3">
+                  <div className="flex justify-center gap-2">
 
-                  {item.file_url ? (
-
-                    <a
-                      href={item.file_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-blue-600"
-                    >
-                      Download
-                    </a>
-
-                  ) : "-"}
-
-                </td>
-
-
-                {/* FOTO */}
-                <td className="p-3">
-
-                  <button
-                    onClick={() => handleViewPhoto(item.id)}
-                    className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs"
-                  >
-                    Lihat
-                  </button>
-
-                </td>
-
-
-                {/* AKSI */}
-                <td className="p-3">
-
-                  {(role === "super_admin" ||
-                    item.divisi === divisiUser) && (
-
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="bg-red-600 text-white px-3 py-1 rounded-lg text-xs"
+                    {item.file_url && (
+                      <a
+                        href={item.file_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg"
                       >
-                        Hapus
-                      </button>
-
+                        <Download size={16} />
+                      </a>
                     )}
 
+                    <button
+                      onClick={() => handleViewPhoto(item.id)}
+                      className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"
+                    >
+                      <Eye size={16} />
+                    </button>
+
+                    {(role === "super_admin" ||
+                      item.divisi === divisiUser) && (
+                        <button
+                          onClick={() => handleDelete(item.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+
+                  </div>
                 </td>
 
               </tr>
-
             ))}
-
           </tbody>
 
         </table>
 
       </div>
 
-
-      {/* ================= MODAL ================= */}
-
+      {/* MODAL tetap sama */}
       {showDesc && (
-
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
-
             <button
               onClick={() => setShowDesc(false)}
               className="absolute top-3 right-3 text-xl"
             >
               ✕
             </button>
-
             <h3 className="text-xl font-bold mb-4">
               📝 Detail Deskripsi
             </h3>
-
-
-            {!editDesc ? (
-
-              <div className="border rounded-xl p-4 bg-gray-50 max-h-[300px] overflow-y-auto whitespace-pre-wrap">
-                {descText}
-              </div>
-
-            ) : (
-
-              <textarea
-                value={newDesc}
-                onChange={(e) => setNewDesc(e.target.value)}
-                className="border rounded-xl p-4 w-full h-[200px]"
-              />
-
-            )}
-
-
-            <div className="mt-6 flex justify-end gap-3">
-
-              {!editDesc ? (
-
-                <button
-                  onClick={() => setEditDesc(true)}
-                  className="bg-yellow-500 text-white px-5 py-2 rounded-xl"
-                >
-                  Edit
-                </button>
-
-              ) : (
-
-                <button
-                  onClick={handleUpdateDesc}
-                  className="bg-green-600 text-white px-5 py-2 rounded-xl"
-                >
-                  Simpan
-                </button>
-
-              )}
-
-
-              <button
-                onClick={() => setShowDesc(false)}
-                className="bg-blue-600 text-white px-5 py-2 rounded-xl"
-              >
-                Tutup
-              </button>
-
+            <div className="border rounded-xl p-4 bg-gray-50 max-h-[300px] overflow-y-auto whitespace-pre-wrap">
+              {descText}
             </div>
-
           </div>
-
         </div>
       )}
 

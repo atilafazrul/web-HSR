@@ -13,7 +13,10 @@ body,
 
 body {
     overflow-x: hidden;
+    background-color: #f8fafc; /* soft background */
 }
+
+/* ================= HIDE SIDEBAR SCROLLBAR ================= */
 
 .sidebar-no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -26,19 +29,81 @@ body {
     scrollbar-width: none;
 }
 
+/* ================= CUSTOM SCROLLBAR (CONTENT) ================= */
+
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c4b5fd;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a78bfa;
+}
+
 /* ================= ANIMATIONS ================= */
 
-@keyframes fadeIn {
+@keyframes fadeInUp {
     from {
         opacity: 0;
-        transform: translateY(10px);
+        transform: translateY(15px) scale(0.97);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes fadeInCenter {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
     }
 }
 
 .animate-fadeIn {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeInUp 0.25s ease-out;
+}
+
+.animate-modal {
+    animation: fadeInCenter 0.2s ease-out;
+}
+
+/* ================= CARD HOVER EFFECT ================= */
+
+.card-hover {
+    transition: all 0.2s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+}
+
+/* ================= BUTTON TRANSITION ================= */
+
+.btn-smooth {
+    transition: all 0.2s ease;
+}
+
+.btn-smooth:hover {
+    transform: scale(1.03);
+}
+
+/* ================= MODAL BACKDROP ================= */
+
+.modal-backdrop {
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }

@@ -11,6 +11,7 @@ import {
   Hammer,
   Menu,
   LogOut,
+  Users, // ✅ TAMBAHAN ICON
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -52,8 +53,6 @@ export default function Sidebar({
   const isSuperAdmin = role === "super_admin";
   const isAdmin = role === "admin";
 
-  /* ================= FIX ROUTE ACTIVE ================= */
-
   const isActive = (path) => {
     return (
       location.pathname === path ||
@@ -93,10 +92,8 @@ export default function Sidebar({
           <Menu size={24} />
         </button>
 
-
         {/* LOGO */}
         <div className="hidden lg:flex justify-center mb-10 relative">
-
           <img
             src="/images/LOGO HSR.png"
             alt="HSR"
@@ -112,10 +109,9 @@ export default function Sidebar({
           )}
         </div>
 
-
         <div className="space-y-2">
 
-          {/* DASHBOARD */}
+          {/* ================= DASHBOARD ================= */}
           <div onClick={() => navigate(`${basePath}/dashboard`)}>
             <SidebarItem
               icon={<LayoutDashboard size={18} />}
@@ -125,10 +121,20 @@ export default function Sidebar({
             />
           </div>
 
-
-          {/* DIVISI */}
+          {/* ================= KARYAWAN (SUPER ADMIN ONLY) ================= */}
           {isSuperAdmin && (
+            <div onClick={() => navigate(`${basePath}/karyawan`)}>
+              <SidebarItem
+                icon={<Users size={18} />}
+                text="Karyawan"
+                active={isActive(`${basePath}/karyawan`)}
+                expanded={expanded}
+              />
+            </div>
+          )}
 
+          {/* ================= DIVISI (SUPER ADMIN) ================= */}
+          {isSuperAdmin && (
             <div
               className="flex items-center justify-between px-4 py-2 rounded-lg hover:bg-slate-800 cursor-pointer"
               onClick={() => setOpenDivisi(!openDivisi)}
@@ -148,14 +154,10 @@ export default function Sidebar({
             </div>
           )}
 
-
-          {/* DIVISI LIST */}
+          {/* ================= DIVISI LIST ================= */}
           {isSuperAdmin && openDivisi && (
-
             <div className="space-y-1">
-
               {allDivisis.map((d) => (
-
                 <div
                   key={d.name}
                   onClick={() => navigate(`${basePath}/${d.path}`)}
@@ -169,14 +171,11 @@ export default function Sidebar({
                   />
                 </div>
               ))}
-
             </div>
           )}
 
-
-          {/* ADMIN: SINGLE DIVISI */}
+          {/* ================= ADMIN: SINGLE DIVISI ================= */}
           {isAdmin && !isSuperAdmin && (
-
             <div
               onClick={() =>
                 navigate(
@@ -184,7 +183,6 @@ export default function Sidebar({
                 )
               }
             >
-
               <SidebarItem
                 icon={<Folder size={18} />}
                 text={user?.divisi || "Service"}
@@ -194,12 +192,10 @@ export default function Sidebar({
                 expanded={expanded}
                 indented
               />
-
             </div>
           )}
 
-
-          {/* PROFILE */}
+          {/* ================= PROFILE ================= */}
           <div onClick={() => navigate(`${basePath}/profile`)}>
             <SidebarItem
               icon={<User size={18} />}
@@ -212,19 +208,13 @@ export default function Sidebar({
         </div>
       </div>
 
-
-      {/* LOGOUT */}
+      {/* ================= LOGOUT ================= */}
       <button
         onClick={logout}
         className="mx-4 mb-4 bg-red-500 hover:bg-red-600 py-3 rounded-xl font-medium shadow px-4 flex items-center"
       >
         <LogOut size={20} />
-
-        {expanded && (
-          <span className="ml-3">
-            Logout
-          </span>
-        )}
+        {expanded && <span className="ml-3">Logout</span>}
       </button>
 
     </aside>
@@ -232,8 +222,7 @@ export default function Sidebar({
 }
 
 
-
-/* ITEM */
+/* ================= SIDEBAR ITEM ================= */
 
 const SidebarItem = ({
   icon,
@@ -248,7 +237,6 @@ const SidebarItem = ({
     ${active ? "bg-blue-500" : "hover:bg-slate-800"}
     ${indented && expanded ? "pl-8 pr-4" : "px-4"}`}
   >
-
     <span className="w-[18px] flex justify-center">
       {icon}
     </span>
@@ -258,6 +246,5 @@ const SidebarItem = ({
         {text}
       </span>
     )}
-
   </div>
 );

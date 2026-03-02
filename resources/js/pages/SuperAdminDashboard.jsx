@@ -12,6 +12,9 @@ import {
   CheckCircle,
   Clock,
   AlertTriangle,
+  Download,
+  Eye,
+  Trash2,
 } from "lucide-react";
 
 import axios from "axios";
@@ -89,8 +92,7 @@ export default function SuperAdminDashboard({ user, logout }) {
       />
 
       <main
-        className={`flex-1 flex flex-col transition-all duration-300 ${sidebarExpanded ? "lg:ml-72" : "lg:ml-20"
-          }`}
+        className={`flex-1 flex flex-col transition-all duration-300 ${sidebarExpanded ? "lg:ml-72" : "lg:ml-20"}`}
       >
 
         <Header
@@ -279,9 +281,8 @@ const Dashboard = ({ user }) => {
         </div>
       </div>
 
-      {/* TABLE AKTIVITAS PEKERJAAN */}
+      {/* TABLE */}
       <div className="bg-white rounded-3xl shadow-md p-8">
-
         <h3 className="text-xl font-semibold mb-6">Aktivitas Pekerjaan</h3>
 
         <div className="flex gap-4 mb-6">
@@ -311,8 +312,6 @@ const Dashboard = ({ user }) => {
               <th className="p-3">Tanggal</th>
               <th className="p-3">Deskripsi</th>
               <th className="p-3">Status</th>
-              <th className="p-3">File</th>
-              <th className="p-3">Foto</th>
               <th className="p-3">Aksi</th>
             </tr>
           </thead>
@@ -336,23 +335,39 @@ const Dashboard = ({ user }) => {
                     <option value="Terlambat">Terlambat</option>
                   </select>
                 </td>
+
+                {/* AKSI DIGABUNG */}
                 <td className="p-3">
-                  {item.file_url ? (
-                    <a href={item.file_url} target="_blank" rel="noreferrer" className="text-blue-600">
-                      Download
-                    </a>
-                  ) : "-"}
+                  <div className="flex items-center justify-center gap-2">
+
+                    {item.file_url && (
+                      <a
+                        href={item.file_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition"
+                      >
+                        <Download size={16} />
+                      </a>
+                    )}
+
+                    <button
+                      onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)}
+                      className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition"
+                    >
+                      <Eye size={16} />
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+
+                  </div>
                 </td>
-                <td className="p-3">
-                  <button onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)} className="bg-green-600 text-white px-3 py-1 rounded-lg text-xs">
-                    Lihat
-                  </button>
-                </td>
-                <td className="p-3">
-                  <button onClick={() => handleDelete(item.id)} className="bg-red-600 text-white px-3 py-1 rounded-lg text-xs">
-                    Hapus
-                  </button>
-                </td>
+
               </tr>
             ))}
           </tbody>
@@ -370,7 +385,6 @@ const Dashboard = ({ user }) => {
           </div>
         </div>
       )}
-
     </>
   );
 };

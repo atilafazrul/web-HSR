@@ -13,6 +13,7 @@ use App\Http\Controllers\ProjekKerjaController;
 use App\Http\Controllers\FormPekerjaanController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\ServiceReportController;
+use App\Http\Controllers\UserController; // ✅ TAMBAHAN HRD
 
 /*
 |--------------------------------------------------------------------------
@@ -76,9 +77,7 @@ Route::put('/profile', function (Request $request) {
     $validated = $request->validate([
         'user_id' => 'required|integer',
         'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255',
-        'phone' => 'nullable|string|max:20',
-        'address' => 'nullable|string|max:500'
+        'email' => 'required|email|max:255'
     ]);
 
     $user = User::find($validated['user_id']);
@@ -155,6 +154,28 @@ Route::delete('/profile/photo', function (Request $request) {
         'message' => 'Foto berhasil dihapus'
     ]);
 });
+
+
+/*
+|--------------------------------------------------------------------------
+| HRD - KARYAWAN
+|--------------------------------------------------------------------------
+*/
+
+// ================= LIST =================
+Route::get('/karyawan', [UserController::class, 'index']);
+
+// ================= DETAIL =================
+Route::get('/karyawan/{id}', [UserController::class, 'show']);
+
+// ================= CREATE =================
+Route::post('/karyawan', [UserController::class, 'store']);
+
+// ================= UPDATE =================
+Route::put('/karyawan/{id}', [UserController::class, 'update']);
+
+// ================= DELETE =================
+Route::delete('/karyawan/{id}', [UserController::class, 'destroy']);
 
 
 /*

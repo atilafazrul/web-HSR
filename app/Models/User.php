@@ -14,12 +14,32 @@ class User extends Authenticatable
      * Mass assignable attributes
      */
     protected $fillable = [
-    'name',
-    'email',
-    'password',
-    'role',
-    'divisi'
-];
+
+        // ================= BASIC =================
+        'name',
+        'email',
+        'password',
+        'role',
+        'divisi',
+
+        // ================= DATA KTP =================
+        'nik',
+        'tempat_lahir',
+        'tanggal_lahir',
+        'alamat',
+        'jenis_kelamin',
+        'agama',
+        'status_perkawinan',
+        'pekerjaan',
+        'no_telepon',
+        'golongan_darah',
+
+        // ================= KONTAK DARURAT =================
+        'kontak_darurat_nama',
+        'kontak_darurat_hubungan',
+        'kontak_darurat_telepon',
+        'kontak_darurat_alamat',
+    ];
 
     /**
      * Hidden attributes
@@ -32,11 +52,9 @@ class User extends Authenticatable
     /**
      * Attribute casting
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'tanggal_lahir' => 'date',
+        'password' => 'hashed',
+    ];
 }

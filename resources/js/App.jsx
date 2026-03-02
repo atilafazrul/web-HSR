@@ -13,21 +13,20 @@ import KontraktorPage from "./pages/KontraktorPage.jsx";
 
 import FotoProjekPage from "./pages/FotoProjekPage.jsx";
 
+/* ✅ TAMBAHAN */
+import KaryawanPage from "./pages/KaryawanPage.jsx";
+
 export default function App() {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-
-  /* ================= LOAD USER ================= */
   useEffect(() => {
 
     const savedUser = localStorage.getItem("user");
 
     if (savedUser) {
-
       try {
-
         const parsedUser = JSON.parse(savedUser);
 
         if (
@@ -48,8 +47,6 @@ export default function App() {
 
   }, []);
 
-
-  /* ================= SET USER ================= */
   const handleSetUser = (userData) => {
 
     if (
@@ -61,37 +58,23 @@ export default function App() {
       localStorage.setItem("user", JSON.stringify(userData));
 
     } else {
-
       alert("Role tidak valid");
-
     }
-
   };
 
-
-  /* ================= LOGOUT ================= */
   const handleLogout = () => {
-
     setUser(null);
     localStorage.clear();
-
   };
 
-
-  /* ================= LOADING ================= */
   if (loading) {
-    return (
-      <div className="p-10 text-center">
-        Loading...
-      </div>
-    );
+    return <div className="p-10 text-center">Loading...</div>;
   }
-
 
   return (
     <Routes>
 
-      {/* ================= LOGIN ================= */}
+      {/* LOGIN */}
       <Route
         path="/"
         element={
@@ -118,8 +101,7 @@ export default function App() {
         }
       />
 
-
-      {/* ================= SUPER ADMIN ================= */}
+      {/* SUPER ADMIN */}
       <Route
         path="/super_admin/*"
         element={
@@ -129,8 +111,17 @@ export default function App() {
         }
       />
 
+      {/* ✅ ROUTE KARYAWAN KHUSUS SUPER ADMIN */}
+      <Route
+        path="/super_admin/karyawan"
+        element={
+          user?.role === "super_admin"
+            ? <KaryawanPage />
+            : <Navigate to="/" replace />
+        }
+      />
 
-      {/* ================= ADMIN ================= */}
+      {/* ADMIN */}
       <Route
         path="/admin/*"
         element={
@@ -140,8 +131,7 @@ export default function App() {
         }
       />
 
-
-      {/* ================= IT ================= */}
+      {/* IT */}
       <Route
         path="/it/*"
         element={
@@ -151,8 +141,7 @@ export default function App() {
         }
       />
 
-
-      {/* ================= SERVICE ================= */}
+      {/* SERVICE */}
       <Route
         path="/service/*"
         element={
@@ -162,8 +151,7 @@ export default function App() {
         }
       />
 
-
-      {/* ================= KONTRAKTOR ================= */}
+      {/* KONTRAKTOR */}
       <Route
         path="/kontraktor/*"
         element={
@@ -173,8 +161,7 @@ export default function App() {
         }
       />
 
-
-      {/* ================= FOTO (GLOBAL) ================= */}
+      {/* FOTO */}
       <Route
         path="/projek-kerja/foto/:id"
         element={
@@ -184,12 +171,8 @@ export default function App() {
         }
       />
 
-
-      {/* ================= FALLBACK ================= */}
-      <Route
-        path="*"
-        element={<Navigate to="/" replace />}
-      />
+      {/* FALLBACK */}
+      <Route path="*" element={<Navigate to="/" replace />} />
 
     </Routes>
   );
