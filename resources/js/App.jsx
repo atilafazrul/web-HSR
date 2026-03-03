@@ -113,7 +113,7 @@ export default function App() {
 
       {/* ✅ ROUTE KARYAWAN KHUSUS SUPER ADMIN */}
       <Route
-        path="/super_admin/karyawan"
+        path="/super_admin/*"
         element={
           user?.role === "super_admin"
             ? <KaryawanPage />

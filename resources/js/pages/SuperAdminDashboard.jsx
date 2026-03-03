@@ -34,6 +34,7 @@ import FotoProjekPage from "./FotoProjekPage";
 import FormBarangPage from "./FormBarangPage";
 import EditBarangPage from "./EditBarangPage";
 import GeneratePDFPage from "./GeneratePDFPage";
+import KaryawanPage from "./KaryawanPage";
 
 /* ================= DUMMY ================= */
 
@@ -69,6 +70,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     if (path.includes("kontraktor")) return "Divisi Kontraktor";
     if (path.includes("profile")) return "Profile";
     if (path.includes("dashboard")) return "Dashboard";
+    if (path.includes("karyawan")) return "Profil Karyawan";
 
     return "Super Admin";
   };
@@ -106,6 +108,7 @@ export default function SuperAdminDashboard({ user, logout }) {
           <Routes>
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard user={user} />} />
+            <Route path="karyawan" element={<KaryawanPage />} />
 
             <Route path="it">
               <Route index element={<ITPage user={user} />} />
