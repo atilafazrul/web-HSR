@@ -35,6 +35,7 @@ import FormBarangPage from "./FormBarangPage";
 import EditBarangPage from "./EditBarangPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import KaryawanPage from "./KaryawanPage";
+import TargetPage from "./TargetPage";
 
 /* ================= DUMMY ================= */
 
@@ -63,6 +64,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     if (path.includes("/it/buat-pdf")) return "Buat PDF - IT";
     if (path.includes("/service/buat-pdf")) return "Buat PDF - Service";
     if (path.includes("/sales/buat-pdf")) return "Buat PDF - Sales";
+    if (path.includes("/sales/target")) return "Target Penjualan";
     if (path.includes("/kontraktor/buat-pdf")) return "Buat PDF - Kontraktor";
     if (path.includes("/it")) return "Divisi IT";
     if (path.includes("service")) return "Divisi Service";
@@ -131,6 +133,7 @@ export default function SuperAdminDashboard({ user, logout }) {
 
             <Route path="sales">
               <Route index element={<SalesPage user={user} />} />
+              <Route path="target" element={<TargetPage />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
             </Route>

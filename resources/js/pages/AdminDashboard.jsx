@@ -26,6 +26,7 @@ import ProjekKerjaPage from "./ProjekKerjaPage";
 import Profile from "./Profile";
 import FormPekerjaanPage from "./FormPekerjaanPage";
 import GeneratePDFPage from "./GeneratePDFPage";
+import TargetPage from "./TargetPage";
 
 /* INVENTORY */
 import InventoryPage from "./InventoryPage";
@@ -76,6 +77,7 @@ export default function AdminDashboard({ user, logout }) {
     const path = location.pathname;
 
     if (path.includes("inventory")) return "Inventory";
+    if (path.includes("target")) return "Target Penjualan";
     if (path.includes("/it/buat-pdf")) return "Buat PDF - IT";
     if (path.includes("/service/buat-pdf")) return "Buat PDF - Service";
     if (path.includes("/sales/buat-pdf")) return "Buat PDF - Sales";
@@ -235,6 +237,7 @@ export default function AdminDashboard({ user, logout }) {
             {/* ================= PROJEK ================= */}
 
             <Route path="it/projek" element={<ProjekKerjaPage />} />
+            <Route path="sales/target" element={<TargetPage />} />
             <Route path="it/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="service/projek" element={<ProjekKerjaPage />} />
             <Route path="service/buat-pdf" element={<GeneratePDFPage user={user} />} />

@@ -13,9 +13,6 @@ import KontraktorPage from "./pages/KontraktorPage.jsx";
 
 import FotoProjekPage from "./pages/FotoProjekPage.jsx";
 
-/* ✅ TAMBAHAN */
-import KaryawanPage from "./pages/KaryawanPage.jsx";
-
 export default function App() {
 
   const [user, setUser] = useState(null);
@@ -107,16 +104,6 @@ export default function App() {
         element={
           user?.role === "super_admin"
             ? <SuperAdminDashboard user={user} logout={handleLogout} />
-            : <Navigate to="/" replace />
-        }
-      />
-
-      {/* ✅ ROUTE KARYAWAN KHUSUS SUPER ADMIN */}
-      <Route
-        path="/super_admin/*"
-        element={
-          user?.role === "super_admin"
-            ? <KaryawanPage />
             : <Navigate to="/" replace />
         }
       />
