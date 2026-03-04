@@ -37,14 +37,6 @@ import GeneratePDFPage from "./GeneratePDFPage";
 import KaryawanPage from "./KaryawanPage";
 import TargetPage from "./TargetPage";
 
-/* ================= DUMMY ================= */
-
-const ComingSoon = ({ title }) => (
-  <div className="bg-white rounded-2xl shadow p-10 text-center">
-    <h2 className="text-2xl font-bold mb-3">{title}</h2>
-    <p className="text-gray-500">Halaman sedang dikembangkan</p>
-  </div>
-);
 
 /* ================= MAIN ================= */
 
@@ -118,7 +110,6 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
-              <Route path="aset" element={<ComingSoon title="Aset IT" />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
             </Route>
 
@@ -141,7 +132,9 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="kontraktor">
               <Route index element={<KontraktorPage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
-              <Route path="proyek" element={<ComingSoon title="Data Proyek" />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="inventory/tambah" element={<FormBarangPage />} />
+              <Route path="inventory/edit/:id" element={<EditBarangPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
             </Route>
 
