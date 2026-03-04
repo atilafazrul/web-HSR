@@ -13,19 +13,10 @@ class ProjekKerja extends Model
 
 
     /* =============================
-       TAMBAH AGAR file_url MASUK API
-    ============================== */
-    protected $appends = [
-        'file_url',
-        'first_photo_url'
-    ];
-
-
-    /* =============================
        FIELD YANG BOLEH DISIMPAN
     ============================== */
-    protected $fillable = [
 
+    protected $fillable = [
         'report_no',
         'divisi',
         'jenis_pekerjaan',
@@ -33,18 +24,15 @@ class ProjekKerja extends Model
         'alamat',
         'status',
         'start_date',
-        'problem_description',
-
-        // FILE
-        'file'
+        'problem_description'
     ];
 
 
     /* =============================
        AUTO CAST
     ============================== */
-    protected $casts = [
 
+    protected $casts = [
         'start_date' => 'date:Y-m-d',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
@@ -52,14 +40,19 @@ class ProjekKerja extends Model
 
 
     /* =============================
-       AUTO LOAD RELATION FOTO
+       AUTO LOAD RELATION
     ============================== */
-    protected $with = ['photos'];
+
+    protected $with = [
+        'photos',
+        'files'
+    ];
 
 
     /* =============================
        RELATION FOTO
     ============================== */
+
     public function photos()
     {
         return $this->hasMany(
@@ -70,21 +63,22 @@ class ProjekKerja extends Model
 
 
     /* =============================
-       URL FILE DOWNLOAD
+       RELATION FILE
     ============================== */
-    public function getFileUrlAttribute()
-    {
-        if ($this->file) {
-            return asset('storage/' . $this->file);
-        }
 
-        return null;
+    public function files()
+    {
+        return $this->hasMany(
+            ProjekKerjaFile::class,
+            'projek_kerja_id'
+        );
     }
 
 
     /* =============================
        URL FOTO PERTAMA
     ============================== */
+
     public function getFirstPhotoUrlAttribute()
     {
         if ($this->photos && $this->photos->count() > 0) {

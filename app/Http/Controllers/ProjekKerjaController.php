@@ -5,260 +5,401 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ProjekKerja;
 use App\Models\ProjekKerjaPhoto;
+use App\Models\ProjekKerjaFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class ProjekKerjaController extends Controller
 {
-    /* ======================================================
-       GET ALL
-    ====================================================== */
-    public function index()
-    {
-        return response()->json(
-            ProjekKerja::with('photos')->latest()->get()
-        );
-    }
 
-    /* ======================================================
-       GET SINGLE
-    ====================================================== */
-    public function show($id)
-    {
-        return response()->json(
-            ProjekKerja::with('photos')->findOrFail($id)
-        );
-    }
+/* ======================================================
+   GET ALL
+====================================================== */
 
-    /* ======================================================
-       GET PHOTOS
-    ====================================================== */
-    public function getPhotos($id)
-    {
-        $projek = ProjekKerja::with('photos')->find($id);
+public function index()
+{
+    $projek = ProjekKerja::with(['photos','files'])
+        ->latest()
+        ->get();
 
-        if (!$projek) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data tidak ditemukan'
-            ], 404);
-        }
+    return response()->json($projek);
+}
 
-        $photos = [];
 
-        foreach ($projek->photos as $photo) {
-            if ($photo->photo && Storage::disk('public')->exists($photo->photo)) {
-                $photos[] = [
-                    'id' => $photo->id,
-                    'url' => asset('storage/' . $photo->photo)
-                ];
-            }
-        }
+/* ======================================================
+   GET SINGLE
+====================================================== */
 
-        return response()->json([
-            'success' => true,
-            'photos' => $photos
+public function show($id)
+{
+    $projek = ProjekKerja::with(['photos','files'])
+        ->findOrFail($id);
+
+    return response()->json($projek);
+}
+
+
+/* ======================================================
+   CREATE PROJECT + FILE + PHOTO
+====================================================== */
+
+public function store(Request $request)
+{
+
+    $request->validate([
+        'divisi'=>'required|string',
+        'jenis_pekerjaan'=>'required|string',
+        'karyawan'=>'required|string',
+        'alamat'=>'required|string',
+        'status'=>'required|in:Proses,Selesai,Terlambat',
+        'start_date'=>'required|date',
+        'problem_description'=>'nullable|string',
+        'file'=>'nullable|file|max:5120',
+        'files.*'=>'nullable|file|max:5120',
+        'photos.*'=>'nullable|image|max:2048'
+    ]);
+
+    DB::beginTransaction();
+
+    try{
+
+        $today = date('dmY');
+        $lastId = ProjekKerja::max('id') ?? 0;
+        $newNumber = $lastId + 1;
+
+        $reportNo = "SR".
+            str_pad($newNumber,3,"0",STR_PAD_LEFT).
+            "/HSR/".$today;
+
+
+        $projek = ProjekKerja::create([
+            'report_no'=>$reportNo,
+            'divisi'=>$request->divisi,
+            'jenis_pekerjaan'=>$request->jenis_pekerjaan,
+            'karyawan'=>$request->karyawan,
+            'alamat'=>$request->alamat,
+            'status'=>$request->status,
+            'start_date'=>Carbon::parse($request->start_date)->format('Y-m-d'),
+            'problem_description'=>$request->problem_description
         ]);
-    }
-
-    /* ======================================================
-       CREATE PROJECT (SUPER SAFE VERSION)
-    ====================================================== */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'divisi' => 'required|string',
-            'jenis_pekerjaan' => 'required|string',
-            'karyawan' => 'required|string',
-            'alamat' => 'required|string',
-            'status' => 'required|in:Proses,Selesai,Terlambat',
-            'start_date' => 'required|date',
-            'problem_description' => 'nullable|string',
-
-            'file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:5120',
-            'photos' => 'nullable|array',
-            'photos.*' => 'image|max:2048'
-        ]);
-
-        DB::beginTransaction();
-
-        try {
-
-            /* ================= REPORT NUMBER SAFE ================= */
-            $today = date('dmY');
-
-            $lastId = ProjekKerja::max('id') ?? 0;
-            $newNumber = $lastId + 1;
-
-            $reportNo = "SR" .
-                str_pad($newNumber, 3, "0", STR_PAD_LEFT)
-                . "/HSR/" . $today;
 
 
-            /* ================= UPLOAD FILE ================= */
-            $filePath = null;
+        /* ================= FILE UPLOAD ================= */
 
-            if ($request->hasFile('file') && $request->file('file')->isValid()) {
-                $filePath = $request->file('file')
-                    ->store('projek-files', 'public');
-            }
+        // jika upload 1 file
+        if($request->hasFile('file')){
 
+            $file = $request->file('file');
 
-            /* ================= SAVE PROJECT ================= */
-            $projek = ProjekKerja::create([
-                'report_no' => $reportNo,
-                'divisi' => $request->divisi,
-                'jenis_pekerjaan' => $request->jenis_pekerjaan,
-                'karyawan' => $request->karyawan,
-                'alamat' => $request->alamat,
-                'status' => $request->status,
-                'start_date' => Carbon::parse($request->start_date)->format('Y-m-d'),
-                'problem_description' => $request->problem_description,
-                'file' => $filePath
+            $path = $file->store('projek-files','public');
+
+            ProjekKerjaFile::create([
+                'projek_kerja_id'=>$projek->id,
+                'file'=>$path
             ]);
 
+        }
 
-            /* ================= SAVE PHOTOS ================= */
-            if ($request->hasFile('photos')) {
-                foreach ($request->file('photos') as $photo) {
-                    if ($photo->isValid()) {
-                        $path = $photo->store('projek-photos', 'public');
-                        $projek->photos()->create([
-                            'photo' => $path
-                        ]);
-                    }
-                }
+        // jika upload multiple files
+        if($request->hasFile('files')){
+
+            foreach($request->file('files') as $file){
+
+                $path = $file->store('projek-files','public');
+
+                ProjekKerjaFile::create([
+                    'projek_kerja_id'=>$projek->id,
+                    'file'=>$path
+                ]);
+
             }
 
-            DB::commit();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Data berhasil disimpan',
-                'data' => $projek->load('photos')
-            ], 201);
-
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Terjadi kesalahan',
-                'error' => $e->getMessage()
-            ], 500);
         }
-    }
 
-    /* ======================================================
-       UPDATE FULL DATA
-    ====================================================== */
-    public function update(Request $request, $id)
-    {
-        $projek = ProjekKerja::findOrFail($id);
 
-        $request->validate([
-            'divisi' => 'required|string',
-            'jenis_pekerjaan' => 'required|string',
-            'karyawan' => 'required|string',
-            'alamat' => 'required|string',
-            'status' => 'required|in:Proses,Selesai,Terlambat',
-            'start_date' => 'required|date',
-            'problem_description' => 'nullable|string',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:5120'
-        ]);
+        /* ================= PHOTO UPLOAD ================= */
 
-        if ($request->hasFile('file')) {
-            if ($projek->file && Storage::disk('public')->exists($projek->file)) {
-                Storage::disk('public')->delete($projek->file);
+        if($request->hasFile('photos')){
+
+            foreach($request->file('photos') as $photo){
+
+                $path = $photo->store('projek-photos','public');
+
+                ProjekKerjaPhoto::create([
+                    'projek_kerja_id'=>$projek->id,
+                    'photo'=>$path
+                ]);
+
             }
 
-            $projek->file = $request->file('file')
-                ->store('projek-files', 'public');
         }
 
-        $projek->update([
-            'divisi' => $request->divisi,
-            'jenis_pekerjaan' => $request->jenis_pekerjaan,
-            'karyawan' => $request->karyawan,
-            'alamat' => $request->alamat,
-            'status' => $request->status,
-            'start_date' => Carbon::parse($request->start_date)->format('Y-m-d'),
-            'problem_description' => $request->problem_description
-        ]);
+
+        DB::commit();
 
         return response()->json([
-            'success' => true,
-            'message' => 'Data berhasil diupdate',
-            'data' => $projek->load('photos')
-        ]);
-    }
+            'success'=>true,
+            'data'=>$projek
+        ],201);
 
-    /* ======================================================
-       UPDATE STATUS
-    ====================================================== */
-    public function updateStatus(Request $request, $id)
-    {
-        $request->validate([
-            'status' => 'required|in:Proses,Selesai,Terlambat'
-        ]);
+    }catch(\Exception $e){
 
-        $projek = ProjekKerja::findOrFail($id);
-
-        $projek->update([
-            'status' => $request->status
-        ]);
+        DB::rollBack();
 
         return response()->json([
-            'success' => true,
-            'message' => 'Status berhasil diupdate'
-        ]);
+            'success'=>false,
+            'error'=>$e->getMessage()
+        ],500);
+
     }
 
-    /* ======================================================
-       UPDATE DESCRIPTION
-    ====================================================== */
-    public function updateDescription(Request $request, $id)
-    {
-        $request->validate([
-            'problem_description' => 'nullable|string'
-        ]);
+}
 
-        $projek = ProjekKerja::findOrFail($id);
 
-        $projek->update([
-            'problem_description' => $request->problem_description
-        ]);
+/* ======================================================
+   GET PHOTOS
+====================================================== */
 
+public function getPhotos($id)
+{
+
+    $projek = ProjekKerja::with('photos')->find($id);
+
+    if(!$projek){
         return response()->json([
-            'success' => true,
-            'message' => 'Deskripsi berhasil diupdate'
-        ]);
+            'success'=>false
+        ],404);
     }
 
-    /* ======================================================
-       DELETE PROJECT
-    ====================================================== */
-    public function destroy($id)
-    {
-        $projek = ProjekKerja::with('photos')->findOrFail($id);
+    $photos=[];
 
-        if ($projek->file && Storage::disk('public')->exists($projek->file)) {
-            Storage::disk('public')->delete($projek->file);
+    foreach($projek->photos as $photo){
+
+        $photos[]=[
+            'id'=>$photo->id,
+            'url'=>asset('storage/'.$photo->photo)
+        ];
+
+    }
+
+    return response()->json([
+        'success'=>true,
+        'photos'=>$photos
+    ]);
+
+}
+
+
+/* ======================================================
+   GET FILES
+====================================================== */
+
+public function getFiles($id)
+{
+
+    $projek = ProjekKerja::with('files')->find($id);
+
+    if(!$projek){
+        return response()->json([
+            'success'=>false
+        ],404);
+    }
+
+    $files=[];
+
+    foreach($projek->files as $file){
+
+        $files[]=[
+            'id'=>$file->id,
+            'url'=>asset('storage/'.$file->file)
+        ];
+
+    }
+
+    return response()->json([
+        'success'=>true,
+        'files'=>$files
+    ]);
+
+}
+
+
+/* ======================================================
+   ADD PHOTO
+====================================================== */
+
+public function addPhoto(Request $request,$id)
+{
+
+    $request->validate([
+        'photo'=>'required|image|max:2048'
+    ]);
+
+    $path = $request->file('photo')->store('projek-photos','public');
+
+    $photo = ProjekKerjaPhoto::create([
+        'projek_kerja_id'=>$id,
+        'photo'=>$path
+    ]);
+
+    return response()->json([
+        'success'=>true,
+        'photo'=>$photo
+    ]);
+
+}
+
+
+/* ======================================================
+   ADD FILE
+====================================================== */
+
+public function addFile(Request $request,$id)
+{
+
+    $request->validate([
+        'file'=>'required|file|max:5120'
+    ]);
+
+    $path = $request->file('file')->store('projek-files','public');
+
+    $file = ProjekKerjaFile::create([
+        'projek_kerja_id'=>$id,
+        'file'=>$path
+    ]);
+
+    return response()->json([
+        'success'=>true,
+        'file'=>$file
+    ]);
+
+}
+
+
+/* ======================================================
+   DELETE PHOTO
+====================================================== */
+
+public function deletePhoto($id)
+{
+
+    $photo = ProjekKerjaPhoto::findOrFail($id);
+
+    if(Storage::disk('public')->exists($photo->photo)){
+        Storage::disk('public')->delete($photo->photo);
+    }
+
+    $photo->delete();
+
+    return response()->json([
+        'success'=>true
+    ]);
+
+}
+
+
+/* ======================================================
+   DELETE FILE
+====================================================== */
+
+public function deleteFile($id)
+{
+
+    $file = ProjekKerjaFile::findOrFail($id);
+
+    if(Storage::disk('public')->exists($file->file)){
+        Storage::disk('public')->delete($file->file);
+    }
+
+    $file->delete();
+
+    return response()->json([
+        'success'=>true
+    ]);
+
+}
+
+
+/* ======================================================
+   UPDATE STATUS
+====================================================== */
+
+public function updateStatus(Request $request,$id)
+{
+
+    $request->validate([
+        'status'=>'required|in:Proses,Selesai,Terlambat'
+    ]);
+
+    $projek = ProjekKerja::findOrFail($id);
+
+    $projek->update([
+        'status'=>$request->status
+    ]);
+
+    return response()->json([
+        'success'=>true
+    ]);
+
+}
+
+
+/* ======================================================
+   UPDATE DESCRIPTION
+====================================================== */
+
+public function updateDescription(Request $request,$id)
+{
+
+    $request->validate([
+        'problem_description'=>'nullable|string'
+    ]);
+
+    $projek = ProjekKerja::findOrFail($id);
+
+    $projek->update([
+        'problem_description'=>$request->problem_description
+    ]);
+
+    return response()->json([
+        'success'=>true
+    ]);
+
+}
+
+
+/* ======================================================
+   DELETE PROJECT
+====================================================== */
+
+public function destroy($id)
+{
+
+    $projek = ProjekKerja::with(['photos','files'])->findOrFail($id);
+
+    foreach($projek->photos as $photo){
+
+        if(Storage::disk('public')->exists($photo->photo)){
+            Storage::disk('public')->delete($photo->photo);
         }
 
-        foreach ($projek->photos as $photo) {
-            if ($photo->photo && Storage::disk('public')->exists($photo->photo)) {
-                Storage::disk('public')->delete($photo->photo);
-            }
+    }
+
+    foreach($projek->files as $file){
+
+        if(Storage::disk('public')->exists($file->file)){
+            Storage::disk('public')->delete($file->file);
         }
 
-        $projek->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Project berhasil dihapus'
-        ]);
     }
+
+    $projek->delete();
+
+    return response()->json([
+        'success'=>true
+    ]);
+
+}
+
 }

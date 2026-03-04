@@ -8,8 +8,8 @@ export default function FotoProjekPage() {
   const navigate = useNavigate();
 
   const [photos, setPhotos] = useState([]);
+  const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
-
 
   // ================= AMBIL FOTO =================
   const fetchPhotos = async () => {
@@ -25,22 +25,44 @@ export default function FotoProjekPage() {
       }
 
     } catch (err) {
-
       console.error("Gagal load foto:", err);
-
-    } finally {
-      setLoading(false);
     }
+
+  };
+
+
+  // ================= AMBIL FILE =================
+  const fetchFiles = async () => {
+
+    try {
+
+      const res = await axios.get(
+        `http://127.0.0.1:8000/api/projek-kerja/${id}/files`
+      );
+
+      if (res.data.success) {
+        setFiles(res.data.files);
+      }
+
+    } catch (err) {
+      console.error("Gagal load file:", err);
+    }
+
   };
 
 
   useEffect(() => {
-    fetchPhotos();
+
+    Promise.all([
+      fetchPhotos(),
+      fetchFiles()
+    ]).finally(() => setLoading(false));
+
   }, [id]);
 
 
   // ================= TAMBAH FOTO =================
-  const handleUpload = async (file) => {
+  const handleUploadPhoto = async (file) => {
 
     if (!file) return;
 
@@ -63,8 +85,32 @@ export default function FotoProjekPage() {
   };
 
 
+  // ================= TAMBAH FILE =================
+  const handleUploadFile = async (file) => {
+
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+
+      await axios.post(
+        `http://127.0.0.1:8000/api/projek-kerja/${id}/add-file`,
+        formData,
+        { headers: { "Content-Type": "multipart/form-data" } }
+      );
+
+      fetchFiles();
+
+    } catch (err) {
+      alert("Gagal upload file");
+    }
+  };
+
+
   // ================= HAPUS FOTO =================
-  const handleDelete = async (photoId) => {
+  const handleDeletePhoto = async (photoId) => {
 
     if (!window.confirm("Hapus foto ini?")) return;
 
@@ -82,62 +128,102 @@ export default function FotoProjekPage() {
   };
 
 
+  // ================= HAPUS FILE =================
+  const handleDeleteFile = async (fileId) => {
+
+    if (!window.confirm("Hapus file ini?")) return;
+
+    try {
+
+      await axios.delete(
+        `http://127.0.0.1:8000/api/projek-kerja/file/${fileId}`
+      );
+
+      fetchFiles();
+
+    } catch (err) {
+      alert("Gagal hapus file");
+    }
+  };
+
+
   if (loading) {
-    return <div className="p-10">Loading...</div>;
+    return <div className="p-10 text-gray-500">Loading...</div>;
   }
 
 
   return (
-    <div className="p-10">
+    <div className="p-10 bg-gray-50 min-h-screen">
 
-      {/* BACK */}
-      <button
-        onClick={() => navigate(-1)}
-        className="mb-6 bg-gray-600 text-white px-4 py-2 rounded"
-      >
-        ← Kembali
-      </button>
+      {/* HEADER */}
+      <div className="flex items-center justify-between mb-10">
+
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">
+            Dokumentasi Projek
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Kelola dokumen dan foto dokumentasi projek
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate(-1)}
+          className="bg-gray-700 hover:bg-gray-800 text-white px-5 py-2 rounded-lg transition"
+        >
+          ← Kembali
+        </button>
+
+      </div>
 
 
-      <h2 className="text-3xl font-bold mb-8">
-        Kelola Foto Projek
+      {/* ================= FILE DOKUMEN ================= */}
+
+      <h2 className="text-2xl font-semibold mb-6 text-gray-700">
+        Dokumen Projek
       </h2>
 
+      <div className="space-y-4">
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-
-        {/* LIST FOTO */}
-        {photos.map(photo => (
+        {files.map(file => (
 
           <div
-            key={photo.id}
-            className="bg-white p-4 rounded-xl shadow"
+            key={file.id}
+            className="flex items-center justify-between bg-white shadow-sm hover:shadow-md rounded-xl p-4 transition"
           >
 
-            <img
-              src={photo.url}
-              className="w-full h-48 object-cover rounded mb-4"
-              alt="projek"
-            />
+            <div className="flex items-center gap-4">
 
+              <div className="bg-blue-100 text-blue-600 p-3 rounded-lg text-xl">
+                📄
+              </div>
 
-            <div className="flex gap-2 flex-wrap">
+              <div>
+                <p className="font-medium text-gray-800 break-all">
+                  {file.url.split('/').pop()}
+                </p>
 
-              {/* DOWNLOAD */}
+                <p className="text-sm text-gray-400">
+                  File dokumentasi projek
+                </p>
+              </div>
+
+            </div>
+
+            <div className="flex gap-2">
+
               <a
-                href={photo.url}
-                download
-                className="bg-green-600 text-white px-3 py-1 rounded"
+                href={file.url}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm"
               >
-                Download
+                Buka
               </a>
 
-
-              {/* HAPUS */}
               <button
-                onClick={() => handleDelete(photo.id)}
-                className="bg-red-600 text-white px-3 py-1 rounded"
+                onClick={() => handleDeleteFile(file.id)}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
               >
                 Hapus
               </button>
@@ -145,19 +231,107 @@ export default function FotoProjekPage() {
             </div>
 
           </div>
+
+        ))}
+
+      </div>
+
+
+      {/* Upload File */}
+
+      <label className="mt-6 border-2 border-dashed border-gray-300 rounded-xl h-40 flex flex-col items-center justify-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition">
+
+        <div className="text-4xl">
+          ⬆️
+        </div>
+
+        <p className="text-gray-600 mt-2">
+          Upload File Dokumentasi
+        </p>
+
+        <p className="text-sm text-gray-400">
+          Klik untuk memilih file
+        </p>
+
+        <input
+          type="file"
+          hidden
+          onChange={(e) =>
+            handleUploadFile(e.target.files[0])
+          }
+        />
+
+      </label>
+
+
+
+      {/* ================= FOTO ================= */}
+
+      <h2 className="text-2xl font-semibold mt-16 mb-6 text-gray-700">
+        Foto Projek
+      </h2>
+
+
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+
+        {photos.map(photo => (
+
+          <div
+            key={photo.id}
+            className="bg-white rounded-xl shadow hover:shadow-lg transition overflow-hidden"
+          >
+
+            <img
+              src={photo.url}
+              className="w-full h-48 object-cover"
+              alt="projek"
+            />
+
+            <div className="p-4 flex justify-between">
+
+              <a
+                href={photo.url}
+                download
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm"
+              >
+                Download
+              </a>
+
+              <button
+                onClick={() => handleDeletePhoto(photo.id)}
+                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
+              >
+                Hapus
+              </button>
+
+            </div>
+
+          </div>
+
         ))}
 
 
-        {/* TAMBAH FOTO */}
-        <label className="bg-gray-200 flex items-center justify-center rounded-xl cursor-pointer h-64">
+        {/* Upload Foto */}
 
-          + Tambah Foto
+        <label className="border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer h-56 hover:border-blue-400 hover:bg-blue-50 transition">
+
+          <div className="text-center">
+
+            <div className="text-4xl">
+              📷
+            </div>
+
+            <p className="text-gray-500 mt-2">
+              Tambah Foto
+            </p>
+
+          </div>
 
           <input
             type="file"
             hidden
             onChange={(e) =>
-              handleUpload(e.target.files[0])
+              handleUploadPhoto(e.target.files[0])
             }
           />
 

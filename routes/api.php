@@ -13,7 +13,8 @@ use App\Http\Controllers\ProjekKerjaController;
 use App\Http\Controllers\FormPekerjaanController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\ServiceReportController;
-use App\Http\Controllers\UserController; // ✅ TAMBAHAN HRD
+use App\Http\Controllers\UserController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +22,6 @@ use App\Http\Controllers\UserController; // ✅ TAMBAHAN HRD
 |--------------------------------------------------------------------------
 */
 
-// ================= LOGIN =================
 Route::post('/login', function (Request $request) {
 
     $validated = $request->validate([
@@ -32,10 +32,12 @@ Route::post('/login', function (Request $request) {
     $user = User::where('email', $validated['email'])->first();
 
     if (!$user || !Hash::check($validated['password'], $user->password)) {
+
         return response()->json([
             'success' => false,
             'message' => 'Email atau password salah'
         ], 401);
+
     }
 
     return response()->json([
@@ -43,6 +45,7 @@ Route::post('/login', function (Request $request) {
         'message' => 'Login berhasil',
         'user' => $user
     ]);
+
 });
 
 
@@ -52,26 +55,27 @@ Route::post('/login', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 
-// ================= GET PROFILE =================
 Route::get('/profile', function (Request $request) {
 
     $user = User::find($request->query('user_id'));
 
     if (!$user) {
+
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
         ], 404);
+
     }
 
     return response()->json([
         'success' => true,
         'user' => $user
     ]);
+
 });
 
 
-// ================= UPDATE PROFILE =================
 Route::put('/profile', function (Request $request) {
 
     $validated = $request->validate([
@@ -83,10 +87,12 @@ Route::put('/profile', function (Request $request) {
     $user = User::find($validated['user_id']);
 
     if (!$user) {
+
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
         ], 404);
+
     }
 
     $user->update($validated);
@@ -96,10 +102,10 @@ Route::put('/profile', function (Request $request) {
         'message' => 'Profile berhasil diupdate',
         'user' => $user
     ]);
+
 });
 
 
-// ================= PROFILE PHOTO =================
 Route::post('/profile/photo', function (Request $request) {
 
     $validated = $request->validate([
@@ -110,10 +116,12 @@ Route::post('/profile/photo', function (Request $request) {
     $user = User::find($validated['user_id']);
 
     if (!$user) {
+
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
         ], 404);
+
     }
 
     if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
@@ -129,17 +137,21 @@ Route::post('/profile/photo', function (Request $request) {
         'success' => true,
         'profile_photo' => $path
     ]);
+
 });
+
 
 Route::delete('/profile/photo', function (Request $request) {
 
     $user = User::find($request->user_id);
 
     if (!$user) {
+
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
         ], 404);
+
     }
 
     if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
@@ -153,6 +165,7 @@ Route::delete('/profile/photo', function (Request $request) {
         'success' => true,
         'message' => 'Foto berhasil dihapus'
     ]);
+
 });
 
 
@@ -162,19 +175,10 @@ Route::delete('/profile/photo', function (Request $request) {
 |--------------------------------------------------------------------------
 */
 
-// ================= LIST =================
 Route::get('/karyawan', [UserController::class, 'index']);
-
-// ================= DETAIL =================
 Route::get('/karyawan/{id}', [UserController::class, 'show']);
-
-// ================= CREATE =================
 Route::post('/karyawan', [UserController::class, 'store']);
-
-// ================= UPDATE =================
 Route::put('/karyawan/{id}', [UserController::class, 'update']);
-
-// ================= DELETE =================
 Route::delete('/karyawan/{id}', [UserController::class, 'destroy']);
 
 
@@ -184,22 +188,15 @@ Route::delete('/karyawan/{id}', [UserController::class, 'destroy']);
 |--------------------------------------------------------------------------
 */
 
-// LIST
 Route::get('/barang', [BarangController::class, 'index']);
-
-// DETAIL
 Route::get('/barang/{id}', [BarangController::class, 'show']);
-
-// CREATE
 Route::post('/barang', [BarangController::class, 'store']);
 
-// UPDATE
-Route::match(['put', 'patch'], '/barang/{id}', [
+Route::match(['put','patch'], '/barang/{id}', [
     BarangController::class,
     'update'
 ]);
 
-// DELETE
 Route::delete('/barang/{id}', [
     BarangController::class,
     'destroy'
@@ -212,45 +209,83 @@ Route::delete('/barang/{id}', [
 |--------------------------------------------------------------------------
 */
 
-// READ
 Route::get('/projek-kerja', [ProjekKerjaController::class, 'index']);
-Route::get('/projek-kerja/{id}', [ProjekKerjaController::class, 'show']);
 
-// CREATE
 Route::post('/projek-kerja', [ProjekKerjaController::class, 'store']);
 
-// UPDATE FULL
-Route::put('/projek-kerja/{id}', [ProjekKerjaController::class, 'update']);
-
-// UPDATE STATUS
 Route::patch('/projek-kerja/{id}/status', [
     ProjekKerjaController::class,
     'updateStatus'
 ]);
 
-// UPDATE DESKRIPSI
 Route::patch('/projek-kerja/{id}/deskripsi', [
     ProjekKerjaController::class,
     'updateDescription'
 ]);
 
-// FOTO
-Route::post('/projek-kerja/{id}/add-photo', [
-    ProjekKerjaController::class,
-    'addPhoto'
-]);
+
+/*
+|--------------------------------------------------------------------------
+| FOTO PROJEK
+|--------------------------------------------------------------------------
+*/
 
 Route::get('/projek-kerja/{id}/photos', [
     ProjekKerjaController::class,
     'getPhotos'
 ]);
 
-Route::delete('/projek-kerja/photo/{photoId}', [
+Route::post('/projek-kerja/{id}/add-photo', [
+    ProjekKerjaController::class,
+    'addPhoto'
+]);
+
+Route::delete('/projek-kerja/photo/{id}', [
     ProjekKerjaController::class,
     'deletePhoto'
 ]);
 
-// DELETE
+
+/*
+|--------------------------------------------------------------------------
+| FILE / DOKUMEN PROJEK
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/projek-kerja/{id}/files', [
+    ProjekKerjaController::class,
+    'getFiles'
+]);
+
+Route::post('/projek-kerja/{id}/add-file', [
+    ProjekKerjaController::class,
+    'addFile'
+]);
+
+Route::delete('/projek-kerja/file/{id}', [
+    ProjekKerjaController::class,
+    'deleteFile'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| DETAIL PROJECT
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/projek-kerja/{id}', [
+    ProjekKerjaController::class,
+    'show'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| DELETE PROJECT
+|--------------------------------------------------------------------------
+*/
+
 Route::delete('/projek-kerja/{id}', [
     ProjekKerjaController::class,
     'destroy'
@@ -275,20 +310,15 @@ Route::post('/form-pekerjaan/pdf', [
 |--------------------------------------------------------------------------
 */
 
-// READ
 Route::get('/service-reports', [ServiceReportController::class, 'index']);
 Route::get('/service-reports/{id}', [ServiceReportController::class, 'show']);
 
-// CREATE
 Route::post('/service-reports', [ServiceReportController::class, 'store']);
 
-// UPDATE
 Route::put('/service-reports/{id}', [ServiceReportController::class, 'update']);
 
-// DELETE
 Route::delete('/service-reports/{id}', [ServiceReportController::class, 'destroy']);
 
-// PDF
 Route::get('/service-reports/{id}/pdf', [
     ServiceReportController::class,
     'generatePDF'
