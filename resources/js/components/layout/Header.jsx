@@ -1,11 +1,14 @@
 import React from "react";
 import { Bell } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export default function Header({
   user,
   title,          // 👈 TERIMA TITLE
   showBell = true,
 }) {
+
+  const navigate = useNavigate();
 
   // Get photo URL
   const getPhotoUrl = (photoPath) => {
@@ -16,6 +19,11 @@ export default function Header({
 
   const photoUrl = getPhotoUrl(user?.profile_photo);
   const initialLetter = user?.name?.charAt(0);
+
+  const rolePath =
+    user?.role === "super_admin"
+      ? "/super_admin/profile"
+      : "/admin/profile";
 
   return (
     <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
@@ -33,7 +41,10 @@ export default function Header({
         )}
 
         {/* USER */}
-        <div className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full">
+        <div
+          onDoubleClick={() => navigate(rolePath)}
+          className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full cursor-pointer"
+        >
 
           {photoUrl ? (
             <img
