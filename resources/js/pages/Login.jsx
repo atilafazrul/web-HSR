@@ -86,7 +86,7 @@ export default function Login({ setUser }) {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200">
 
       <h1 className="text-4xl font-semibold mb-6 text-center">
-        Inspection Preventive Maintenance
+        Manajemen Sistem
       </h1>
 
 
@@ -100,11 +100,10 @@ export default function Login({ setUser }) {
           <div className="relative w-[150px] h-6 overflow-hidden">
 
             <span
-              className={`absolute left-0 transition-all duration-500 ${
-                animate
+              className={`absolute left-0 transition-all duration-500 ${animate
                   ? "opacity-100 translate-y-0"
                   : "opacity-0 -translate-y-3"
-              } text-pink-600 font-bold tracking-widest`}
+                } text-pink-600 font-bold tracking-widest`}
             >
               {divisions[currentDivision]}
             </span>

@@ -171,7 +171,7 @@ export default function FotoProjekPage() {
           onClick={() => navigate(-1)}
           className="bg-gray-700 hover:bg-gray-800 text-white px-5 py-2 rounded-lg transition"
         >
-          ← Kembali
+          Kembali
         </button>
 
       </div>

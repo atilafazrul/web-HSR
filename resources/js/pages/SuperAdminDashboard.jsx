@@ -100,7 +100,14 @@ export default function SuperAdminDashboard({ user, logout }) {
         }`}
       >
 
-        <Header user={user} showBell={false} title={getPageTitle()} />
+        <Header
+          user={user}
+          showBell={false}
+          sidebarExpanded={sidebarExpanded}
+          setSidebarExpanded={setSidebarExpanded}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
+        />
 
         <div className="flex-1 p-8 overflow-y-auto">
 

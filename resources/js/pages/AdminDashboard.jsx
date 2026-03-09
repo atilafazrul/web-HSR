@@ -123,7 +123,10 @@ export default function AdminDashboard({ user, logout }) {
         <Header
           user={currentUser}
           showBell={false}
-          title={getPageTitle()}
+          sidebarExpanded={sidebarExpanded}
+          setSidebarExpanded={setSidebarExpanded}
+          sidebarOpen={sidebarOpen}
+          setSidebarOpen={setSidebarOpen}
         />
 
         <div className="flex-1 p-8 overflow-y-auto">

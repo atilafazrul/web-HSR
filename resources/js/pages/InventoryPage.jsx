@@ -114,14 +114,6 @@ export default function InventoryPage() {
 
       {/* HEADER */}
       <div className="flex items-center gap-4 mb-6">
-
-        <button
-          onClick={() => navigate(`${basePath}/it`)}
-          className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg"
-        >
-          ← Kembali
-        </button>
-
         <h2 className="text-3xl font-bold flex items-center gap-2">
           <Package size={28} />
           Inventory Aset
@@ -194,11 +186,10 @@ export default function InventoryPage() {
 
                   <td className="p-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        b.keterangan === "Rusak"
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${b.keterangan === "Rusak"
                           ? "bg-red-100 text-red-600"
                           : "bg-green-100 text-green-600"
-                      }`}
+                        }`}
                     >
                       {b.keterangan || "Siap Pakai"}
                     </span>

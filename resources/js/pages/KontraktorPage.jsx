@@ -20,12 +20,14 @@ const KontraktorPage = () => {
       {/* HEADER */}
       <div className="flex items-center gap-4 mb-6">
 
+        {/*
         <button
           onClick={() => navigate(`${basePath}/dashboard`)}
           className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg"
         >
           ← Kembali
         </button>
+        */}
 
         <h2 className="text-3xl font-bold">
           Divisi Kontraktor

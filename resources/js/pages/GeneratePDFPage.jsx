@@ -50,13 +50,6 @@ export default function GeneratePDFPage({ user }) {
       {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg flex items-center gap-2"
-          >
-            <ArrowLeft size={18} />
-            Kembali
-          </button>
           <div>
             <h2 className="text-3xl font-bold">Generate Service Report</h2>
             <p className="text-gray-500">

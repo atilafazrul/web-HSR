@@ -9,9 +9,9 @@ import {
   Wrench,
   BarChart3,
   Hammer,
-  Menu,
   LogOut,
-  Users, // ✅ TAMBAHAN ICON
+  Users,
+  X,
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -34,21 +34,11 @@ export default function Sidebar({
     return saved !== null ? JSON.parse(saved) : true;
   });
 
-  const [internalExpanded, setInternalExpanded] = useState(true);
-
   useEffect(() => {
     localStorage.setItem("sidebarDivisiOpen", JSON.stringify(openDivisi));
   }, [openDivisi]);
 
-  const expanded = isExpanded !== undefined ? isExpanded : internalExpanded;
-
-  const toggleSidebar = () => {
-    if (setIsExpanded) {
-      setIsExpanded(!isExpanded);
-    } else {
-      setInternalExpanded(!internalExpanded);
-    }
-  };
+  const expanded = isExpanded;
 
   const isSuperAdmin = role === "super_admin";
   const isAdmin = role === "admin";
@@ -73,24 +63,36 @@ export default function Sidebar({
   ];
 
   return (
-    <aside
-      className={`fixed z-40 top-0 left-0 h-full
-      ${expanded ? "w-72" : "w-20"}
-      text-white flex flex-col justify-between
-      transform transition-all duration-300
-      ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
-      style={{ backgroundColor: "#172238" }}
-    >
+    <>
+      {/* MOBILE OVERLAY */}
+      {sidebarOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black/50 z-30"
+          onClick={() => setSidebarOpen && setSidebarOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed z-40 top-0 left-0 h-full
+        ${expanded ? "w-72" : "w-20"}
+        text-white flex flex-col justify-between
+        transform transition-all duration-300
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
+        style={{ backgroundColor: "#172238" }}
+      >
 
       <div className="p-4">
 
-        {/* TOGGLE */}
-        <button
-          onClick={toggleSidebar}
-          className="w-full flex items-center justify-center p-2 mb-6 rounded-lg hover:bg-slate-800"
-        >
-          <Menu size={24} />
-        </button>
+        {/* MOBILE HEADER - CLOSE BUTTON */}
+        <div className="lg:hidden flex items-center justify-between mb-6">
+          <span className="font-semibold text-lg">Menu</span>
+          <button
+            onClick={() => setSidebarOpen && setSidebarOpen(false)}
+            className="p-2 rounded-lg hover:bg-slate-800"
+          >
+            <X size={24} />
+          </button>
+        </div>
 
         {/* LOGO */}
         <div className="hidden lg:flex justify-center mb-10 relative">
@@ -218,6 +220,7 @@ export default function Sidebar({
       </button>
 
     </aside>
+    </>
   );
 }
 

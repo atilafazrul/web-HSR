@@ -177,13 +177,6 @@ const TargetPage = () => {
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(`${basePath}/sales`)}
-            className="bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg transition"
-          >
-            ← Kembali
-          </button>
-
           <div>
             <h2 className="text-3xl font-bold">Target Penjualan</h2>
             <p className="text-gray-500">
@@ -214,11 +207,10 @@ const TargetPage = () => {
                     setSelectedProduct(product);
                     setDropdownOpen(false);
                   }}
-                  className={`w-full text-left px-3 py-2 text-sm transition ${
-                    selectedProduct === product
+                  className={`w-full text-left px-3 py-2 text-sm transition ${selectedProduct === product
                       ? "bg-blue-50 text-blue-600 font-medium"
                       : "text-gray-700 hover:bg-gray-50"
-                  }`}
+                    }`}
                 >
                   {product}
                 </button>

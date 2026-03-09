@@ -1,11 +1,14 @@
 import React from "react";
-import { Bell } from "lucide-react";
+import { Bell, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Header({
   user,
-  title,          // 👈 TERIMA TITLE
   showBell = true,
+  sidebarExpanded,
+  setSidebarExpanded,
+  sidebarOpen,
+  setSidebarOpen,
 }) {
 
   const navigate = useNavigate();
@@ -25,13 +28,45 @@ export default function Header({
       ? "/super_admin/profile"
       : "/admin/profile";
 
-  return (
-    <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center">
+  const toggleSidebar = () => {
+    if (setSidebarExpanded) {
+      setSidebarExpanded(!sidebarExpanded);
+    }
+  };
 
-      {/* JUDUL DINAMIS */}
-      <h1 className="text-xl font-semibold">
-        {title || "Dokumentasi Kerja"}
-      </h1>
+  const toggleMobileSidebar = () => {
+    if (setSidebarOpen) {
+      setSidebarOpen(!sidebarOpen);
+    }
+  };
+
+  return (
+    <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center relative z-50">
+
+      {/* LEFT SECTION: TOGGLE BUTTON */}
+      <div className="flex items-center gap-4">
+
+        {/* TOGGLE SIDEBAR (DESKTOP) */}
+        {setSidebarExpanded && (
+          <button
+            onClick={toggleSidebar}
+            className="hidden lg:flex items-center justify-center p-2 rounded-lg hover:bg-gray-100"
+          >
+            {sidebarExpanded ? <Menu size={20} /> : <Menu size={20} />}
+          </button>
+        )}
+
+        {/* TOGGLE SIDEBAR (MOBILE) */}
+        {setSidebarOpen && (
+          <button
+            onClick={toggleMobileSidebar}
+            className="lg:hidden flex items-center justify-center p-2 rounded-lg hover:bg-gray-100"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        )}
+
+      </div>
 
       <div className="flex items-center gap-4">
 

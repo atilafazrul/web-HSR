@@ -103,14 +103,6 @@ export default function KaryawanPage() {
       <div className="flex justify-between items-center mb-10 flex-wrap gap-4">
 
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(-1)}
-            className="flex items-center gap-2 px-5 py-2 bg-white shadow rounded-xl hover:shadow-lg transition"
-          >
-            <ArrowLeft size={18} />
-            Back
-          </button>
-
           <div>
             <h2 className="text-3xl font-bold">
               Dashboard Profil Karyawan
@@ -132,7 +124,7 @@ export default function KaryawanPage() {
               type="text"
               placeholder="Cari karyawan..."
               value={searchTerm}
-              onChange={(e)=>setSearchTerm(e.target.value)}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 pr-4 py-2 border rounded-xl text-sm w-[220px] bg-white shadow-sm focus:ring-2 focus:ring-purple-400 outline-none"
             />
           </div>
@@ -194,21 +186,21 @@ export default function KaryawanPage() {
                 onClick={() => setSelected(emp)}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-50 hover:bg-blue-100 text-blue-600 transition"
               >
-                <Eye size={18}/>
+                <Eye size={18} />
               </button>
 
               <button
                 onClick={() => setEditData({ ...emp })}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 transition"
               >
-                <Pencil size={18}/>
+                <Pencil size={18} />
               </button>
 
               <button
                 onClick={() => handleDelete(emp.id)}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-red-50 hover:bg-red-100 text-red-600 transition"
               >
-                <Trash2 size={18}/>
+                <Trash2 size={18} />
               </button>
 
             </div>
@@ -240,18 +232,18 @@ export default function KaryawanPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <Info label="NIK" value={selected.nik}/>
-            <Info label="Email" value={selected.email}/>
-            <Info label="Phone" value={selected.phone}/>
-            <Info label="Role" value={selected.role}/>
-            <Info label="Tempat Lahir" value={selected.tempat_lahir}/>
-            <Info label="Tanggal Lahir" value={selected.tanggal_lahir}/>
-            <Info label="Alamat" value={selected.alamat}/>
-            <Info label="Jenis Kelamin" value={selected.jenis_kelamin}/>
-            <Info label="Agama" value={selected.agama}/>
-            <Info label="Status Perkawinan" value={selected.status_perkawinan}/>
-            <Info label="Pekerjaan" value={selected.pekerjaan}/>
-            <Info label="Golongan Darah" value={selected.golongan_darah}/>
+            <Info label="NIK" value={selected.nik} />
+            <Info label="Email" value={selected.email} />
+            <Info label="Phone" value={selected.phone} />
+            <Info label="Role" value={selected.role} />
+            <Info label="Tempat Lahir" value={selected.tempat_lahir} />
+            <Info label="Tanggal Lahir" value={selected.tanggal_lahir} />
+            <Info label="Alamat" value={selected.alamat} />
+            <Info label="Jenis Kelamin" value={selected.jenis_kelamin} />
+            <Info label="Agama" value={selected.agama} />
+            <Info label="Status Perkawinan" value={selected.status_perkawinan} />
+            <Info label="Pekerjaan" value={selected.pekerjaan} />
+            <Info label="Golongan Darah" value={selected.golongan_darah} />
           </div>
 
         </Modal>
@@ -265,37 +257,37 @@ export default function KaryawanPage() {
           <div className="grid grid-cols-2 gap-4">
 
             <Input label="NIK" value={editData.nik}
-              onChange={(v)=>setEditData({...editData,nik:v})}/>
+              onChange={(v) => setEditData({ ...editData, nik: v })} />
 
             <Input label="Email" value={editData.email}
-              onChange={(v)=>setEditData({...editData,email:v})}/>
+              onChange={(v) => setEditData({ ...editData, email: v })} />
 
             <Input label="Phone" value={editData.phone}
-              onChange={(v)=>setEditData({...editData,phone:v})}/>
+              onChange={(v) => setEditData({ ...editData, phone: v })} />
 
             <Input label="Tempat Lahir" value={editData.tempat_lahir}
-              onChange={(v)=>setEditData({...editData,tempat_lahir:v})}/>
+              onChange={(v) => setEditData({ ...editData, tempat_lahir: v })} />
 
             <Input label="Tanggal Lahir" value={editData.tanggal_lahir}
-              onChange={(v)=>setEditData({...editData,tanggal_lahir:v})}/>
+              onChange={(v) => setEditData({ ...editData, tanggal_lahir: v })} />
 
             <Input label="Alamat" value={editData.alamat}
-              onChange={(v)=>setEditData({...editData,alamat:v})}/>
+              onChange={(v) => setEditData({ ...editData, alamat: v })} />
 
             <Input label="Jenis Kelamin" value={editData.jenis_kelamin}
-              onChange={(v)=>setEditData({...editData,jenis_kelamin:v})}/>
+              onChange={(v) => setEditData({ ...editData, jenis_kelamin: v })} />
 
             <Input label="Agama" value={editData.agama}
-              onChange={(v)=>setEditData({...editData,agama:v})}/>
+              onChange={(v) => setEditData({ ...editData, agama: v })} />
 
             <Input label="Status Perkawinan" value={editData.status_perkawinan}
-              onChange={(v)=>setEditData({...editData,status_perkawinan:v})}/>
+              onChange={(v) => setEditData({ ...editData, status_perkawinan: v })} />
 
             <Input label="Pekerjaan" value={editData.pekerjaan}
-              onChange={(v)=>setEditData({...editData,pekerjaan:v})}/>
+              onChange={(v) => setEditData({ ...editData, pekerjaan: v })} />
 
             <Input label="Golongan Darah" value={editData.golongan_darah}
-              onChange={(v)=>setEditData({...editData,golongan_darah:v})}/>
+              onChange={(v) => setEditData({ ...editData, golongan_darah: v })} />
 
           </div>
 
@@ -317,14 +309,14 @@ export default function KaryawanPage() {
 
           <input
             value={createData.name}
-            onChange={(e)=>setCreateData({...createData,name:e.target.value})}
+            onChange={(e) => setCreateData({ ...createData, name: e.target.value })}
             placeholder="Nama"
             className="border p-2 w-full mb-3 rounded text-sm"
           />
 
           <input
             value={createData.email}
-            onChange={(e)=>setCreateData({...createData,email:e.target.value})}
+            onChange={(e) => setCreateData({ ...createData, email: e.target.value })}
             placeholder="Email"
             className="border p-2 w-full mb-3 rounded text-sm"
           />
@@ -332,14 +324,14 @@ export default function KaryawanPage() {
           <input
             type="password"
             value={createData.password}
-            onChange={(e)=>setCreateData({...createData,password:e.target.value})}
+            onChange={(e) => setCreateData({ ...createData, password: e.target.value })}
             placeholder="Password"
             className="border p-2 w-full mb-3 rounded text-sm"
           />
 
           <select
             value={createData.divisi}
-            onChange={(e)=>setCreateData({...createData,divisi:e.target.value})}
+            onChange={(e) => setCreateData({ ...createData, divisi: e.target.value })}
             className="border p-2 w-full mb-3 rounded text-sm"
           >
             <option value="">Pilih Divisi</option>
@@ -363,7 +355,7 @@ export default function KaryawanPage() {
   );
 }
 
-function Info({label,value}) {
+function Info({ label, value }) {
   return (
     <div className="bg-gray-50 p-3 rounded-lg">
       <p className="text-gray-400 text-xs">{label}</p>
@@ -372,13 +364,13 @@ function Info({label,value}) {
   );
 }
 
-function Input({label,value,onChange}) {
+function Input({ label, value, onChange }) {
   return (
     <div>
       <p className="text-gray-400 text-xs mb-1">{label}</p>
       <input
         value={value || ""}
-        onChange={(e)=>onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         className="border p-2 w-full rounded text-sm"
       />
     </div>
@@ -393,7 +385,7 @@ function Modal({ children, onClose }) {
           onClick={onClose}
           className="absolute right-4 top-4 text-gray-500"
         >
-          <X size={20}/>
+          <X size={20} />
         </button>
         {children}
       </div>
