@@ -87,12 +87,13 @@ public function store(Request $request)
 
         /* ================= FILE UPLOAD ================= */
 
-        // jika upload 1 file
         if($request->hasFile('file')){
 
             $file = $request->file('file');
 
-            $path = $file->store('projek-files','public');
+            $fileName = $file->getClientOriginalName();
+
+            $path = $file->storeAs('projek-files',$fileName,'public');
 
             ProjekKerjaFile::create([
                 'projek_kerja_id'=>$projek->id,
@@ -101,12 +102,13 @@ public function store(Request $request)
 
         }
 
-        // jika upload multiple files
         if($request->hasFile('files')){
 
             foreach($request->file('files') as $file){
 
-                $path = $file->store('projek-files','public');
+                $fileName = $file->getClientOriginalName();
+
+                $path = $file->storeAs('projek-files',$fileName,'public');
 
                 ProjekKerjaFile::create([
                     'projek_kerja_id'=>$projek->id,
@@ -124,7 +126,9 @@ public function store(Request $request)
 
             foreach($request->file('photos') as $photo){
 
-                $path = $photo->store('projek-photos','public');
+                $fileName = $photo->getClientOriginalName();
+
+                $path = $photo->storeAs('projek-photos',$fileName,'public');
 
                 ProjekKerjaPhoto::create([
                     'projek_kerja_id'=>$projek->id,
@@ -236,7 +240,11 @@ public function addPhoto(Request $request,$id)
         'photo'=>'required|image|max:2048'
     ]);
 
-    $path = $request->file('photo')->store('projek-photos','public');
+    $photo = $request->file('photo');
+
+    $fileName = $photo->getClientOriginalName();
+
+    $path = $photo->storeAs('projek-photos',$fileName,'public');
 
     $photo = ProjekKerjaPhoto::create([
         'projek_kerja_id'=>$id,
@@ -262,7 +270,11 @@ public function addFile(Request $request,$id)
         'file'=>'required|file|max:5120'
     ]);
 
-    $path = $request->file('file')->store('projek-files','public');
+    $fileUpload = $request->file('file');
+
+    $fileName = $fileUpload->getClientOriginalName();
+
+    $path = $fileUpload->storeAs('projek-files',$fileName,'public');
 
     $file = ProjekKerjaFile::create([
         'projek_kerja_id'=>$id,
