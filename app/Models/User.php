@@ -21,6 +21,7 @@ class User extends Authenticatable
         'password',
         'role',
         'divisi',
+        'profile_photo',
 
         // ================= DATA KTP =================
         'nik',
@@ -31,6 +32,8 @@ class User extends Authenticatable
         'agama',
         'status_perkawinan',
         'pekerjaan',
+
+        // ================= KONTAK =================
         'no_telepon',
         'golongan_darah',
 
@@ -50,11 +53,34 @@ class User extends Authenticatable
     ];
 
     /**
-     * Attribute casting
+     * Casting
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'tanggal_lahir' => 'date',
         'password' => 'hashed',
     ];
+
+    /**
+     * Append attribute supaya ikut muncul di API
+     */
+    protected $appends = ['phone'];
+
+    /**
+     * ================= ACCESSOR =================
+     * Frontend baca -> phone
+     */
+    public function getPhoneAttribute()
+    {
+        return $this->no_telepon;
+    }
+
+    /**
+     * ================= MUTATOR =================
+     * Frontend kirim -> phone
+     */
+    public function setPhoneAttribute($value)
+    {
+        $this->attributes['no_telepon'] = $value;
+    }
 }

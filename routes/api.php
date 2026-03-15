@@ -80,22 +80,32 @@ Route::put('/profile', function (Request $request) {
 
     $validated = $request->validate([
         'user_id' => 'required|integer',
-        'name' => 'required|string|max:255',
-        'email' => 'required|email|max:255'
+        'name' => 'nullable|string|max:255',
+        'email' => 'nullable|email|max:255',
+        'phone' => 'nullable|string|max:20',
+        'no_telepon' => 'nullable|string|max:20',
+        'alamat' => 'nullable|string'
     ]);
 
     $user = User::find($validated['user_id']);
 
     if (!$user) {
-
         return response()->json([
             'success' => false,
             'message' => 'User tidak ditemukan'
         ], 404);
-
     }
 
-    $user->update($validated);
+    // Siapkan data untuk update (hapus user_id dari array)
+    $updateData = array_filter($validated, function($key) {
+        return in_array($key, ['name', 'email', 'phone', 'no_telepon', 'alamat']);
+    }, ARRAY_FILTER_USE_KEY);
+
+    // Update user
+    $user->update($updateData);
+    
+    // Ambil data terbaru
+    $user->refresh();
 
     return response()->json([
         'success' => true,
