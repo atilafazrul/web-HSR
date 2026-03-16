@@ -28,6 +28,8 @@ import ITPage from "./ITPage";
 import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
+import LogistikPage from "./LogistikPage";
+import PurchasingPage from "./PurchasingPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import Profile from "./Profile";
@@ -39,6 +41,14 @@ import TargetPage from "./TargetPage";
 import InventoryPage from "./InventoryPage";
 import FormBarangPage from "./FormBarangPage";
 import EditBarangPage from "./EditBarangPage";
+
+/* PEMBELIAN PURCHASING */
+import PembelianPage from "./PembelianPage";
+
+/* LOGISTIK INVENTORY */
+import LogistikInventoryPage from "./LogistikInventoryPage";
+import LogistikFormBarangPage from "./LogistikFormBarangPage";
+import LogistikEditBarangPage from "./LogistikEditBarangPage";
 
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
@@ -125,6 +135,8 @@ export default function AdminDashboard({ user, logout }) {
     if (path.includes("service")) return "Divisi Service";
     if (path.includes("sales")) return "Divisi Sales";
     if (path.includes("kontraktor")) return "Divisi Kontraktor";
+    if (path.includes("logistik")) return "Divisi Logistik";
+    if (path.includes("purchasing")) return "Divisi Purchasing";
     if (path.includes("profile")) return "Profile";
 
     return "Admin";
@@ -164,6 +176,8 @@ export default function AdminDashboard({ user, logout }) {
       "Service": "/images/Service Card.jpg",
       "Sales": "/images/Sales Card.jpg",
       "Kontraktor": "/images/Kontraktor Card.jpg",
+      "Logistik": "/images/IT meet.jpg", // default image
+      "Purchasing": "/images/IT meet.jpg", // default image
     };
     return imageMap[divisi] || "/images/IT meet.jpg";
   };
@@ -291,6 +305,8 @@ export default function AdminDashboard({ user, logout }) {
                           <option value="Service">Service</option>
                           <option value="Sales">Sales</option>
                           <option value="Kontraktor">Kontraktor</option>
+                          <option value="Logistik">Logistik</option>
+                          <option value="Purchasing">Purchasing</option>
                         </select>
 
                         <select
@@ -540,6 +556,17 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="sales/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="kontraktor/projek" element={<ProjekKerjaPage />} />
             <Route path="kontraktor/buat-pdf" element={<GeneratePDFPage user={user} />} />
+            <Route path="logistik" element={<LogistikPage user={user} />} />
+            <Route path="purchasing" element={<PurchasingPage user={user} />} />
+            <Route path="logistik/projek" element={<ProjekKerjaPage />} />
+            <Route path="purchasing/projek" element={<ProjekKerjaPage />} />
+            <Route path="logistik/buat-pdf" element={<GeneratePDFPage user={user} />} />
+            <Route path="purchasing/buat-pdf" element={<GeneratePDFPage user={user} />} />
+            <Route path="purchasing/pembelian" element={<PembelianPage />} />
+            
+            <Route path="logistik/inventory" element={<LogistikInventoryPage />} />
+            <Route path="logistik/inventory/tambah" element={<LogistikFormBarangPage />} />
+            <Route path="logistik/inventory/edit/:id" element={<LogistikEditBarangPage />} />
 
             {/* ================= PROFILE ================= */}
             <Route

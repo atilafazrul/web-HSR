@@ -12,6 +12,8 @@ import ServicePage from "./pages/ServicePage.jsx";
 import KontraktorPage from "./pages/KontraktorPage.jsx";
 
 import FotoProjekPage from "./pages/FotoProjekPage.jsx";
+import LogistikPage from "./pages/LogistikPage.jsx";
+import PurchasingPage from "./pages/PurchasingPage.jsx";
 
 export default function App() {
 
@@ -27,7 +29,7 @@ export default function App() {
         const parsedUser = JSON.parse(savedUser);
 
         if (
-          ["super_admin", "admin", "it", "service", "kontraktor"]
+          ["super_admin", "admin", "it", "service", "kontraktor", "sales", "logistik", "purchasing"]
             .includes(parsedUser.role)
         ) {
           setUser(parsedUser);
@@ -47,7 +49,7 @@ export default function App() {
   const handleSetUser = (userData) => {
 
     if (
-      ["super_admin", "admin", "it", "service", "kontraktor"]
+      ["super_admin", "admin", "it", "service", "kontraktor", "sales", "logistik", "purchasing"]
         .includes(userData.role)
     ) {
 
@@ -90,6 +92,12 @@ export default function App() {
                   ? "/service/dashboard"
                   : user.role === "kontraktor"
                   ? "/kontraktor/dashboard"
+                  : user.role === "sales"
+                  ? "/sales/dashboard"
+                  : user.role === "logistik"
+                  ? "/logistik/dashboard"
+                  : user.role === "purchasing"
+                  ? "/purchasing/dashboard"
                   : "/"
               }
               replace
@@ -144,6 +152,26 @@ export default function App() {
         element={
           user?.role === "kontraktor"
             ? <KontraktorPage user={user} logout={handleLogout} />
+            : <Navigate to="/" replace />
+        }
+      />
+
+      {/* LOGISTIK */}
+      <Route
+        path="/logistik/*"
+        element={
+          user?.role === "logistik"
+            ? <LogistikPage user={user} logout={handleLogout} />
+            : <Navigate to="/" replace />
+        }
+      />
+
+      {/* PURCHASING */}
+      <Route
+        path="/purchasing/*"
+        element={
+          user?.role === "purchasing"
+            ? <PurchasingPage user={user} logout={handleLogout} />
             : <Navigate to="/" replace />
         }
       />

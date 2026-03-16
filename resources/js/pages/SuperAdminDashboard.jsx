@@ -37,6 +37,8 @@ import InventoryPage from "./InventoryPage";
 import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
+import LogistikPage from "./LogistikPage";
+import PurchasingPage from "./PurchasingPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import FormBarangPage from "./FormBarangPage";
@@ -44,6 +46,14 @@ import EditBarangPage from "./EditBarangPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import KaryawanPage from "./KaryawanPage";
 import TargetPage from "./TargetPage";
+
+/* PEMBELIAN PURCHASING */
+import PembelianPage from "./PembelianPage";
+
+/* LOGISTIK INVENTORY */
+import LogistikInventoryPage from "./LogistikInventoryPage";
+import LogistikFormBarangPage from "./LogistikFormBarangPage";
+import LogistikEditBarangPage from "./LogistikEditBarangPage";
 
 /* ================= MAIN ================= */
 
@@ -85,6 +95,8 @@ export default function SuperAdminDashboard({ user, logout }) {
     if (path.includes("service")) return "Divisi Service";
     if (path.includes("sales")) return "Divisi Sales";
     if (path.includes("kontraktor")) return "Divisi Kontraktor";
+    if (path.includes("logistik")) return "Divisi Logistik";
+    if (path.includes("purchasing")) return "Divisi Purchasing";
     if (path.includes("profile")) return "Profile";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("karyawan")) return "Profil Karyawan";
@@ -161,6 +173,22 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+            </Route>
+
+            <Route path="logistik">
+              <Route index element={<LogistikPage user={user} />} />
+              <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="inventory" element={<LogistikInventoryPage />} />
+              <Route path="inventory/tambah" element={<LogistikFormBarangPage />} />
+              <Route path="inventory/edit/:id" element={<LogistikEditBarangPage />} />
+            </Route>
+
+            <Route path="purchasing">
+              <Route index element={<PurchasingPage user={user} />} />
+              <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="pembelian" element={<PembelianPage />} />
             </Route>
 
             <Route path="projek-kerja" element={<ProjekKerjaPage />} />
@@ -348,6 +376,22 @@ const Dashboard = ({ user, windowWidth }) => {
             onClick={() => navigate(`${basePath}/kontraktor`)}
             isMobile={isMobile}
           />
+
+          <DivisiCard
+            title="Divisi Logistik"
+            image="/images/IT meet.jpg"
+            count={projek.filter(p => p.divisi === "Logistik").length}
+            onClick={() => navigate(`${basePath}/logistik`)}
+            isMobile={isMobile}
+          />
+
+          <DivisiCard
+            title="Divisi Purchasing"
+            image="/images/IT meet.jpg"
+            count={projek.filter(p => p.divisi === "Purchasing").length}
+            onClick={() => navigate(`${basePath}/purchasing`)}
+            isMobile={isMobile}
+          />
         </div>
       </div>
 
@@ -390,6 +434,8 @@ const Dashboard = ({ user, windowWidth }) => {
               <option value="Service">Service</option>
               <option value="Sales">Sales</option>
               <option value="Kontraktor">Kontraktor</option>
+              <option value="Logistik">Logistik</option>
+              <option value="Purchasing">Purchasing</option>
             </select>
 
             <select

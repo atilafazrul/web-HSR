@@ -12,6 +12,8 @@ use App\Models\User;
 use App\Http\Controllers\ProjekKerjaController;
 use App\Http\Controllers\FormPekerjaanController;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\LogistikInventoryController;
+use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\UserController;
 
@@ -212,6 +214,47 @@ Route::delete('/barang/{id}', [
     'destroy'
 ]);
 
+
+/*
+|--------------------------------------------------------------------------
+| INVENTORY LOGISTIK
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/logistik-inventory', [LogistikInventoryController::class, 'index']);
+Route::get('/logistik-inventory/{id}', [LogistikInventoryController::class, 'show']);
+Route::post('/logistik-inventory', [LogistikInventoryController::class, 'store']);
+
+Route::match(['put','patch'], '/logistik-inventory/{id}', [
+    LogistikInventoryController::class,
+    'update'
+]);
+
+Route::delete('/logistik-inventory/{id}', [
+    LogistikInventoryController::class,
+    'destroy'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| PEMBELIAN PURCHASING
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/pembelian', [PembelianController::class, 'index']);
+Route::get('/pembelian/{id}', [PembelianController::class, 'show']);
+Route::post('/pembelian', [PembelianController::class, 'store']);
+
+Route::match(['put','patch'], '/pembelian/{id}', [
+    PembelianController::class,
+    'update'
+]);
+
+Route::delete('/pembelian/{id}', [
+    PembelianController::class,
+    'destroy'
+]);
 
 /*
 |--------------------------------------------------------------------------

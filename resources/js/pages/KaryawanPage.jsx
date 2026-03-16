@@ -560,7 +560,9 @@ export default function KaryawanPage() {
                 { value: "IT", label: "IT" },
                 { value: "Service", label: "Service" },
                 { value: "Sales", label: "Sales" },
-                { value: "Kontraktor", label: "Kontraktor" }
+                { value: "Kontraktor", label: "Kontraktor" },
+                { value: "Logistik", label: "Logistik" },
+                { value: "Purchasing", label: "Purchasing" }
               ]}
             />
           </div>

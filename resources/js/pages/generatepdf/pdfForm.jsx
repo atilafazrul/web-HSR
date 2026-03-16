@@ -333,7 +333,7 @@ function EquipmentSection({ formData, onInputChange }) {
 function PartsReplacementSection({ partsList, onPartsChange, onAddParts, onRemoveParts }) {
   return (
     <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
         <h4 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
           <Package size={20} />
           Parts Replacement
@@ -341,90 +341,106 @@ function PartsReplacementSection({ partsList, onPartsChange, onAddParts, onRemov
         <button
           type="button"
           onClick={onAddParts}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm w-full sm:w-auto"
         >
           <Plus size={16} />
           Tambah Part
         </button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-16">No</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Part Name</th>
-              <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Part No</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-32">In</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-32">Out</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-24">Qty</th>
-              <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 w-16"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {partsList.map((part, index) => (
-              <tr key={part.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm font-medium text-gray-600">{part.id}.</td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={part.name}
-                    onChange={(e) => onPartsChange(index, "name", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Nama part"
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={part.part_no}
-                    onChange={(e) => onPartsChange(index, "part_no", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                    placeholder="Part No"
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={part.in}
-                    onChange={(e) => onPartsChange(index, "in", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center"
-                    placeholder="-"
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    type="text"
-                    value={part.out}
-                    onChange={(e) => onPartsChange(index, "out", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center"
-                    placeholder="-"
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <input
-                    type="number"
-                    value={part.qty}
-                    onChange={(e) => onPartsChange(index, "qty", e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center"
-                    placeholder="0"
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    onClick={() => onRemoveParts(index)}
-                    disabled={partsList.length <= 1}
-                    className="flex justify-center w-8 h-8 rounded-lg text-red-500 hover:bg-red-50 transition disabled:opacity-30 disabled:cursor-not-allowed mx-auto"
-                    title="Hapus baris"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="hidden lg:grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 rounded-t-xl text-sm font-semibold text-gray-700 border border-b-0 border-gray-200">
+        <div className="col-span-1">No</div>
+        <div className="col-span-3">Part Name</div>
+        <div className="col-span-3">Part No</div>
+        <div className="col-span-1 text-center">In</div>
+        <div className="col-span-1 text-center">Out</div>
+        <div className="col-span-2 text-center">Qty</div>
+        <div className="col-span-1 text-center"></div>
+      </div>
+
+      <div className="space-y-4 lg:space-y-0 lg:border lg:border-gray-200 lg:rounded-b-xl lg:bg-white lg:divide-y lg:divide-gray-100">
+        {partsList.map((part, index) => (
+          <div key={part.id} className="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:gap-2 lg:items-center p-4 border border-gray-200 lg:border-none rounded-xl lg:rounded-none bg-white lg:bg-transparent lg:hover:bg-gray-50 shadow-sm lg:shadow-none">
+
+            <div className="col-span-1 font-medium text-gray-600 hidden lg:block">
+              {index + 1}.
+            </div>
+
+            <div className="flex justify-between items-center lg:hidden -mb-2">
+              <span className="font-semibold text-gray-700">Part {index + 1}</span>
+            </div>
+
+            <div className="col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1 lg:hidden">Part Name</label>
+              <input
+                type="text"
+                value={part.name}
+                onChange={(e) => onPartsChange(index, "name", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                placeholder="Nama part"
+              />
+            </div>
+
+            <div className="col-span-3">
+              <label className="block text-sm font-medium text-gray-700 mb-1 lg:hidden">Part No</label>
+              <input
+                type="text"
+                value={part.part_no}
+                onChange={(e) => onPartsChange(index, "part_no", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                placeholder="Part No"
+              />
+            </div>
+
+            <div className="flex gap-4 lg:contents">
+              <div className="flex-1 lg:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1 lg:hidden">In</label>
+                <input
+                  type="text"
+                  value={part.in}
+                  onChange={(e) => onPartsChange(index, "in", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-center"
+                  placeholder="-"
+                />
+              </div>
+              <div className="flex-1 lg:col-span-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1 lg:hidden">Out</label>
+                <input
+                  type="text"
+                  value={part.out}
+                  onChange={(e) => onPartsChange(index, "out", e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-center"
+                  placeholder="-"
+                />
+              </div>
+            </div>
+
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1 lg:hidden">Qty</label>
+              <input
+                type="number"
+                value={part.qty}
+                onChange={(e) => onPartsChange(index, "qty", e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm lg:text-center"
+                placeholder="0"
+              />
+            </div>
+
+            <div className="col-span-1 text-center mt-2 lg:mt-0">
+              <button
+                type="button"
+                onClick={() => onRemoveParts(index)}
+                disabled={partsList.length <= 1}
+                className="flex items-center justify-center gap-2 w-full lg:w-8 h-10 lg:h-8 rounded-lg text-red-500 bg-red-50 lg:bg-transparent lg:hover:bg-red-50 transition disabled:opacity-30 disabled:cursor-not-allowed mx-auto"
+                title="Hapus baris"
+              >
+                <Trash2 size={16} />
+                <span className="lg:hidden text-sm font-medium">Hapus Part</span>
+              </button>
+            </div>
+
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -37,7 +37,9 @@ export default function ProjekKerjaPage() {
         it: "IT",
         service: "Service",
         kontraktor: "Kontraktor",
-        sales: "Sales"
+        sales: "Sales",
+        logistik: "Logistik",
+        purchasing: "Purchasing"
       };
 
       return divisiMap[divisiFromPath.toLowerCase()] || divisiFromPath;
@@ -98,25 +100,8 @@ export default function ProjekKerjaPage() {
 
       let data = res.data.data || res.data || [];
 
-      if (role === "admin") {
-
-        data = data.filter(
-          item =>
-            item.divisi &&
-            item.divisi.toLowerCase() === divisiUser?.toLowerCase()
-        );
-
-      }
-
-      if (role === "super_admin" && currentDivisi) {
-
-        data = data.filter(
-          item =>
-            item.divisi &&
-            item.divisi.toLowerCase() === currentDivisi.toLowerCase()
-        );
-
-      }
+      // Filter divisi dihilangkan agar semua divisi dapat melihat projek divisi lain
+      // sesuai dengan instruksi.
 
       setDataList(data);
 
@@ -320,480 +305,482 @@ export default function ProjekKerjaPage() {
   return (
     <div className="space-y-12 p-6">
 
-{/* ================= FORM ================= */}
+      {/* ================= FORM ================= */}
 
-{(role === "admin" || role === "super_admin") && (
-<div className="bg-white rounded-3xl shadow-xl border p-8">
+      {(role === "admin" || role === "super_admin") && (
+        <div className="bg-white rounded-3xl shadow-xl border p-8">
 
-<div className="mb-8">
+          <div className="mb-8">
 
-<h2 className="text-3xl font-bold flex items-center gap-3">
+            <h2 className="text-3xl font-bold flex items-center gap-3">
 
-<Briefcase className="text-blue-600" />
+              <Briefcase className="text-blue-600" />
 
-Tambah Projek Kerja
+              Tambah Projek Kerja
 
-</h2>
+            </h2>
 
-<p className="text-gray-500 text-sm mt-1">
+            <p className="text-gray-500 text-sm mt-1">
 
-Tambahkan data projek kerja baru ke dalam sistem
-
-</p>
+              Tambahkan data projek kerja baru ke dalam sistem
+
+            </p>
+
+          </div>
+
+          <form
+            onSubmit={handleSubmit}
+            className="grid grid-cols-1 md:grid-cols-2 gap-6"
+            encType="multipart/form-data"
+          >
+
+            {role === "super_admin" ? (
+              <select
+                name="divisi"
+                value={form.divisi}
+                onChange={handleChange}
+                className="border p-3 rounded-xl focus:ring-2 focus:ring-blue-400"
+                required
+              >
+                <option value="">Pilih Divisi</option>
+                <option value="IT">IT</option>
+                <option value="Service">Service</option>
+                <option value="Kontraktor">Kontraktor</option>
+                <option value="Sales">Sales</option>
+                <option value="Logistik">Logistik</option>
+                <option value="Purchasing">Purchasing</option>
+              </select>
+            ) : (
+              <input
+                value={divisiUser}
+                disabled
+                className="border p-3 rounded-xl bg-gray-100"
+              />
+            )}
+
+            <div className="relative">
+
+              <Briefcase className="absolute left-3 top-3 text-gray-400" size={18} />
+
+              <input
+                name="jenis_pekerjaan"
+                value={form.jenis_pekerjaan}
+                onChange={handleChange}
+                placeholder="Jenis Pekerjaan"
+                className="border pl-10 p-3 rounded-xl w-full"
+                required
+              />
+
+            </div>
+
+            <div className="relative">
+
+              <User className="absolute left-3 top-3 text-gray-400" size={18} />
+
+              <input
+                name="karyawan"
+                value={form.karyawan}
+                onChange={handleChange}
+                placeholder="Karyawan"
+                className="border pl-10 p-3 rounded-xl w-full"
+              />
+
+            </div>
+
+            <div className="relative">
+
+              <MapPin className="absolute left-3 top-3 text-gray-400" size={18} />
+
+              <input
+                name="alamat"
+                value={form.alamat}
+                onChange={handleChange}
+                placeholder="Lokasi"
+                className="border pl-10 p-3 rounded-xl w-full"
+              />
+
+            </div>
+
+            <div className="relative">
+
+              <Calendar className="absolute left-3 top-3 text-gray-400" size={18} />
+
+              <input
+                type="date"
+                name="start_date"
+                value={form.start_date}
+                onChange={handleChange}
+                className="border pl-10 p-3 rounded-xl w-full"
+                required
+              />
+
+            </div>
+
+            <select
+              name="status"
+              value={form.status}
+              onChange={handleChange}
+              className="border p-3 rounded-xl"
+            >
+              <option value="Proses">Proses</option>
+              <option value="Selesai">Selesai</option>
+              <option value="Terlambat">Terlambat</option>
+            </select>
+
+            <label
+              htmlFor="uploadFile"
+              className="border-2 border-dashed rounded-xl p-4 text-center hover:bg-blue-50 transition cursor-pointer block"
+            >
+
+              <Upload className="mx-auto mb-1 text-blue-600" size={22} />
+
+              <span className="font-semibold text-blue-700 text-sm block">
+                Upload File
+              </span>
+
+              <span className="text-xs text-gray-500">
+                {form.file ? form.file.name : "Choose file No file chosen"}
+              </span>
+
+              <input
+                id="uploadFile"
+                type="file"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+
+            </label>
+
+            <label
+              htmlFor="uploadFoto"
+              className="border-2 border-dashed rounded-xl p-4 text-center hover:bg-green-50 transition cursor-pointer block"
+            >
+
+              <Upload className="mx-auto mb-1 text-green-600" size={22} />
+
+              <span className="font-semibold text-green-700 text-sm block">
+                Upload Foto
+              </span>
+
+              <span className="text-xs text-gray-500">
+                {form.photos.length > 0
+                  ? `${form.photos.length} foto dipilih`
+                  : "Choose files No file chosen"}
+              </span>
+
+              <input
+                id="uploadFoto"
+                type="file"
+                multiple
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+
+            </label>
+
+            <textarea
+              name="problem_description"
+              value={form.problem_description}
+              onChange={handleChange}
+              placeholder="Deskripsi"
+              className="border p-3 rounded-xl md:col-span-2"
+            />
+
+            <button
+              disabled={loading}
+              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl md:col-span-2 font-semibold shadow-lg transition"
+            >
+
+              {loading ? "Menyimpan..." : "Simpan Projek"}
+
+            </button>
+
+          </form>
+
+        </div>
+      )}
+
+      {/* ================= TABLE ================= */}
+
+      <div className="bg-white rounded-2xl shadow-md p-8 border">
+
+        <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+
+          <Activity className="text-blue-600" />
+          Data Projek Kerja
+
+        </h2>
+
+        <div className="overflow-x-auto">
+
+          <table className="min-w-full text-sm">
+
+            <thead className="bg-gray-100 text-gray-700">
+
+              <tr className="text-left">
+
+                <th className="p-4 font-semibold">
+                  <div className="flex items-center gap-2 opacity-80">
+                    <Building size={16} className="text-gray-400" />
+                    Divisi
+                  </div>
+                </th>
+
+                <th className="p-4 font-semibold">
+                  <div className="flex items-center gap-2 opacity-80">
+                    <Briefcase size={16} className="text-gray-400" />
+                    Tugas
+                  </div>
+                </th>
 
-</div>
-
-<form
-onSubmit={handleSubmit}
-className="grid grid-cols-1 md:grid-cols-2 gap-6"
-encType="multipart/form-data"
->
+                <th className="p-4 font-semibold">
+                  <div className="flex items-center gap-2 opacity-80">
+                    <User size={16} className="text-gray-400" />
+                    Karyawan
+                  </div>
+                </th>
+
+                <th className="p-4 font-semibold">
+                  <div className="flex items-center gap-2 opacity-80">
+                    <MapPin size={16} className="text-gray-400" />
+                    Lokasi
+                  </div>
+                </th>
+
+                <th className="p-4 font-semibold">
+                  <div className="flex items-center gap-2 opacity-80">
+                    <Calendar size={16} className="text-gray-400" />
+                    Tanggal
+                  </div>
+                </th>
 
-{role === "super_admin" ? (
-<select
-name="divisi"
-value={form.divisi}
-onChange={handleChange}
-className="border p-3 rounded-xl focus:ring-2 focus:ring-blue-400"
-required
->
-<option value="">Pilih Divisi</option>
-<option value="IT">IT</option>
-<option value="Service">Service</option>
-<option value="Kontraktor">Kontraktor</option>
-<option value="Sales">Sales</option>
-</select>
-) : (
-<input
-value={divisiUser}
-disabled
-className="border p-3 rounded-xl bg-gray-100"
-/>
-)}
-
-<div className="relative">
+                <th className="p-4 font-semibold">
+                  <div className="flex items-center gap-2 opacity-80">
+                    <FileText size={16} className="text-gray-400" />
+                    Deskripsi
+                  </div>
+                </th>
 
-<Briefcase className="absolute left-3 top-3 text-gray-400" size={18}/>
-
-<input
-name="jenis_pekerjaan"
-value={form.jenis_pekerjaan}
-onChange={handleChange}
-placeholder="Jenis Pekerjaan"
-className="border pl-10 p-3 rounded-xl w-full"
-required
-/>
-
-</div>
-
-<div className="relative">
-
-<User className="absolute left-3 top-3 text-gray-400" size={18}/>
-
-<input
-name="karyawan"
-value={form.karyawan}
-onChange={handleChange}
-placeholder="Karyawan"
-className="border pl-10 p-3 rounded-xl w-full"
-/>
-
-</div>
-
-<div className="relative">
-
-<MapPin className="absolute left-3 top-3 text-gray-400" size={18}/>
-
-<input
-name="alamat"
-value={form.alamat}
-onChange={handleChange}
-placeholder="Lokasi"
-className="border pl-10 p-3 rounded-xl w-full"
-/>
-
-</div>
-
-<div className="relative">
-
-<Calendar className="absolute left-3 top-3 text-gray-400" size={18}/>
-
-<input
-type="date"
-name="start_date"
-value={form.start_date}
-onChange={handleChange}
-className="border pl-10 p-3 rounded-xl w-full"
-required
-/>
-
-</div>
+                <th className="p-4 font-semibold">
+                  <div className="flex items-center gap-2 opacity-80">
+                    <Activity size={16} className="text-gray-400" />
+                    Status
+                  </div>
+                </th>
 
-<select
-name="status"
-value={form.status}
-onChange={handleChange}
-className="border p-3 rounded-xl"
->
-<option value="Proses">Proses</option>
-<option value="Selesai">Selesai</option>
-<option value="Terlambat">Terlambat</option>
-</select>
+                <th className="p-4 font-semibold text-center">
+                  <div className="flex items-center justify-center gap-2 opacity-80">
+                    <Settings size={16} className="text-gray-400" />
+                    Aksi
+                  </div>
+                </th>
 
-<label
-htmlFor="uploadFile"
-className="border-2 border-dashed rounded-xl p-4 text-center hover:bg-blue-50 transition cursor-pointer block"
->
+              </tr>
 
-<Upload className="mx-auto mb-1 text-blue-600" size={22}/>
-
-<span className="font-semibold text-blue-700 text-sm block">
-Upload File
-</span>
-
-<span className="text-xs text-gray-500">
-{form.file ? form.file.name : "Choose file No file chosen"}
-</span>
-
-<input
-id="uploadFile"
-type="file"
-onChange={handleFileUpload}
-className="hidden"
-/>
-
-</label>
-
-<label
-htmlFor="uploadFoto"
-className="border-2 border-dashed rounded-xl p-4 text-center hover:bg-green-50 transition cursor-pointer block"
->
-
-<Upload className="mx-auto mb-1 text-green-600" size={22}/>
-
-<span className="font-semibold text-green-700 text-sm block">
-Upload Foto
-</span>
-
-<span className="text-xs text-gray-500">
-{form.photos.length > 0
-? `${form.photos.length} foto dipilih`
-: "Choose files No file chosen"}
-</span>
-
-<input
-id="uploadFoto"
-type="file"
-multiple
-accept="image/*"
-onChange={handlePhotoUpload}
-className="hidden"
-/>
-
-</label>
-
-<textarea
-name="problem_description"
-value={form.problem_description}
-onChange={handleChange}
-placeholder="Deskripsi"
-className="border p-3 rounded-xl md:col-span-2"
-/>
-
-<button
-disabled={loading}
-className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl md:col-span-2 font-semibold shadow-lg transition"
->
-
-{loading ? "Menyimpan..." : "Simpan Projek"}
-
-</button>
-
-</form>
-
-</div>
-)}
-
-{/* ================= TABLE ================= */}
-
-<div className="bg-white rounded-2xl shadow-md p-8 border">
-
-<h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-
-<Activity className="text-blue-600" />
-📊 Data Projek Kerja
-
-</h2>
-
-<div className="overflow-x-auto">
-
-<table className="min-w-full text-sm">
-
-<thead className="bg-gray-100 text-gray-700">
-
-<tr className="text-left">
-
-<th className="p-4 font-semibold">
-<div className="flex items-center gap-2 opacity-80">
-<Building size={16} className="text-gray-400" />
-Divisi
-</div>
-</th>
-
-<th className="p-4 font-semibold">
-<div className="flex items-center gap-2 opacity-80">
-<Briefcase size={16} className="text-gray-400" />
-Tugas
-</div>
-</th>
+            </thead>
 
-<th className="p-4 font-semibold">
-<div className="flex items-center gap-2 opacity-80">
-<User size={16} className="text-gray-400" />
-Karyawan
-</div>
-</th>
-
-<th className="p-4 font-semibold">
-<div className="flex items-center gap-2 opacity-80">
-<MapPin size={16} className="text-gray-400" />
-Lokasi
-</div>
-</th>
+            <tbody>
 
-<th className="p-4 font-semibold">
-<div className="flex items-center gap-2 opacity-80">
-<Calendar size={16} className="text-gray-400" />
-Tanggal
-</div>
-</th>
+              {dataList.map((item) => (
 
-<th className="p-4 font-semibold">
-<div className="flex items-center gap-2 opacity-80">
-<FileText size={16} className="text-gray-400" />
-Deskripsi
-</div>
-</th>
+                <tr key={item.id} className="border-b hover:bg-gray-50 transition">
 
-<th className="p-4 font-semibold">
-<div className="flex items-center gap-2 opacity-80">
-<Activity size={16} className="text-gray-400" />
-Status
-</div>
-</th>
+                  <td className="p-4 text-left">
+                    {item.divisi}
+                  </td>
 
-<th className="p-4 font-semibold text-center">
-<div className="flex items-center justify-center gap-2 opacity-80">
-<Settings size={16} className="text-gray-400" />
-Aksi
-</div>
-</th>
+                  <td className="p-4 font-medium text-left">
+                    {item.jenis_pekerjaan}
+                  </td>
 
-</tr>
+                  <td className="p-4 text-left">
+                    {item.karyawan}
+                  </td>
 
-</thead>
+                  <td className="p-4 text-left">
+                    {item.alamat}
+                  </td>
 
-<tbody>
+                  <td className="p-4 text-left">
+                    {new Date(item.start_date).toLocaleDateString("id-ID")}
+                  </td>
 
-{dataList.map((item) => (
+                  <td className="p-4 text-left">
 
-<tr key={item.id} className="border-b hover:bg-gray-50 transition">
+                    {item.problem_description ? (
 
-<td className="p-4 text-left">
-{item.divisi}
-</td>
+                      <button
+                        onClick={() => {
 
-<td className="p-4 font-medium text-left">
-{item.jenis_pekerjaan}
-</td>
+                          setDescText(item.problem_description);
+                          setNewDesc(item.problem_description);
+                          setCurrentId(item.id);
+                          setEditDesc(false);
+                          setShowDesc(true);
 
-<td className="p-4 text-left">
-{item.karyawan}
-</td>
+                        }}
+                        className="px-3 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
+                      >
 
-<td className="p-4 text-left">
-{item.alamat}
-</td>
+                        <Eye size={14} />
+                        <span>Lihat</span>
 
-<td className="p-4 text-left">
-{new Date(item.start_date).toLocaleDateString("id-ID")}
-</td>
+                      </button>
 
-<td className="p-4 text-left">
+                    ) : "-"}
 
-{item.problem_description ? (
+                  </td>
 
-<button
-onClick={() => {
+                  <td className="p-4 text-left">
 
-setDescText(item.problem_description);
-setNewDesc(item.problem_description);
-setCurrentId(item.id);
-setEditDesc(false);
-setShowDesc(true);
+                    <select
+                      value={item.status}
+                      onChange={(e) =>
+                        handleStatusChange(item.id, e.target.value)
+                      }
+                      className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(item.status)}`}
+                    >
 
-}}
-className="px-3 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
->
+                      <option value="Proses">Proses</option>
+                      <option value="Selesai">Selesai</option>
+                      <option value="Terlambat">Terlambat</option>
 
-<Eye size={14} />
-<span>Lihat</span>
+                    </select>
 
-</button>
+                  </td>
 
-) : "-"}
+                  <td className="p-4">
 
-</td>
+                    <div className="flex justify-center gap-2">
 
-<td className="p-4 text-left">
+                      {item.file_url && (
 
-<select
-value={item.status}
-onChange={(e) =>
-handleStatusChange(item.id, e.target.value)
-}
-className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(item.status)}`}
->
+                        <a
+                          href={item.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg"
+                        >
 
-<option value="Proses">Proses</option>
-<option value="Selesai">Selesai</option>
-<option value="Terlambat">Terlambat</option>
+                          <Download size={16} />
 
-</select>
+                        </a>
 
-</td>
+                      )}
 
-<td className="p-4">
+                      <button
+                        onClick={() => handleViewPhoto(item.id)}
+                        className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"
+                      >
 
-<div className="flex justify-center gap-2">
+                        <FileText size={16} />
 
-{item.file_url && (
+                      </button>
 
-<a
-href={item.file_url}
-target="_blank"
-rel="noreferrer"
-className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg"
->
+                      {(role === "super_admin" ||
+                        item.divisi === divisiUser) && (
 
-<Download size={16} />
+                          <button
+                            onClick={() => handleDelete(item.id)}
+                            className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"
+                          >
 
-</a>
+                            <Trash2 size={16} />
 
-)}
+                          </button>
 
-<button
-onClick={() => handleViewPhoto(item.id)}
-className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg"
->
+                        )}
 
-<FileText size={16} />
+                    </div>
 
-</button>
+                  </td>
 
-{(role === "super_admin" ||
-item.divisi === divisiUser) && (
+                </tr>
 
-<button
-onClick={() => handleDelete(item.id)}
-className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"
->
+              ))}
 
-<Trash2 size={16} />
+            </tbody>
 
-</button>
+          </table>
 
-)}
+        </div>
 
-</div>
+      </div>
 
-</td>
+      {/* ================= MODAL DESKRIPSI ================= */}
 
-</tr>
+      {showDesc && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
 
-))}
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
 
-</tbody>
+            <h3 className="text-xl font-bold mb-4">
+              Deskripsi Pekerjaan
+            </h3>
 
-</table>
+            {!editDesc ? (
 
-</div>
+              <>
+                <p className="text-gray-700 whitespace-pre-line">
+                  {descText || "-"}
+                </p>
 
-</div>
+                <div className="flex justify-end gap-3 mt-6">
 
-{/* ================= MODAL DESKRIPSI ================= */}
+                  <button
+                    onClick={() => setEditDesc(true)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+                  >
+                    Edit
+                  </button>
 
-{showDesc && (
-<div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                  <button
+                    onClick={() => setShowDesc(false)}
+                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
+                  >
+                    Tutup
+                  </button>
 
-<div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
+                </div>
+              </>
 
-<h3 className="text-xl font-bold mb-4">
-Deskripsi Pekerjaan
-</h3>
+            ) : (
 
-{!editDesc ? (
+              <>
+                <textarea
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  className="border w-full p-3 rounded-xl h-32"
+                />
 
-<>
-<p className="text-gray-700 whitespace-pre-line">
-{descText || "-"}
-</p>
+                <div className="flex justify-end gap-3 mt-6">
 
-<div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={handleUpdateDesc}
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
+                  >
+                    Simpan
+                  </button>
 
-<button
-onClick={() => setEditDesc(true)}
-className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
->
-Edit
-</button>
+                  <button
+                    onClick={() => setEditDesc(false)}
+                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
+                  >
+                    Batal
+                  </button>
 
-<button
-onClick={() => setShowDesc(false)}
-className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
->
-Tutup
-</button>
+                </div>
 
-</div>
-</>
+              </>
 
-) : (
+            )}
 
-<>
-<textarea
-value={newDesc}
-onChange={(e) => setNewDesc(e.target.value)}
-className="border w-full p-3 rounded-xl h-32"
-/>
+          </div>
 
-<div className="flex justify-end gap-3 mt-6">
+        </div>
+      )}
 
-<button
-onClick={handleUpdateDesc}
-className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg"
->
-Simpan
-</button>
-
-<button
-onClick={() => setEditDesc(false)}
-className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
->
-Batal
-</button>
-
-</div>
-
-</>
-
-)}
-
-</div>
-
-</div>
-)}
-
-</div>
-);
+    </div>
+  );
 }

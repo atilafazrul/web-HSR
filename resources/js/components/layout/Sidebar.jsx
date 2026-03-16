@@ -12,6 +12,8 @@ import {
   LogOut,
   Users,
   X,
+  Truck,
+  ShoppingCart,
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -76,6 +78,8 @@ export default function Sidebar({
     { name: "Service", path: "service", icon: <Wrench size={18} /> },
     { name: "Kontraktor", path: "kontraktor", icon: <Hammer size={18} /> },
     { name: "Sales", path: "sales", icon: <BarChart3 size={18} /> },
+    { name: "Logistik", path: "logistik", icon: <Truck size={18} /> },
+    { name: "Purchasing", path: "purchasing", icon: <ShoppingCart size={18} /> },
   ];
 
   return (
