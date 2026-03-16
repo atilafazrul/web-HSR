@@ -76,7 +76,9 @@ export default function KaryawanPage() {
       const fields = [
         'name', 'nik', 'email', 'phone', 'no_telepon', 'alamat',
         'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'agama',
-        'status_perkawinan', 'pekerjaan', 'golongan_darah'
+        'status_perkawinan', 'pekerjaan', 'golongan_darah',
+        'kontak_darurat_nama', 'kontak_darurat_hubungan', 
+        'kontak_darurat_telepon', 'kontak_darurat_alamat'
       ];
       
       fields.forEach(field => {
@@ -125,7 +127,7 @@ export default function KaryawanPage() {
 
       await axios.post("/api/karyawan", {
         ...createData,
-        role: createData.role || "admin"
+        role: "admin" // Set default role
       });
 
       alert("Karyawan berhasil ditambahkan ✅");
@@ -227,7 +229,6 @@ export default function KaryawanPage() {
                 email: "",
                 password: "",
                 divisi: "",
-                role: "admin"
               })
             }
             className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2.5 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
@@ -265,7 +266,8 @@ export default function KaryawanPage() {
               </div>
 
               <h4 className="font-semibold text-lg truncate">{emp.name}</h4>
-              <p className="text-gray-500 mb-4 text-sm">{emp.divisi || "-"}</p>
+              <p className="text-gray-500 mb-2 text-sm">{emp.divisi || "-"}</p>
+              <p className="text-gray-400 mb-4 text-xs">{emp.email}</p>
 
               <div className="flex justify-center gap-3">
                 <button
@@ -321,19 +323,35 @@ export default function KaryawanPage() {
             <p className="text-gray-500">{selected.divisi || "-"}</p>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <Info label="NIK" value={selected.nik} />
-            <Info label="Email" value={selected.email} />
-            <Info label="Phone" value={selected.phone || selected.no_telepon} />
-            <Info label="Role" value={selected.role} />
-            <Info label="Tempat Lahir" value={selected.tempat_lahir} />
-            <Info label="Tanggal Lahir" value={selected.tanggal_lahir ? new Date(selected.tanggal_lahir).toLocaleDateString('id-ID') : "-"} />
-            <Info label="Alamat" value={selected.alamat} />
-            <Info label="Jenis Kelamin" value={selected.jenis_kelamin} />
-            <Info label="Agama" value={selected.agama} />
-            <Info label="Status Perkawinan" value={selected.status_perkawinan} />
-            <Info label="Pekerjaan" value={selected.pekerjaan} />
-            <Info label="Golongan Darah" value={selected.golongan_darah} />
+          <div className="space-y-4">
+            {/* Data Pribadi */}
+            <div>
+              <h4 className="font-semibold text-purple-700 mb-2">Data Pribadi</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <Info label="NIK" value={selected.nik} />
+                <Info label="Email" value={selected.email} />
+                <Info label="No. Telepon" value={selected.phone || selected.no_telepon} />
+                <Info label="Tempat Lahir" value={selected.tempat_lahir} />
+                <Info label="Tanggal Lahir" value={selected.tanggal_lahir ? new Date(selected.tanggal_lahir).toLocaleDateString('id-ID') : "-"} />
+                <Info label="Alamat" value={selected.alamat} />
+                <Info label="Jenis Kelamin" value={selected.jenis_kelamin} />
+                <Info label="Agama" value={selected.agama} />
+                <Info label="Status Perkawinan" value={selected.status_perkawinan} />
+                <Info label="Pekerjaan" value={selected.pekerjaan} />
+                <Info label="Golongan Darah" value={selected.golongan_darah} />
+              </div>
+            </div>
+
+            {/* Kontak Darurat */}
+            <div>
+              <h4 className="font-semibold text-purple-700 mb-2">Kontak Darurat</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <Info label="Nama Kontak Darurat" value={selected.kontak_darurat_nama} />
+                <Info label="Hubungan" value={selected.kontak_darurat_hubungan} />
+                <Info label="Telepon Kontak Darurat" value={selected.kontak_darurat_telepon} />
+                <Info label="Alamat Kontak Darurat" value={selected.kontak_darurat_alamat} />
+              </div>
+            </div>
           </div>
         </Modal>
       )}
@@ -341,106 +359,147 @@ export default function KaryawanPage() {
       {/* MODAL EDIT */}
       {editData && (
         <Modal onClose={() => setEditData(null)} title="Edit Data Karyawan">
-          <div className="grid grid-cols-2 gap-4">
-            <Input 
-              label="Nama Lengkap" 
-              value={editData.name}
-              onChange={(v) => setEditData({ ...editData, name: v })} 
-              required
-            />
+          <div className="space-y-6">
+            {/* Data Pribadi */}
+            <div>
+              <h4 className="font-semibold text-purple-700 mb-3">Data Pribadi</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <Input 
+                  label="Nama Lengkap" 
+                  value={editData.name}
+                  onChange={(v) => setEditData({ ...editData, name: v })} 
+                  required
+                />
 
-            <Input 
-              label="NIK" 
-              value={editData.nik}
-              onChange={(v) => setEditData({ ...editData, nik: v })} 
-            />
+                <Input 
+                  label="NIK" 
+                  value={editData.nik}
+                  onChange={(v) => setEditData({ ...editData, nik: v })} 
+                />
 
-            <Input 
-              label="Email" 
-              type="email"
-              value={editData.email}
-              onChange={(v) => setEditData({ ...editData, email: v })} 
-              required
-            />
+                <Input 
+                  label="Email" 
+                  type="email"
+                  value={editData.email}
+                  onChange={(v) => setEditData({ ...editData, email: v })} 
+                  required
+                />
 
-            <Input 
-              label="Nomor Telepon" 
-              value={editData.phone || editData.no_telepon}
-              onChange={(v) => {
-                setEditData({ 
-                  ...editData, 
-                  phone: v,
-                  no_telepon: v 
-                });
-              }} 
-            />
+                <Input 
+                  label="Nomor Telepon" 
+                  value={editData.phone || editData.no_telepon}
+                  onChange={(v) => {
+                    setEditData({ 
+                      ...editData, 
+                      phone: v,
+                      no_telepon: v 
+                    });
+                  }} 
+                />
 
-            <Input 
-              label="Tempat Lahir" 
-              value={editData.tempat_lahir}
-              onChange={(v) => setEditData({ ...editData, tempat_lahir: v })} 
-            />
+                <Input 
+                  label="Tempat Lahir" 
+                  value={editData.tempat_lahir}
+                  onChange={(v) => setEditData({ ...editData, tempat_lahir: v })} 
+                />
 
-            <Input 
-              label="Tanggal Lahir" 
-              type="date"
-              value={editData.tanggal_lahir || ""}
-              onChange={(v) => setEditData({ ...editData, tanggal_lahir: v })} 
-            />
+                <Input 
+                  label="Tanggal Lahir" 
+                  type="date"
+                  value={editData.tanggal_lahir || ""}
+                  onChange={(v) => setEditData({ ...editData, tanggal_lahir: v })} 
+                />
 
-            <Input 
-              label="Alamat" 
-              value={editData.alamat}
-              onChange={(v) => setEditData({ ...editData, alamat: v })} 
-            />
+                <div className="col-span-2">
+                  <Input 
+                    label="Alamat" 
+                    value={editData.alamat}
+                    onChange={(v) => setEditData({ ...editData, alamat: v })} 
+                  />
+                </div>
 
-            <Select
-              label="Jenis Kelamin"
-              value={editData.jenis_kelamin}
-              onChange={(v) => setEditData({ ...editData, jenis_kelamin: v })}
-              options={[
-                { value: "", label: "Pilih Jenis Kelamin" },
-                { value: "Laki-laki", label: "Laki-laki" },
-                { value: "Perempuan", label: "Perempuan" }
-              ]}
-            />
+                <Select
+                  label="Jenis Kelamin"
+                  value={editData.jenis_kelamin}
+                  onChange={(v) => setEditData({ ...editData, jenis_kelamin: v })}
+                  options={[
+                    { value: "", label: "Pilih Jenis Kelamin" },
+                    { value: "Laki-laki", label: "Laki-laki" },
+                    { value: "Perempuan", label: "Perempuan" }
+                  ]}
+                />
 
-            <Input 
-              label="Agama" 
-              value={editData.agama}
-              onChange={(v) => setEditData({ ...editData, agama: v })} 
-            />
+                <Input 
+                  label="Agama" 
+                  value={editData.agama}
+                  onChange={(v) => setEditData({ ...editData, agama: v })} 
+                />
 
-            <Select
-              label="Status Perkawinan"
-              value={editData.status_perkawinan}
-              onChange={(v) => setEditData({ ...editData, status_perkawinan: v })}
-              options={[
-                { value: "", label: "Pilih Status" },
-                { value: "Belum Kawin", label: "Belum Kawin" },
-                { value: "Kawin", label: "Kawin" },
-                { value: "Cerai", label: "Cerai" }
-              ]}
-            />
+                <Select
+                  label="Status Perkawinan"
+                  value={editData.status_perkawinan}
+                  onChange={(v) => setEditData({ ...editData, status_perkawinan: v })}
+                  options={[
+                    { value: "", label: "Pilih Status" },
+                    { value: "Belum Kawin", label: "Belum Kawin" },
+                    { value: "Kawin", label: "Kawin" },
+                    { value: "Cerai", label: "Cerai" },
+                    { value: "Cerai Mati", label: "Cerai Mati" }
+                  ]}
+                />
 
-            <Input 
-              label="Pekerjaan" 
-              value={editData.pekerjaan}
-              onChange={(v) => setEditData({ ...editData, pekerjaan: v })} 
-            />
+                <Input 
+                  label="Pekerjaan" 
+                  value={editData.pekerjaan}
+                  onChange={(v) => setEditData({ ...editData, pekerjaan: v })} 
+                />
 
-            <Select
-              label="Golongan Darah"
-              value={editData.golongan_darah}
-              onChange={(v) => setEditData({ ...editData, golongan_darah: v })}
-              options={[
-                { value: "", label: "Pilih Golongan" },
-                { value: "A", label: "A" },
-                { value: "B", label: "B" },
-                { value: "AB", label: "AB" },
-                { value: "O", label: "O" }
-              ]}
-            />
+                <Select
+                  label="Golongan Darah"
+                  value={editData.golongan_darah}
+                  onChange={(v) => setEditData({ ...editData, golongan_darah: v })}
+                  options={[
+                    { value: "", label: "Pilih Golongan" },
+                    { value: "A", label: "A" },
+                    { value: "B", label: "B" },
+                    { value: "AB", label: "AB" },
+                    { value: "O", label: "O" }
+                  ]}
+                />
+              </div>
+            </div>
+
+            {/* Kontak Darurat */}
+            <div>
+              <h4 className="font-semibold text-purple-700 mb-3">Kontak Darurat</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <Input 
+                  label="Nama Kontak Darurat" 
+                  value={editData.kontak_darurat_nama}
+                  onChange={(v) => setEditData({ ...editData, kontak_darurat_nama: v })} 
+                />
+
+                <Input 
+                  label="Hubungan" 
+                  value={editData.kontak_darurat_hubungan}
+                  onChange={(v) => setEditData({ ...editData, kontak_darurat_hubungan: v })} 
+                />
+
+                <Input 
+                  label="Telepon Kontak Darurat" 
+                  value={editData.kontak_darurat_telepon}
+                  onChange={(v) => setEditData({ ...editData, kontak_darurat_telepon: v })} 
+                />
+
+                <div className="col-span-2">
+                  <Input 
+                    label="Alamat Kontak Darurat" 
+                    value={editData.kontak_darurat_alamat}
+                    onChange={(v) => setEditData({ ...editData, kontak_darurat_alamat: v })} 
+                  />
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex gap-2 mt-6">
@@ -502,17 +561,6 @@ export default function KaryawanPage() {
                 { value: "Service", label: "Service" },
                 { value: "Sales", label: "Sales" },
                 { value: "Kontraktor", label: "Kontraktor" }
-              ]}
-            />
-
-            <Select
-              label="Role"
-              value={createData.role}
-              onChange={(v) => setCreateData({ ...createData, role: v })}
-              options={[
-                { value: "admin", label: "Admin" },
-                { value: "user", label: "User" },
-                { value: "super_admin", label: "Super Admin" }
               ]}
             />
           </div>
@@ -590,8 +638,8 @@ function Select({ label, value, onChange, options }) {
 function Modal({ children, onClose, title }) {
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-      <div className="bg-white p-6 rounded-2xl w-full max-w-2xl relative shadow-2xl max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-4">
+      <div className="bg-white p-6 rounded-2xl w-full max-w-3xl relative shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4 sticky top-0 bg-white pb-2">
           <h3 className="text-lg font-bold">{title}</h3>
           <button
             onClick={onClose}
