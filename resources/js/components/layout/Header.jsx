@@ -87,7 +87,7 @@ export default function Header({
         {/* USER - ubah dari onDoubleClick ke onClick */}
         <button
           onClick={handleProfileClick}
-          className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full cursor-pointer hover:bg-gray-200 transition"
+          className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full cursor-pointer hover:bg-gray-200 transition flex-shrink-0"
           style={{ touchAction: "manipulation", minHeight: "44px" }}
           aria-label="Profile"
         >
@@ -95,14 +95,14 @@ export default function Header({
             <img
               src={photoUrl}
               alt="Profile"
-              className="w-8 h-8 rounded-full object-cover"
+              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
             />
           ) : (
-            <div className="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center">
+            <div className="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0">
               {initialLetter}
             </div>
           )}
-          <span className="font-medium hidden sm:block">{user?.name}</span>
+          <span className="font-medium hidden sm:block truncate max-w-[100px] md:max-w-[150px] lg:max-w-[200px]">{user?.name}</span>
         </button>
       </div>
     </header>

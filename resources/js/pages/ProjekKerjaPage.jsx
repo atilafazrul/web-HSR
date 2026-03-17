@@ -318,7 +318,7 @@ export default function ProjekKerjaPage() {
   };
 
   return (
-    <div className="space-y-12 p-6">
+    <div className="space-y-12 p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
 
       {/* ================= FORM ================= */}
       {(role === "admin" || role === "super_admin") && (
@@ -479,7 +479,7 @@ export default function ProjekKerjaPage() {
       )}
 
       {/* ================= TABLE ================= */}
-      <div className="bg-white rounded-2xl shadow-md p-8 border">
+      <div className="bg-white rounded-2xl shadow-md p-4 lg:p-8 border" style={{ maxWidth: '100%' }}>
         {/* Header dengan judul dan search */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -509,36 +509,36 @@ export default function ProjekKerjaPage() {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
+        <div className="w-full" style={{ overflowX: 'auto' }}>
+          <table className="text-sm" style={{ minWidth: '1100px', width: '100%', tableLayout: 'fixed' }}>
             <thead className="bg-gray-100 text-gray-700">
               <tr className="text-left">
-                <th className="p-4 font-semibold" style={{ minWidth: '100px' }}>
+                <th className="p-2 font-semibold" style={{ width: '70px' }}>
                   <Building size={16} className="inline mr-1 text-gray-400" /> Divisi
                 </th>
-                <th className="p-4 font-semibold" style={{ minWidth: '150px' }}>
+                <th className="p-2 font-semibold" style={{ width: '140px' }}>
                   <Briefcase size={16} className="inline mr-1 text-gray-400" /> Tugas
                 </th>
-                <th className="p-4 font-semibold" style={{ minWidth: '120px' }}>
+                <th className="p-2 font-semibold" style={{ width: '110px' }}>
                   <User size={16} className="inline mr-1 text-gray-400" /> Karyawan
                 </th>
-                <th className="p-4 font-semibold" style={{ minWidth: '150px' }}>
+                <th className="p-2 font-semibold" style={{ width: '140px' }}>
                   <MapPin size={16} className="inline mr-1 text-gray-400" /> Lokasi
                 </th>
-                <th className="p-4 font-semibold" style={{ minWidth: '110px' }}>
+                <th className="p-2 font-semibold" style={{ width: '95px' }}>
                   <Calendar size={16} className="inline mr-1 text-gray-400" /> Tanggal
                 </th>
-                <th className="p-4 font-semibold" style={{ minWidth: '130px' }}>
+                <th className="p-2 font-semibold" style={{ width: '90px' }}>
                   <FileText size={16} className="inline mr-1 text-gray-400" /> Deskripsi
                 </th>
                 {/* KOLOM BARANG DITAMBAHKAN */}
-                <th className="p-4 font-semibold" style={{ minWidth: '150px' }}>
-                  <ShoppingCart size={16} className="inline mr-1 text-gray-400" /> Barang Dibeli
+                <th className="p-2 font-semibold" style={{ width: '100px' }}>
+                  <ShoppingCart size={16} className="inline mr-1 text-gray-400" /> Barang
                 </th>
-                <th className="p-4 font-semibold" style={{ minWidth: '150px' }}>
+                <th className="p-2 font-semibold" style={{ width: '115px' }}>
                   <Activity size={16} className="inline mr-1 text-gray-400" /> Status
                 </th>
-                <th className="p-4 font-semibold text-center" style={{ minWidth: '180px' }}>
+                <th className="p-2 font-semibold text-center" style={{ width: '140px' }}>
                   <Settings size={16} className="inline mr-1 text-gray-400" /> Aksi
                 </th>
               </tr>
@@ -546,12 +546,12 @@ export default function ProjekKerjaPage() {
             <tbody>
               {currentItems.map((item) => (
                 <tr key={item.id} className="border-b hover:bg-gray-50 transition">
-                  <td className="p-4">{item.divisi}</td>
-                  <td className="p-4 font-medium">{item.jenis_pekerjaan}</td>
-                  <td className="p-4">{item.karyawan}</td>
-                  <td className="p-4">{item.alamat}</td>
-                  <td className="p-4">{new Date(item.start_date).toLocaleDateString("id-ID")}</td>
-                  <td className="p-4">
+                  <td className="p-2 truncate">{item.divisi}</td>
+                  <td className="p-2 font-medium truncate">{item.jenis_pekerjaan}</td>
+                  <td className="p-2 truncate">{item.karyawan}</td>
+                  <td className="p-2 truncate">{item.alamat}</td>
+                  <td className="p-2 whitespace-nowrap">{new Date(item.start_date).toLocaleDateString("id-ID")}</td>
+                  <td className="p-2">
                     {item.problem_description ? (
                       <button
                         onClick={() => {
@@ -561,15 +561,15 @@ export default function ProjekKerjaPage() {
                           setEditDesc(false);
                           setShowDesc(true);
                         }}
-                        className="px-3 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
+                        className="px-2 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
                       >
                         <Eye size={14} />
-                        <span>Lihat</span>
+                        <span className="hidden sm:inline">Lihat</span>
                       </button>
                     ) : "-"}
                   </td>
                   {/* KOLOM BARANG */}
-                  <td className="p-4">
+                  <td className="p-2">
                     {item.barang_dibeli ? (
                       <button
                         onClick={() => {
@@ -579,34 +579,34 @@ export default function ProjekKerjaPage() {
                           setEditBarang(false);
                           setShowBarangModal(true);
                         }}
-                        className="px-3 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
+                        className="px-2 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
                       >
                         <Eye size={14} />
-                        <span>Lihat</span>
+                        <span className="hidden sm:inline">Lihat</span>
                       </button>
                     ) : "-"}
                   </td>
-                  <td className="p-4">
-                    <span className={`px-3 py-1 rounded-full text-xs border ${getStatusColor(item.status)} whitespace-normal`}>
+                  <td className="p-2">
+                    <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(item.status)} whitespace-nowrap inline-block max-w-full truncate`}>
                       {item.status}
                     </span>
                   </td>
-                  <td className="p-4">
-                    <div className="flex justify-center gap-2">
+                  <td className="p-2">
+                    <div className="flex justify-center gap-1">
                       {item.file_url && (
-                        <a href={item.file_url} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg" title="Download File">
-                          <Download size={16} />
+                        <a href={item.file_url} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-lg" title="Download File">
+                          <Download size={14} />
                         </a>
                       )}
-                      <button onClick={() => handleViewPhoto(item.id)} className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg" title="Lihat Foto">
-                        <FileText size={16} />
+                      <button onClick={() => handleViewPhoto(item.id)} className="bg-green-600 hover:bg-green-700 text-white p-1.5 rounded-lg" title="Lihat Foto">
+                        <FileText size={14} />
                       </button>
-                      <button onClick={() => openTimelineModal(item)} className="bg-purple-600 hover:bg-purple-700 text-white p-2 rounded-lg" title="Ubah Status">
-                        <Clock size={16} />
+                      <button onClick={() => openTimelineModal(item)} className="bg-purple-600 hover:bg-purple-700 text-white p-1.5 rounded-lg" title="Ubah Status">
+                        <Clock size={14} />
                       </button>
                       {(role === "super_admin" || item.divisi === divisiUser) && (
-                        <button onClick={() => handleDelete(item.id)} className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg" title="Hapus">
-                          <Trash2 size={16} />
+                        <button onClick={() => handleDelete(item.id)} className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-lg" title="Hapus">
+                          <Trash2 size={14} />
                         </button>
                       )}
                     </div>
