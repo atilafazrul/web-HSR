@@ -37,6 +37,11 @@ import FormPekerjaanPage from "./FormPekerjaanPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import TargetPage from "./TargetPage";
 
+/* BERITA ACARA */
+import BeritaAcaraPage from "./BeritaAcaraPage";
+import BAUFPage from "./berita acara/BAUFPage";
+import BASTPage from "./berita acara/BASTPage";
+
 /* INVENTORY */
 import InventoryPage from "./InventoryPage";
 import FormBarangPage from "./FormBarangPage";
@@ -567,6 +572,11 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="logistik/inventory" element={<LogistikInventoryPage />} />
             <Route path="logistik/inventory/tambah" element={<LogistikFormBarangPage />} />
             <Route path="logistik/inventory/edit/:id" element={<LogistikEditBarangPage />} />
+
+            {/* ================= BERITA ACARA ================= */}
+            <Route path="berita-acara" element={<BeritaAcaraPage />} />
+            <Route path="berita-acara/bauf" element={<BAUFPage />} />
+            <Route path="berita-acara/bast" element={<BASTPage />} />
 
             {/* ================= PROFILE ================= */}
             <Route

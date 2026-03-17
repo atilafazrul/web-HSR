@@ -16,6 +16,7 @@ use App\Http\Controllers\LogistikInventoryController;
 use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\BASTController;
 
 
 /*
@@ -378,4 +379,36 @@ Route::delete('/service-reports/{id}', [ServiceReportController::class, 'destroy
 Route::get('/service-reports/{id}/pdf', [
     ServiceReportController::class,
     'generatePDF'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| BAST PDF
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/bast/next-nomor', [
+    BASTController::class,
+    'getNextNomorSurat'
+]);
+
+Route::get('/bast/history', [
+    BASTController::class,
+    'getHistory'
+]);
+
+Route::post('/bast/pdf', [
+    BASTController::class,
+    'generatePDF'
+]);
+
+Route::get('/bast/{id}/pdf', [
+    BASTController::class,
+    'regeneratePDF'
+]);
+
+Route::delete('/bast/{id}', [
+    BASTController::class,
+    'destroy'
 ]);

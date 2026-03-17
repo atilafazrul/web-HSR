@@ -47,6 +47,11 @@ import GeneratePDFPage from "./GeneratePDFPage";
 import KaryawanPage from "./KaryawanPage";
 import TargetPage from "./TargetPage";
 
+/* BERITA ACARA */
+import BeritaAcaraPage from "./BeritaAcaraPage";
+import BAUFPage from "./berita acara/BAUFPage";
+import BASTPage from "./berita acara/BASTPage";
+
 /* PEMBELIAN PURCHASING */
 import PembelianPage from "./PembelianPage";
 
@@ -140,6 +145,11 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard user={user} windowWidth={windowWidth} />} />
             <Route path="karyawan" element={<KaryawanPage />} />
+
+            {/* BERITA ACARA */}
+            <Route path="berita-acara" element={<BeritaAcaraPage />} />
+            <Route path="berita-acara/bauf" element={<BAUFPage />} />
+            <Route path="berita-acara/bast" element={<BASTPage />} />
 
             <Route path="it">
               <Route index element={<ITPage user={user} />} />

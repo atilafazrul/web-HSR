@@ -14,6 +14,7 @@ import {
   X,
   Truck,
   ShoppingCart,
+  FileText,
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -165,6 +166,22 @@ export default function Sidebar({
                   icon={<Users size={18} />}
                   text="Karyawan"
                   active={isActive(`${basePath}/karyawan`)}
+                  expanded={expanded}
+                  isMobile={isMobile}
+                />
+              </div>
+            )}
+
+            {/* ================= BERITA ACARA (SUPER ADMIN & ADMIN) ================= */}
+            {(isSuperAdmin || isAdmin) && (
+              <div onClick={() => {
+                navigate(`${basePath}/berita-acara`);
+                if (isMobile) setSidebarOpen(false);
+              }}>
+                <SidebarItem
+                  icon={<FileText size={18} />}
+                  text="Berita Acara"
+                  active={isActive(`${basePath}/berita-acara`)}
                   expanded={expanded}
                   isMobile={isMobile}
                 />
