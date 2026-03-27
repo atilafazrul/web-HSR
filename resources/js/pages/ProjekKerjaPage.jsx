@@ -98,7 +98,7 @@ export default function ProjekKerjaPage() {
   const [newStatus, setNewStatus] = useState("");
 
   const api = axios.create({
-    baseURL: "https://mansys.hsrsystem.com//api",
+    baseURL: "https://mansys.hsrsystem.com/api",
   });
 
   useEffect(() => {
