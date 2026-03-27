@@ -85,7 +85,7 @@ export default function LogistikFormBarangPage() {
       }
 
       await axios.post(
-        "http://127.0.0.1:8000/api/logistik-inventory",
+        "https://mansys.hsrsystem.com/api/logistik-inventory",
         formData,
         {
           headers: {

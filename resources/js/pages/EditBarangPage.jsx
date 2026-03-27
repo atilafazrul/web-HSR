@@ -40,7 +40,7 @@ export default function EditBarangPage() {
       try {
 
         const res = await axios.get(
-          `http://127.0.0.1:8000/api/barang/${id}`
+          `https://mansys.hsrsystem.com/api/barang/${id}`
         );
 
         let data = null;
@@ -132,7 +132,7 @@ export default function EditBarangPage() {
       }
 
       await axios.post(
-        `http://127.0.0.1:8000/api/barang/${id}?_method=PUT`,
+        `https://mansys.hsrsystem.com/api/barang/${id}?_method=PUT`,
         formData,
         {
           headers: {

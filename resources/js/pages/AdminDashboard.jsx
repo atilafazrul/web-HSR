@@ -74,7 +74,7 @@ export default function AdminDashboard({ user, logout }) {
   const location = useLocation();
 
   const api = axios.create({
-    baseURL: "http://127.0.0.1:8000/api",
+    baseURL: "https://mansys.hsrsystem.com/api",
   });
 
   // Effect untuk mendeteksi resize window

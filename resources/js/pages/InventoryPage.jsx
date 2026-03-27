@@ -15,7 +15,7 @@ export default function InventoryPage() {
       ? "/super_admin"
       : "/admin";
 
-  const API_URL = "http://127.0.0.1:8000";
+  const API_URL = "https://mansys.hsrsystem.com/api";
 
   const [barangs, setBarangs] = useState([]);
   const [loading, setLoading] = useState(true);

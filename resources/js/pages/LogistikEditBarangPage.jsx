@@ -39,7 +39,7 @@ export default function LogistikEditBarangPage() {
       try {
 
         const res = await axios.get(
-          `http://127.0.0.1:8000/api/logistik-inventory/${id}`
+          `https://mansys.hsrsystem.com/api/logistik-inventory/${id}`
         );
 
         let data = null;
@@ -129,7 +129,7 @@ export default function LogistikEditBarangPage() {
       }
 
       await axios.post(
-        `http://127.0.0.1:8000/api/logistik-inventory/${id}?_method=PUT`,
+        `https://mansys.hsrsystem.com/api/logistik-inventory/${id}?_method=PUT`,
         formData,
         {
           headers: {
