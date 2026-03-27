@@ -17,7 +17,7 @@ export default function FotoProjekPage() {
     try {
 
       const res = await axios.get(
-        `http://127.0.0.1:8000/api/projek-kerja/${id}/photos`
+        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/photos`
       );
 
       if (res.data.success) {
@@ -37,7 +37,7 @@ export default function FotoProjekPage() {
     try {
 
       const res = await axios.get(
-        `http://127.0.0.1:8000/api/projek-kerja/${id}/files`
+        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/files`
       );
 
       if (res.data.success) {
@@ -72,7 +72,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.post(
-        `http://127.0.0.1:8000/api/projek-kerja/${id}/add-photo`,
+        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/add-photo`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -96,7 +96,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.post(
-        `http://127.0.0.1:8000/api/projek-kerja/${id}/add-file`,
+        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/add-file`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -117,7 +117,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.delete(
-        `http://127.0.0.1:8000/api/projek-kerja/photo/${photoId}`
+        `https://mansys.hsrsystem.com/api/projek-kerja/photo/${photoId}`
       );
 
       fetchPhotos();
@@ -136,7 +136,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.delete(
-        `http://127.0.0.1:8000/api/projek-kerja/file/${fileId}`
+        `https://mansys.hsrsystem.com/api/projek-kerja/file/${fileId}`
       );
 
       fetchFiles();
