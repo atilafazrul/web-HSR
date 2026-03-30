@@ -40,7 +40,7 @@ export default function EditBarangPage() {
       try {
 
         const res = await axios.get(
-          `https://mansys.hsrsystem.com/api/barang/${id}`
+          `${import.meta.env.VITE_API_URL}/barang/${id}`
         );
 
         let data = null;
@@ -132,7 +132,7 @@ export default function EditBarangPage() {
       }
 
       await axios.post(
-        `https://mansys.hsrsystem.com/api/barang/${id}?_method=PUT`,
+        `${import.meta.env.VITE_API_URL}/barang/${id}?_method=PUT`,
         formData,
         {
           headers: {
@@ -224,11 +224,10 @@ export default function EditBarangPage() {
           name="keterangan"
           value={form.keterangan}
           onChange={handleChange}
-          className={`w-full border p-3 rounded ${
-            form.keterangan === "Rusak"
-              ? "bg-red-100 text-red-600"
-              : "bg-green-100 text-green-600"
-          }`}
+          className={`w-full border p-3 rounded ${form.keterangan === "Rusak"
+            ? "bg-red-100 text-red-600"
+            : "bg-green-100 text-green-600"
+            }`}
         >
           <option value="Siap Pakai">Siap Pakai</option>
           <option value="Rusak">Rusak</option>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian, getDayName } from "../utils/dateHelpers";
 
 export const useBAST = () => {
@@ -43,7 +43,7 @@ export const useBAST = () => {
   const fetchNextNomorSurat = async () => {
     setFetchingNomor(true);
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/bast/next-nomor");
+      const response = await api.get("/bast/next-nomor");
       setNextNomorSurat(response.data.nomor_surat);
     } catch (error) {
       console.error("Error fetching nomor surat:", error);
@@ -56,7 +56,7 @@ export const useBAST = () => {
   const fetchHistory = async () => {
     setFetchingHistory(true);
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/bast/history");
+      const response = await api.get("/bast/history");
       setHistoryData(response.data.data || []);
     } catch (error) {
       console.error("Error fetching history:", error);
@@ -75,7 +75,7 @@ export const useBAST = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === "tanggal_bast") {
       setFormData(prev => ({
         ...prev,
@@ -142,8 +142,8 @@ export const useBAST = () => {
         items: formData.items
       };
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/bast/pdf",
+      const response = await api.post(
+        "/bast/pdf",
         submitData,
         {
           responseType: 'blob',
@@ -187,8 +187,8 @@ export const useBAST = () => {
   const handleGeneratePDF = async (item) => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        `http://127.0.0.1:8000/api/bast/${item.id}/pdf`,
+      const response = await api.get(
+        `/bast/${item.id}/pdf`,
         {
           responseType: 'blob',
           headers: {
@@ -218,7 +218,7 @@ export const useBAST = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Yakin ingin menghapus dokumen ini dari riwayat?")) {
       try {
-        await axios.delete(`http://127.0.0.1:8000/api/bast/${id}`);
+        await api.delete(`/bast/${id}`);
         fetchHistory();
       } catch (error) {
         console.error("Error deleting:", error);
@@ -229,7 +229,7 @@ export const useBAST = () => {
     }
   };
 
-  const filteredHistory = historyData.filter(item => 
+  const filteredHistory = historyData.filter(item =>
     item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.nama_klient?.toLowerCase().includes(searchTerm.toLowerCase())
   );

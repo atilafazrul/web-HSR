@@ -6,7 +6,7 @@ import {
   useNavigate,
   useLocation
 } from "react-router-dom";
-import axios from "axios";
+import api from "../api/axiosConfig";
 
 import {
   ListTodo,
@@ -77,10 +77,6 @@ export default function AdminDashboard({ user, logout }) {
 
   const navigate = useNavigate();
   const location = useLocation();
-
-  const api = axios.create({
-    baseURL: "https://mansys.hsrsystem.com/api",
-  });
 
   // Effect untuk mendeteksi resize window
   useEffect(() => {
@@ -338,37 +334,37 @@ export default function AdminDashboard({ user, logout }) {
                             <tr className="text-left">
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
-                                  <Building size={15} className="text-gray-400"/>
+                                  <Building size={15} className="text-gray-400" />
                                   Divisi
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
-                                  <Briefcase size={15} className="text-gray-400"/>
+                                  <Briefcase size={15} className="text-gray-400" />
                                   Tugas
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
-                                  <User size={15} className="text-gray-400"/>
+                                  <User size={15} className="text-gray-400" />
                                   Karyawan
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
-                                  <MapPin size={15} className="text-gray-400"/>
+                                  <MapPin size={15} className="text-gray-400" />
                                   Lokasi
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
-                                  <Calendar size={15} className="text-gray-400"/>
+                                  <Calendar size={15} className="text-gray-400" />
                                   Tanggal
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
-                                  <Activity size={15} className="text-gray-400"/>
+                                  <Activity size={15} className="text-gray-400" />
                                   Status
                                 </div>
                               </th>
@@ -385,13 +381,12 @@ export default function AdminDashboard({ user, logout }) {
                                   {new Date(item.start_date).toLocaleDateString("id-ID")}
                                 </td>
                                 <td className="p-4 text-left">
-                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                    item.status === "Selesai" 
-                                      ? "bg-green-100 text-green-600" 
-                                      : item.status === "Proses" 
-                                        ? "bg-yellow-100 text-yellow-600" 
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${item.status === "Selesai"
+                                      ? "bg-green-100 text-green-600"
+                                      : item.status === "Proses"
+                                        ? "bg-yellow-100 text-yellow-600"
                                         : "bg-red-100 text-red-600"
-                                  }`}>
+                                    }`}>
                                     {item.status}
                                   </span>
                                 </td>
@@ -422,13 +417,12 @@ export default function AdminDashboard({ user, logout }) {
                                 <td className="p-4 font-medium text-left">{item.jenis_pekerjaan}</td>
                                 <td className="p-4 text-left">{item.karyawan}</td>
                                 <td className="p-4 text-left">
-                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                    item.status === "Selesai" 
-                                      ? "bg-green-100 text-green-600" 
-                                      : item.status === "Proses" 
-                                        ? "bg-yellow-100 text-yellow-600" 
+                                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${item.status === "Selesai"
+                                      ? "bg-green-100 text-green-600"
+                                      : item.status === "Proses"
+                                        ? "bg-yellow-100 text-yellow-600"
                                         : "bg-red-100 text-red-600"
-                                  }`}>
+                                    }`}>
                                     {item.status}
                                   </span>
                                 </td>
@@ -452,13 +446,12 @@ export default function AdminDashboard({ user, logout }) {
                                 <span className="text-xs font-semibold text-gray-500 uppercase">{item.divisi}</span>
                                 <h4 className="font-medium text-base mt-1">{item.jenis_pekerjaan}</h4>
                               </div>
-                              <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                                item.status === "Selesai" 
-                                  ? "bg-green-100 text-green-600" 
-                                  : item.status === "Proses" 
-                                    ? "bg-yellow-100 text-yellow-600" 
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${item.status === "Selesai"
+                                  ? "bg-green-100 text-green-600"
+                                  : item.status === "Proses"
+                                    ? "bg-yellow-100 text-yellow-600"
                                     : "bg-red-100 text-red-600"
-                              }`}>
+                                }`}>
                                 {item.status}
                               </span>
                             </div>
@@ -493,11 +486,10 @@ export default function AdminDashboard({ user, logout }) {
                           <button
                             onClick={() => setPage(prev => Math.max(prev - 1, 0))}
                             disabled={page === 0}
-                            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${
-                              page === 0 
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${page === 0
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'bg-gray-200 hover:bg-gray-300'
-                            }`}
+                              }`}
                           >
                             ← Prev
                           </button>
@@ -507,11 +499,10 @@ export default function AdminDashboard({ user, logout }) {
                               startIndex + itemsPerPage < filteredAllProjek.length ? prev + 1 : prev
                             )}
                             disabled={startIndex + itemsPerPage >= filteredAllProjek.length}
-                            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${
-                              startIndex + itemsPerPage >= filteredAllProjek.length 
-                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${startIndex + itemsPerPage >= filteredAllProjek.length
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                                 : 'bg-gray-200 hover:bg-gray-300'
-                            }`}
+                              }`}
                           >
                             Next →
                           </button>
@@ -568,7 +559,7 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="logistik/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="purchasing/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="purchasing/pembelian" element={<PembelianPage />} />
-            
+
             <Route path="logistik/inventory" element={<LogistikInventoryPage />} />
             <Route path="logistik/inventory/tambah" element={<LogistikFormBarangPage />} />
             <Route path="logistik/inventory/edit/:id" element={<LogistikEditBarangPage />} />

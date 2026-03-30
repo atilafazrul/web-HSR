@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
 
-export default function Login({ setUser }) {
+export default function Login({ setUser, login, isLoading }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const divisions = ["IT", "SERVICE", "KONTRAKTOR", "SALES", "LOGISTIK", "PURCHASING"];
   const [currentDivision, setCurrentDivision] = useState(0);
@@ -35,48 +35,16 @@ export default function Login({ setUser }) {
 
     e.preventDefault();
 
-    if (loading) return;
+    if (isLoading) return;
 
-    setLoading(true);
+    const result = await login({ email, password });
 
-    try {
-
-      const response = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json"
-        },
-        body: JSON.stringify({ email, password })
-      });
-
-      const data = await response.json();
-
-      console.log("LOGIN RESPONSE:", data);
-
-      if (response.ok && data.success) {
-
-        localStorage.setItem("user", JSON.stringify(data.user));
-
-        // Kirim ke App.jsx
-        setUser(data.user);
-
-      } else {
-
-        alert(data.message || "Login gagal");
-        setPassword("");
-
-      }
-
-    } catch (error) {
-
-      console.error("Login error:", error);
-      alert("Terjadi error server");
-
-    } finally {
-
-      setLoading(false);
-
+    if (result.success) {
+      // Kirim ke App.jsx
+      setUser(result.data.user);
+    } else {
+      alert(result.error || "Login gagal");
+      setPassword("");
     }
   };
 
@@ -155,12 +123,13 @@ export default function Login({ setUser }) {
           </div>
 
 
+
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-2 rounded-lg bg-pink-600 text-white"
+            disabled={isLoading}
+            className="w-full py-2 rounded-lg bg-pink-600 text-white hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Loading..." : "LOGIN"}
+            {isLoading ? "Loading..." : "LOGIN"}
           </button>
 
         </form>

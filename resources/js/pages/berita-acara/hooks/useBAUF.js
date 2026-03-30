@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian, getDayName } from "../utils/dateHelpers";
 
 export const useBAUF = () => {
@@ -43,7 +43,7 @@ export const useBAUF = () => {
   const fetchNextNomorSurat = async () => {
     setFetchingNomor(true);
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/bauf/next-nomor");
+      const response = await api.get("/bauf/next-nomor");
       setNextNomorSurat(response.data.nomor_surat);
     } catch (error) {
       console.error("Error fetching nomor surat:", error);
@@ -56,7 +56,7 @@ export const useBAUF = () => {
   const fetchHistory = async () => {
     setFetchingHistory(true);
     try {
-      const response = await axios.get("http://127.0.0.1:8000/api/bauf/history");
+      const response = await api.get("/bauf/history");
       setHistoryData(response.data.data || []);
     } catch (error) {
       console.error("Error fetching history:", error);
@@ -140,8 +140,8 @@ export const useBAUF = () => {
         items: formData.items
       };
 
-      const response = await axios.post(
-        "http://127.0.0.1:8000/api/bauf/pdf",
+      const response = await api.post(
+        "/bauf/pdf",
         submitData,
         {
           responseType: 'blob',
@@ -185,8 +185,8 @@ export const useBAUF = () => {
   const handleGeneratePDF = async (item) => {
     setLoading(true);
     try {
-      const response = await axios.get(
-        'http://127.0.0.1:8000/api/bauf/' + item.id + '/pdf',
+      const response = await api.get(
+        `/bauf/${item.id}/pdf`,
         {
           responseType: 'blob',
           headers: {
@@ -216,7 +216,7 @@ export const useBAUF = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Yakin ingin menghapus dokumen ini dari riwayat?")) {
       try {
-        await axios.delete('http://127.0.0.1:8000/api/bauf/' + id);
+        await api.delete(`/bauf/${id}`);
         fetchHistory();
       } catch (error) {
         console.error("Error deleting:", error);
@@ -227,7 +227,7 @@ export const useBAUF = () => {
     }
   };
 
-  const filteredHistory = historyData.filter(item => 
+  const filteredHistory = historyData.filter(item =>
     item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.nama_klient?.toLowerCase().includes(searchTerm.toLowerCase())
   );

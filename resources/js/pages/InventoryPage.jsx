@@ -15,7 +15,7 @@ export default function InventoryPage() {
       ? "/super_admin"
       : "/admin";
 
-  const API_URL = "https://mansys.hsrsystem.com/api";
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const [barangs, setBarangs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -182,11 +182,10 @@ export default function InventoryPage() {
                   <td className="p-3">{b.stok}</td>
                   <td className="p-3">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        b.keterangan === "Rusak"
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${b.keterangan === "Rusak"
                           ? "bg-red-100 text-red-600"
                           : "bg-green-100 text-green-600"
-                      }`}
+                        }`}
                     >
                       {b.keterangan || "Siap Pakai"}
                     </span>
@@ -244,11 +243,10 @@ export default function InventoryPage() {
                   <h3 className="font-medium text-base mt-1">{b.nama_barang}</h3>
                 </div>
                 <span
-                  className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    b.keterangan === "Rusak"
+                  className={`px-3 py-1 rounded-full text-xs font-semibold ${b.keterangan === "Rusak"
                       ? "bg-red-100 text-red-600"
                       : "bg-green-100 text-green-600"
-                  }`}
+                    }`}
                 >
                   {b.keterangan || "Siap Pakai"}
                 </span>

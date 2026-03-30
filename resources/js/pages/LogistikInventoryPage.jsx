@@ -15,7 +15,7 @@ export default function LogistikInventoryPage() {
       ? "/super_admin"
       : "/admin";
 
-  const API_URL = "https://mansys.hsrsystem.com/api/logistik-inventory";
+  const API_URL = import.meta.env.VITE_API_URL;
 
   const [barangs, setBarangs] = useState([]);
   const [loading, setLoading] = useState(true);

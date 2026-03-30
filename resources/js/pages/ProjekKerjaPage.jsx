@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../api/axiosConfig";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Download,
@@ -22,7 +22,7 @@ export default function ProjekKerjaPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
   const role = user?.role;
   const divisiUser = user?.divisi;
 
@@ -96,10 +96,6 @@ export default function ProjekKerjaPage() {
   const [showTimelineModal, setShowTimelineModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [newStatus, setNewStatus] = useState("");
-
-  const api = axios.create({
-    baseURL: "https://mansys.hsrsystem.com/api",
-  });
 
   useEffect(() => {
     fetchData();

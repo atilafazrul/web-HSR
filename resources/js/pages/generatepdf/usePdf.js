@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import api from "../../api/axiosConfig";
 
 export const usePdf = (user, currentDivisi = "IT") => {
   const [activeTab, setActiveTab] = useState("form");
@@ -141,8 +142,8 @@ export const usePdf = (user, currentDivisi = "IT") => {
       }
       // Untuk role lain (it/service/sales/kontraktor), backend otomatis filter by user_id
 
-      const response = await fetch(`/api/service-reports?${params.toString()}`);
-      const result = await response.json();
+      const response = await api.get(`/service-reports?${params.toString()}`);
+      const result = response.data;
 
       if (result.success) {
         // Map backend data to frontend format
@@ -236,18 +237,11 @@ export const usePdf = (user, currentDivisi = "IT") => {
         user_id: user?.id,
       };
 
-      const response = await fetch("/api/service-reports", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify(submitData)
-      });
+      const response = await api.post("/service-reports", submitData);
 
-      const result = await response.json();
+      const result = response.data;
 
-      if (response.ok && result.success) {
+      if (response.status === 200 || response.status === 201) {
         alert("Dokumen berhasil disimpan!");
         resetForm();
         setActiveTab("history");
@@ -286,13 +280,13 @@ export const usePdf = (user, currentDivisi = "IT") => {
       if (user?.id) params.append('user_id', user.id);
       if (user?.role) params.append('user_role', user.role);
 
-      const response = await fetch(`/api/service-reports/${item.id}/pdf?${params.toString()}`, {
-        method: 'GET',
+      const response = await api.get(`/service-reports/${item.id}/pdf?${params.toString()}`, {
+        responseType: 'blob'
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         // Download the PDF file
-        const blob = await response.blob();
+        const blob = response.data;
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;

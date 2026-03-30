@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "../api/axiosConfig";
 
 export default function FotoProjekPage() {
 
@@ -17,7 +17,7 @@ export default function FotoProjekPage() {
     try {
 
       const res = await axios.get(
-        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/photos`
+        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/photos`
       );
 
       if (res.data.success) {
@@ -37,7 +37,7 @@ export default function FotoProjekPage() {
     try {
 
       const res = await axios.get(
-        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/files`
+        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/files`
       );
 
       if (res.data.success) {
@@ -72,7 +72,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.post(
-        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/add-photo`,
+        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-photo`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -96,7 +96,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.post(
-        `https://mansys.hsrsystem.com/api/projek-kerja/${id}/add-file`,
+        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-file`,
         formData,
         { headers: { "Content-Type": "multipart/form-data" } }
       );
@@ -117,7 +117,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.delete(
-        `https://mansys.hsrsystem.com/api/projek-kerja/photo/${photoId}`
+        `${import.meta.env.VITE_API_URL}/projek-kerja/photo/${photoId}`
       );
 
       fetchPhotos();
@@ -136,7 +136,7 @@ export default function FotoProjekPage() {
     try {
 
       await axios.delete(
-        `https://mansys.hsrsystem.com/api/projek-kerja/file/${fileId}`
+        `${import.meta.env.VITE_API_URL}/projek-kerja/file/${fileId}`
       );
 
       fetchFiles();

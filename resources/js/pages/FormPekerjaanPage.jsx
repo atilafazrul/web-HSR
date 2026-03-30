@@ -50,7 +50,7 @@ export default function FormPekerjaanPage() {
     try {
 
       const res = await axios.post(
-        "https://mansys.hsrsystem.com/api/form-pekerjaan/pdf",
+        `${import.meta.env.VITE_API_URL}/form-pekerjaan/pdf`,
         form,
         {
           responseType: "blob"

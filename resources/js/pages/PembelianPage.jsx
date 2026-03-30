@@ -32,7 +32,7 @@ export default function PembelianPage() {
 
   const fetchPembelian = async () => {
     try {
-      const res = await axios.get("https://mansys.hsrsystem.com/api/pembelian");
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/pembelian`);
       setDataList(res.data.data);
     } catch (error) {
       console.error("Gagal load pembelian:", error);
@@ -71,7 +71,7 @@ export default function PembelianPage() {
         formData.append("foto", form.foto);
       }
 
-      await axios.post("https://mansys.hsrsystem.com/api/pembelian", formData, {
+      await axios.post(`${import.meta.env.VITE_API_URL}/pembelian`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -108,7 +108,7 @@ export default function PembelianPage() {
       formData.append("harga", itemToUpdate.harga);
       formData.append("status", newStatus);
 
-      await axios.post(`https://mansys.hsrsystem.com/api/pembelian/${id}`, formData);
+      await axios.post(`${import.meta.env.VITE_API_URL}/pembelian/${id}`, formData);
 
       setDataList((prev) =>
         prev.map((item) =>
@@ -126,7 +126,7 @@ export default function PembelianPage() {
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      await axios.delete(`https://mansys.hsrsystem.com/api/pembelian/${id}`, {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/pembelian/${id}`, {
         headers: {
           role: user?.role
         }
@@ -213,8 +213,8 @@ export default function PembelianPage() {
                         value={item.status}
                         onChange={(e) => handleStatusChange(item.id, e.target.value)}
                         className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border outline-none ${item.status === "Diterima"
-                            ? "bg-green-100 text-green-700 border-green-200"
-                            : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                          ? "bg-green-100 text-green-700 border-green-200"
+                          : "bg-yellow-100 text-yellow-700 border-yellow-200"
                           }`}
                       >
                         <option value="Proses">Proses</option>
@@ -226,7 +226,7 @@ export default function PembelianPage() {
                         {item.foto ? (
                           <button
                             onClick={() => {
-                              setSelectedPhoto(`https://mansys.hsrsystem.com/${item.foto}`);
+                              setSelectedPhoto(`${import.meta.env.VITE_API_URL}/${item.foto}`);
                               setShowPhotoModal(true);
                             }}
                             className="bg-blue-100 hover:bg-blue-200 text-blue-600 p-1.5 sm:p-2 rounded-lg transition"

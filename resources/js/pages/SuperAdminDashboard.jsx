@@ -25,7 +25,7 @@ import {
   Settings
 } from "lucide-react";
 
-import axios from "axios";
+import axios from "../api/axiosConfig";
 
 /* PAGES */
 import Profile from "./Profile.jsx";
@@ -77,7 +77,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     };
 
     window.addEventListener('resize', handleResize);
-    
+
     // Panggil sekali untuk set initial width
     handleResize();
 
@@ -127,9 +127,8 @@ export default function SuperAdminDashboard({ user, logout }) {
       />
 
       <main
-        className={`flex-1 flex flex-col transition-all duration-300 w-full ${
-          sidebarExpanded ? "lg:ml-72" : "lg:ml-20"
-        }`}
+        className={`flex-1 flex flex-col transition-all duration-300 w-full ${sidebarExpanded ? "lg:ml-72" : "lg:ml-20"
+          }`}
       >
         <Header
           user={user}
@@ -245,7 +244,7 @@ const Dashboard = ({ user, windowWidth }) => {
   const loadData = async () => {
     try {
       const res = await axios.get(
-        "https://mansys.hsrsystem.com/api/projek-kerja"
+        `${import.meta.env.VITE_API_URL}/projek-kerja`
       );
 
       let data = res.data?.data || res.data || [];
@@ -272,7 +271,7 @@ const Dashboard = ({ user, windowWidth }) => {
 
     try {
       await axios.delete(
-        `https://mansys.hsrsystem.com/api/projek-kerja/${id}`
+        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}`
       );
       setProjek(prev => prev.filter(p => p.id !== id));
     } catch {
@@ -284,7 +283,7 @@ const Dashboard = ({ user, windowWidth }) => {
   const handleUpdateDesc = async () => {
     try {
       await axios.patch(
-        `https://mansys.hsrsystem.com/api/projek-kerja/${selectedId}/deskripsi`,
+        `${import.meta.env.VITE_API_URL}/projek-kerja/${selectedId}/deskripsi`,
         {
           problem_description: descText
         }
@@ -469,49 +468,49 @@ const Dashboard = ({ user, windowWidth }) => {
                 <tr className="text-left">
                   <th className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 opacity-80">
-                      <Building size={15} className="text-gray-400"/>
+                      <Building size={15} className="text-gray-400" />
                       Divisi
                     </div>
                   </th>
                   <th className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 opacity-80">
-                      <Briefcase size={15} className="text-gray-400"/>
+                      <Briefcase size={15} className="text-gray-400" />
                       Tugas
                     </div>
                   </th>
                   <th className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 opacity-80">
-                      <User size={15} className="text-gray-400"/>
+                      <User size={15} className="text-gray-400" />
                       Karyawan
                     </div>
                   </th>
                   <th className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 opacity-80">
-                      <MapPin size={15} className="text-gray-400"/>
+                      <MapPin size={15} className="text-gray-400" />
                       Lokasi
                     </div>
                   </th>
                   <th className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 opacity-80">
-                      <Calendar size={15} className="text-gray-400"/>
+                      <Calendar size={15} className="text-gray-400" />
                       Tanggal
                     </div>
                   </th>
                   <th className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 opacity-80">
-                      <FileText size={15} className="text-gray-400"/>
+                      <FileText size={15} className="text-gray-400" />
                       Deskripsi
                     </div>
                   </th>
                   <th className="p-3 lg:p-4">
                     <div className="flex items-center gap-2 opacity-80">
-                      <Activity size={15} className="text-gray-400"/>
+                      <Activity size={15} className="text-gray-400" />
                       Status
                     </div>
                   </th>
                   <th className="p-3 lg:p-4 text-center">
                     <div className="flex items-center justify-center gap-2 opacity-80">
-                      <Settings size={15} className="text-gray-400"/>
+                      <Settings size={15} className="text-gray-400" />
                       Aksi
                     </div>
                   </th>
@@ -528,7 +527,7 @@ const Dashboard = ({ user, windowWidth }) => {
                       {new Date(item.start_date).toLocaleDateString("id-ID")}
                     </td>
                     <td className="p-3 lg:p-4 text-left">
-                      <button 
+                      <button
                         onClick={() => {
                           setSelectedId(item.id);
                           setDescText(item.problem_description || "");
@@ -537,18 +536,17 @@ const Dashboard = ({ user, windowWidth }) => {
                         }}
                         className="px-2 lg:px-3 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100 transition"
                       >
-                        <Eye size={14}/>
+                        <Eye size={14} />
                         <span>Lihat</span>
                       </button>
                     </td>
                     <td className="p-3 lg:p-4 text-left">
-                      <span className={`px-2 lg:px-3 py-1 rounded-full text-xs font-semibold ${
-                        item.status === "Selesai" 
-                          ? "bg-green-100 text-green-600" 
-                          : item.status === "Proses" 
-                            ? "bg-yellow-100 text-yellow-600" 
-                            : "bg-red-100 text-red-600"
-                      }`}>
+                      <span className={`px-2 lg:px-3 py-1 rounded-full text-xs font-semibold ${item.status === "Selesai"
+                        ? "bg-green-100 text-green-600"
+                        : item.status === "Proses"
+                          ? "bg-yellow-100 text-yellow-600"
+                          : "bg-red-100 text-red-600"
+                        }`}>
                         {item.status}
                       </span>
                     </td>
@@ -557,13 +555,13 @@ const Dashboard = ({ user, windowWidth }) => {
                         {/* DOWNLOAD - HANYA TAMPIL DI DESKTOP JIKA ADA FILE_URL */}
                         {item.file_url && (
                           <a
-                            href={item.file_url} 
+                            href={item.file_url}
                             target="_blank"
                             rel="noreferrer"
                             className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm transition"
                             title="Download"
                           >
-                            <Download size={16}/>
+                            <Download size={16} />
                           </a>
                         )}
                         {/* FOTO PROJEK - HANYA ICON, TANPA TEKS */}
@@ -572,15 +570,15 @@ const Dashboard = ({ user, windowWidth }) => {
                           className="bg-green-600 hover:bg-green-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm transition"
                           title="Foto Projek"
                         >
-                          <FileText size={16}/>
+                          <FileText size={16} />
                         </button>
                         {/* DELETE - HANYA ICON, TANPA TEKS */}
                         <button
-                          onClick={() => handleDelete(item.id)} 
+                          onClick={() => handleDelete(item.id)}
                           className="bg-red-600 hover:bg-red-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm transition"
                           title="Hapus"
                         >
-                          <Trash2 size={16}/>
+                          <Trash2 size={16} />
                         </button>
                       </div>
                     </td>
@@ -601,13 +599,12 @@ const Dashboard = ({ user, windowWidth }) => {
                     <span className="text-xs font-semibold text-gray-500 uppercase">{item.divisi}</span>
                     <h4 className="font-medium text-sm sm:text-base mt-1">{item.jenis_pekerjaan}</h4>
                   </div>
-                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                    item.status === "Selesai" 
-                      ? "bg-green-100 text-green-600" 
-                      : item.status === "Proses" 
-                        ? "bg-yellow-100 text-yellow-600" 
-                        : "bg-red-100 text-red-600"
-                  }`}>
+                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${item.status === "Selesai"
+                    ? "bg-green-100 text-green-600"
+                    : item.status === "Proses"
+                      ? "bg-yellow-100 text-yellow-600"
+                      : "bg-red-100 text-red-600"
+                    }`}>
                     {item.status}
                   </span>
                 </div>
@@ -702,11 +699,10 @@ const Dashboard = ({ user, windowWidth }) => {
             <button
               onClick={() => setPage(prev => Math.max(prev - 1, 0))}
               disabled={page === 0}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${
-                page === 0 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-gray-200 hover:bg-gray-300'
-              }`}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${page === 0
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-200 hover:bg-gray-300'
+                }`}
             >
               ← Prev
             </button>
@@ -716,11 +712,10 @@ const Dashboard = ({ user, windowWidth }) => {
                 startIndex + itemsPerPage < filteredProjek.length ? prev + 1 : prev
               )}
               disabled={startIndex + itemsPerPage >= filteredProjek.length}
-              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${
-                startIndex + itemsPerPage >= filteredProjek.length 
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                  : 'bg-gray-200 hover:bg-gray-300'
-              }`}
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition ${startIndex + itemsPerPage >= filteredProjek.length
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'bg-gray-200 hover:bg-gray-300'
+                }`}
             >
               Next →
             </button>

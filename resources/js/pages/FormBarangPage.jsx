@@ -87,7 +87,7 @@ export default function TambahBarangPage() {
       }
 
       await axios.post(
-        "https://mansys.hsrsystem.com/api/barang",
+        `${import.meta.env.VITE_API_URL}/barang`,
         formData,
         {
           headers: {

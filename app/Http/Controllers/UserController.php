@@ -13,14 +13,14 @@ class UserController extends Controller
     // ================= LIST =================
     public function index()
     {
-        $users = User::where('role','!=','super_admin')->get();
-        
+        $users = User::where('role', '!=', 'super_admin')->get();
+
         $users->transform(function ($user) {
             $user->ijazah = $this->cleanArray($user->ijazah);
             $user->sertifikat = $this->cleanArray($user->sertifikat);
             return $user;
         });
-        
+
         return response()->json($users);
     }
 
@@ -28,10 +28,10 @@ class UserController extends Controller
     public function show($id)
     {
         $user = User::findOrFail($id);
-        
+
         $user->ijazah = $this->cleanArray($user->ijazah);
         $user->sertifikat = $this->cleanArray($user->sertifikat);
-        
+
         return response()->json($user);
     }
 
@@ -39,14 +39,15 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'=>'required|string|max:255',
-            'email'=>'required|email|unique:users',
-            'role'=>'required|string',
-            'divisi'=>'nullable|string',
-            'password'=>'required|min:6'
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users',
+            'role' => 'required|string',
+            'divisi' => 'nullable|string',
+            'password' => 'required|min:6'
         ]);
 
-        $validated['password'] = Hash::make($validated['password']);
+        // 🔥 JANGAN HASH MANUAL – cast 'hashed' akan menangani
+        // $validated['password'] = Hash::make($validated['password']);
 
         return response()->json(User::create($validated));
     }
@@ -80,11 +81,14 @@ class UserController extends Controller
             'kontak_darurat_telepon' => 'nullable|string|max:20',
             'kontak_darurat_alamat' => 'nullable|string',
 
+            // Password opsional
+            'password' => 'nullable|string|min:6',
+
             // Single files
             'ktp' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'kk' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'akte' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
-            
+
             // Multiple files (array)
             'ijazah.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
             'sertifikat.*' => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
@@ -93,6 +97,13 @@ class UserController extends Controller
         // 🔥 HAPUS ijazah dan sertifikat dari validated
         unset($validated['ijazah']);
         unset($validated['sertifikat']);
+
+        // 🔥 JANGAN HASH MANUAL – biarkan cast 'hashed' yang meng-hash
+        if ($request->filled('password')) {
+            $validated['password'] = $request->password; // plain text
+        } else {
+            unset($validated['password']);
+        }
 
         // sync phone
         if ($request->has('no_telepon') && !$request->has('phone')) {
@@ -112,9 +123,9 @@ class UserController extends Controller
                 $encrypted = Crypt::encrypt($content);
                 $filename = $prefix . '_' . time() . '_' . uniqid() . '.enc';
                 $path = 'secure/' . $filename;
-                
+
                 Storage::disk('public')->put($path, $encrypted);
-                
+
                 return $path;
             } catch (\Exception $e) {
                 \Log::error('Error encrypt file: ' . $e->getMessage());
@@ -148,7 +159,7 @@ class UserController extends Controller
         if ($request->hasFile('ijazah')) {
             $existingIjazah = [];
             $rawIjazah = $user->getOriginal('ijazah');
-            
+
             if (!empty($rawIjazah)) {
                 if (is_string($rawIjazah)) {
                     $existingIjazah = json_decode($rawIjazah, true) ?: [];
@@ -156,19 +167,19 @@ class UserController extends Controller
                     $existingIjazah = $rawIjazah;
                 }
             }
-            
-            $existingIjazah = array_filter($existingIjazah, function($item) {
+
+            $existingIjazah = array_filter($existingIjazah, function ($item) {
                 return is_string($item) && !empty($item);
             });
             $existingIjazah = array_values($existingIjazah);
-            
+
             foreach ($request->file('ijazah') as $file) {
                 $encryptedPath = $saveEncrypted($file, 'ijazah');
                 if ($encryptedPath) {
                     $existingIjazah[] = $encryptedPath;
                 }
             }
-            
+
             $user->ijazah = $existingIjazah;
         }
 
@@ -176,7 +187,7 @@ class UserController extends Controller
         if ($request->hasFile('sertifikat')) {
             $existingSertifikat = [];
             $rawSertifikat = $user->getOriginal('sertifikat');
-            
+
             if (!empty($rawSertifikat)) {
                 if (is_string($rawSertifikat)) {
                     $existingSertifikat = json_decode($rawSertifikat, true) ?: [];
@@ -184,19 +195,19 @@ class UserController extends Controller
                     $existingSertifikat = $rawSertifikat;
                 }
             }
-            
-            $existingSertifikat = array_filter($existingSertifikat, function($item) {
+
+            $existingSertifikat = array_filter($existingSertifikat, function ($item) {
                 return is_string($item) && !empty($item);
             });
             $existingSertifikat = array_values($existingSertifikat);
-            
+
             foreach ($request->file('sertifikat') as $file) {
                 $encryptedPath = $saveEncrypted($file, 'sertifikat');
                 if ($encryptedPath) {
                     $existingSertifikat[] = $encryptedPath;
                 }
             }
-            
+
             $user->sertifikat = $existingSertifikat;
         }
 
@@ -230,7 +241,7 @@ class UserController extends Controller
 
             $files = [];
             $rawData = $user->getOriginal($type);
-            
+
             if (!empty($rawData)) {
                 if (is_string($rawData)) {
                     $files = json_decode($rawData, true) ?: [];
@@ -238,12 +249,12 @@ class UserController extends Controller
                     $files = $rawData;
                 }
             }
-            
-            $files = array_filter($files, function($item) {
+
+            $files = array_filter($files, function ($item) {
                 return is_string($item) && !empty($item);
             });
             $files = array_values($files);
-            
+
             if (!isset($files[$index])) {
                 return response()->json([
                     'success' => false,
@@ -282,18 +293,18 @@ class UserController extends Controller
         if (is_string($data)) {
             $data = json_decode($data, true) ?: [];
         }
-        
+
         if (!is_array($data)) {
             return [];
         }
-        
+
         $result = [];
         foreach ($data as $item) {
             if (is_string($item) && !empty($item)) {
                 $result[] = $item;
             }
         }
-        
+
         return array_values($result);
     }
 
@@ -317,13 +328,13 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $index = $request->query('index', 0);
-        
+
         $ijazahFiles = $this->cleanArray($user->ijazah);
-        
+
         if (!isset($ijazahFiles[$index])) {
             return response()->json(['message' => 'File Ijazah tidak ditemukan'], 404);
         }
-        
+
         return $this->decryptFileByPath($ijazahFiles[$index], 'ijazah_' . ($index + 1), $request);
     }
 
@@ -331,13 +342,13 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $index = $request->query('index', 0);
-        
+
         $sertifikatFiles = $this->cleanArray($user->sertifikat);
-        
+
         if (!isset($sertifikatFiles[$index])) {
             return response()->json(['message' => 'File Sertifikat tidak ditemukan'], 404);
         }
-        
+
         return $this->decryptFileByPath($sertifikatFiles[$index], 'sertifikat_' . ($index + 1), $request);
     }
 
@@ -363,28 +374,28 @@ class UserController extends Controller
             if (!is_string($path)) {
                 return response()->json(['message' => 'Path file tidak valid'], 400);
             }
-            
+
             $encrypted = Storage::disk('public')->get($path);
             $decrypted = Crypt::decrypt($encrypted);
-            
+
             $finfo = finfo_open();
             $mime = finfo_buffer($finfo, $decrypted, FILEINFO_MIME_TYPE);
             finfo_close($finfo);
-            
+
             $extension = match ($mime) {
                 'image/jpeg' => 'jpg',
                 'image/png' => 'png',
                 'application/pdf' => 'pdf',
                 default => 'bin',
             };
-            
+
             $isDownload = $request->query('download', false);
             $disposition = $isDownload ? 'attachment' : 'inline';
-            
+
             return response($decrypted)
                 ->header('Content-Type', $mime)
-                ->header('Content-Disposition', $disposition . '; filename="'.$name.'.'.$extension.'"');
-                
+                ->header('Content-Disposition', $disposition . '; filename="' . $name . '.' . $extension . '"');
+
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Gagal decrypt file: ' . $e->getMessage()
@@ -396,9 +407,9 @@ class UserController extends Controller
     public function destroy($id)
     {
         $user = User::findOrFail($id);
-        
+
         $fields = ['ktp', 'kk', 'akte', 'ijazah', 'sertifikat'];
-        
+
         foreach ($fields as $field) {
             if (in_array($field, ['ijazah', 'sertifikat'])) {
                 $files = $this->cleanArray($user->$field);
@@ -413,12 +424,12 @@ class UserController extends Controller
                 }
             }
         }
-        
+
         $user->delete();
 
         return response()->json([
-            'success'=>true,
-            'message'=>'Karyawan berhasil dihapus'
+            'success' => true,
+            'message' => 'Karyawan berhasil dihapus'
         ]);
     }
 }

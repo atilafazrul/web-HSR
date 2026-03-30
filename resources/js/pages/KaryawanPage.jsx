@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import api from "../api/axiosConfig";
 import {
   Eye,
   Pencil,
@@ -51,13 +51,13 @@ export default function KaryawanPage() {
 
   // State untuk file upload hanya untuk create dan edit photo
   const [filePhoto, setFilePhoto] = useState(null);
-  
+
   // State untuk accordion di modal edit
   const [expandedSectionsEdit, setExpandedSectionsEdit] = useState({
     personal: true,
     emergency: false
   });
-  
+
   // State untuk accordion di modal detail
   const [expandedSectionsDetail, setExpandedSectionsDetail] = useState({
     personal: true,
@@ -72,7 +72,7 @@ export default function KaryawanPage() {
   const fetchData = async () => {
     try {
       setError(null);
-      const res = await axios.get("/api/karyawan");
+      const res = await api.get("/karyawan");
       setEmployees(res.data.data || res.data || []);
     } catch (err) {
       console.error(err);
@@ -103,7 +103,7 @@ export default function KaryawanPage() {
     window.open(url, '_blank');
   };
 
-  const handleUpdate = async () => {
+  const handleUpdate = async (newPassword = null) => {
     try {
       setSaving(true);
       setError(null);
@@ -123,14 +123,17 @@ export default function KaryawanPage() {
       // Only update photo if new one is selected
       if (filePhoto) formData.append("profile_photo", filePhoto);
 
-      await axios.post(`/api/karyawan/${editData.id}?_method=PUT`, formData, {
+      // Jika password baru diisi, tambahkan ke formData
+      if (newPassword) formData.append("password", newPassword);
+
+      await api.post(`/karyawan/${editData.id}?_method=PUT`, formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
 
       alert("Data berhasil disimpan ✅");
       resetEditState();
       fetchData();
-      
+
     } catch (err) {
       console.error("Error response:", err.response?.data);
       if (err.response?.data?.errors) {
@@ -165,7 +168,7 @@ export default function KaryawanPage() {
         return;
       }
 
-      await axios.post("/api/karyawan", {
+      await api.post("/karyawan", {
         ...createData,
         role: "admin"
       });
@@ -191,7 +194,7 @@ export default function KaryawanPage() {
   const handleDelete = async (id) => {
     if (!window.confirm("Yakin ingin menghapus karyawan ini?")) return;
     try {
-      await axios.delete(`/api/karyawan/${id}`);
+      await api.delete(`/karyawan/${id}`);
       alert("Karyawan berhasil dihapus ✅");
       fetchData();
     } catch (err) {
@@ -281,20 +284,20 @@ export default function KaryawanPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <StatCard 
-            title="Total Karyawan" 
-            value={employees.length} 
+          <StatCard
+            title="Total Karyawan"
+            value={employees.length}
             icon={<Users size={20} />}
             color="purple"
           />
-          <StatCard 
-            title="Divisi Aktif" 
-            value={new Set(employees.map(e => e.divisi).filter(Boolean)).size} 
+          <StatCard
+            title="Divisi Aktif"
+            value={new Set(employees.map(e => e.divisi).filter(Boolean)).size}
             icon={<Building2 size={20} />}
             color="blue"
           />
-          <StatCard 
-            title="Dokumen Terupload" 
+          <StatCard
+            title="Dokumen Terupload"
             value={employees.reduce((total, emp) => {
               let count = 0;
               if (emp.ktp) count++;
@@ -303,7 +306,7 @@ export default function KaryawanPage() {
               if (emp.ijazah) count += emp.ijazah.length;
               if (emp.sertifikat) count += emp.sertifikat.length;
               return total + count;
-            }, 0)} 
+            }, 0)}
             icon={<FileText size={20} />}
             color="green"
           />
@@ -341,9 +344,9 @@ export default function KaryawanPage() {
       {/* Modal Detail - Dengan Accordion yang Rapi */}
       {selected && (
         <Modal onClose={() => setSelected(null)} title="Detail Karyawan" size="large">
-          <EmployeeDetailModal 
-            employee={selected} 
-            previewFile={previewFile} 
+          <EmployeeDetailModal
+            employee={selected}
+            previewFile={previewFile}
             expandedSections={expandedSectionsDetail}
             toggleSection={toggleSectionDetail}
           />
@@ -354,6 +357,7 @@ export default function KaryawanPage() {
       {editData && (
         <Modal onClose={resetEditState} title="Edit Data Karyawan" size="large">
           <EditEmployeeForm
+            key={editData.id} // Tambahkan key agar state ter-reset
             editData={editData}
             setEditData={setEditData}
             filePhoto={filePhoto}
@@ -390,7 +394,7 @@ const StatCard = ({ title, value, icon, color }) => {
     blue: "bg-blue-50 text-blue-600",
     green: "bg-green-50 text-green-600"
   };
-  
+
   return (
     <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
       <div className="flex items-center justify-between">
@@ -434,7 +438,7 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
         <h4 className="font-bold text-gray-800 text-lg truncate">{employee.name}</h4>
         <p className="text-purple-600 text-sm font-medium mt-1">{employee.divisi || "-"}</p>
         <p className="text-gray-400 text-xs mt-1 truncate">{employee.email}</p>
-        
+
         <div className="flex justify-center gap-2 mt-4">
           <ActionButton icon={<Eye size={16} />} onClick={onView} color="blue" tooltip="Lihat Detail" />
           <ActionButton icon={<Pencil size={16} />} onClick={onEdit} color="purple" tooltip="Edit" />
@@ -634,7 +638,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
   );
 };
 
-// ================= EDIT FORM =================
+// ================= EDIT FORM (DENGAN PASSWORD) =================
 const EditEmployeeForm = ({
   editData,
   setEditData,
@@ -646,6 +650,8 @@ const EditEmployeeForm = ({
   expandedSections,
   toggleSection
 }) => {
+  const [newPassword, setNewPassword] = useState("");
+
   const personalFields = [
     { label: "Nama Lengkap", key: "name", type: "text", required: true },
     { label: "NIK", key: "nik", type: "text" },
@@ -682,7 +688,7 @@ const EditEmployeeForm = ({
         <div className="flex items-center gap-4">
           <img
             src={
-              filePhoto 
+              filePhoto
                 ? URL.createObjectURL(filePhoto)
                 : editData.profile_photo
                   ? `/storage/${editData.profile_photo}`
@@ -723,6 +729,19 @@ const EditEmployeeForm = ({
               />
             </div>
           ))}
+          {/* Field Password Baru */}
+          <div className="md:col-span-2">
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              Password Baru <span className="text-gray-400">(kosongkan jika tidak diubah)</span>
+            </label>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="Masukkan password baru"
+              className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 outline-none"
+            />
+          </div>
         </div>
       </AccordionSection>
 
@@ -757,7 +776,7 @@ const EditEmployeeForm = ({
       {/* Action Buttons */}
       <div className="flex gap-3 pt-4 border-t mt-4">
         <button
-          onClick={handleUpdate}
+          onClick={() => handleUpdate(newPassword)}
           disabled={saving}
           className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-purple-600 hover:to-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
         >
@@ -890,7 +909,7 @@ const FormField = ({ label, value, onChange, type = "text", options, required, p
       </div>
     );
   }
-  
+
   if (type === "textarea") {
     return (
       <div>
@@ -907,7 +926,7 @@ const FormField = ({ label, value, onChange, type = "text", options, required, p
       </div>
     );
   }
-  
+
   return (
     <div>
       <label className="block text-xs font-medium text-gray-500 mb-1">
@@ -955,7 +974,7 @@ const DocumentCard = ({ label, filename, icon, onPreview }) => (
         <p className="text-[10px] text-gray-400 truncate group-hover:text-gray-500 transition-colors">{filename}</p>
       </div>
     </div>
-    
+
     {/* Tombol View - Hanya muncul saat hover */}
     <button
       onClick={onPreview}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import api from "../api/axiosConfig";
 import {
   User,
   Mail,
@@ -75,8 +76,8 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     const fetchProfile = async () => {
       if (!user?.id) return;
       try {
-        const res = await fetch(`/api/profile?user_id=${user.id}`);
-        const data = await res.json();
+        const res = await api.get(`/profile?user_id=${user.id}`);
+        const data = res.data;
         if (data.success) {
           const newData = {
             name: data.user.name || "",
@@ -144,16 +145,12 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   const handleDeleteExistingFile = async (type, index) => {
     if (!confirm("Yakin mau hapus file ini?")) return;
     try {
-      const res = await fetch(`/api/karyawan/${user.id}/delete-file`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type, index })
-      });
-      const data = await res.json();
+      const res = await api.post(`/karyawan/${user.id}/delete-file`, { type, index });
+      const data = res.data;
       if (data.success) {
         setSuccess("File berhasil dihapus ✅");
-        const refresh = await fetch(`/api/profile?user_id=${user.id}`);
-        const result = await refresh.json();
+        const refresh = await api.get(`/profile?user_id=${user.id}`);
+        const result = refresh.data;
         if (result.success) {
           setProfileData({
             name: result.user.name || "",
@@ -204,12 +201,12 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       ijazahFiles.forEach((file, idx) => formDataToSend.append(`ijazah[${idx}]`, file));
       sertifikatFiles.forEach((file, idx) => formDataToSend.append(`sertifikat[${idx}]`, file));
 
-      const res = await fetch(`/api/karyawan/${user.id}`, { method: "POST", body: formDataToSend });
-      const data = await res.json();
+      const res = await api.post(`/karyawan/${user.id}`, formDataToSend);
+      const data = res.data;
 
-      if (res.ok && data.success) {
-        const verify = await fetch(`/api/profile?user_id=${user.id}`);
-        const verifyData = await verify.json();
+      if (res.status === 200 && data.success) {
+        const verify = await api.get(`/profile?user_id=${user.id}`);
+        const verifyData = verify.data;
         if (verifyData.success) {
           const verified = {
             name: verifyData.user.name || "",
@@ -254,9 +251,9 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       const fd = new FormData();
       fd.append("user_id", user.id);
       fd.append("photo", file);
-      const res = await fetch("/api/profile/photo", { method: "POST", body: fd });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const res = await api.post("/profile/photo", fd);
+      const data = res.data;
+      if (res.status === 200 && data.success) {
         setProfileData(prev => ({ ...prev, profile_photo: data.profile_photo }));
         if (onProfileUpdate) onProfileUpdate({ ...user, profile_photo: data.profile_photo });
         setSuccess("Foto diupdate! 📸");
@@ -275,13 +272,9 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   const handleDeletePhoto = async () => {
     if (!confirm("Hapus foto profile?")) return;
     try {
-      const res = await fetch("/api/profile/photo", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
+      const res = await api.delete("/profile/photo", { data: { user_id: user.id } });
+      const data = res.data;
+      if (res.status === 200 && data.success) {
         setProfileData(prev => ({ ...prev, profile_photo: null }));
         if (onProfileUpdate) onProfileUpdate({ ...user, profile_photo: null });
         setSuccess("Foto dihapus");
