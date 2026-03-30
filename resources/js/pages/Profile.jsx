@@ -312,18 +312,11 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen blg-gradient-to-br from-slate-50 to-slate-100">
       <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleFileChange} />
 
       <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
-        {/* Header - Changed from "Employee Profile" to "Halaman Profil" */}
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-            Halaman Profil
-          </h1>
-          <p className="text-gray-500 mt-2">Kelola informasi dan dokumen pribadi Anda</p>
-        </div>
-
+       
         {/* Alert Messages */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-center gap-3">

@@ -103,12 +103,6 @@ export default function KaryawanPage() {
     window.open(url, '_blank');
   };
 
-  const downloadFile = (karyawanId, type, index = null) => {
-    let url = `/api/karyawan/${karyawanId}/${type}?download=true`;
-    if (index !== null) url += `&index=${index}`;
-    window.open(url, '_blank');
-  };
-
   const handleUpdate = async () => {
     try {
       setSaving(true);
@@ -350,7 +344,6 @@ export default function KaryawanPage() {
           <EmployeeDetailModal 
             employee={selected} 
             previewFile={previewFile} 
-            downloadFile={downloadFile}
             expandedSections={expandedSectionsDetail}
             toggleSection={toggleSectionDetail}
           />
@@ -471,7 +464,7 @@ const ActionButton = ({ icon, onClick, color, tooltip }) => {
 };
 
 // ================= DETAIL MODAL CONTENT (RAPIH DENGAN ACCORDION) =================
-const EmployeeDetailModal = ({ employee, previewFile, downloadFile, expandedSections, toggleSection }) => {
+const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSection }) => {
   // Data Pribadi Fields
   const personalFields = [
     { label: "NIK", value: employee.nik },
@@ -579,7 +572,6 @@ const EmployeeDetailModal = ({ employee, previewFile, downloadFile, expandedSect
                   filename={doc.file.split('/').pop()}
                   icon={doc.icon}
                   onPreview={() => previewFile(employee.id, doc.type)}
-                  onDownload={() => downloadFile(employee.id, doc.type)}
                 />
               ))}
             </div>
@@ -603,7 +595,6 @@ const EmployeeDetailModal = ({ employee, previewFile, downloadFile, expandedSect
                     filename={file.split('/').pop()}
                     icon={<GraduationCap size={14} />}
                     onPreview={() => previewFile(employee.id, 'ijazah', index)}
-                    onDownload={() => downloadFile(employee.id, 'ijazah', index)}
                   />
                 ))}
               </div>
@@ -625,7 +616,6 @@ const EmployeeDetailModal = ({ employee, previewFile, downloadFile, expandedSect
                     filename={file.split('/').pop()}
                     icon={<Award size={14} />}
                     onPreview={() => previewFile(employee.id, 'sertifikat', index)}
-                    onDownload={() => downloadFile(employee.id, 'sertifikat', index)}
                   />
                 ))}
               </div>
@@ -760,7 +750,7 @@ const EditEmployeeForm = ({
       <div className="bg-blue-50 rounded-xl p-3 flex items-center gap-2">
         <FileText size={14} className="text-blue-500" />
         <p className="text-xs text-blue-700">
-          Untuk melihat dan mengunduh dokumen (KTP, KK, Ijazah, dll), silakan buka halaman Detail Karyawan.
+          Untuk melihat dokumen (KTP, KK, Ijazah, dll), silakan buka halaman Detail Karyawan.
         </p>
       </div>
 
@@ -953,33 +943,27 @@ const FileUploadSimple = ({ label, file, onFileChange, icon }) => {
   );
 };
 
-const DocumentCard = ({ label, filename, icon, onPreview, onDownload }) => (
-  <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between group hover:bg-gray-100 transition border border-gray-100">
+// ================= DOCUMENT CARD - TOMBOL VIEW HANYA MUNCUL SAAT HOVER =================
+const DocumentCard = ({ label, filename, icon, onPreview }) => (
+  <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between group hover:bg-gray-100 transition-all duration-200 border border-gray-100 hover:border-gray-200 relative">
     <div className="flex items-center gap-3 flex-1 min-w-0">
-      <div className="p-2 bg-purple-100 rounded-lg text-purple-600">
+      <div className="p-2 bg-purple-100 rounded-lg text-purple-600 group-hover:bg-purple-200 transition-colors">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-700">{label}</p>
-        <p className="text-[10px] text-gray-400 truncate">{filename}</p>
+        <p className="text-xs font-medium text-gray-700 group-hover:text-gray-900 transition-colors">{label}</p>
+        <p className="text-[10px] text-gray-400 truncate group-hover:text-gray-500 transition-colors">{filename}</p>
       </div>
     </div>
-    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition">
-      <button
-        onClick={onPreview}
-        className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition"
-        title="Lihat"
-      >
-        <EyeIcon size={12} />
-      </button>
-      <button
-        onClick={onDownload}
-        className="p-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-        title="Download"
-      >
-        <Download size={12} />
-      </button>
-    </div>
+    
+    {/* Tombol View - Hanya muncul saat hover */}
+    <button
+      onClick={onPreview}
+      className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-105 opacity-0 group-hover:opacity-100"
+      title="Lihat Dokumen"
+    >
+      <EyeIcon size={12} />
+    </button>
   </div>
 );
 
