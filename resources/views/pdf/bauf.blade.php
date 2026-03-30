@@ -217,12 +217,11 @@
         <p class="MsoNormal"><span lang="EN-ID">&nbsp;</span></p>
 
         <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center">
-            <b><u><span lang="EN-ID" style="font-size: 18.0pt; line-height: 107%">BERITA ACARA SERAH
-                        TERIMA</span></u></b>
+            <b><u><span lang="EN-ID" style="font-size: 18.0pt; line-height: 107%">BERITA ACARA UJI FUNGSI</span></u></b>
         </p>
 
         <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center">
-            <span lang="EN-ID">Nomor : {{ $nomor_surat ?? '(NOMER URUT SURAT)/BAST-HSR/BULAN ROMAWI/2026' }}</span>
+            <span lang="EN-ID">Nomor : {{ $nomor_surat ?? '(NOMER URUT SURAT)/BAUF-HSR/BULAN ROMAWI/2026' }}</span>
         </p>
 
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
@@ -233,7 +232,7 @@
 
         <p class="MsoNormal" style="margin-bottom: 0in">
             <span lang="EN-ID">Pada hari ini <b>{{ $nama_hari ?? '(NAMA HARI)' }}</b> Tanggal
-                <b>{{ $tanggal_bast ?? '(TANGGAL-BULAN-TAHUN)' }}</b> Telah dilaksanakan pemasangan dan uji fungsi/uji
+                <b>{{ $tanggal_bauf ?? '(TANGGAL-BULAN-TAHUN)' }}</b> Telah dilaksanakan pemasangan dan uji fungsi/uji
                 coba, untuk peralatan di bawah ini :</span>
         </p>
 
@@ -346,8 +345,8 @@
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
 
         <p class="MsoNormal" style="margin-bottom: 0in">
-            <span lang="EN-ID">Dengan ini kami menyatakan bahwa telah barang yang telah kami serahkan kepada pihak
-                <b>{{ $nama_klient ?? '(NAMA KLIENT)' }} </b>dengan hasil
+            <span lang="EN-ID">Dengan ini kami menyatakan bahwa telah melaksanakan pemasangan uji fungsi/uji coba peralatan tersebut di
+                <b>{{ $nama_klient ?? '(NAMA KLIENT)' }}</b> dengan hasil
                 <b><i><u>{{ $hasil ?? 'BAIK' }}</u></i></b></span>
         </p>
 

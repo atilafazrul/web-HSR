@@ -5,10 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Dompdf\Dompdf;
 use Dompdf\Options;
-use App\Models\BastDocument;
 use Carbon\Carbon;
+use App\Models\BaufDocument;
 
-class BASTController extends Controller
+class BAUFController extends Controller
 {
     /**
      * Convert angka bulan ke romawi
@@ -44,15 +44,15 @@ class BASTController extends Controller
         $bulanRomawi = $this->bulanToRomawi($bulan);
         
         // Cari nomor urut terakhir untuk bulan dan tahun ini
-        $lastDocument = BastDocument::where('tahun', $tahun)
+        $lastDocument = BaufDocument::where('tahun', $tahun)
             ->where('bulan', $bulan)
             ->orderBy('nomor_urut', 'desc')
             ->first();
         
         $nomorUrut = $lastDocument ? $lastDocument->nomor_urut + 1 : 1;
         
-        // Format: 001/BAST-HSR/III/2026
-        $nomorSurat = sprintf('%03d/BAST-HSR/%s/%d', $nomorUrut, $bulanRomawi, $tahun);
+        // Format: 001/BAUF-HSR/III/2026
+        $nomorSurat = sprintf('%03d/BAUF-HSR/%s/%d', $nomorUrut, $bulanRomawi, $tahun);
         
         return [
             'nomor_surat' => $nomorSurat,
@@ -80,11 +80,11 @@ class BASTController extends Controller
     }
 
     /**
-     * Get riwayat BAST
+     * Get riwayat BAUF
      */
     public function getHistory()
     {
-        $documents = BastDocument::orderBy('created_at', 'desc')->get();
+        $documents = BaufDocument::orderBy('created_at', 'desc')->get();
         
         return response()->json([
             'data' => $documents
@@ -92,13 +92,13 @@ class BASTController extends Controller
     }
 
     /**
-     * Generate PDF BAST
+     * Generate PDF BAUF
      */
     public function generatePDF(Request $request)
     {
         $validated = $request->validate([
             'nama_hari' => 'required|string',
-            'tanggal_bast' => 'required|string',
+            'tanggal_bauf' => 'required|string',
             'nama_klient' => 'required|string',
             'tanggal_tanda_tangan' => 'required|string',
             'hasil' => 'required|string',
@@ -112,10 +112,10 @@ class BASTController extends Controller
         $nomorData = $this->generateNomorSurat();
 
         // Simpan ke database
-        $document = BastDocument::create([
+        $document = BaufDocument::create([
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $validated['nama_hari'],
-            'tanggal_bast' => $validated['tanggal_bast'],
+            'tanggal_bauf' => $validated['tanggal_bauf'],
             'nama_klient' => $validated['nama_klient'],
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
             'hasil' => $validated['hasil'],
@@ -128,7 +128,7 @@ class BASTController extends Controller
         $data = [
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $validated['nama_hari'],
-            'tanggal_bast' => $validated['tanggal_bast'],
+            'tanggal_bauf' => $validated['tanggal_bauf'],
             'nama_klient' => $validated['nama_klient'],
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
             'hasil' => $validated['hasil'],
@@ -143,12 +143,12 @@ class BASTController extends Controller
      */
     public function regeneratePDF($id)
     {
-        $document = BastDocument::findOrFail($id);
+        $document = BaufDocument::findOrFail($id);
         
         $data = [
             'nomor_surat' => $document->nomor_surat,
             'nama_hari' => $document->nama_hari,
-            'tanggal_bast' => $document->tanggal_bast,
+            'tanggal_bauf' => $document->tanggal_bauf,
             'nama_klient' => $document->nama_klient,
             'tanggal_tanda_tangan' => $document->tanggal_tanda_tangan,
             'hasil' => $document->hasil ?? 'BAIK',
@@ -156,6 +156,27 @@ class BASTController extends Controller
         ];
 
         return $this->generatePDFResponse($data);
+    }
+
+    /**
+     * Delete BAUF document
+     */
+    public function destroy($id)
+    {
+        try {
+            $document = BaufDocument::findOrFail($id);
+            $document->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Dokumen berhasil dihapus'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus dokumen'
+            ], 500);
+        }
     }
 
     /**
@@ -170,7 +191,7 @@ class BASTController extends Controller
 
         $dompdf = new Dompdf($options);
 
-        // Encode logos to base64 for dompdf (same as service-report)
+        // Encode logos to base64 for dompdf (same as BAST)
         $hsrLogoPath = public_path('images/hsr logo.png');
         $isoLogoPath = public_path('images/iso logo.png');
         $medimageLogoPath = public_path('images/medimage logo.png');
@@ -240,38 +261,17 @@ class BASTController extends Controller
         $data['watermark'] = $watermarkBase64;
 
         // Render view
-        $html = view('pdf.bast', $data)->render();
-        
+        $html = view('pdf.bauf', $data)->render();
+
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        
-        $filename = 'BAST-' . $data['nomor_surat'] . '.pdf';
-        
+
+        $filename = 'BAUF-' . $data['nomor_surat'] . '.pdf';
+
         return response()->make($dompdf->output(), 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"'
         ]);
-    }
-
-    /**
-     * Delete BAST document
-     */
-    public function destroy($id)
-    {
-        try {
-            $document = BastDocument::findOrFail($id);
-            $document->delete();
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Dokumen berhasil dihapus'
-            ]);
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Gagal menghapus dokumen'
-            ], 500);
-        }
     }
 }

@@ -17,6 +17,7 @@ use App\Http\Controllers\PembelianController;
 use App\Http\Controllers\ServiceReportController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\BASTController;
+use App\Http\Controllers\BAUFController;
 
 
 /*
@@ -410,5 +411,37 @@ Route::get('/bast/{id}/pdf', [
 
 Route::delete('/bast/{id}', [
     BASTController::class,
+    'destroy'
+]);
+
+
+/*
+|--------------------------------------------------------------------------
+| BAUF PDF
+|--------------------------------------------------------------------------
+*/
+
+Route::get('/bauf/next-nomor', [
+    BAUFController::class,
+    'getNextNomorSurat'
+]);
+
+Route::post('/bauf/pdf', [
+    BAUFController::class,
+    'generatePDF'
+]);
+
+Route::get('/bauf/history', [
+    BAUFController::class,
+    'getHistory'
+]);
+
+Route::get('/bauf/{id}/pdf', [
+    BAUFController::class,
+    'regeneratePDF'
+]);
+
+Route::delete('/bauf/{id}', [
+    BAUFController::class,
     'destroy'
 ]);

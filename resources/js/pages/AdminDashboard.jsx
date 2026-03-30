@@ -39,8 +39,8 @@ import TargetPage from "./TargetPage";
 
 /* BERITA ACARA */
 import BeritaAcaraPage from "./BeritaAcaraPage";
-import BAUFPage from "./berita acara/BAUFPage";
-import BASTPage from "./berita acara/BASTPage";
+import BAUFPage from "./berita-acara/BAUFPage";
+import BASTPage from "./berita-acara/BASTPage";
 
 /* INVENTORY */
 import InventoryPage from "./InventoryPage";
