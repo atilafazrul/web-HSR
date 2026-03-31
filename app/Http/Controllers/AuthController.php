@@ -46,7 +46,7 @@ class AuthController extends Controller
         // Hitung waktu expired
         $expiresAt = $rememberMe 
             ? now()->addMinutes(60 * 24 * 7)
-            : now()->addMinutes(15);
+            : now()->addMinutes(2);
 
         // Jika login berhasil
         return response()->json([

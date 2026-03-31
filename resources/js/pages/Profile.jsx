@@ -198,8 +198,8 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       if (files.kk) formDataToSend.append("kk", files.kk);
       if (files.akte) formDataToSend.append("akte", files.akte);
       
-      ijazahFiles.forEach((file, idx) => formDataToSend.append(`ijazah[${idx}]`, file));
-      sertifikatFiles.forEach((file, idx) => formDataToSend.append(`sertifikat[${idx}]`, file));
+      ijazahFiles.forEach((file) => formDataToSend.append(`ijazah[]`, file));
+      sertifikatFiles.forEach((file) => formDataToSend.append(`sertifikat[]`, file));
 
       const res = await api.post(`/karyawan/${user.id}`, formDataToSend);
       const data = res.data;

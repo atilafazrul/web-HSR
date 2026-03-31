@@ -19,21 +19,29 @@ class SessionTimeoutMiddleware
         if ($request->user()) {
             $token = $request->user()->currentAccessToken();
             
-            // Jika token ada dan sudah expired
-            if ($token && $token->expires_at && $token->expires_at->isPast()) {
-                // Hapus token yang expired
-                $token->delete();
+            if ($token) {
+                $timeoutMinutes = 15; // Session timeout 15 menit
+                $now = now();
                 
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Session Anda telah berakhir. Silakan login kembali.',
-                    'code' => 'SESSION_TIMEOUT'
-                ], 401);
-            }
-            
-            // Update last_used_at jika ada
-            if ($token && method_exists($token, 'forceFill')) {
-                $token->forceFill(['last_used_at' => now()])->save();
+                // Cek last_used_at untuk menentukan apakah user sudah idle terlalu lama
+                $lastUsedAt = $token->last_used_at ?? $token->created_at;
+                
+                // Jika user idle lebih dari 2 menit, expire session
+                if ($lastUsedAt && $now->diffInMinutes($lastUsedAt) >= $timeoutMinutes) {
+                    // Hapus token yang expired karena idle
+                    $token->delete();
+                    
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Session Anda telah berakhir karena tidak ada aktivitas selama 15 menit. Silakan login kembali.',
+                        'code' => 'SESSION_TIMEOUT'
+                    ], 401);
+                }
+                
+                // User masih aktif, update last_used_at
+                $token->forceFill([
+                    'last_used_at' => $now
+                ])->save();
             }
         }
 

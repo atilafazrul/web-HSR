@@ -126,9 +126,7 @@ export default function KaryawanPage() {
       // Jika password baru diisi, tambahkan ke formData
       if (newPassword) formData.append("password", newPassword);
 
-      await api.post(`/karyawan/${editData.id}?_method=PUT`, formData, {
-        headers: { "Content-Type": "multipart/form-data" }
-      });
+      await api.post(`/karyawan/${editData.id}?_method=PUT`, formData);
 
       alert("Data berhasil disimpan ✅");
       resetEditState();
