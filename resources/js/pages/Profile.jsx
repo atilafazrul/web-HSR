@@ -314,10 +314,10 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   ];
 
   return (
-    <div className="min-h-screen blg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleFileChange} />
 
-      <div className="max-w-6xl mx-auto px-4 py-8 md:py-12">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6 md:py-12">
        
         {/* Alert Messages */}
         {error && (
@@ -344,14 +344,14 @@ export default function Profile({ user, logout, onProfileUpdate }) {
           {/* Cover & Profile Header */}
           <div className="relative">
             <div className="h-32 bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"></div>
-            <div className="absolute -bottom-16 left-0 right-0 px-6 md:px-8">
+            <div className="relative md:absolute md:-bottom-16 left-0 right-0 px-4 sm:px-6 md:px-8 mt-4 md:mt-0">
               <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
                 <div className="relative">
                   <div className="relative">
                     {photoUrl ? (
-                      <img src={photoUrl} alt={profileData.name} className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-xl bg-white" />
+                      <img src={photoUrl} alt={profileData.name} className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-white shadow-xl bg-white" />
                     ) : (
-                      <div className="w-28 h-28 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-xl">
+                      <div className="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-xl">
                         {initial}
                       </div>
                     )}
@@ -376,7 +376,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     )}
                   </div>
                 </div>
-                <div className="flex-1 text-center md:text-left">
+                <div className="flex-1 text-center md:text-left w-full min-w-0">
                   <h2 className="text-2xl font-bold text-gray-900">{profileData.name || user?.name}</h2>
                   <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
@@ -395,21 +395,21 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     </span>
                   </div>
                 </div>
-                <div>
+                <div className="w-full md:w-auto">
                   {!isEditing ? (
                     <button
                       onClick={handleEdit}
-                      className="px-5 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition flex items-center gap-2 shadow-md text-sm font-medium"
+                      className="w-full md:w-auto px-5 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition flex items-center justify-center gap-2 shadow-md text-sm font-medium"
                     >
                       <Edit2 size={16} />
                       Edit Profile
                     </button>
                   ) : (
-                    <div className="flex gap-2">
-                      <button onClick={handleCancel} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center gap-2">
+                    <div className="grid grid-cols-2 md:flex gap-2">
+                      <button onClick={handleCancel} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2">
                         <X size={16} /> Batal
                       </button>
-                      <button onClick={handleSave} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition text-sm font-medium flex items-center gap-2">
+                      <button onClick={handleSave} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
                         <Save size={16} /> {loading ? "Menyimpan..." : "Simpan"}
                       </button>
                     </div>
@@ -420,7 +420,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
           </div>
 
           {/* Tab Navigation */}
-          <div className="mt-20 px-6 md:px-8 border-b border-gray-200">
+          <div className="mt-24 md:mt-20 px-4 md:px-8 border-b border-gray-200">
             <div className="flex gap-6 overflow-x-auto">
               {tabs.map(tab => (
                 <button
@@ -778,7 +778,7 @@ const DocCard = ({ label, filename, onPreview }) => (
     </div>
     <button 
       onClick={onPreview} 
-      className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition opacity-60 group-hover:opacity-100"
+      className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition opacity-100 md:opacity-60 md:group-hover:opacity-100"
       title="Lihat Dokumen"
     >
       <Eye size={16} />
