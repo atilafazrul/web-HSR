@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../hooks/useAuth";
 
-export default function Login({ setUser, login, isLoading }) {
+export default function Login({ login, isLoading }) {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -40,8 +39,7 @@ export default function Login({ setUser, login, isLoading }) {
     const result = await login({ email, password });
 
     if (result.success) {
-      // Kirim ke App.jsx
-      setUser(result.data.user);
+      // User sudah otomatis di-set oleh useAuth.login()
     } else {
       alert(result.error || "Login gagal");
       setPassword("");

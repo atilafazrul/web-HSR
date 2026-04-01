@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Plus, Package, Search, Eye, Pencil, Trash2 } from "lucide-react";
+import api from "../api/axiosConfig";
 
 export default function LogistikInventoryPage() {
 
@@ -32,7 +32,7 @@ export default function LogistikInventoryPage() {
     try {
       setLoading(true);
 
-      const res = await axios.get(`${API_URL}/api/logistik-inventory`);
+      const res = await api.get("/logistik-inventory");
 
       let data = res.data;
 
@@ -57,7 +57,7 @@ export default function LogistikInventoryPage() {
 
     try {
 
-      await axios.delete(`${API_URL}/api/logistik-inventory/${id}`, {
+      await api.delete(`/logistik-inventory/${id}`, {
         headers: {
           role: role
         }

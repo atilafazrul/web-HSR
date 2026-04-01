@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axiosConfig";
 
 export default function TambahBarangPage() {
 
@@ -86,8 +86,8 @@ export default function TambahBarangPage() {
         formData.append("foto", form.foto);
       }
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/barang`,
+      await api.post(
+        `/barang`,
         formData,
         {
           headers: {

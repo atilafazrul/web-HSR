@@ -14,21 +14,20 @@ import tokenManager from '../utils/tokenManager';
  */
 const ProtectedRoute = ({ children, redirectTo = '/' }) => {
     const location = useLocation();
-    
-    // Cek apakah user terautentikasi
+
     const isAuthenticated = tokenManager.isAuthenticated();
-    
+
     // Jika tidak terautentikasi, redirect ke login dengan state
     if (!isAuthenticated) {
         return (
-            <Navigate 
-                to={redirectTo} 
-                state={{ from: location.pathname }} 
-                replace 
+            <Navigate
+                to={redirectTo}
+                state={{ from: location.pathname }}
+                replace
             />
         );
     }
-    
+
     // Jika terautentikasi, render children
     return children;
 };

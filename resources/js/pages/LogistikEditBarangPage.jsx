@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import api from "../api/axiosConfig";
 
 export default function LogistikEditBarangPage() {
 
@@ -38,9 +38,7 @@ export default function LogistikEditBarangPage() {
 
       try {
 
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_URL}/logistik-inventory/${id}`
-        );
+        const res = await api.get(`/logistik-inventory/${id}`);
 
         let data = null;
 
@@ -128,8 +126,8 @@ export default function LogistikEditBarangPage() {
         formData.append("foto", form.foto);
       }
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/logistik-inventory/${id}?_method=PUT`,
+      await api.post(
+        `/logistik-inventory/${id}?_method=PUT`,
         formData,
         {
           headers: {

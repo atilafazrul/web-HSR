@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Plus, Package, Search, Eye, Pencil, Trash2 } from "lucide-react";
+import api from "../api/axiosConfig";
 
 export default function InventoryPage() {
 
@@ -32,7 +32,7 @@ export default function InventoryPage() {
     try {
       setLoading(true);
 
-      const res = await axios.get(`${API_URL}/api/barang`);
+      const res = await api.get("/barang");
 
       let data = res.data;
 
@@ -57,7 +57,7 @@ export default function InventoryPage() {
 
     try {
 
-      await axios.delete(`${API_URL}/api/barang/${id}`, {
+      await api.delete(`/barang/${id}`, {
         headers: {
           role: role
         }

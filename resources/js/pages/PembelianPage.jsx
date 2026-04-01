@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Package,
   Plus,
@@ -8,10 +7,13 @@ import {
   X,
   Upload
 } from "lucide-react";
+import api from "../api/axiosConfig";
 
 export default function PembelianPage() {
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const API_URL = import.meta.env.VITE_API_URL;
 
   // Modal Tambah
   const [showAddModal, setShowAddModal] = useState(false);
@@ -32,7 +34,7 @@ export default function PembelianPage() {
 
   const fetchPembelian = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/pembelian`);
+      const res = await api.get("/pembelian");
       setDataList(res.data.data);
     } catch (error) {
       console.error("Gagal load pembelian:", error);
@@ -71,7 +73,7 @@ export default function PembelianPage() {
         formData.append("foto", form.foto);
       }
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/pembelian`, formData, {
+      await api.post("/pembelian", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -108,7 +110,7 @@ export default function PembelianPage() {
       formData.append("harga", itemToUpdate.harga);
       formData.append("status", newStatus);
 
-      await axios.post(`${import.meta.env.VITE_API_URL}/pembelian/${id}`, formData);
+      await api.post(`/pembelian/${id}`, formData);
 
       setDataList((prev) =>
         prev.map((item) =>
@@ -126,7 +128,7 @@ export default function PembelianPage() {
 
     try {
       const user = JSON.parse(localStorage.getItem("user"));
-      await axios.delete(`${import.meta.env.VITE_API_URL}/pembelian/${id}`, {
+      await api.delete(`/pembelian/${id}`, {
         headers: {
           role: user?.role
         }

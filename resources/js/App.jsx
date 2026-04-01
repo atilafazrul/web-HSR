@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import React, { useMemo } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 /* ================= HOOKS ================= */
 import { useAuth } from "./hooks/useAuth";
 
 /* ================= COMPONENTS ================= */
 import SessionTimeoutModal from "./components/SessionTimeoutModal.jsx";
-import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
 /* ================= PAGES ================= */
 import Login from "./pages/Login.jsx";
@@ -24,7 +23,6 @@ import PurchasingPage from "./pages/PurchasingPage.jsx";
 
 export default function App() {
 
-  const navigate = useNavigate();
   const { 
     user, 
     isAuthenticated, 
@@ -34,44 +32,21 @@ export default function App() {
     logout, 
     resetSessionTimeout 
   } = useAuth();
-  
-  const [appUser, setAppUser] = useState(null);
-
-  // Sync user dari useAuth ke appUser
-  useEffect(() => {
-    if (user) {
-      setAppUser(user);
-    } else {
-      setAppUser(null);
-    }
-  }, [user]);
-
-  // Handle set user dari Login component
-  const handleSetUser = (userData) => {
-    if (
-      ["super_admin", "admin", "it", "service", "kontraktor", "sales", "logistik", "purchasing"]
-        .includes(userData.role)
-    ) {
-      setAppUser(userData);
-    } else {
-      alert("Role tidak valid");
-    }
-  };
 
   // Handle logout
   const handleLogout = async () => {
     await logout();
-    setAppUser(null);
   };
 
   // Handle redirect ke login saat session timeout
   const handleLoginRedirect = () => {
     resetSessionTimeout();
-    navigate('/');
+    window.location.href = '/';
   };
 
-  // Get redirect path berdasarkan role
-  const getRoleRedirectPath = (role) => {
+  // Get redirect path berdasarkan role - memoized untuk hindari re-render
+  const roleRedirectPath = useMemo(() => {
+    if (!user?.role) return "/";
     const paths = {
       super_admin: "/super_admin/dashboard",
       admin: "/admin/dashboard",
@@ -82,147 +57,83 @@ export default function App() {
       logistik: "/logistik/dashboard",
       purchasing: "/purchasing/dashboard",
     };
-    return paths[role] || "/";
-  };
+    return paths[user.role] || "/";
+  }, [user?.role]);
 
+  // Show loading state
   if (isLoading) {
     return <div className="p-10 text-center">Loading...</div>;
   }
 
+  // Not authenticated - show login
+  if (!isAuthenticated || !user) {
+    return (
+      <>
+        <Routes>
+          <Route path="*" element={<Login login={login} isLoading={isLoading} />} />
+        </Routes>
+        <SessionTimeoutModal 
+          isOpen={isSessionTimeout} 
+          onLoginRedirect={handleLoginRedirect} 
+        />
+      </>
+    );
+  }
+
+  // Authenticated - show appropriate dashboard based on role
+  const role = user.role;
+
   return (
     <>
       <Routes>
+        {/* DEFAULT ROUTE - redirect ke dashboard berdasarkan role */}
+        <Route path="/" element={<Navigate to={roleRedirectPath} replace />} />
 
-        {/* LOGIN */}
-        <Route
-          path="/"
-          element={
-            !isAuthenticated || !appUser ? (
-              <Login 
-                setUser={handleSetUser} 
-                login={login} 
-                isLoading={isLoading} 
-              />
-            ) : (
-              <Navigate to={getRoleRedirectPath(appUser.role)} replace />
-            )
-          }
-        />
+        {/* SUPER ADMIN ROUTES */}
+        {role === "super_admin" && (
+          <Route path="/super_admin/*" element={<SuperAdminDashboard user={user} logout={handleLogout} />} />
+        )}
 
-        {/* SUPER ADMIN */}
-        <Route
-          path="/super_admin/*"
-          element={
-            <ProtectedRoute>
-              {appUser?.role === "super_admin" ? (
-                <SuperAdminDashboard user={appUser} logout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
+        {/* ADMIN ROUTES */}
+        {role === "admin" && (
+          <Route path="/admin/*" element={<AdminDashboard user={user} logout={handleLogout} />} />
+        )}
 
-        {/* ADMIN */}
-        <Route
-          path="/admin/*"
-          element={
-            <ProtectedRoute>
-              {appUser?.role === "admin" ? (
-                <AdminDashboard user={appUser} logout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
+        {/* IT ROUTES */}
+        {role === "it" && (
+          <Route path="/it/*" element={<ITPage user={user} logout={handleLogout} />} />
+        )}
 
-        {/* IT */}
-        <Route
-          path="/it/*"
-          element={
-            <ProtectedRoute>
-              {appUser?.role === "it" ? (
-                <ITPage user={appUser} logout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
+        {/* SERVICE ROUTES */}
+        {role === "service" && (
+          <Route path="/service/*" element={<ServicePage user={user} logout={handleLogout} />} />
+        )}
 
-        {/* SERVICE */}
-        <Route
-          path="/service/*"
-          element={
-            <ProtectedRoute>
-              {appUser?.role === "service" ? (
-                <ServicePage user={appUser} logout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
+        {/* KONTRAKTOR ROUTES */}
+        {role === "kontraktor" && (
+          <Route path="/kontraktor/*" element={<KontraktorPage user={user} logout={handleLogout} />} />
+        )}
 
-        {/* KONTRAKTOR */}
-        <Route
-          path="/kontraktor/*"
-          element={
-            <ProtectedRoute>
-              {appUser?.role === "kontraktor" ? (
-                <KontraktorPage user={appUser} logout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
+        {/* LOGISTIK ROUTES */}
+        {role === "logistik" && (
+          <Route path="/logistik/*" element={<LogistikPage user={user} logout={handleLogout} />} />
+        )}
 
-        {/* LOGISTIK */}
-        <Route
-          path="/logistik/*"
-          element={
-            <ProtectedRoute>
-              {appUser?.role === "logistik" ? (
-                <LogistikPage user={appUser} logout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
+        {/* PURCHASING ROUTES */}
+        {role === "purchasing" && (
+          <Route path="/purchasing/*" element={<PurchasingPage user={user} logout={handleLogout} />} />
+        )}
 
-        {/* PURCHASING */}
-        <Route
-          path="/purchasing/*"
-          element={
-            <ProtectedRoute>
-              {appUser?.role === "purchasing" ? (
-                <PurchasingPage user={appUser} logout={handleLogout} />
-              ) : (
-                <Navigate to="/" replace />
-              )}
-            </ProtectedRoute>
-          }
-        />
-
-        {/* FOTO */}
+        {/* FOTO PROJEK - bisa diakses semua role yang authenticated */}
         <Route
           path="/projek-kerja/foto/:id"
-          element={
-            <ProtectedRoute>
-              <FotoProjekPage />
-            </ProtectedRoute>
-          }
+          element={<FotoProjekPage />}
         />
 
-        {/* FALLBACK */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-
+        {/* FALLBACK - redirect ke dashboard */}
+        <Route path="*" element={<Navigate to={roleRedirectPath} replace />} />
       </Routes>
 
-      {/* Session Timeout Modal */}
       <SessionTimeoutModal 
         isOpen={isSessionTimeout} 
         onLoginRedirect={handleLoginRedirect} 

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import api from "../api/axiosConfig";
 
 export default function FormPekerjaanPage() {
 
@@ -49,8 +49,8 @@ export default function FormPekerjaanPage() {
 
     try {
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_API_URL}/form-pekerjaan/pdf`,
+      const res = await api.post(
+        "/form-pekerjaan/pdf",
         form,
         {
           responseType: "blob"

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate, useParams } from "react-router-dom";
+import api from "../api/axiosConfig";
 
 export default function EditBarangPage() {
 
@@ -39,9 +39,7 @@ export default function EditBarangPage() {
 
       try {
 
-        const res = await axios.get(
-          `${import.meta.env.VITE_API_URL}/barang/${id}`
-        );
+        const res = await api.get(`/barang/${id}`);
 
         let data = null;
 
@@ -131,8 +129,8 @@ export default function EditBarangPage() {
         formData.append("foto", form.foto);
       }
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/barang/${id}?_method=PUT`,
+      await api.post(
+        `/barang/${id}?_method=PUT`,
         formData,
         {
           headers: {

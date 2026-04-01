@@ -1,12 +1,3 @@
-/**
- * useAuth Hook
- * 
- * Custom hook untuk mengelola state autentikasi dan session.
- * Features:
- * - Login dengan remember me option
- * - Logout dengan revoke token
- */
-
 import { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../api/axiosConfig';
 import tokenManager from '../utils/tokenManager';
@@ -24,13 +15,16 @@ export const useAuth = () => {
     const [error, setError] = useState(null);
     const [isSessionTimeout, setIsSessionTimeout] = useState(false);
 
-    // Ref untuk idle timer dan activity listener
+    // Gunakan ref untuk timer dan listener agar tidak memicu re-render
     const idleTimerRef = useRef(null);
     const activityHandlerRef = useRef(null);
 
-    /**
-     * Handle session timeout
-     */
+    // Simpan handleSessionTimeout sebagai ref agar startSessionMonitoring
+    // tidak perlu bergantung padanya sebagai dependency (mencegah re-create)
+    const handleSessionTimeoutRef = useRef(null);
+
+    // ─── Handlers ────────────────────────────────────────────────────────────
+
     const handleSessionTimeout = useCallback(() => {
         tokenManager.clearToken();
         setUser(null);
@@ -38,69 +32,65 @@ export const useAuth = () => {
         setIsSessionTimeout(true);
     }, []);
 
-    /**
-     * Handle general auth error
-     */
+    // Simpan di ref agar bisa diakses di dalam timeout callback tanpa dependency
+    handleSessionTimeoutRef.current = handleSessionTimeout;
+
     const handleAuthError = useCallback(() => {
         tokenManager.clearToken();
         setUser(null);
         setIsAuthenticated(false);
     }, []);
 
-    /**
-     * Stop session monitoring — bersihkan timer & event listeners
-     */
+    // ─── Session Monitoring ───────────────────────────────────────────────────
+
     const stopSessionMonitoring = useCallback(() => {
-        // Clear idle timer
         if (idleTimerRef.current) {
             clearTimeout(idleTimerRef.current);
             idleTimerRef.current = null;
         }
-
-        // Hapus activity event listeners
         if (activityHandlerRef.current) {
             ACTIVITY_EVENTS.forEach(event => {
                 window.removeEventListener(event, activityHandlerRef.current);
             });
             activityHandlerRef.current = null;
         }
-    }, []);
+    }, []); // deps kosong — hanya mengakses refs, tidak berubah antar render
 
-    /**
-     * Start session monitoring berbasis idle activity.
-     * Timer di-reset setiap ada aktivitas user.
-     * Jika tidak ada aktivitas selama IDLE_TIMEOUT_MS, session dianggap timeout.
-     */
     const startSessionMonitoring = useCallback(() => {
-        // Hentikan monitoring yang sedang berjalan dulu
-        stopSessionMonitoring();
+        // Bersihkan monitoring sebelumnya
+        if (idleTimerRef.current) {
+            clearTimeout(idleTimerRef.current);
+            idleTimerRef.current = null;
+        }
+        if (activityHandlerRef.current) {
+            ACTIVITY_EVENTS.forEach(event => {
+                window.removeEventListener(event, activityHandlerRef.current);
+            });
+            activityHandlerRef.current = null;
+        }
 
         const resetIdleTimer = () => {
             if (idleTimerRef.current) {
                 clearTimeout(idleTimerRef.current);
             }
+            // Gunakan ref agar tidak perlu handleSessionTimeout sebagai dep
             idleTimerRef.current = setTimeout(() => {
-                handleSessionTimeout();
+                handleSessionTimeoutRef.current?.();
             }, IDLE_TIMEOUT_MS);
         };
 
-        // Simpan referensi handler agar bisa di-remove nanti
         activityHandlerRef.current = resetIdleTimer;
 
-        // Pasang event listener pada setiap aktivitas user
         ACTIVITY_EVENTS.forEach(event => {
             window.addEventListener(event, resetIdleTimer, { passive: true });
         });
 
         // Mulai timer awal
         resetIdleTimer();
-    }, [handleSessionTimeout, stopSessionMonitoring]);
+    }, []); // deps kosong — hanya mengakses refs, tidak berubah antar render
 
-    /**
-     * Login user
-     * @param {Object} credentials - { email, password }
-     * @param {boolean} rememberMe - Keep logged in for 7 days
-     */
+    // ─── Auth Actions ─────────────────────────────────────────────────────────
+
     const login = useCallback(async (credentials, rememberMe = false) => {
         setIsLoading(true);
         setError(null);
@@ -108,25 +98,17 @@ export const useAuth = () => {
         try {
             const response = await apiClient.post('/login', {
                 ...credentials,
-                remember_me: rememberMe
+                remember_me: rememberMe,
             });
 
             const { data } = response.data;
 
-            // Simpan token dan data
-            tokenManager.setToken(
-                data.token,
-                data.expires_at,
-                data.remember_me,
-                data.user
-            );
+            tokenManager.setToken(data.token, data.expires_at, data.remember_me, data.user);
 
-            // Update state
             setUser(data.user);
             setIsAuthenticated(true);
             setIsSessionTimeout(false);
 
-            // Mulai idle-based session monitoring
             startSessionMonitoring();
 
             return { success: true, data };
@@ -139,9 +121,6 @@ export const useAuth = () => {
         }
     }, [startSessionMonitoring]);
 
-    /**
-     * Logout user dan revoke token
-     */
     const logout = useCallback(async () => {
         setIsLoading(true);
 
@@ -156,59 +135,34 @@ export const useAuth = () => {
             setUser(null);
             setIsAuthenticated(false);
             setIsSessionTimeout(false);
-
-            // Stop session monitoring
             stopSessionMonitoring();
-
             setIsLoading(false);
         }
     }, [stopSessionMonitoring]);
 
-    /**
-     * Check session status secara manual
-     */
-    const checkSession = useCallback(async () => {
-        if (!tokenManager.getToken()) {
-            setIsAuthenticated(false);
-            setUser(null);
-            return;
-        }
-
-        try {
-            const response = await apiClient.get('/me');
-            if (response.data.success) {
-                setUser(response.data.data.user);
-                setIsAuthenticated(true);
-            }
-        } catch (err) {
-            if (err.response?.status === 401) {
-                handleSessionTimeout();
-            }
-        }
-    }, [handleSessionTimeout]);
-
-    /**
-     * Reset session timeout state (setelah login ulang)
-     */
     const resetSessionTimeout = useCallback(() => {
         setIsSessionTimeout(false);
     }, []);
 
-    // Effect: Listen untuk event session timeout dan auth error dari axios interceptor
-    useEffect(() => {
-        const handleSessionTimeoutEvent = () => handleSessionTimeout();
-        const handleAuthErrorEvent = () => handleAuthError();
+    // ─── Effects ──────────────────────────────────────────────────────────────
 
-        window.addEventListener('session-timeout', handleSessionTimeoutEvent);
-        window.addEventListener('auth-error', handleAuthErrorEvent);
+    // Listen untuk event session-timeout & auth-error dari axios interceptor
+    useEffect(() => {
+        const onSessionTimeout = () => handleSessionTimeout();
+        const onAuthError = () => handleAuthError();
+
+        window.addEventListener('session-timeout', onSessionTimeout);
+        window.addEventListener('auth-error', onAuthError);
 
         return () => {
-            window.removeEventListener('session-timeout', handleSessionTimeoutEvent);
-            window.removeEventListener('auth-error', handleAuthErrorEvent);
+            window.removeEventListener('session-timeout', onSessionTimeout);
+            window.removeEventListener('auth-error', onAuthError);
         };
     }, [handleSessionTimeout, handleAuthError]);
 
-    // Effect: Start session monitoring saat authenticated (termasuk restore session)
+    // Start/stop idle monitoring saat status authenticated berubah.
+    // startSessionMonitoring & stopSessionMonitoring memiliki deps [] (stabil),
+    // sehingga effect ini HANYA jalan ulang saat isAuthenticated berubah.
     useEffect(() => {
         if (isAuthenticated) {
             startSessionMonitoring();
@@ -219,14 +173,7 @@ export const useAuth = () => {
         return () => {
             stopSessionMonitoring();
         };
-    }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // Effect: Check session saat mount (untuk restore session dari localStorage)
-    useEffect(() => {
-        if (tokenManager.getToken() && !user) {
-            checkSession();
-        }
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [isAuthenticated, startSessionMonitoring, stopSessionMonitoring]);
 
     return {
         user,
@@ -236,7 +183,6 @@ export const useAuth = () => {
         isSessionTimeout,
         login,
         logout,
-        checkSession,
         resetSessionTimeout,
     };
 };
