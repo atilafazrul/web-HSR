@@ -398,7 +398,7 @@ export default function ProjekKerjaPage() {
                 name="start_date"
                 value={form.start_date}
                 onChange={handleChange}
-                className="border pl-10 p-3 rounded-xl w-full"
+                className="border pl-10 p-3 rounded-xl w-full min-w-0 max-w-full"
                 required
               />
             </div>

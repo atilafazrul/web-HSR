@@ -72,7 +72,7 @@ export default function Header({
         )}
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 min-w-0">
         {/* Bell */}
         {showBell && (
           <button
@@ -87,7 +87,7 @@ export default function Header({
         {/* USER - ubah dari onDoubleClick ke onClick */}
         <button
           onClick={handleProfileClick}
-          className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full cursor-pointer hover:bg-gray-200 transition flex-shrink-0"
+          className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full cursor-pointer hover:bg-gray-200 transition flex-shrink-0 max-w-full"
           style={{ touchAction: "manipulation", minHeight: "44px" }}
           aria-label="Profile"
         >

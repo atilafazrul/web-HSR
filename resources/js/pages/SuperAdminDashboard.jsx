@@ -128,7 +128,7 @@ export default function SuperAdminDashboard({ user, logout }) {
       />
 
       <main
-        className={`flex-1 flex flex-col transition-all duration-300 w-full ${sidebarExpanded ? "lg:ml-72" : "lg:ml-20"
+        className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${sidebarExpanded ? "lg:pl-72" : "lg:pl-20"
           }`}
       >
         <Header
