@@ -16,12 +16,14 @@ export default function InventoryPage() {
       : "/admin";
 
   const API_URL = import.meta.env.VITE_API_URL;
+  const ASSET_BASE_URL = (API_URL || "").replace(/\/api\/?$/, "");
 
   const [barangs, setBarangs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
-  const [previewImage, setPreviewImage] = useState(null);
+  const [previewImages, setPreviewImages] = useState(null);
+  const [previewIndex, setPreviewIndex] = useState(0);
 
   /* ================= LOAD DATA ================= */
   useEffect(() => {
@@ -84,6 +86,9 @@ export default function InventoryPage() {
     const text =
       (b.kode_barang || "") +
       (b.nama_barang || "") +
+      (b.merek || "") +
+      (b.model || "") +
+      (b.nomor_serial || "") +
       (b.kategori || "") +
       (b.keterangan || "") +
       (b.lokasi || "");
@@ -159,6 +164,9 @@ export default function InventoryPage() {
             <tr>
               <th className="p-3 text-left">Kode</th>
               <th className="p-3 text-left">Nama</th>
+              <th className="p-3 text-left whitespace-nowrap">Merek</th>
+              <th className="p-3 text-left">Model</th>
+              <th className="p-3 text-left whitespace-nowrap">Serial</th>
               <th className="p-3 text-left">Kategori</th>
               <th className="p-3 text-left">Stok</th>
               <th className="p-3 text-left">Keterangan</th>
@@ -169,7 +177,7 @@ export default function InventoryPage() {
           <tbody>
             {filteredBarang.length === 0 ? (
               <tr>
-                <td colSpan="7" className="p-6 text-center text-gray-500">
+                <td colSpan="10" className="p-6 text-center text-gray-500">
                   Data tidak ditemukan
                 </td>
               </tr>
@@ -178,6 +186,9 @@ export default function InventoryPage() {
                 <tr key={b.id} className="border-t">
                   <td className="p-3">{b.kode_barang}</td>
                   <td className="p-3">{b.nama_barang}</td>
+                  <td className="p-3">{b.merek || "—"}</td>
+                  <td className="p-3">{b.model || "—"}</td>
+                  <td className="p-3 font-mono text-xs">{b.nomor_serial || "—"}</td>
                   <td className="p-3">{b.kategori}</td>
                   <td className="p-3">{b.stok}</td>
                   <td className="p-3">
@@ -195,7 +206,13 @@ export default function InventoryPage() {
                     <div className="flex items-center gap-3">
                       {b.foto && (
                         <button
-                          onClick={() => setPreviewImage(`${API_URL}/${b.foto}`)}
+                          onClick={() => {
+                            const fotos = Array.isArray(b.fotos) && b.fotos.length
+                              ? b.fotos
+                              : (b.foto ? [b.foto] : []);
+                            setPreviewImages(fotos.map((p) => `${ASSET_BASE_URL}/${p}`));
+                            setPreviewIndex(0);
+                          }}
                           className="text-gray-600 hover:text-black"
                           title="Lihat Foto"
                         >
@@ -255,6 +272,18 @@ export default function InventoryPage() {
               {/* Detail Barang */}
               <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                 <div>
+                  <span className="text-gray-500">Merek:</span>
+                  <p className="font-medium">{b.merek || "—"}</p>
+                </div>
+                <div>
+                  <span className="text-gray-500">Model:</span>
+                  <p className="font-medium">{b.model || "—"}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-gray-500">Serial:</span>
+                  <p className="font-medium font-mono text-xs">{b.nomor_serial || "—"}</p>
+                </div>
+                <div>
                   <span className="text-gray-500">Kategori:</span>
                   <p className="font-medium">{b.kategori}</p>
                 </div>
@@ -272,7 +301,13 @@ export default function InventoryPage() {
               <div className="flex gap-2 pt-3 border-t border-gray-100">
                 {b.foto && (
                   <button
-                    onClick={() => setPreviewImage(`${API_URL}/${b.foto}`)}
+                    onClick={() => {
+                      const fotos = Array.isArray(b.fotos) && b.fotos.length
+                        ? b.fotos
+                        : (b.foto ? [b.foto] : []);
+                      setPreviewImages(fotos.map((p) => `${ASSET_BASE_URL}/${p}`));
+                      setPreviewIndex(0);
+                    }}
                     className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-lg transition flex items-center justify-center"
                     title="Lihat Foto"
                   >
@@ -302,20 +337,50 @@ export default function InventoryPage() {
       </div>
 
       {/* IMAGE PREVIEW MODAL */}
-      {previewImage && (
+      {previewImages && previewImages.length > 0 && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
-          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setPreviewImages(null);
+            setPreviewIndex(0);
+          }}
         >
-          <div className="relative max-w-full">
-            <img
-              src={previewImage}
-              alt="Preview"
-              className="max-h-[80vh] max-w-full rounded-lg shadow-lg object-contain"
-            />
+          <div className="relative w-full max-w-5xl flex flex-col gap-3" onClick={(e) => e.stopPropagation()}>
+            <div className="relative bg-neutral-900 rounded-lg flex items-center justify-center min-h-[200px] max-h-[78vh] p-2">
+              <img
+                src={previewImages[previewIndex]}
+                alt={`Foto ${previewIndex + 1}`}
+                className="max-h-[76vh] max-w-full w-auto object-contain rounded"
+              />
+            </div>
+            {previewImages.length > 1 && (
+              <div className="flex gap-2 flex-wrap justify-center items-center max-h-[18vh] overflow-y-auto py-1">
+                {previewImages.map((src, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setPreviewIndex(idx)}
+                    className={`shrink-0 rounded-lg border-2 overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-400 ${idx === previewIndex ? "border-blue-400 ring-1 ring-blue-400" : "border-white/20 opacity-80 hover:opacity-100"
+                      }`}
+                    title={`Foto ${idx + 1}`}
+                  >
+                    <img
+                      src={src}
+                      alt=""
+                      className="w-16 h-16 object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
             <button
-              onClick={() => setPreviewImage(null)}
-              className="absolute top-2 right-2 bg-white w-8 h-8 rounded-full shadow flex items-center justify-center hover:bg-gray-100"
+              type="button"
+              onClick={() => {
+                setPreviewImages(null);
+                setPreviewIndex(0);
+              }}
+              className="absolute -top-1 -right-1 sm:top-0 sm:right-0 bg-white w-9 h-9 rounded-full shadow flex items-center justify-center hover:bg-gray-100 text-lg leading-none"
+              aria-label="Tutup"
             >
               ✕
             </button>

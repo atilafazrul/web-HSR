@@ -22,11 +22,11 @@ export default function LogistikFormBarangPage() {
     kategori: "",
     stok: "",
     lokasi: "",
-    foto: null,
+    fotos: [],
   });
 
   const [loading, setLoading] = useState(false);
-  const [preview, setPreview] = useState(null);
+  const [previews, setPreviews] = useState([]);
 
   /* ================= HANDLE CHANGE ================= */
 
@@ -35,17 +35,22 @@ export default function LogistikFormBarangPage() {
     const { name, value, files } = e.target;
 
     if (name === "foto") {
+      const selected = Array.from(files || []);
+      const limited = selected.slice(0, 6);
 
-      const file = files[0];
-
-      setForm({
-        ...form,
-        foto: file,
-      });
-
-      if (file) {
-        setPreview(URL.createObjectURL(file));
+      if (selected.length > 6) {
+        alert("Maksimal 6 foto ❗");
       }
+
+      setForm((prev) => ({
+        ...prev,
+        fotos: limited,
+      }));
+
+      setPreviews((prev) => {
+        prev.forEach((u) => URL.revokeObjectURL(u));
+        return limited.map((f) => URL.createObjectURL(f));
+      });
 
     } else {
 
@@ -80,8 +85,8 @@ export default function LogistikFormBarangPage() {
       formData.append("stok", form.stok);
       formData.append("lokasi", form.lokasi);
 
-      if (form.foto) {
-        formData.append("foto", form.foto);
+      if (form.fotos?.length) {
+        form.fotos.forEach((f) => formData.append("fotos[]", f));
       }
 
       await api.post(
@@ -186,16 +191,22 @@ export default function LogistikFormBarangPage() {
             type="file"
             name="foto"
             accept="image/*"
+            multiple
             onChange={handleChange}
             className="w-full border p-2 rounded-lg"
           />
 
-          {preview && (
-            <img
-              src={preview}
-              alt="Preview"
-              className="mt-3 w-32 h-32 object-cover rounded-lg border"
-            />
+          {previews.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {previews.map((src, idx) => (
+                <img
+                  key={idx}
+                  src={src}
+                  alt={`Preview ${idx + 1}`}
+                  className="w-24 h-24 object-cover rounded-lg border"
+                />
+              ))}
+            </div>
           )}
         </div>
 

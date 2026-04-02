@@ -11,13 +11,21 @@ class Barang extends Model
 
     protected $table = 'barangs'; // opsional tapi aman
 
+    protected $casts = [
+        'fotos' => 'array',
+    ];
+
     protected $fillable = [
     'kode_barang',
     'nama_barang',
+    'merek',
+    'model',
+    'nomor_serial',
     'kategori',
     'stok',
     'keterangan', // WAJIB ADA
     'lokasi',
-    'foto'
+    'foto',
+    'fotos',
     ];
 }
