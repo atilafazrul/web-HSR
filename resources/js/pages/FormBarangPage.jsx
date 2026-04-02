@@ -2,6 +2,44 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 
+async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.75) {
+  if (!file || !file.type?.startsWith("image/")) return file;
+
+  const imgUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = imgUrl;
+    });
+
+    const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+    const width = Math.round(img.width * ratio);
+    const height = Math.round(img.height * ratio);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality)
+    );
+
+    if (!blob) return file;
+    if (blob.size >= file.size) return file;
+
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(imgUrl);
+  }
+}
+
 export default function TambahBarangPage() {
 
   const navigate = useNavigate();
@@ -30,21 +68,26 @@ export default function TambahBarangPage() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [processingPhotos, setProcessingPhotos] = useState(false);
   const [previews, setPreviews] = useState([]);
 
   /* ================= HANDLE CHANGE ================= */
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
 
     const { name, value, files } = e.target;
 
     if (name === "fotos") {
       const selected = Array.from(files || []);
+      setProcessingPhotos(true);
+      const compressed = await Promise.all(
+        selected.map((f) => compressImage(f))
+      );
       setForm((prev) => {
         // Dedup by (name + size) so re-picking same file won't duplicate
         const keyOf = (f) => `${f?.name || ""}__${f?.size || 0}`;
         const existingKeys = new Set((prev.fotos || []).map(keyOf));
-        const uniqueSelected = selected.filter((f) => {
+        const uniqueSelected = compressed.filter((f) => {
           const k = keyOf(f);
           if (existingKeys.has(k)) return false;
           existingKeys.add(k);
@@ -76,6 +119,7 @@ export default function TambahBarangPage() {
 
       // allow re-selecting the same file again
       e.target.value = "";
+      setProcessingPhotos(false);
 
     } else {
 
@@ -172,8 +216,18 @@ export default function TambahBarangPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow space-y-4 max-w-xl"
+        className="relative bg-white p-6 rounded-xl shadow space-y-4 max-w-xl"
       >
+        {(processingPhotos || loading) && (
+          <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2 text-blue-700">
+              <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-medium">
+                {processingPhotos ? "Memproses foto..." : "Mengupload data..."}
+              </p>
+            </div>
+          </div>
+        )}
 
         <input
           type="text"
@@ -276,9 +330,16 @@ export default function TambahBarangPage() {
             accept="image/*"
             multiple
             onChange={handleChange}
-            className="w-full border p-2 rounded-lg"
+            disabled={processingPhotos || loading}
+            className="w-full border p-2 rounded-lg disabled:opacity-60"
           />
-          <p className="text-xs text-gray-500 mt-1">Maksimal 6 foto</p>
+          <p className="text-xs text-gray-500 mt-1">Maksimal 6 foto (otomatis dikompres)</p>
+          {processingPhotos && (
+            <div className="mt-2 inline-flex items-center gap-2 text-xs text-blue-600">
+              <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              Memproses foto...
+            </div>
+          )}
 
           {previews.length > 0 && (
             <div className="mt-3 grid grid-cols-3 gap-2">
@@ -307,7 +368,7 @@ export default function TambahBarangPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || processingPhotos}
             className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? "Menyimpan..." : "Simpan"}

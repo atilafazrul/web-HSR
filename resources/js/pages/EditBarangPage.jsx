@@ -8,6 +8,44 @@ function newId() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
 }
 
+async function compressImage(file, maxW = 1600, maxH = 1600, quality = 0.75) {
+  if (!file || !file.type?.startsWith("image/")) return file;
+
+  const imgUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((resolve, reject) => {
+      const el = new Image();
+      el.onload = () => resolve(el);
+      el.onerror = reject;
+      el.src = imgUrl;
+    });
+
+    const ratio = Math.min(maxW / img.width, maxH / img.height, 1);
+    const width = Math.round(img.width * ratio);
+    const height = Math.round(img.height * ratio);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(img, 0, 0, width, height);
+
+    const blob = await new Promise((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality)
+    );
+
+    if (!blob) return file;
+    if (blob.size >= file.size) return file;
+
+    const baseName = file.name.replace(/\.[^/.]+$/, "");
+    return new File([blob], `${baseName}.jpg`, { type: "image/jpeg" });
+  } catch {
+    return file;
+  } finally {
+    URL.revokeObjectURL(imgUrl);
+  }
+}
+
 export default function EditBarangPage() {
 
   const { id } = useParams();
@@ -39,6 +77,8 @@ export default function EditBarangPage() {
   const [photoItems, setPhotoItems] = useState([]);
 
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [processingPhotos, setProcessingPhotos] = useState(false);
 
   const replaceInputRef = useRef(null);
   const replaceIndexRef = useRef(null);
@@ -111,8 +151,12 @@ export default function EditBarangPage() {
 
   /* ================= PHOTOS ================= */
 
-  const handleAddFotos = (e) => {
+  const handleAddFotos = async (e) => {
     const selected = Array.from(e.target.files || []);
+    setProcessingPhotos(true);
+    const compressed = await Promise.all(
+      selected.map((f) => compressImage(f))
+    );
     const keyOf = (f) => `${f?.name || ""}__${f?.size || 0}`;
 
     setPhotoItems((prev) => {
@@ -121,7 +165,7 @@ export default function EditBarangPage() {
       );
       const next = [...prev];
 
-      for (const f of selected) {
+      for (const f of compressed) {
         if (next.length >= 6) {
           alert("Maksimal 6 foto ❗");
           break;
@@ -137,6 +181,7 @@ export default function EditBarangPage() {
     });
 
     e.target.value = "";
+    setProcessingPhotos(false);
   };
 
   const handleRemovePhoto = (indexToRemove) => {
@@ -154,7 +199,7 @@ export default function EditBarangPage() {
     replaceInputRef.current?.click();
   };
 
-  const handleReplaceChange = (e) => {
+  const handleReplaceChange = async (e) => {
     const file = e.target.files?.[0];
     const idx = replaceIndexRef.current;
     e.target.value = "";
@@ -165,19 +210,22 @@ export default function EditBarangPage() {
       alert("Pilih file gambar");
       return;
     }
+    setProcessingPhotos(true);
+    const compressed = await compressImage(file);
 
     setPhotoItems((prev) => {
       const old = prev[idx];
       if (old?.kind === "new" && old.previewUrl) {
         URL.revokeObjectURL(old.previewUrl);
       }
-      const previewUrl = URL.createObjectURL(file);
+      const previewUrl = URL.createObjectURL(compressed);
       return prev.map((it, i) =>
         i === idx
-          ? { id: newId(), kind: "new", file, previewUrl }
+          ? { id: newId(), kind: "new", file: compressed, previewUrl }
           : it
       );
     });
+    setProcessingPhotos(false);
   };
 
 
@@ -202,6 +250,7 @@ export default function EditBarangPage() {
     e.preventDefault();
 
     try {
+      setSaving(true);
 
       const formData = new FormData();
 
@@ -250,6 +299,8 @@ export default function EditBarangPage() {
       const msg = err.response?.data?.message;
       alert(msg || "Gagal update barang ❌");
 
+    } finally {
+      setSaving(false);
     }
 
   };
@@ -277,8 +328,18 @@ export default function EditBarangPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white p-6 rounded-xl shadow space-y-4 max-w-xl"
+        className="relative bg-white p-6 rounded-xl shadow space-y-4 max-w-xl"
       >
+        {(processingPhotos || saving) && (
+          <div className="absolute inset-0 z-20 bg-white/70 backdrop-blur-[1px] rounded-xl flex items-center justify-center">
+            <div className="flex flex-col items-center gap-2 text-blue-700">
+              <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-sm font-medium">
+                {processingPhotos ? "Memproses foto..." : "Menyimpan perubahan..."}
+              </p>
+            </div>
+          </div>
+        )}
 
         <input
           type="text"
@@ -382,12 +443,18 @@ export default function EditBarangPage() {
             accept="image/*"
             multiple
             onChange={handleAddFotos}
-            disabled={photoItems.length >= 6}
+            disabled={photoItems.length >= 6 || processingPhotos || saving}
             className="w-full border p-3 rounded disabled:opacity-50"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Maksimal 6 foto. Klik <strong>Ganti</strong> untuk mengganti satu foto, atau silang untuk hapus.
+            Maksimal 6 foto. Klik <strong>Ganti</strong> untuk mengganti satu foto, atau silang untuk hapus. Foto otomatis dikompres.
           </p>
+          {processingPhotos && (
+            <div className="mt-2 inline-flex items-center gap-2 text-xs text-blue-600">
+              <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              Memproses foto...
+            </div>
+          )}
 
           {photoItems.length > 0 && (
             <div className="mt-3 grid grid-cols-3 gap-3">
@@ -430,9 +497,10 @@ export default function EditBarangPage() {
 
           <button
             type="submit"
-            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
+            disabled={saving || processingPhotos}
+            className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
-            Update
+            {saving ? "Mengupdate..." : "Update"}
           </button>
 
           <button
