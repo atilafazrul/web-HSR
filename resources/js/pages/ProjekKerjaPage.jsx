@@ -1529,43 +1529,67 @@ export default function ProjekKerjaPage() {
                           </button>
                         </div>
                         <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                          {biayaEdit[col.key].map((row, idx) => (
-                            <div key={idx} className="bg-white rounded-lg border p-2 space-y-2">
-                              <div className="flex gap-2">
+                          {biayaEdit[col.key].map((row, idx) => {
+                            const barisLunas = Boolean(row.is_lunas);
+                            const bolehEditIsi = !barisLunas;
+                            const bolehHapus = !barisLunas || role === "super_admin";
+                            return (
+                              <div
+                                key={idx}
+                                className={`bg-white rounded-lg border p-2 space-y-2 ${barisLunas ? "border-amber-200/80 bg-amber-50/30" : ""}`}
+                              >
+                                {barisLunas ? (
+                                  <p className="text-[10px] text-amber-800 font-medium">
+                                    Sudah lunas — isi tidak bisa diubah
+                                    {role === "super_admin" ? "; hanya super admin bisa hapus baris ini" : ""}
+                                  </p>
+                                ) : null}
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="off"
+                                    value={row.nominal}
+                                    onChange={(e) =>
+                                      updateBiayaCell(
+                                        col.key,
+                                        idx,
+                                        "nominal",
+                                        formatRibuanId(digitsOnly(e.target.value))
+                                      )
+                                    }
+                                    readOnly={!bolehEditIsi}
+                                    disabled={!bolehEditIsi}
+                                    className={`border w-full p-2 rounded-lg text-sm ${!bolehEditIsi ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
+                                    placeholder="Biaya"
+                                  />
+                                  {bolehHapus ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeBiayaRow(col.key, idx)}
+                                      className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 shrink-0"
+                                      title="Hapus baris"
+                                    >
+                                      <Trash2 size={16} />
+                                    </button>
+                                  ) : (
+                                    <span className="p-2 shrink-0 text-[10px] text-gray-400 w-10 text-center" title="Tidak bisa dihapus">
+                                      —
+                                    </span>
+                                  )}
+                                </div>
                                 <input
                                   type="text"
-                                  inputMode="numeric"
-                                  autoComplete="off"
-                                  value={row.nominal}
-                                  onChange={(e) =>
-                                    updateBiayaCell(
-                                      col.key,
-                                      idx,
-                                      "nominal",
-                                      formatRibuanId(digitsOnly(e.target.value))
-                                    )
-                                  }
-                                  className="border w-full p-2 rounded-lg text-sm"
-                                  placeholder="Biaya"
+                                  value={row.keterangan}
+                                  onChange={(e) => updateBiayaCell(col.key, idx, "keterangan", e.target.value)}
+                                  readOnly={!bolehEditIsi}
+                                  disabled={!bolehEditIsi}
+                                  className={`border w-full p-2 rounded-lg text-sm ${!bolehEditIsi ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
+                                  placeholder="Keterangan"
                                 />
-                                <button
-                                  type="button"
-                                  onClick={() => removeBiayaRow(col.key, idx)}
-                                  className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 shrink-0"
-                                  title="Hapus baris"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
                               </div>
-                              <input
-                                type="text"
-                                value={row.keterangan}
-                                onChange={(e) => updateBiayaCell(col.key, idx, "keterangan", e.target.value)}
-                                className="border w-full p-2 rounded-lg text-sm"
-                                placeholder="Keterangan"
-                              />
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                         <p className="mt-2 text-sm font-semibold text-gray-800">
                           Subtotal: {formatRupiah(sumBiayaRows(biayaEdit[col.key]))}

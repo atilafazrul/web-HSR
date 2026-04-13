@@ -167,6 +167,7 @@ class DashboardBiayaController extends Controller
         $request->validate([
             'is_lunas' => 'nullable|boolean',
             'keterangan' => 'nullable|string|max:2000',
+            'nominal' => 'nullable|numeric|min:0',
             'photos' => 'nullable|array|max:25',
             'photos.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120',
         ]);
@@ -178,9 +179,27 @@ class DashboardBiayaController extends Controller
             ], 403);
         }
 
+        $wantsContentChange = $request->has('keterangan')
+            || $request->has('nominal')
+            || $request->hasFile('photos');
+
+        $pendingLunasOff = ($user->role ?? null) === 'super_admin'
+            && $request->has('is_lunas')
+            && ! $request->boolean('is_lunas');
+
+        if ($row->is_lunas && $wantsContentChange && ! $pendingLunasOff) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Biaya sudah lunas tidak bisa diubah.',
+            ], 403);
+        }
+
         $payload = ['updated_by' => $user->id ?? null];
         if ($request->has('keterangan')) {
             $payload['keterangan'] = $request->input('keterangan');
+        }
+        if ($request->has('nominal')) {
+            $payload['nominal'] = $request->input('nominal');
         }
         if ($request->hasFile('photos')) {
             if (! $this->kategoriAllowsPhotos($row->kategori)) {
@@ -214,7 +233,16 @@ class DashboardBiayaController extends Controller
 
     public function destroy(Request $request, $id)
     {
+        $user = $request->user();
         $row = $this->scopedQuery($request)->findOrFail($id);
+
+        if ($row->is_lunas && ($user->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang bisa menghapus biaya yang sudah lunas.',
+            ], 403);
+        }
+
         $this->deleteStoredPhotos($row->photo_paths ?? []);
         $row->delete();
 

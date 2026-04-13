@@ -503,9 +503,62 @@ class ProjekKerjaController extends Controller
 
             $normalizeItems = function (?array $incoming, array $existing = []) use ($isSuperAdmin) {
                 $incoming = $incoming ?? [];
+                $existing = $existing ?? [];
+
+                if ($isSuperAdmin) {
+                    $result = [];
+                    foreach ($incoming as $idx => $row) {
+                        if (! is_array($row)) {
+                            continue;
+                        }
+
+                        $nominal = (float) ($row['nominal'] ?? 0);
+                        if ($nominal < 0) {
+                            $nominal = 0;
+                        }
+                        $keterangan = trim((string) ($row['keterangan'] ?? ''));
+
+                        $isLunas = (bool) ($row['is_lunas'] ?? false);
+
+                        if ($nominal > 0 || $keterangan !== '') {
+                            $result[] = [
+                                'nominal' => round($nominal, 2),
+                                'keterangan' => $keterangan,
+                                'is_lunas' => $isLunas,
+                            ];
+                        }
+                    }
+
+                    return $result;
+                }
+
+                // Non–super admin: baris is_lunas tidak boleh diubah isi / dihapus; urutan baris lunas harus sama.
+                $lunasQueue = array_values(array_filter($existing, fn ($r) => is_array($r) && ! empty($r['is_lunas'])));
                 $result = [];
-                foreach ($incoming as $idx => $row) {
-                    if (!is_array($row)) {
+                foreach ($incoming as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+
+                    if (! empty($row['is_lunas'])) {
+                        $lun = $lunasQueue[0] ?? null;
+                        if (! $lun) {
+                            throw new \InvalidArgumentException('Baris biaya lunas tidak valid atau tidak boleh ditambah.');
+                        }
+                        $ln = round((float) ($lun['nominal'] ?? 0), 2);
+                        $lk = trim((string) ($lun['keterangan'] ?? ''));
+                        $rn = round((float) ($row['nominal'] ?? 0), 2);
+                        $rk = trim((string) ($row['keterangan'] ?? ''));
+                        if ($ln !== $rn || $lk !== $rk) {
+                            throw new \InvalidArgumentException('Baris yang sudah lunas tidak boleh diubah nominal atau keterangannya.');
+                        }
+                        array_shift($lunasQueue);
+                        $result[] = [
+                            'nominal' => $ln,
+                            'keterangan' => $lk,
+                            'is_lunas' => true,
+                        ];
+
                         continue;
                     }
 
@@ -515,18 +568,17 @@ class ProjekKerjaController extends Controller
                     }
                     $keterangan = trim((string) ($row['keterangan'] ?? ''));
 
-                    $existingIsLunas = (bool) ($existing[$idx]['is_lunas'] ?? false);
-                    $isLunas = $isSuperAdmin
-                        ? (bool) ($row['is_lunas'] ?? false)
-                        : $existingIsLunas;
-
                     if ($nominal > 0 || $keterangan !== '') {
                         $result[] = [
                             'nominal' => round($nominal, 2),
                             'keterangan' => $keterangan,
-                            'is_lunas' => $isLunas,
+                            'is_lunas' => false,
                         ];
                     }
+                }
+
+                if (count($lunasQueue) > 0) {
+                    throw new \InvalidArgumentException('Baris biaya yang sudah lunas tidak boleh dihapus.');
                 }
 
                 return $result;
@@ -578,6 +630,11 @@ class ProjekKerjaController extends Controller
                 'data' => $projek
             ]);
 
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,

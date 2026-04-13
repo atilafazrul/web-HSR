@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/axiosConfig";
-import { DollarSign, Eye, Trash2 } from "lucide-react";
-import { digitsOnly, formatRibuanId, parseRibuanId } from "../utils/formatRupiahInput";
+import { DollarSign, Eye, Pencil, Trash2 } from "lucide-react";
+import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 
 const kategoriConfig = [
   { key: "jalan", label: "Biaya Jalan" },
@@ -52,8 +52,16 @@ export default function BiayaDashboardPanel({ user }) {
   });
   const pengeluaranPhotoInputRef = useRef(null);
   const reimbPhotoInputRef = useRef(null);
+  const editPhotoInputRef = useRef(null);
 
   const kategoriWithPhotos = (key) => key === "pengeluaran" || key === "reimbursment";
+
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    nominal: "",
+    keterangan: "",
+    photoFiles: [],
+  });
 
   const fetchAll = async () => {
     setLoading(true);
@@ -147,11 +155,64 @@ export default function BiayaDashboardPanel({ user }) {
     if (!window.confirm("Hapus data biaya ini?")) return;
     try {
       await api.delete(`/dashboard-biaya/${id}`);
+      if (editingId === id) {
+        setEditingId(null);
+        setEditForm({ nominal: "", keterangan: "", photoFiles: [] });
+      }
       fetchAll();
     } catch (err) {
       alert(err.response?.data?.message || "Gagal hapus data");
     }
   };
+
+  const startEdit = (row) => {
+    if (row.is_lunas) return;
+    setEditingId(row.id);
+    setEditForm({
+      nominal: nominalApiToInput(row.nominal) || formatRibuanId(String(Math.round(Number(row.nominal || 0)))),
+      keterangan: row.keterangan || "",
+      photoFiles: [],
+    });
+    if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({ nominal: "", keterangan: "", photoFiles: [] });
+    if (editPhotoInputRef.current) editPhotoInputRef.current.value = "";
+  };
+
+  const saveEdit = async () => {
+    const row = items.find((i) => i.id === editingId);
+    if (!row || row.is_lunas) return;
+    const nominal = parseRibuanId(editForm.nominal);
+    if (!nominal || nominal <= 0) {
+      alert("Nominal harus lebih dari 0");
+      return;
+    }
+    try {
+      const kat = row.kategori;
+      if (kategoriWithPhotos(kat)) {
+        const fd = new FormData();
+        fd.append("nominal", String(nominal));
+        fd.append("keterangan", editForm.keterangan || "");
+        (editForm.photoFiles || []).forEach((file) => fd.append("photos[]", file));
+        await api.patch(`/dashboard-biaya/${row.id}`, fd);
+      } else {
+        await api.patch(`/dashboard-biaya/${row.id}`, {
+          nominal,
+          keterangan: editForm.keterangan || "",
+        });
+      }
+      cancelEdit();
+      fetchAll();
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal menyimpan perubahan");
+    }
+  };
+
+  const canDeleteRow = (row) => !row.is_lunas || isSuperAdmin;
+  const canEditRow = (row) => !row.is_lunas;
 
   return (
     <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
@@ -244,50 +305,125 @@ export default function BiayaDashboardPanel({ user }) {
             <div className="space-y-2 max-h-56 overflow-y-auto">
               {(grouped[k.key] || []).map((row) => (
                 <div key={row.id} className="text-xs border rounded-lg p-2">
-                  <p className="font-semibold">{rupiah(row.nominal)}</p>
-                  {row.keterangan ? <p className="text-gray-600">{row.keterangan}</p> : null}
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
-                  </p>
-                  <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    {isSuperAdmin ? (
-                      <button
-                        type="button"
-                        onClick={() => toggleLunas(row)}
-                        className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
-                      >
-                        {row.is_lunas ? "Lunas" : "Belum"}
-                      </button>
-                    ) : (
-                      <span
-                        className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
-                      >
-                        {row.is_lunas ? "Lunas" : "Belum"}
-                      </span>
-                    )}
-                    {(row.photo_urls || []).map((url, idx) => (
-                      <a
-                        key={`${row.id}-ph-${idx}`}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        title={`Lihat lampiran ${idx + 1}`}
-                        className="inline-flex items-center justify-center px-2 py-1 rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
-                      >
-                        <Eye size={12} aria-hidden />
-                        {(row.photo_urls || []).length > 1 ? (
-                          <span className="ml-0.5 text-[10px] font-medium tabular-nums">{idx + 1}</span>
+                  {editingId === row.id ? (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        value={editForm.nominal}
+                        onChange={(e) =>
+                          setEditForm((f) => ({
+                            ...f,
+                            nominal: formatRibuanId(digitsOnly(e.target.value)),
+                          }))
+                        }
+                        placeholder="Biaya"
+                        className="w-full border rounded-lg p-2 text-sm"
+                      />
+                      <input
+                        type="text"
+                        value={editForm.keterangan}
+                        onChange={(e) => setEditForm((f) => ({ ...f, keterangan: e.target.value }))}
+                        placeholder="Keterangan"
+                        className="w-full border rounded-lg p-2 text-sm"
+                      />
+                      {kategoriWithPhotos(row.kategori) ? (
+                        <div>
+                          <label className="block text-[11px] text-gray-600 mb-0.5">Tambah foto (opsional)</label>
+                          <input
+                            ref={editPhotoInputRef}
+                            type="file"
+                            multiple
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={(e) =>
+                              setEditForm((f) => ({
+                                ...f,
+                                photoFiles: e.target.files ? Array.from(e.target.files) : [],
+                              }))
+                            }
+                            className="w-full text-[11px] border rounded-lg p-1 bg-white"
+                          />
+                        </div>
+                      ) : null}
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={saveEdit}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-1.5 text-xs"
+                        >
+                          Simpan
+                        </button>
+                        <button
+                          type="button"
+                          onClick={cancelEdit}
+                          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg py-1.5 text-xs"
+                        >
+                          Batal
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="font-semibold">{rupiah(row.nominal)}</p>
+                      {row.keterangan ? <p className="text-gray-600">{row.keterangan}</p> : null}
+                      <p className="mt-1 text-[11px] text-gray-500">
+                        <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
+                      </p>
+                      <div className="mt-2 flex items-center gap-2 flex-wrap">
+                        {isSuperAdmin ? (
+                          <button
+                            type="button"
+                            onClick={() => toggleLunas(row)}
+                            className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                          >
+                            {row.is_lunas ? "Lunas" : "Belum"}
+                          </button>
+                        ) : (
+                          <span
+                            className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                          >
+                            {row.is_lunas ? "Lunas" : "Belum"}
+                          </span>
+                        )}
+                        {(row.photo_urls || []).map((url, idx) => (
+                          <a
+                            key={`${row.id}-ph-${idx}`}
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Lihat lampiran ${idx + 1}`}
+                            className="inline-flex items-center justify-center px-2 py-1 rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                          >
+                            <Eye size={12} aria-hidden />
+                            {(row.photo_urls || []).length > 1 ? (
+                              <span className="ml-0.5 text-[10px] font-medium tabular-nums">{idx + 1}</span>
+                            ) : null}
+                          </a>
+                        ))}
+                        {canEditRow(row) ? (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(row)}
+                            title="Edit"
+                            className="inline-flex items-center justify-center px-2 py-1 rounded border bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                          >
+                            <Pencil size={12} aria-hidden />
+                          </button>
                         ) : null}
-                      </a>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => removeRow(row.id)}
-                      className="px-2 py-1 rounded border bg-red-100 text-red-600 border-red-300"
-                    >
-                      <Trash2 size={12} />
-                    </button>
-                  </div>
+                        {canDeleteRow(row) ? (
+                          <button
+                            type="button"
+                            onClick={() => removeRow(row.id)}
+                            title="Hapus"
+                            className="px-2 py-1 rounded border bg-red-100 text-red-600 border-red-300"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        ) : null}
+                      </div>
+                    </>
+                  )}
                 </div>
               ))}
               {(grouped[k.key] || []).length === 0 ? (
