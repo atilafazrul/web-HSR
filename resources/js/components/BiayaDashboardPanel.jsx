@@ -1,6 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/axiosConfig";
-import { DollarSign, Trash2 } from "lucide-react";
+import { DollarSign, Eye, Trash2 } from "lucide-react";
+import { digitsOnly, formatRibuanId, parseRibuanId } from "../utils/formatRupiahInput";
 
 const kategoriConfig = [
   { key: "jalan", label: "Biaya Jalan" },
@@ -33,6 +34,8 @@ const formatDateTime = (v) => {
 };
 
 export default function BiayaDashboardPanel({ user }) {
+  const isSuperAdmin = user?.role === "super_admin";
+
   const [summary, setSummary] = useState({
     jalan: 0,
     pengeluaran: 0,
@@ -45,8 +48,9 @@ export default function BiayaDashboardPanel({ user }) {
   const [form, setForm] = useState({
     jalan: { nominal: "", keterangan: "" },
     pengeluaran: { nominal: "", keterangan: "" },
-    reimbursment: { nominal: "", keterangan: "" },
+    reimbursment: { nominal: "", keterangan: "", photoFiles: [] },
   });
+  const reimbPhotoInputRef = useRef(null);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -68,29 +72,49 @@ export default function BiayaDashboardPanel({ user }) {
     fetchAll();
   }, []);
 
-  const grouped = useMemo(
-    () => ({
-      jalan: items.filter((i) => i.kategori === "jalan"),
-      pengeluaran: items.filter((i) => i.kategori === "pengeluaran"),
-      reimbursment: items.filter((i) => i.kategori === "reimbursment"),
-    }),
-    [items]
-  );
+  const grouped = useMemo(() => {
+    const sortBelumLunasFirst = (arr) =>
+      [...arr].sort((a, b) => {
+        const la = a.is_lunas ? 1 : 0;
+        const lb = b.is_lunas ? 1 : 0;
+        if (la !== lb) return la - lb;
+        return new Date(b.created_at) - new Date(a.created_at);
+      });
+    return {
+      jalan: sortBelumLunasFirst(items.filter((i) => i.kategori === "jalan")),
+      pengeluaran: sortBelumLunasFirst(items.filter((i) => i.kategori === "pengeluaran")),
+      reimbursment: sortBelumLunasFirst(items.filter((i) => i.kategori === "reimbursment")),
+    };
+  }, [items]);
 
   const submitKategori = async (kategori) => {
     const row = form[kategori];
-    const nominal = Number(row.nominal || 0);
+    const nominal = parseRibuanId(row.nominal);
     if (!nominal || nominal <= 0) {
       alert("Nominal harus lebih dari 0");
       return;
     }
     try {
-      await api.post("/dashboard-biaya", {
-        kategori,
-        nominal,
-        keterangan: row.keterangan || "",
-      });
-      setForm((p) => ({ ...p, [kategori]: { nominal: "", keterangan: "" } }));
+      if (kategori === "reimbursment") {
+        const fd = new FormData();
+        fd.append("kategori", kategori);
+        fd.append("nominal", String(nominal));
+        fd.append("keterangan", row.keterangan || "");
+        (row.photoFiles || []).forEach((file) => fd.append("photos[]", file));
+        await api.post("/dashboard-biaya", fd);
+        if (reimbPhotoInputRef.current) reimbPhotoInputRef.current.value = "";
+        setForm((p) => ({
+          ...p,
+          reimbursment: { nominal: "", keterangan: "", photoFiles: [] },
+        }));
+      } else {
+        await api.post("/dashboard-biaya", {
+          kategori,
+          nominal,
+          keterangan: row.keterangan || "",
+        });
+        setForm((p) => ({ ...p, [kategori]: { nominal: "", keterangan: "" } }));
+      }
       fetchAll();
     } catch (err) {
       alert(err.response?.data?.message || "Gagal simpan biaya");
@@ -133,16 +157,20 @@ export default function BiayaDashboardPanel({ user }) {
           <div key={k.key} className="rounded-xl border p-3 bg-gray-50">
             <p className="text-sm font-semibold mb-2">{k.label}</p>
             <input
-              type="number"
-              min="0"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
               value={form[k.key].nominal}
               onChange={(e) =>
                 setForm((p) => ({
                   ...p,
-                  [k.key]: { ...p[k.key], nominal: e.target.value },
+                  [k.key]: {
+                    ...p[k.key],
+                    nominal: formatRibuanId(digitsOnly(e.target.value)),
+                  },
                 }))
               }
-              placeholder="Nominal"
+              placeholder="Biaya"
               className="w-full border rounded-lg p-2 text-sm mb-2"
             />
             <input
@@ -157,6 +185,32 @@ export default function BiayaDashboardPanel({ user }) {
               placeholder="Keterangan"
               className="w-full border rounded-lg p-2 text-sm mb-2"
             />
+            {k.key === "reimbursment" ? (
+              <div className="mb-2">
+                <label className="block text-xs text-gray-600 mb-1">Lampiran foto (opsional, bisa banyak)</label>
+                <input
+                  ref={reimbPhotoInputRef}
+                  type="file"
+                  multiple
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      reimbursment: {
+                        ...p.reimbursment,
+                        photoFiles: e.target.files ? Array.from(e.target.files) : [],
+                      },
+                    }))
+                  }
+                  className="w-full text-xs border rounded-lg p-1.5 bg-white"
+                />
+                {form.reimbursment.photoFiles?.length > 0 ? (
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    {form.reimbursment.photoFiles.length} file dipilih
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <button
               type="button"
               onClick={() => submitKategori(k.key)}
@@ -187,14 +241,37 @@ export default function BiayaDashboardPanel({ user }) {
                   <p className="mt-1 text-[11px] text-gray-500">
                     <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
                   </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => toggleLunas(row)}
-                      className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
-                    >
-                      {row.is_lunas ? "Lunas" : "Belum"}
-                    </button>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    {isSuperAdmin ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleLunas(row)}
+                        className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                      >
+                        {row.is_lunas ? "Lunas" : "Belum"}
+                      </button>
+                    ) : (
+                      <span
+                        className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                      >
+                        {row.is_lunas ? "Lunas" : "Belum"}
+                      </span>
+                    )}
+                    {(row.photo_urls || []).map((url, idx) => (
+                      <a
+                        key={`${row.id}-ph-${idx}`}
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`Lihat lampiran ${idx + 1}`}
+                        className="inline-flex items-center justify-center px-2 py-1 rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                      >
+                        <Eye size={12} aria-hidden />
+                        {(row.photo_urls || []).length > 1 ? (
+                          <span className="ml-0.5 text-[10px] font-medium tabular-nums">{idx + 1}</span>
+                        ) : null}
+                      </a>
+                    ))}
                     <button
                       type="button"
                       onClick={() => removeRow(row.id)}

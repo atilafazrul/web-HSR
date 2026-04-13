@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
+import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Download,
@@ -468,25 +469,25 @@ export default function ProjekKerjaPage() {
   const normalizeBiayaRows = (arr) => {
     if (!Array.isArray(arr) || arr.length === 0) return [emptyBiayaRow()];
     return arr.map((r) => ({
-      nominal: r.nominal != null && r.nominal !== "" ? String(r.nominal) : "",
+      nominal: nominalApiToInput(r.nominal),
       keterangan: r.keterangan ?? "",
       is_lunas: Boolean(r.is_lunas),
     }));
   };
 
   const sumBiayaRows = (rows) =>
-    rows.reduce((acc, r) => acc + (Number(r.nominal) || 0), 0);
+    rows.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
 
   const displayBiayaRows = (rows) =>
     rows.filter(
       (r) =>
-        (Number(r.nominal) || 0) > 0 ||
+        parseRibuanId(r.nominal) > 0 ||
         (r.keterangan && String(r.keterangan).trim() !== "")
     );
 
   const biayaToPayload = (rows) =>
     rows.map((r) => ({
-      nominal: Number.isFinite(Number(r.nominal)) ? Number(r.nominal) : 0,
+      nominal: parseRibuanId(r.nominal),
       keterangan: (r.keterangan || "").trim(),
       is_lunas: Boolean(r.is_lunas),
     }));
@@ -1391,7 +1392,7 @@ export default function ProjekKerjaPage() {
                           <ul className="space-y-1 text-gray-700 max-h-40 overflow-y-auto">
                             {shown.map((r, i) => (
                               <li key={i} className="text-xs border-b border-gray-200/80 pb-1">
-                                <span className="font-medium">{formatRupiah(r.nominal || 0)}</span>
+                                <span className="font-medium">{formatRupiah(parseRibuanId(r.nominal))}</span>
                                 {role === "super_admin" ? (
                                   <button
                                     type="button"
@@ -1509,13 +1510,20 @@ export default function ProjekKerjaPage() {
                             <div key={idx} className="bg-white rounded-lg border p-2 space-y-2">
                               <div className="flex gap-2">
                                 <input
-                                  type="number"
-                                  min="0"
-                                  step="any"
+                                  type="text"
+                                  inputMode="numeric"
+                                  autoComplete="off"
                                   value={row.nominal}
-                                  onChange={(e) => updateBiayaCell(col.key, idx, "nominal", e.target.value)}
+                                  onChange={(e) =>
+                                    updateBiayaCell(
+                                      col.key,
+                                      idx,
+                                      "nominal",
+                                      formatRibuanId(digitsOnly(e.target.value))
+                                    )
+                                  }
                                   className="border w-full p-2 rounded-lg text-sm"
-                                  placeholder="Nominal"
+                                  placeholder="Biaya"
                                 />
                                 <button
                                   type="button"
