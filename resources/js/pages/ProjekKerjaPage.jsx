@@ -20,7 +20,7 @@ import {
   ShoppingCart,
   Clock,
   DollarSign,
-  Plus
+  Plus,
 } from "lucide-react";
 
 function BiayaMetaFooter({ meta }) {
@@ -99,6 +99,7 @@ export default function ProjekKerjaPage() {
   };
 
   const currentDivisi = getCurrentDivisi();
+  const isSelesaiContext = /\/(seles|selesai)(\/|$)/i.test(location.pathname);
 
   useEffect(() => {
     if (!user) navigate("/");
@@ -276,13 +277,8 @@ export default function ProjekKerjaPage() {
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
-    setProcessingUpload(true);
-    try {
-      const out = await compressImage(f);
-      setForm(prev => ({ ...prev, file: out }));
-    } finally {
-      setProcessingUpload(false);
-    }
+    // Dokumen (pdf/doc/xls) tidak perlu dan tidak boleh dikompres sebagai gambar.
+    setForm(prev => ({ ...prev, file: f }));
   };
 
   const handlePhotoUpload = async (e) => {
@@ -718,9 +714,22 @@ export default function ProjekKerjaPage() {
     );
   };
 
-  // Filter data berdasarkan pencarian
-  const filteredData = dataList.filter(item => {
-    const term = searchTerm.toLowerCase();
+  /**
+   * Super admin:
+   * - di konteks /seles atau /selesai: hanya status selesai
+   * - di halaman projek biasa: tampilkan semua status
+   */
+  const filteredData = dataList.filter((item) => {
+    if (role === "super_admin") {
+      if (isSelesaiContext && String(item.status || "").trim().toLowerCase() !== "selesai") {
+        return false;
+      }
+      if (currentDivisi && divisiKey(item.divisi) !== divisiKey(currentDivisi)) {
+        return false;
+      }
+    }
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return true;
     return (
       item.divisi?.toLowerCase().includes(term) ||
       item.jenis_pekerjaan?.toLowerCase().includes(term) ||
@@ -999,19 +1008,33 @@ export default function ProjekKerjaPage() {
 
       {/* ================= TABLE ================= */}
       <div className="bg-white rounded-2xl shadow-md p-4 lg:p-8 border" style={{ maxWidth: '100%' }}>
-        {/* Header dengan judul, search, dan toggle auto-refresh */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Activity className="text-blue-600" />
-            Data Projek Kerja
-          </h2>
-          <div className="relative mt-2 sm:mt-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div>
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Activity className="text-blue-600" />
+              Data Projek Kerja
+            </h2>
+            {role === "super_admin" && isSelesaiContext ? (
+              <p className="text-xs text-gray-500 mt-1">
+                Hanya proyek status <span className="font-medium text-gray-700">Selesai</span>
+                {currentDivisi ? (
+                  <>
+                    {" · "}
+                    divisi <span className="font-medium text-gray-700">{divisiLabel(currentDivisi)}</span>
+                  </>
+                ) : (
+                  <> · semua divisi</>
+                )}
+              </p>
+            ) : null}
+          </div>
+          <div className="relative mt-2 sm:mt-0 w-full sm:w-64 shrink-0">
             <input
               type="text"
               placeholder="Cari divisi, tugas, karyawan, lokasi, status..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="border rounded-lg pl-10 pr-4 py-2 w-full sm:w-64 focus:ring-2 focus:ring-blue-400"
+              className="border rounded-lg pl-10 pr-4 py-2 w-full focus:ring-2 focus:ring-blue-400"
             />
             <svg
               className="absolute left-3 top-2.5 text-gray-400"

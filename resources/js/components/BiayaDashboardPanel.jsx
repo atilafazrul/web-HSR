@@ -47,10 +47,13 @@ export default function BiayaDashboardPanel({ user }) {
 
   const [form, setForm] = useState({
     jalan: { nominal: "", keterangan: "" },
-    pengeluaran: { nominal: "", keterangan: "" },
+    pengeluaran: { nominal: "", keterangan: "", photoFiles: [] },
     reimbursment: { nominal: "", keterangan: "", photoFiles: [] },
   });
+  const pengeluaranPhotoInputRef = useRef(null);
   const reimbPhotoInputRef = useRef(null);
+
+  const kategoriWithPhotos = (key) => key === "pengeluaran" || key === "reimbursment";
 
   const fetchAll = async () => {
     setLoading(true);
@@ -95,17 +98,22 @@ export default function BiayaDashboardPanel({ user }) {
       return;
     }
     try {
-      if (kategori === "reimbursment") {
+      if (kategoriWithPhotos(kategori)) {
         const fd = new FormData();
         fd.append("kategori", kategori);
         fd.append("nominal", String(nominal));
         fd.append("keterangan", row.keterangan || "");
         (row.photoFiles || []).forEach((file) => fd.append("photos[]", file));
         await api.post("/dashboard-biaya", fd);
-        if (reimbPhotoInputRef.current) reimbPhotoInputRef.current.value = "";
+        if (kategori === "pengeluaran" && pengeluaranPhotoInputRef.current) {
+          pengeluaranPhotoInputRef.current.value = "";
+        }
+        if (kategori === "reimbursment" && reimbPhotoInputRef.current) {
+          reimbPhotoInputRef.current.value = "";
+        }
         setForm((p) => ({
           ...p,
-          reimbursment: { nominal: "", keterangan: "", photoFiles: [] },
+          [kategori]: { nominal: "", keterangan: "", photoFiles: [] },
         }));
       } else {
         await api.post("/dashboard-biaya", {
@@ -185,28 +193,28 @@ export default function BiayaDashboardPanel({ user }) {
               placeholder="Keterangan"
               className="w-full border rounded-lg p-2 text-sm mb-2"
             />
-            {k.key === "reimbursment" ? (
+            {kategoriWithPhotos(k.key) ? (
               <div className="mb-2">
                 <label className="block text-xs text-gray-600 mb-1">Lampiran foto (opsional, bisa banyak)</label>
                 <input
-                  ref={reimbPhotoInputRef}
+                  ref={k.key === "pengeluaran" ? pengeluaranPhotoInputRef : reimbPhotoInputRef}
                   type="file"
                   multiple
                   accept="image/jpeg,image/jpg,image/png,image/webp"
                   onChange={(e) =>
                     setForm((p) => ({
                       ...p,
-                      reimbursment: {
-                        ...p.reimbursment,
+                      [k.key]: {
+                        ...p[k.key],
                         photoFiles: e.target.files ? Array.from(e.target.files) : [],
                       },
                     }))
                   }
                   className="w-full text-xs border rounded-lg p-1.5 bg-white"
                 />
-                {form.reimbursment.photoFiles?.length > 0 ? (
+                {form[k.key].photoFiles?.length > 0 ? (
                   <p className="text-[11px] text-gray-500 mt-1">
-                    {form.reimbursment.photoFiles.length} file dipilih
+                    {form[k.key].photoFiles.length} file dipilih
                   </p>
                 ) : null}
               </div>

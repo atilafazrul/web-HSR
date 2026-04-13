@@ -8,6 +8,12 @@ use Illuminate\Support\Facades\Storage;
 
 class DashboardBiayaController extends Controller
 {
+    /** Kategori yang boleh melampirkan foto */
+    protected function kategoriAllowsPhotos(?string $kategori): bool
+    {
+        return in_array($kategori, ['pengeluaran', 'reimbursment'], true);
+    }
+
     protected function scopedQuery(Request $request)
     {
         $user = $request->user();
@@ -117,10 +123,10 @@ class DashboardBiayaController extends Controller
         ]);
 
         $hasAnyPhoto = $request->hasFile('photos') || $request->hasFile('photo');
-        if ($hasAnyPhoto && $request->input('kategori') !== 'reimbursment') {
+        if ($hasAnyPhoto && ! $this->kategoriAllowsPhotos($request->input('kategori'))) {
             return response()->json([
                 'success' => false,
-                'message' => 'Foto hanya untuk kategori Reimbursment.',
+                'message' => 'Foto hanya untuk kategori Pengeluaran dan Reimbursment.',
             ], 422);
         }
 
@@ -177,10 +183,10 @@ class DashboardBiayaController extends Controller
             $payload['keterangan'] = $request->input('keterangan');
         }
         if ($request->hasFile('photos')) {
-            if ($row->kategori !== 'reimbursment') {
+            if (! $this->kategoriAllowsPhotos($row->kategori)) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Foto hanya untuk kategori Reimbursment.',
+                    'message' => 'Foto hanya untuk kategori Pengeluaran dan Reimbursment.',
                 ], 422);
             }
             $newPaths = $this->storeUploadedPhotos($request, 'photos');

@@ -131,6 +131,11 @@ class ProjekKerjaController extends Controller
             if ($request->hasFile('file')) {
                 $path = $request->file('file')->store('projek-kerja-files', 'public');
                 $projek->update(['file_url' => asset('storage/' . $path)]);
+                // Simpan juga ke tabel dokumentasi supaya langsung muncul di halaman Foto/Dokumen Projek.
+                ProjekKerjaFile::create([
+                    'projek_kerja_id' => $projek->id,
+                    'file' => $path,
+                ]);
             }
 
             // Handle photo uploads

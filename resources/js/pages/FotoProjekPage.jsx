@@ -94,9 +94,9 @@ export default function FotoProjekPage() {
 
     setUploadBusy(true);
     try {
-      const ready = await compressImage(file);
       const formData = new FormData();
-      formData.append("file", ready);
+      // File dokumen dikirim asli (tanpa kompres image).
+      formData.append("file", file);
 
       await axios.post(
         `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-file`,
