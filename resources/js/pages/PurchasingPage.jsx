@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { ShoppingCart, Package, ListTodo } from "lucide-react";
+import { ShoppingCart, Package, ListTodo, Archive } from "lucide-react";
 
 const PurchasingPage = () => {
   const navigate = useNavigate();
@@ -29,6 +29,12 @@ const PurchasingPage = () => {
           title="Progres Pekerjaan"
           desc="Pantau status dan perkembangan purchasing"
           onClick={() => navigate(`${basePath}/purchasing/projek`)}
+        />
+        <Card
+          icon={<Archive size={30} className="text-amber-600" />}
+          title="Archive Pekerjaan"
+          desc="Lihat pekerjaan selesai yang sudah di-archive"
+          onClick={() => navigate(`${basePath}/purchasing/projek/archive`)}
         />
         <Card
           icon={<ShoppingCart size={30} className="text-blue-600" />}

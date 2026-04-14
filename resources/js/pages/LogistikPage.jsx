@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Truck, Package, ListTodo } from "lucide-react";
+import { Truck, Package, ListTodo, Archive } from "lucide-react";
 
 const LogistikPage = () => {
   const navigate = useNavigate();
@@ -29,6 +29,12 @@ const LogistikPage = () => {
           title="Progres Pekerjaan"
           desc="Pantau status dan perkembangan logistik"
           onClick={() => navigate(`${basePath}/logistik/projek`)}
+        />
+        <Card
+          icon={<Archive size={30} className="text-amber-600" />}
+          title="Archive Pekerjaan"
+          desc="Lihat pekerjaan selesai yang sudah di-archive"
+          onClick={() => navigate(`${basePath}/logistik/projek/archive`)}
         />
         <Card
           icon={<Package size={30} className="text-blue-600" />}

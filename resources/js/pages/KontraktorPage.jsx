@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ListTodo, FileText } from "lucide-react";
+import { Package, ListTodo, FileText, Archive } from "lucide-react";
 
 const KontraktorPage = () => {
 
@@ -55,6 +55,13 @@ const KontraktorPage = () => {
           title="Progres Pekerjaan"
           desc="Pantau status dan perkembangan proyek"
           onClick={() => navigate(`${basePath}/kontraktor/projek`)}
+        />
+
+        <Card
+          icon={<Archive size={30} className="text-amber-600" />}
+          title="Archive Pekerjaan"
+          desc="Lihat pekerjaan selesai yang sudah di-archive"
+          onClick={() => navigate(`${basePath}/kontraktor/projek/archive`)}
         />
 
         {/* BUAT PDF */}

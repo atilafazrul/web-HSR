@@ -159,6 +159,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="it">
               <Route index element={<ITPage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
@@ -168,6 +169,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="service">
               <Route index element={<ServicePage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
@@ -178,12 +180,14 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route index element={<SalesPage user={user} />} />
               <Route path="target" element={<TargetPage />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
             </Route>
 
             <Route path="kontraktor">
               <Route index element={<KontraktorPage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
@@ -193,6 +197,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="logistik">
               <Route index element={<LogistikPage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
               <Route path="inventory" element={<LogistikInventoryPage />} />
               <Route path="inventory/tambah" element={<LogistikFormBarangPage />} />
@@ -202,6 +207,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="purchasing">
               <Route index element={<PurchasingPage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
               <Route path="pembelian" element={<PembelianPage />} />
             </Route>

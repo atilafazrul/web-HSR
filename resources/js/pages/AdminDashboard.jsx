@@ -554,18 +554,24 @@ export default function AdminDashboard({ user, logout }) {
 
             {/* ================= PROJEK ================= */}
             <Route path="it/projek" element={<ProjekKerjaPage />} />
+            <Route path="it/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="sales/target" element={<TargetPage />} />
             <Route path="it/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="service/projek" element={<ProjekKerjaPage />} />
+            <Route path="service/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="service/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="sales/projek" element={<ProjekKerjaPage />} />
+            <Route path="sales/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="sales/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="kontraktor/projek" element={<ProjekKerjaPage />} />
+            <Route path="kontraktor/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="kontraktor/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="logistik" element={<LogistikPage user={user} />} />
             <Route path="purchasing" element={<PurchasingPage user={user} />} />
             <Route path="logistik/projek" element={<ProjekKerjaPage />} />
+            <Route path="logistik/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="purchasing/projek" element={<ProjekKerjaPage />} />
+            <Route path="purchasing/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="logistik/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="purchasing/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="purchasing/pembelian" element={<PembelianPage />} />

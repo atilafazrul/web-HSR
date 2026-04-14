@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart3, FileText, ListTodo } from "lucide-react";
+import { Archive, BarChart3, FileText, ListTodo } from "lucide-react";
 
 const SalesPage = () => {
 
@@ -52,6 +52,13 @@ const SalesPage = () => {
           title="Progres Pekerjaan"
           desc="Pantau status dan perkembangan penjualan"
           onClick={() => navigate(`${basePath}/sales/projek`)}
+        />
+
+        <Card
+          icon={<Archive size={30} className="text-amber-600" />}
+          title="Archive Pekerjaan"
+          desc="Lihat pekerjaan selesai yang sudah di-archive"
+          onClick={() => navigate(`${basePath}/sales/projek/archive`)}
         />
 
         {/* BUAT PDF */}

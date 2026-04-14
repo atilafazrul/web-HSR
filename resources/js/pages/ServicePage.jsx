@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Package,
   ListTodo,
-  FileText
+  FileText,
+  Archive
 } from "lucide-react";
 
 const ServicePage = () => {
@@ -51,6 +52,13 @@ const ServicePage = () => {
           title="Progres Pekerjaan"
           desc="Pantau status pekerjaan servis"
           onClick={() => navigate(`${basePath}/service/projek`)}
+        />
+
+        <Card
+          icon={<Archive size={30} className="text-amber-600" />}
+          title="Archive Pekerjaan"
+          desc="Lihat pekerjaan selesai yang sudah di-archive"
+          onClick={() => navigate(`${basePath}/service/projek/archive`)}
         />
 
 

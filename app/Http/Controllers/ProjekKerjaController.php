@@ -78,15 +78,22 @@ class ProjekKerjaController extends Controller
     public function index(Request $request)
     {
         $query = ProjekKerja::query();
+        $archiveFlag = filter_var($request->query('archive', false), FILTER_VALIDATE_BOOLEAN);
+        $query->where('is_archived', $archiveFlag);
 
         // Filter by divisi if provided
-        // Juga tampilkan projek yang pernah lewat divisi ini (ada di divisi_flow)
+        // Untuk data aktif: hanya divisi saat ini.
+        // Untuk archive: boleh tampil juga yang pernah lewat divisi ini (divisi_flow).
         if ($request->has('divisi') && $request->divisi) {
             $divisiFilter = strtolower($request->divisi);
-            $query->where(function($q) use ($divisiFilter) {
-                $q->where('divisi', $divisiFilter)
-                  ->orWhere('divisi_flow', 'like', '%' . $divisiFilter . '%');
-            });
+            if ($archiveFlag) {
+                $query->where(function($q) use ($divisiFilter) {
+                    $q->whereRaw('LOWER(divisi) = ?', [$divisiFilter])
+                      ->orWhere('divisi_flow', 'like', '%' . $divisiFilter . '%');
+                });
+            } else {
+                $query->whereRaw('LOWER(divisi) = ?', [$divisiFilter]);
+            }
         }
 
         $projek = $query->orderBy('id', 'desc')->get();
@@ -94,6 +101,60 @@ class ProjekKerjaController extends Controller
         return response()->json([
             'success' => true,
             'data' => $projek
+        ]);
+    }
+
+    public function archive(Request $request, $id)
+    {
+        $projek = ProjekKerja::find($id);
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan',
+            ], 404);
+        }
+
+        if (strtolower(trim((string) $projek->status)) !== 'selesai') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya project dengan status Selesai yang bisa di-archive.',
+            ], 422);
+        }
+
+        $projek->update([
+            'is_archived' => true,
+            'archived_at' => now(),
+            'archived_status' => $projek->status,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Project berhasil dipindah ke archive.',
+            'data' => $projek->fresh(),
+        ]);
+    }
+
+    public function unarchive(Request $request, $id)
+    {
+        $projek = ProjekKerja::find($id);
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan',
+            ], 404);
+        }
+
+        $restoreStatus = $projek->archived_status ?: $projek->status ?: 'Selesai';
+        $projek->update([
+            'is_archived' => false,
+            'archived_at' => null,
+            'status' => $restoreStatus,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Archive dibatalkan. Project kembali ke progres.',
+            'data' => $projek->fresh(),
         ]);
     }
 
@@ -339,6 +400,12 @@ class ProjekKerjaController extends Controller
                     $newStatus = $validated['status'];
                 }
                 $data['status'] = $validated['status'];
+                $isSelesai = strtolower(trim((string) $validated['status'])) === 'selesai';
+                if ($isSelesai) {
+                    $data['is_archived'] = true;
+                    $data['archived_at'] = now();
+                    $data['archived_status'] = $validated['status'];
+                }
             }
             if (isset($validated['start_date'])) {
                 $data['start_date'] = $validated['start_date'];
@@ -511,7 +578,10 @@ class ProjekKerjaController extends Controller
 
             $projek->update([
                 'status' => $validated['status'],
-                'status_history' => $history
+                'status_history' => $history,
+                'is_archived' => strtolower(trim((string) $validated['status'])) === 'selesai',
+                'archived_at' => strtolower(trim((string) $validated['status'])) === 'selesai' ? now() : null,
+                'archived_status' => strtolower(trim((string) $validated['status'])) === 'selesai' ? $validated['status'] : $projek->archived_status,
             ]);
 
             return response()->json([

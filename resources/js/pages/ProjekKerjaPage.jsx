@@ -21,6 +21,7 @@ import {
   Clock,
   DollarSign,
   Plus,
+  RotateCcw,
 } from "lucide-react";
 
 function BiayaMetaFooter({ meta }) {
@@ -69,6 +70,13 @@ export default function ProjekKerjaPage() {
   };
 
   const divisiKey = (d) => String(d || "").toLowerCase().trim();
+  const projectRelatedToDivisi = (item, targetDivisi) => {
+    const target = divisiKey(targetDivisi);
+    if (!target) return true;
+    if (divisiKey(item?.divisi) === target) return true;
+    const flow = Array.isArray(item?.divisi_flow) ? item.divisi_flow : [];
+    return flow.some((d) => divisiKey(d) === target);
+  };
   const karyawanProjectList = (item) => {
     const karyawanFromString = String(item?.karyawan || "")
       .split(",")
@@ -119,6 +127,7 @@ export default function ProjekKerjaPage() {
 
   const currentDivisi = getCurrentDivisi();
   const isSelesaiContext = /\/(seles|selesai)(\/|$)/i.test(location.pathname);
+  const isArchiveContext = /\/archive(\/|$)/i.test(location.pathname);
 
   useEffect(() => {
     if (!user) navigate("/");
@@ -189,7 +198,7 @@ export default function ProjekKerjaPage() {
 
   useEffect(() => {
     fetchData();
-  }, [currentDivisi, divisiUser]);
+  }, [currentDivisi, divisiUser, isArchiveContext]);
 
   useEffect(() => {
     const fetchSalesUsers = async () => {
@@ -216,17 +225,13 @@ export default function ProjekKerjaPage() {
 
   const fetchData = async () => {
     try {
-      // Super Admin melihat semua data
-      // Admin hanya melihat data dari divisi user yang login
-      let params = '';
-      if (role !== "super_admin") {
-        const filterDivisi = divisiUser;
-        if (filterDivisi) {
-          params = `?divisi=${filterDivisi}`;
-        }
+      const query = new URLSearchParams();
+      if (role !== "super_admin" && divisiUser) {
+        query.set("divisi", divisiUser);
       }
-
-      const res = await api.get(`/projek-kerja${params}`);
+      query.set("archive", isArchiveContext ? "1" : "0");
+      const params = query.toString();
+      const res = await api.get(`/projek-kerja${params ? `?${params}` : ""}`);
       console.log("API Response raw:", res.data);
       // Handle response dari API yang berformat {success: true, data: [...]}
       // Ambil hanya property 'data' dari response
@@ -246,6 +251,17 @@ export default function ProjekKerjaPage() {
       setDataList([]);
     }
   };
+
+  const handleUnarchiveProject = async (item) => {
+    if (!window.confirm("Batalkan archive dan kembalikan ke progres terakhir?")) return;
+    try {
+      await api.patch(`/projek-kerja/${item.id}/unarchive`);
+      fetchData();
+    } catch (err) {
+      alert(err.response?.data?.message || "Gagal membatalkan archive");
+    }
+  };
+
 
   const handleChange = (e) => {
     setForm(prev => ({
@@ -740,10 +756,13 @@ export default function ProjekKerjaPage() {
    */
   const filteredData = dataList.filter((item) => {
     if (role === "super_admin") {
+      if (isArchiveContext && !item.is_archived) {
+        return false;
+      }
       if (isSelesaiContext && String(item.status || "").trim().toLowerCase() !== "selesai") {
         return false;
       }
-      if (currentDivisi && divisiKey(item.divisi) !== divisiKey(currentDivisi)) {
+      if (currentDivisi && (isArchiveContext ? !projectRelatedToDivisi(item, currentDivisi) : divisiKey(item.divisi) !== divisiKey(currentDivisi))) {
         return false;
       }
     }
@@ -787,7 +806,7 @@ export default function ProjekKerjaPage() {
     <div className="space-y-12 p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
 
       {/* ================= FORM ================= */}
-      {(role === "super_admin" || divisiUser === "Sales") && (
+      {!isArchiveContext && (role === "super_admin" || divisiUser === "Sales") && (
         <div className="bg-white rounded-3xl shadow-xl border p-4 sm:p-8 min-w-0 overflow-x-hidden">
           <div className="mb-8">
             <h2 className="text-3xl font-bold flex items-center gap-3">
@@ -1046,6 +1065,11 @@ export default function ProjekKerjaPage() {
                 )}
               </p>
             ) : null}
+            {isArchiveContext ? (
+              <p className="text-xs text-gray-500 mt-1">
+                Menampilkan proyek yang sudah di-<span className="font-medium text-gray-700">archive</span>.
+              </p>
+            ) : null}
           </div>
           <div className="relative mt-2 sm:mt-0 w-full sm:w-64 shrink-0">
             <input
@@ -1209,13 +1233,15 @@ export default function ProjekKerjaPage() {
                       </button>
                       {(role === "super_admin" || String(item.divisi || "").toLowerCase().trim() === String(divisiUser || "").toLowerCase().trim()) && (
                         <>
-                          <button
-                            onClick={() => goToEditProjectPage(item)}
-                            className="bg-purple-600 hover:bg-purple-700 text-white p-1.5 rounded-lg"
-                            title="Edit project & oper divisi"
-                          >
-                            <Edit3 size={14} />
-                          </button>
+                          {!isArchiveContext ? (
+                            <button
+                              onClick={() => goToEditProjectPage(item)}
+                              className="bg-purple-600 hover:bg-purple-700 text-white p-1.5 rounded-lg"
+                              title="Edit project & oper divisi"
+                            >
+                              <Edit3 size={14} />
+                            </button>
+                          ) : null}
                           <button
                             onClick={() => openUangModal(item)}
                             className={`text-white p-1.5 rounded-lg ${item.is_lunas ? "bg-green-600 hover:bg-green-700" : "bg-yellow-500 hover:bg-yellow-600"}`}
@@ -1223,9 +1249,18 @@ export default function ProjekKerjaPage() {
                           >
                             <DollarSign size={14} />
                           </button>
+                          {isArchiveContext ? (
+                            <button
+                              onClick={() => handleUnarchiveProject(item)}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white p-1.5 rounded-lg"
+                              title="Batalkan Archive"
+                            >
+                              <RotateCcw size={14} />
+                            </button>
+                          ) : null}
                         </>
                       )}
-                      {(role === "super_admin" || item.divisi === divisiUser) && (
+                      {!isArchiveContext && (role === "super_admin" || item.divisi === divisiUser) && (
                         <button
                           onClick={() => handleDelete(item.id)}
                           className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-lg"

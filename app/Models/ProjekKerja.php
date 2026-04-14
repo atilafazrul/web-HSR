@@ -37,6 +37,9 @@ class ProjekKerja extends Model
         'biaya_edit_meta',
         'is_lunas',
         'lunas_at',
+        'is_archived',
+        'archived_at',
+        'archived_status',
     ];
 
 
@@ -55,6 +58,8 @@ class ProjekKerja extends Model
         'status_history' => 'array',
         'is_lunas' => 'boolean',
         'lunas_at' => 'datetime',
+        'is_archived' => 'boolean',
+        'archived_at' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];

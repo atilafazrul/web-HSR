@@ -331,6 +331,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ProjekKerjaController::class,
         'setLunas'
     ]);
+    Route::patch('/projek-kerja/{id}/archive', [
+        ProjekKerjaController::class,
+        'archive'
+    ]);
+    Route::patch('/projek-kerja/{id}/unarchive', [
+        ProjekKerjaController::class,
+        'unarchive'
+    ]);
 
     Route::get('/projek-kerja/{id}/export-biaya', [
         ProjekKerjaController::class,

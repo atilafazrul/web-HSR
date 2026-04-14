@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import {
   Package,
   ListTodo,
-  FileText
+  FileText,
+  Archive
 } from "lucide-react";
 
 const ITPage = () => {
@@ -51,6 +52,13 @@ const ITPage = () => {
           title="Progres Pekerjaan"
           desc="Pantau status dan perkembangan pekerjaan IT"
           onClick={() => navigate(`${basePath}/it/projek`)}
+        />
+
+        <Card
+          icon={<Archive size={30} className="text-amber-600" />}
+          title="Archive Pekerjaan"
+          desc="Lihat pekerjaan selesai yang sudah di-archive"
+          onClick={() => navigate(`${basePath}/it/projek/archive`)}
         />
 
         {/* BUAT PDF */}
