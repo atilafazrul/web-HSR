@@ -120,7 +120,7 @@ export default function EditProjekKerjaPage() {
         jenis_pekerjaan: form.jenis_pekerjaan,
         karyawan: karyawanString,
         pic_karyawan: Array.isArray(form.karyawan_terlibat) && form.karyawan_terlibat.length > 0
-          ? form.karyawan_terlibat[0]
+          ? form.karyawan_terlibat[form.karyawan_terlibat.length - 1]
           : form.karyawan || "",
         karyawan_terlibat: form.karyawan_terlibat || [],
         alamat: form.alamat,

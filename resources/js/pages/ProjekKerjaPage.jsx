@@ -70,14 +70,33 @@ export default function ProjekKerjaPage() {
 
   const divisiKey = (d) => String(d || "").toLowerCase().trim();
   const karyawanProjectList = (item) => {
+    const karyawanFromString = String(item?.karyawan || "")
+      .split(",")
+      .map((v) => String(v || "").trim())
+      .filter((v) => v !== "");
     const arr = [
-      item?.karyawan,
-      ...(Array.isArray(item?.karyawan_terlibat) ? item.karyawan_terlibat : []),
       item?.pic_karyawan,
+      ...(Array.isArray(item?.karyawan_terlibat) ? item.karyawan_terlibat : []),
+      ...karyawanFromString,
     ]
       .map((v) => String(v || "").trim())
       .filter((v) => v !== "");
     return Array.from(new Set(arr));
+  };
+  const getCurrentKaryawanName = (item) => {
+    const pic = String(item?.pic_karyawan || "").trim();
+    if (pic) return pic;
+
+    const terlibat = Array.isArray(item?.karyawan_terlibat)
+      ? item.karyawan_terlibat.map((v) => String(v || "").trim()).filter(Boolean)
+      : [];
+    if (terlibat.length > 0) return terlibat[terlibat.length - 1];
+
+    const fromString = String(item?.karyawan || "")
+      .split(",")
+      .map((v) => String(v || "").trim())
+      .filter(Boolean);
+    return fromString.length > 0 ? fromString[fromString.length - 1] : "-";
   };
 
   const getCurrentDivisi = () => {
@@ -1111,15 +1130,16 @@ export default function ProjekKerjaPage() {
                   <td className="p-2">
                     {(() => {
                       const karyawanList = karyawanProjectList(item);
+                      const currentName = getCurrentKaryawanName(item);
                       if (karyawanList.length <= 1) {
-                        return <span className="truncate block">{karyawanList[0] || "-"}</span>;
+                        return <span className="truncate block">{currentName || "-"}</span>;
                       }
                       return (
                         <select
                           className="border rounded-lg px-2 py-1 text-xs bg-white w-full max-w-[140px]"
-                          value={karyawanList[0]}
+                          value={currentName}
                           onChange={(e) => {
-                            e.target.value = karyawanList[0];
+                            e.target.value = currentName;
                           }}
                           title="Karyawan yang terlibat di project"
                         >

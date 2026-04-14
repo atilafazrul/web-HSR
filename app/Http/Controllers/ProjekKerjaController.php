@@ -5,12 +5,73 @@ namespace App\Http\Controllers;
 use App\Models\ProjekKerja;
 use App\Models\ProjekKerjaPhoto;
 use App\Models\ProjekKerjaFile;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 
 class ProjekKerjaController extends Controller
 {
+    protected function resolveDefaultPicFromDivisi(?string $targetDivisi): ?string
+    {
+        $target = strtolower(trim((string) $targetDivisi));
+        if ($target === '') {
+            return null;
+        }
+
+        $user = User::query()
+            ->whereRaw('LOWER(divisi) = ?', [$target])
+            ->where('role', '!=', 'super_admin')
+            ->orderByDesc('id')
+            ->first();
+
+        return $user?->name ? trim((string) $user->name) : null;
+    }
+
+    /**
+     * Ambil PIC berdasarkan divisi tujuan dari kandidat karyawan.
+     * Prioritas: kandidat terakhir yang divisinya cocok.
+     */
+    protected function resolvePicByDivisi(?string $targetDivisi, array $candidates, ?string $fallback = null): ?string
+    {
+        $names = array_values(array_filter(array_map(
+            fn ($v) => trim((string) $v),
+            $candidates
+        )));
+
+        if (empty($names)) {
+            return $fallback ?: null;
+        }
+
+        $target = strtolower(trim((string) $targetDivisi));
+        if ($target === '') {
+            return end($names) ?: ($fallback ?: null);
+        }
+
+        $users = User::query()
+            ->whereRaw('LOWER(divisi) = ?', [$target])
+            ->pluck('name')
+            ->map(fn ($n) => strtolower(trim((string) $n)))
+            ->filter()
+            ->values()
+            ->all();
+        $nameSet = array_fill_keys($users, true);
+
+        for ($i = count($names) - 1; $i >= 0; $i--) {
+            $key = strtolower($names[$i]);
+            if (isset($nameSet[$key])) {
+                return $names[$i];
+            }
+        }
+
+        $defaultByDivisi = $this->resolveDefaultPicFromDivisi($targetDivisi);
+        if ($defaultByDivisi) {
+            return $defaultByDivisi;
+        }
+
+        return end($names) ?: ($fallback ?: null);
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -92,15 +153,25 @@ class ProjekKerjaController extends Controller
                 $karyawanArray = array_values($karyawanArray);
             }
 
-            // pic_karyawan adalah karyawan pertama dari array
-            $picKaryawan = !empty($karyawanArray) ? $karyawanArray[0] : null;
+            // pic_karyawan dipilih berdasar divisi aktif (fallback: kandidat terakhir)
+            $picKaryawan = $this->resolvePicByDivisi(
+                $validated['divisi'] ?? null,
+                $karyawanArray
+            );
 
             // karyawan_terlibat berisi semua karyawan yang dipilih
             $karyawanTerlibat = $karyawanArray;
 
-            // Jika ada pic_karyawan atau karyawan_terlibat dari request, gunakan itu
-            $picKaryawan = $validated['pic_karyawan'] ?? $picKaryawan;
+            // Jika karyawan_terlibat dikirim, pakai sebagai sumber kandidat.
             $karyawanTerlibat = $validated['karyawan_terlibat'] ?? $karyawanTerlibat;
+            $picKaryawan = $this->resolvePicByDivisi(
+                $validated['divisi'] ?? null,
+                $karyawanTerlibat,
+                $validated['pic_karyawan'] ?? $picKaryawan
+            );
+            if ($picKaryawan && !in_array($picKaryawan, $karyawanTerlibat, true)) {
+                $karyawanTerlibat[] = $picKaryawan;
+            }
 
             $data = [
                 'report_no' => $reportNo,
@@ -280,7 +351,7 @@ class ProjekKerjaController extends Controller
             }
 
             // Parse karyawan (string dengan nama dipisahkan koma) menjadi array
-            // pic_karyawan adalah karyawan pertama, karyawan_terlibat berisi semua karyawan
+            // pic_karyawan adalah karyawan terakhir (pemegang terkini), karyawan_terlibat berisi semua karyawan
             if (isset($validated['karyawan'])) {
                 $karyawanString = $validated['karyawan'] ?? '';
                 $karyawanArray = [];
@@ -295,17 +366,37 @@ class ProjekKerjaController extends Controller
                     $karyawanArray = array_values($karyawanArray);
                 }
 
-                // pic_karyawan adalah karyawan pertama dari array
-                $picKaryawan = !empty($karyawanArray) ? $karyawanArray[0] : null;
-                $karyawanTerlibat = $karyawanArray;
+                $karyawanTerlibat = isset($validated['karyawan_terlibat']) && is_array($validated['karyawan_terlibat'])
+                    ? $validated['karyawan_terlibat']
+                    : $karyawanArray;
+                $targetDivisi = $validated['divisi'] ?? ($data['divisi'] ?? $projek->divisi);
+                $picKaryawan = $this->resolvePicByDivisi(
+                    $targetDivisi,
+                    $karyawanTerlibat,
+                    $validated['pic_karyawan'] ?? null
+                );
+                if ($picKaryawan && !in_array($picKaryawan, $karyawanTerlibat, true)) {
+                    $karyawanTerlibat[] = $picKaryawan;
+                }
 
-                // Jika ada pic_karyawan atau karyawan_terlibat dari request, gunakan itu
-                $data['pic_karyawan'] = $validated['pic_karyawan'] ?? $picKaryawan;
+                $data['pic_karyawan'] = $picKaryawan;
                 $data['karyawan_terlibat'] = $karyawanTerlibat;
+                $data['karyawan'] = implode(', ', $karyawanTerlibat);
             } elseif (isset($validated['pic_karyawan']) || isset($validated['karyawan_terlibat'])) {
                 // Jika ada explicit pic_karyawan atau karyawan_terlibat tanpa karyawan
-                $data['pic_karyawan'] = $validated['pic_karyawan'] ?? null;
-                $data['karyawan_terlibat'] = $validated['karyawan_terlibat'] ?? [];
+                $karyawanTerlibat = $validated['karyawan_terlibat'] ?? ($projek->karyawan_terlibat ?? []);
+                $targetDivisi = $validated['divisi'] ?? ($data['divisi'] ?? $projek->divisi);
+                $resolvedPic = $this->resolvePicByDivisi(
+                    $targetDivisi,
+                    $karyawanTerlibat,
+                    $validated['pic_karyawan'] ?? null
+                );
+                if ($resolvedPic && !in_array($resolvedPic, $karyawanTerlibat, true)) {
+                    $karyawanTerlibat[] = $resolvedPic;
+                }
+                $data['pic_karyawan'] = $resolvedPic;
+                $data['karyawan_terlibat'] = $karyawanTerlibat;
+                $data['karyawan'] = implode(', ', $karyawanTerlibat);
             }
 
             // Update status history if status changed

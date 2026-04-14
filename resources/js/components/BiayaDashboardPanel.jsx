@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/axiosConfig";
 import { DollarSign, Eye, Pencil, Trash2 } from "lucide-react";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
+import { compressImage } from "../utils/imageCompress";
 
 const kategoriConfig = [
   { key: "jalan", label: "Biaya Jalan" },
@@ -44,6 +45,7 @@ export default function BiayaDashboardPanel({ user }) {
   });
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [compressingKey, setCompressingKey] = useState(null);
 
   const [form, setForm] = useState({
     jalan: { nominal: "", keterangan: "" },
@@ -55,6 +57,39 @@ export default function BiayaDashboardPanel({ user }) {
   const editPhotoInputRef = useRef(null);
 
   const kategoriWithPhotos = (key) => key === "pengeluaran" || key === "reimbursment";
+  const isCompressingKategori = (key) => compressingKey === key;
+
+  const handlePhotoSelection = async (kategori, fileList) => {
+    const files = fileList ? Array.from(fileList) : [];
+    setCompressingKey(kategori);
+    try {
+      const compressed = await Promise.all(files.map((file) => compressImage(file)));
+      setForm((p) => ({
+        ...p,
+        [kategori]: {
+          ...p[kategori],
+          photoFiles: compressed,
+        },
+      }));
+    } finally {
+      setCompressingKey((current) => (current === kategori ? null : current));
+    }
+  };
+
+  const handleEditPhotoSelection = async (fileList) => {
+    const files = fileList ? Array.from(fileList) : [];
+    const editKey = "edit";
+    setCompressingKey(editKey);
+    try {
+      const compressed = await Promise.all(files.map((file) => compressImage(file)));
+      setEditForm((f) => ({
+        ...f,
+        photoFiles: compressed,
+      }));
+    } finally {
+      setCompressingKey((current) => (current === editKey ? null : current));
+    }
+  };
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({
@@ -103,6 +138,10 @@ export default function BiayaDashboardPanel({ user }) {
     const nominal = parseRibuanId(row.nominal);
     if (!nominal || nominal <= 0) {
       alert("Nominal harus lebih dari 0");
+      return;
+    }
+    if (isCompressingKategori(kategori)) {
+      alert("Foto masih dikompres. Tunggu sebentar lalu coba simpan lagi.");
       return;
     }
     try {
@@ -190,6 +229,10 @@ export default function BiayaDashboardPanel({ user }) {
       alert("Nominal harus lebih dari 0");
       return;
     }
+    if (compressingKey === "edit") {
+      alert("Foto masih dikompres. Tunggu sebentar lalu coba simpan lagi.");
+      return;
+    }
     try {
       const kat = row.kategori;
       if (kategoriWithPhotos(kat)) {
@@ -256,23 +299,18 @@ export default function BiayaDashboardPanel({ user }) {
             />
             {kategoriWithPhotos(k.key) ? (
               <div className="mb-2">
-                <label className="block text-xs text-gray-600 mb-1">Lampiran foto (opsional, bisa banyak)</label>
+                <label className="block text-xs text-gray-600 mb-1">Upload foto</label>
                 <input
                   ref={k.key === "pengeluaran" ? pengeluaranPhotoInputRef : reimbPhotoInputRef}
                   type="file"
                   multiple
                   accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={(e) =>
-                    setForm((p) => ({
-                      ...p,
-                      [k.key]: {
-                        ...p[k.key],
-                        photoFiles: e.target.files ? Array.from(e.target.files) : [],
-                      },
-                    }))
-                  }
+                  onChange={(e) => handlePhotoSelection(k.key, e.target.files)}
                   className="w-full text-xs border rounded-lg p-1.5 bg-white"
                 />
+                {isCompressingKategori(k.key) ? (
+                  <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
+                ) : null}
                 {form[k.key].photoFiles?.length > 0 ? (
                   <p className="text-[11px] text-gray-500 mt-1">
                     {form[k.key].photoFiles.length} file dipilih
@@ -283,9 +321,10 @@ export default function BiayaDashboardPanel({ user }) {
             <button
               type="button"
               onClick={() => submitKategori(k.key)}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2 text-sm"
+              disabled={isCompressingKategori(k.key)}
+              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-lg py-2 text-sm"
             >
-              Simpan {k.label}
+              {isCompressingKategori(k.key) ? "Mengompres foto..." : `Simpan ${k.label}`}
             </button>
           </div>
         ))}
@@ -330,29 +369,28 @@ export default function BiayaDashboardPanel({ user }) {
                       />
                       {kategoriWithPhotos(row.kategori) ? (
                         <div>
-                          <label className="block text-[11px] text-gray-600 mb-0.5">Tambah foto (opsional)</label>
+                          <label className="block text-[11px] text-gray-600 mb-0.5">Upload foto</label>
                           <input
                             ref={editPhotoInputRef}
                             type="file"
                             multiple
                             accept="image/jpeg,image/jpg,image/png,image/webp"
-                            onChange={(e) =>
-                              setEditForm((f) => ({
-                                ...f,
-                                photoFiles: e.target.files ? Array.from(e.target.files) : [],
-                              }))
-                            }
+                            onChange={(e) => handleEditPhotoSelection(e.target.files)}
                             className="w-full text-[11px] border rounded-lg p-1 bg-white"
                           />
+                          {compressingKey === "edit" ? (
+                            <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
+                          ) : null}
                         </div>
                       ) : null}
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={saveEdit}
-                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-1.5 text-xs"
+                          disabled={compressingKey === "edit"}
+                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white rounded-lg py-1.5 text-xs"
                         >
-                          Simpan
+                          {compressingKey === "edit" ? "Mengompres foto..." : "Simpan"}
                         </button>
                         <button
                           type="button"
