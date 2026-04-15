@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import api from "../api/axiosConfig";
-import { DollarSign, Eye, Pencil, Trash2 } from "lucide-react";
+import { DollarSign, Eye, Pencil, Trash2, Clock, CheckCircle, AlertCircle, X } from "lucide-react";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
 
@@ -55,6 +55,10 @@ export default function BiayaDashboardPanel({ user }) {
   const pengeluaranPhotoInputRef = useRef(null);
   const reimbPhotoInputRef = useRef(null);
   const editPhotoInputRef = useRef(null);
+
+  // State untuk modal konfirmasi
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const kategoriWithPhotos = (key) => key === "pengeluaran" || key === "reimbursment";
   const isCompressingKategori = (key) => compressingKey === key;
@@ -176,18 +180,41 @@ export default function BiayaDashboardPanel({ user }) {
     }
   };
 
-  const toggleLunas = async (row) => {
+  const toggleLunas = (row) => {
+    const newStatus = !row.is_lunas;
+    const statusText = newStatus ? "Lunas" : "Belum Lunas";
+    setConfirmAction({
+      row,
+      newStatus,
+      statusText,
+    });
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmStatus = async () => {
+    if (!confirmAction) return;
+
+    const { row, newStatus } = confirmAction;
+
     try {
-      await api.patch(`/dashboard-biaya/${row.id}`, { is_lunas: !row.is_lunas });
+      await api.patch(`/dashboard-biaya/${row.id}`, { is_lunas: newStatus });
       setItems((prev) =>
         prev.map((x) =>
-          x.id === row.id ? { ...x, is_lunas: !x.is_lunas, lunas_at: !x.is_lunas ? new Date().toISOString() : null } : x
+          x.id === row.id ? { ...x, is_lunas: newStatus, lunas_at: newStatus ? new Date().toISOString() : null } : x
         )
       );
       fetchAll();
     } catch (err) {
       alert(err.response?.data?.message || "Gagal update lunas");
+    } finally {
+      setShowConfirmModal(false);
+      setConfirmAction(null);
     }
+  };
+
+  const handleCancelConfirm = () => {
+    setShowConfirmModal(false);
+    setConfirmAction(null);
   };
 
   const removeRow = async (id) => {
@@ -258,7 +285,8 @@ export default function BiayaDashboardPanel({ user }) {
   const canEditRow = (row) => !row.is_lunas;
 
   return (
-    <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
+    <>
+      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
       <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
         <DollarSign size={18} className="text-emerald-600" />
         Biaya Diluar Projek
@@ -403,7 +431,15 @@ export default function BiayaDashboardPanel({ user }) {
                     </div>
                   ) : (
                     <>
-                      <p className="font-semibold">{rupiah(row.nominal)}</p>
+                      <div className="flex justify-between items-start">
+                        <p className="font-semibold">{rupiah(row.nominal)}</p>
+                        {row.lunas_at && (
+                          <div className="flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                            <Clock size={10} />
+                            <span>Updated: {formatDateTime(row.lunas_at)}</span>
+                          </div>
+                        )}
+                      </div>
                       {row.keterangan ? <p className="text-gray-600">{row.keterangan}</p> : null}
                       <p className="mt-1 text-[11px] text-gray-500">
                         <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
@@ -474,6 +510,83 @@ export default function BiayaDashboardPanel({ user }) {
 
       {loading ? <p className="text-xs text-gray-400 mt-3">Memuat...</p> : null}
     </div>
+
+    {/* Modal Konfirmasi Status */}
+    {showConfirmModal && confirmAction && (
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all animate-in fade-in zoom-in duration-200">
+          {/* Header dengan icon */}
+          <div className="pt-6 pb-2 px-6 flex flex-col items-center">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
+              confirmAction.newStatus
+                ? 'bg-emerald-100'
+                : 'bg-amber-100'
+            }`}>
+              {confirmAction.newStatus ? (
+                <CheckCircle size={32} className="text-emerald-600" />
+              ) : (
+                <AlertCircle size={32} className="text-amber-600" />
+              )}
+            </div>
+
+            <h3 className="text-lg font-bold text-gray-800 mb-1">
+              Ubah Status Biaya
+            </h3>
+            <p className="text-sm text-gray-500 text-center">
+              Apakah Anda yakin ingin mengubah status menjadi
+            </p>
+          </div>
+
+          {/* Status yang akan diubah */}
+          <div className="px-6 pb-4">
+            <div className={`py-3 px-4 rounded-xl text-center font-semibold ${
+              confirmAction.newStatus
+                ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
+                : 'bg-amber-50 text-amber-700 border-2 border-amber-200'
+            }`}>
+              {confirmAction.statusText}
+            </div>
+          </div>
+
+          {/* Info tambahan */}
+          {confirmAction.row && (
+            <div className="px-6 pb-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Nominal:</p>
+                <p className="font-semibold text-gray-700">{rupiah(confirmAction.row.nominal)}</p>
+                {confirmAction.row.keterangan && (
+                  <>
+                    <p className="text-xs text-gray-500 mb-1 mt-2">Keterangan:</p>
+                    <p className="text-sm text-gray-700 truncate">{confirmAction.row.keterangan}</p>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Tombol Action */}
+          <div className="px-6 pb-6 flex gap-3">
+            <button
+              onClick={handleCancelConfirm}
+              className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm"
+            >
+              Batal
+            </button>
+            <button
+              onClick={handleConfirmStatus}
+              className={`flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm ${
+                confirmAction.newStatus
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-amber-600 hover:bg-amber-700'
+              }`}
+            >
+              Ya, Ubah Status
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
 
