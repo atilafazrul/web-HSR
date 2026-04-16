@@ -14,6 +14,7 @@ export default function PembelianPage() {
   const [loading, setLoading] = useState(true);
 
   const API_URL = import.meta.env.VITE_API_URL;
+  const BASE_URL = API_URL.replace('/api', ''); // Hapus /api untuk akses file storage
 
   // Modal Tambah
   const [showAddModal, setShowAddModal] = useState(false);
@@ -23,7 +24,7 @@ export default function PembelianPage() {
     supplier: "",
     tanggal: "",
     harga: "",
-    status: "Proses",
+    status: "Dipesan",
     foto: null,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +36,7 @@ export default function PembelianPage() {
   const fetchPembelian = async () => {
     try {
       const res = await api.get("/pembelian");
+      console.log("Data pembelian:", res.data.data);
       setDataList(res.data.data);
     } catch (error) {
       console.error("Gagal load pembelian:", error);
@@ -84,7 +86,7 @@ export default function PembelianPage() {
         supplier: "",
         tanggal: "",
         harga: "",
-        status: "Proses",
+        status: "Dipesan",
         foto: null,
       });
 
@@ -100,6 +102,7 @@ export default function PembelianPage() {
   const handleStatusChange = async (id, newStatus) => {
     try {
       const itemToUpdate = dataList.find((item) => item.id === id);
+      console.log("Update status untuk item:", itemToUpdate);
 
       const formData = new FormData();
       formData.append("_method", "PUT");
@@ -112,11 +115,8 @@ export default function PembelianPage() {
 
       await api.post(`/pembelian/${id}`, formData);
 
-      setDataList((prev) =>
-        prev.map((item) =>
-          item.id === id ? { ...item, status: newStatus } : item
-        )
-      );
+      // Refresh data untuk memastikan foto tetap ada
+      await fetchPembelian();
     } catch (error) {
       console.error("Gagal update status", error);
       alert("Gagal mengupdate status pembelian");
@@ -214,21 +214,27 @@ export default function PembelianPage() {
                       <select
                         value={item.status}
                         onChange={(e) => handleStatusChange(item.id, e.target.value)}
-                        className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border outline-none ${item.status === "Diterima"
-                          ? "bg-green-100 text-green-700 border-green-200"
-                          : "bg-yellow-100 text-yellow-700 border-yellow-200"
-                          }`}
+                        className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium border outline-none ${
+                          item.status === "Diterima"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : item.status === "Dikirim"
+                            ? "bg-blue-100 text-blue-700 border-blue-200"
+                            : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                        }`}
                       >
-                        <option value="Proses">Proses</option>
+                        <option value="Dipesan">Dipesan</option>
+                        <option value="Dikirim">Dikirim</option>
                         <option value="Diterima">Diterima</option>
                       </select>
                     </td>
                     <td className="p-2 sm:p-4 text-center">
                       <div className="flex justify-center gap-1 sm:gap-2">
-                        {item.foto ? (
+                        {item.foto !== null && item.foto !== undefined && item.foto !== '' ? (
                           <button
                             onClick={() => {
-                              setSelectedPhoto(`${import.meta.env.VITE_API_URL}/${item.foto}`);
+                              const photoUrl = `${BASE_URL}/${item.foto}`;
+                              console.log("Klik lihat foto, URL:", photoUrl);
+                              setSelectedPhoto(photoUrl);
                               setShowPhotoModal(true);
                             }}
                             className="bg-blue-100 hover:bg-blue-200 text-blue-600 p-1.5 sm:p-2 rounded-lg transition"
@@ -349,7 +355,8 @@ export default function PembelianPage() {
                     className="border border-gray-300 p-2 sm:p-2.5 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                     required
                   >
-                    <option value="Proses">Proses</option>
+                    <option value="Dipesan">Dipesan</option>
+                    <option value="Dikirim">Dikirim</option>
                     <option value="Diterima">Diterima</option>
                   </select>
                 </div>

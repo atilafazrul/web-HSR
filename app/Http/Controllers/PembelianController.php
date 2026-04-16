@@ -28,7 +28,7 @@ class PembelianController extends Controller
             'supplier' => 'required',
             'tanggal' => 'required|date',
             'harga' => 'required|integer',
-            'status' => 'required|in:Proses,Diterima',
+            'status' => 'required|in:Dipesan,Dikirim,Diterima',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
@@ -38,7 +38,8 @@ class PembelianController extends Controller
             'supplier',
             'tanggal',
             'harga',
-            'status'
+            'status',
+            'foto'  // Tambahkan foto agar tidak hilang saat update
         ]);
 
         // Upload Foto
@@ -95,7 +96,7 @@ class PembelianController extends Controller
             'supplier' => 'required',
             'tanggal' => 'required|date',
             'harga' => 'required|integer',
-            'status' => 'required|in:Proses,Diterima',
+            'status' => 'required|in:Dipesan,Dikirim,Diterima',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
@@ -105,7 +106,8 @@ class PembelianController extends Controller
             'supplier',
             'tanggal',
             'harga',
-            'status'
+            'status',
+            'foto'  // Tambahkan foto agar tidak hilang saat update
         ]);
 
         // Upload Foto Baru
