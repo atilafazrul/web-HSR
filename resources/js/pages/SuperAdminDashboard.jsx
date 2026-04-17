@@ -27,6 +27,9 @@ import {
 
 import axios from "../api/axiosConfig";
 
+/* REKAP PER AKUN */
+import RekapPerAkun from "../components/RekapPerAkun";
+
 /* PAGES */
 import Profile from "./Profile.jsx";
 import Sidebar from "../components/layout/Sidebar";
@@ -148,6 +151,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route index element={<Navigate to="dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard user={user} windowWidth={windowWidth} />} />
             <Route path="karyawan" element={<KaryawanPage />} />
+            <Route path="rekap-akun" element={<RekapPerAkun user={user} />} />
 
             {/* BERITA ACARA */}
             <Route path="berita-acara" element={<BeritaAcaraPage />} />

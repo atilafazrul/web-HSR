@@ -281,7 +281,7 @@ export default function BiayaDashboardPanel({ user }) {
     }
   };
 
-  const canDeleteRow = (row) => !row.is_lunas || isSuperAdmin;
+  const canDeleteRow = (row) => !row.is_lunas;
   const canEditRow = (row) => !row.is_lunas;
 
   return (

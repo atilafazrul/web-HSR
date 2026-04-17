@@ -231,6 +231,170 @@ class DashboardBiayaController extends Controller
         ]);
     }
 
+    public function rekapPerAkun(Request $request)
+    {
+        $user = $request->user();
+
+        if (($user->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang bisa mengakses rekapitulasi per akun.',
+            ], 403);
+        }
+
+        $bulan = $request->input('bulan');
+        $tahun = $request->input('tahun');
+
+        if (!$bulan || !$tahun) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulan dan tahun wajib diisi.',
+            ], 422);
+        }
+
+        $query = DashboardBiaya::query();
+
+        // Filter berdasarkan bulan dan tahun
+        $query->whereYear('created_at', $tahun)
+              ->whereMonth('created_at', $bulan);
+
+        // Group by creator (nama akun)
+        $dataByAkun = $query->with(['creator:id,name'])
+            ->get()
+            ->groupBy('created_by')
+            ->map(function ($items) {
+                $akun = $items->first()->creator;
+                return [
+                    'nama_akun' => $akun->name ?? 'Unknown',
+                    'jalan' => $items->where('kategori', 'jalan')->sum('nominal'),
+                    'pengeluaran' => $items->where('kategori', 'pengeluaran')->sum('nominal'),
+                    'reimbursment' => $items->where('kategori', 'reimbursment')->sum('nominal'),
+                    'total' => $items->sum('nominal'),
+                ];
+            })
+            ->values()
+            ->sortBy('nama_akun')
+            ->values();
+
+        // Calculate total semua
+        $allBiaya = [
+            'jalan' => $dataByAkun->sum('jalan'),
+            'pengeluaran' => $dataByAkun->sum('pengeluaran'),
+            'reimbursment' => $dataByAkun->sum('reimbursment'),
+            'total' => $dataByAkun->sum('total'),
+        ];
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'by_akun' => $dataByAkun,
+                'all' => $allBiaya,
+            ]
+        ]);
+    }
+
+    public function searchAkun(Request $request)
+    {
+        $user = $request->user();
+
+        if (($user->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang bisa mengakses rekapitulasi per akun.',
+            ], 403);
+        }
+
+        $nama = $request->input('nama');
+        $bulan = $request->input('bulan');
+        $tahun = $request->input('tahun');
+
+        if (!$nama) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama akun wajib diisi.',
+            ], 422);
+        }
+
+        // Jika bulan dan tahun disediakan, hanya cari user yang memiliki biaya di periode tersebut
+        if ($bulan && $tahun) {
+            // Cari user dengan nama yang cocok DAN memiliki biaya di periode ini
+            $users = \App\Models\User::where('name', 'LIKE', "%{$nama}%")
+                ->whereHas('dashboardBiaya', function ($q) use ($bulan, $tahun) {
+                    $q->whereYear('created_at', $tahun)
+                      ->whereMonth('created_at', $bulan);
+                })
+                ->withCount('dashboardBiaya')
+                ->orderBy('name', 'asc')
+                ->limit(10)
+                ->get()
+                ->map(function ($u) {
+                    return [
+                        'id' => $u->id,
+                        'nama_akun' => $u->name,
+                        'name' => $u->name,
+                    ];
+                });
+        } else {
+            // Tanpa filter bulan/tahun, cari semua user dengan nama yang cocok
+            $users = \App\Models\User::where('name', 'LIKE', "%{$nama}%")
+                ->withCount('dashboardBiaya')
+                ->orderBy('name', 'asc')
+                ->limit(10)
+                ->get()
+                ->map(function ($u) {
+                    return [
+                        'id' => $u->id,
+                        'nama_akun' => $u->name,
+                        'name' => $u->name,
+                    ];
+                });
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $users,
+        ]);
+    }
+
+    public function rekapDetailAkun(Request $request)
+    {
+        $user = $request->user();
+
+        if (($user->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang bisa mengakses rekapitulasi per akun.',
+            ], 403);
+        }
+
+        $bulan = $request->input('bulan');
+        $tahun = $request->input('tahun');
+        $createdBy = $request->input('created_by');
+
+        if (!$bulan || !$tahun || !$createdBy) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Parameter tidak lengkap.',
+            ], 422);
+        }
+
+        $query = DashboardBiaya::query();
+
+        // Filter berdasarkan bulan, tahun, dan creator
+        $query->whereYear('created_at', $tahun)
+              ->whereMonth('created_at', $bulan)
+              ->where('created_by', $createdBy);
+
+        $data = $query->with(['creator:id,name', 'updater:id,name'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
+    }
+
     public function destroy(Request $request, $id)
     {
         $user = $request->user();

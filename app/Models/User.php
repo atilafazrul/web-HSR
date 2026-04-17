@@ -97,4 +97,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Notification::class);
     }
+
+    public function dashboardBiaya()
+    {
+        return $this->hasMany(\App\Models\DashboardBiaya::class, 'created_by');
+    }
 }

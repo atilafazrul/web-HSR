@@ -302,6 +302,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/dashboard-biaya', [DashboardBiayaController::class, 'store']);
     Route::patch('/dashboard-biaya/{id}', [DashboardBiayaController::class, 'update']);
     Route::delete('/dashboard-biaya/{id}', [DashboardBiayaController::class, 'destroy']);
+    Route::get('/dashboard-biaya/rekap-per-akun', [DashboardBiayaController::class, 'rekapPerAkun']);
+    Route::get('/dashboard-biaya/search-akun', [DashboardBiayaController::class, 'searchAkun']);
+    Route::get('/dashboard-biaya/rekap-detail-akun', [DashboardBiayaController::class, 'rekapDetailAkun']);
 
     /*
     |--------------------------------------------------------------------------

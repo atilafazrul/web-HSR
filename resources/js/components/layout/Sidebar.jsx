@@ -158,18 +158,33 @@ export default function Sidebar({
 
             {/* ================= KARYAWAN (SUPER ADMIN ONLY) ================= */}
             {isSuperAdmin && (
-              <div onClick={() => {
-                navigate(`${basePath}/karyawan`);
-                if (isMobile) setSidebarOpen(false);
-              }}>
-                <SidebarItem
-                  icon={<Users size={18} />}
-                  text="Karyawan"
-                  active={isActive(`${basePath}/karyawan`)}
-                  expanded={expanded}
-                  isMobile={isMobile}
-                />
-              </div>
+              <>
+                <div onClick={() => {
+                  navigate(`${basePath}/karyawan`);
+                  if (isMobile) setSidebarOpen(false);
+                }}>
+                  <SidebarItem
+                    icon={<Users size={18} />}
+                    text="Karyawan"
+                    active={isActive(`${basePath}/karyawan`)}
+                    expanded={expanded}
+                    isMobile={isMobile}
+                  />
+                </div>
+
+                <div onClick={() => {
+                  navigate(`${basePath}/rekap-akun`);
+                  if (isMobile) setSidebarOpen(false);
+                }}>
+                  <SidebarItem
+                    icon={<FileText size={18} />}
+                    text="Rekap Biaya Kayawan"
+                    active={isActive(`${basePath}/rekap-akun`)}
+                    expanded={expanded}
+                    isMobile={isMobile}
+                  />
+                </div>
+              </>
             )}
 
             {/* ================= BERITA ACARA (SUPER ADMIN & ADMIN) ================= */}
