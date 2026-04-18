@@ -68,7 +68,6 @@ class DashboardBiayaController extends Controller
             ->with(['creator:id,name', 'updater:id,name'])
             ->orderByRaw('is_lunas ASC')
             ->orderByDesc('created_at')
-            ->limit(50)
             ->get()
             ->map(function ($row) {
                 $row->creator_name = $row->creator?->name;
