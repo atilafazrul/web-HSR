@@ -210,12 +210,12 @@ export default function Sidebar({
                   className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800 cursor-pointer transition-colors"
                   onClick={() => setOpenDivisi(!openDivisi)}
                 >
-                  <div className="flex items-center min-w-0">
+                  <span className={`flex items-center ${!expanded ? 'mx-auto' : ''}`}>
                     <Folder size={18} className="flex-shrink-0" />
                     <span className={`ml-3 truncate ${expanded ? "block" : "hidden"}`}>
                       Divisi
                     </span>
-                  </div>
+                  </span>
 
                   {expanded && (
                     <span className="flex-shrink-0">
@@ -226,7 +226,7 @@ export default function Sidebar({
 
                 {/* ================= DIVISI LIST ================= */}
                 {openDivisi && (
-                  <div className="mt-1 space-y-1 pl-4">
+                  <div className="mt-1 space-y-1">
                     {allDivisis.map((d) => (
                       <div
                         key={d.name}
@@ -240,7 +240,6 @@ export default function Sidebar({
                           text={d.name}
                           active={isActive(`${basePath}/${d.path}`)}
                           expanded={expanded}
-                          indented
                           isMobile={isMobile}
                         />
                       </div>
