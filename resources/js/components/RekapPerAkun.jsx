@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../api/axiosConfig";
 import { DollarSign, Calendar, User, TrendingUp, Download, Search, X, FileText, ChevronRight } from "lucide-react";
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
@@ -145,7 +147,7 @@ export default React.memo(function RekapPerAkun({ user }) {
         alert("Gagal memuat detail biaya. Cek console untuk detail error.");
       }
     } finally {
-      // Clear the abort controller reference
+      // Clear abort controller reference
       if (abortControllerRef.current === controller) {
         abortControllerRef.current = null;
       }
@@ -391,7 +393,7 @@ export default React.memo(function RekapPerAkun({ user }) {
     };
   }, []);
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     // Jika ada akun terpilih, hanya export akun tersebut
     const dataToExport = selectedAkun ? [selectedAkun] : dataByAkun;
 
@@ -403,7 +405,7 @@ export default React.memo(function RekapPerAkun({ user }) {
       return;
     }
 
-    // Helper function to format number without currency symbol for CSV
+    // Helper function to format number without currency symbol
     const formatNumberForCSV = (n) => new Intl.NumberFormat("id-ID", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
@@ -412,25 +414,80 @@ export default React.memo(function RekapPerAkun({ user }) {
     const monthName = new Date(selectedYear, selectedMonth - 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
     const accountName = selectedAkun?.nama_akun || selectedAkun?.name || "";
 
-    let csv = `REKAPITULASI BIAYA PER AKUN\n`;
-    csv += `Periode: ${monthName}\n`;
-    csv += `Dibuat: ${new Date().toLocaleString("id-ID")}\n`;
+    // Format waktu dengan format Tanggal, Bulan, dan Tahun kemudian jam
+    const now = new Date();
+    const tanggal = now.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    const jam = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
+    const waktuDibuat = `${tanggal} ${jam}`;
 
+    // Buat workbook baru
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Rekap Biaya');
+
+    // Set kolom width
+    worksheet.columns = [
+      { width: 5 },
+      { width: 25 },
+      { width: 20 },
+      { width: 25 },
+      { width: 20 },
+      { width: 20 },
+    ];
+
+    // Header title
+    worksheet.mergeCells('A1:F1');
+    const cellA1 = worksheet.getCell('A1');
+    cellA1.value = 'REKAPITULASI BIAYYA PER AKUN';
+    cellA1.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+    cellA1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF172238' } };
+    cellA1.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    // Periode
+    worksheet.mergeCells('A2:F2');
+    const cellA2 = worksheet.getCell('A2');
+    cellA2.value = `Periode: ${monthName}`;
+    cellA2.font = { bold: true, size: 11 };
+    cellA2.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    // Dibuat
+    worksheet.mergeCells('A3:F3');
+    const cellA3 = worksheet.getCell('A3');
+    cellA3.value = `Dibuat: ${waktuDibuat}`;
+    cellA3.font = { size: 10 };
+    cellA3.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    // Akun (jika ada akun terpilih)
     if (selectedAkun) {
-      csv += `Akun: ${accountName}\n`;
+      worksheet.mergeCells('A4:F4');
+      const cellA4 = worksheet.getCell('A4');
+      cellA4.value = `Akun: ${accountName}`;
+      cellA4.font = { bold: true, size: 11 };
+      cellA4.alignment = { horizontal: 'left', vertical: 'middle' };
     }
 
-    csv += `\n`;
-    csv += `No,Nama Akun,Biaya Jalan,Biaya Pengeluaran,Biaya Reimbursment,Total\n`;
+    // Header tabel
+    const headers = ['No.', 'Nama Akun', 'Biaya Jalan', 'Biaya Pengeluaran ', 'Biaya Reimbursment', 'Total'];
+    headers.forEach((header, index) => {
+      const cell = worksheet.getCell(6, index + 1);
+      cell.value = header;
+      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } },
+      };
+    });
 
+    // Data
     dataToExport.forEach((akun, idx) => {
-      // Hitung total dari detailBiaya jika ada dan ini akun terpilih, gunakan data dari akun jika tidak
       let jalanTotal = akun.jalan || 0;
       let pengeluaranTotal = akun.pengeluaran || 0;
       let reimbursmentTotal = akun.reimbursment || 0;
       let total = akun.total || 0;
 
-      // Jika ada detailBiaya dan ini akun terpilih, hitung dari detailBiaya
       if (detailBiaya.length > 0 && selectedAkun && akun.nama_akun === selectedAkun.nama_akun) {
         jalanTotal = detailBiaya.filter(d => d.kategori === 'jalan').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0);
         pengeluaranTotal = detailBiaya.filter(d => d.kategori === 'pengeluaran').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0);
@@ -438,10 +495,39 @@ export default React.memo(function RekapPerAkun({ user }) {
         total = jalanTotal + pengeluaranTotal + reimbursmentTotal;
       }
 
-      csv += `${idx + 1},"${akun.nama_akun || akun.name}","${formatNumberForCSV(jalanTotal)}","${formatNumberForCSV(pengeluaranTotal)}","${formatNumberForCSV(reimbursmentTotal)}","${formatNumberForCSV(total)}"\n`;
+      const rowIndex = idx + 7;
+      const rowData = [
+        idx + 1,
+        akun.nama_akun || akun.name,
+        formatNumberForCSV(jalanTotal),
+        formatNumberForCSV(pengeluaranTotal),
+        formatNumberForCSV(reimbursmentTotal),
+        formatNumberForCSV(total),
+      ];
+
+      rowData.forEach((value, colIndex) => {
+        const cell = worksheet.getCell(rowIndex, colIndex + 1);
+        cell.value = value;
+        cell.font = { size: 10 };
+        cell.alignment = {
+          horizontal: colIndex === 0 ? 'center' : 'left',
+          vertical: 'middle'
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } },
+        };
+
+        // Warna latar baris selang-seling
+        if (idx % 2 === 0) {
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+        }
+      });
     });
 
-    // Add total row
+    // Total row
     const totalJalan = dataToExport.reduce((sum, a) => {
       if (detailBiaya.length > 0 && selectedAkun && a.nama_akun === selectedAkun.nama_akun) {
         return sum + detailBiaya.filter(d => d.kategori === 'jalan').reduce((s, d) => s + (Number(d.nominal) || 0), 0);
@@ -465,18 +551,29 @@ export default React.memo(function RekapPerAkun({ user }) {
 
     const grandTotal = totalJalan + totalPengeluaran + totalReimbursment;
 
-    csv += `\nTOTAL,,"${formatNumberForCSV(totalJalan)}","${formatNumberForCSV(totalPengeluaran)}","${formatNumberForCSV(totalReimbursment)}","${formatNumberForCSV(grandTotal)}"\n`;
+    const totalRowIndex = dataToExport.length + 7;
+    const totalData = ['', '', formatNumberForCSV(totalJalan), formatNumberForCSV(totalPengeluaran), formatNumberForCSV(totalReimbursment), formatNumberForCSV(grandTotal)];
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = selectedAkun
-      ? `rekap_biaya_${accountName}_${selectedYear}_${selectedMonth}.csv`
-      : `rekap_biaya_${selectedYear}_${selectedMonth}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    totalData.forEach((value, colIndex) => {
+      const cell = worksheet.getCell(totalRowIndex, colIndex + 1);
+      cell.value = value;
+      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF28A745' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } },
+      };
+    });
+
+    // Generate buffer dan save file
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    saveAs(blob, selectedAkun
+      ? `rekap_biaya_${accountName}_${selectedYear}_${selectedMonth}.xlsx`
+      : `rekap_biaya_${selectedYear}_${selectedMonth}.xlsx`);
   };
 
   // Filter akun berdasarkan search term
@@ -561,7 +658,7 @@ export default React.memo(function RekapPerAkun({ user }) {
           className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white px-3 sm:px-4 py-2 rounded-lg flex items-center gap-2 transition text-sm sm:text-base"
         >
           <Download size={16} />
-          Export CSV
+          Export Excel
         </button>
       </div>
 
