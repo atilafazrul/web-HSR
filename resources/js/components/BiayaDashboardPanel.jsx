@@ -313,8 +313,7 @@ export default function BiayaDashboardPanel({ user }) {
               placeholder="Biaya"
               className="w-full border rounded-lg p-2 text-sm mb-2"
             />
-            <input
-              type="text"
+            <textarea
               value={form[k.key].keterangan}
               onChange={(e) =>
                 setForm((p) => ({
@@ -323,7 +322,8 @@ export default function BiayaDashboardPanel({ user }) {
                 }))
               }
               placeholder="Keterangan"
-              className="w-full border rounded-lg p-2 text-sm mb-2"
+              className="w-full border rounded-lg p-2 text-sm mb-2 resize-y min-h-[60px]"
+              rows="2"
             />
             {kategoriWithPhotos(k.key) ? (
               <div className="mb-2">
@@ -388,12 +388,12 @@ export default function BiayaDashboardPanel({ user }) {
                         placeholder="Biaya"
                         className="w-full border rounded-lg p-2 text-sm"
                       />
-                      <input
-                        type="text"
+                      <textarea
                         value={editForm.keterangan}
                         onChange={(e) => setEditForm((f) => ({ ...f, keterangan: e.target.value }))}
                         placeholder="Keterangan"
-                        className="w-full border rounded-lg p-2 text-sm"
+                        className="w-full border rounded-lg p-2 text-sm resize-y min-h-[60px]"
+                        rows="2"
                       />
                       {kategoriWithPhotos(row.kategori) ? (
                         <div>
@@ -440,7 +440,7 @@ export default function BiayaDashboardPanel({ user }) {
                           </div>
                         )}
                       </div>
-                      {row.keterangan ? <p className="text-gray-600">{row.keterangan}</p> : null}
+                      {row.keterangan ? <p className="text-gray-600 whitespace-pre-wrap break-words">{row.keterangan}</p> : null}
                       <p className="mt-1 text-[11px] text-gray-500">
                         <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
                       </p>
