@@ -251,29 +251,163 @@ class DashboardBiayaController extends Controller
             ], 422);
         }
 
+        // Ambil biaya dari dashboard_biayas
         $query = DashboardBiaya::query();
-
-        // Filter berdasarkan bulan dan tahun
         $query->whereYear('created_at', $tahun)
               ->whereMonth('created_at', $bulan);
 
-        // Group by creator (nama akun)
-        $dataByAkun = $query->with(['creator:id,name'])
+        $dashboardBiayaByAkun = $query->with(['creator:id,name'])
             ->get()
             ->groupBy('created_by')
             ->map(function ($items) {
                 $akun = $items->first()->creator;
                 return [
                     'nama_akun' => $akun->name ?? 'Unknown',
+                    'created_by' => $items->first()->created_by,
                     'jalan' => $items->where('kategori', 'jalan')->sum('nominal'),
                     'pengeluaran' => $items->where('kategori', 'pengeluaran')->sum('nominal'),
                     'reimbursment' => $items->where('kategori', 'reimbursment')->sum('nominal'),
                     'total' => $items->sum('nominal'),
                 ];
-            })
-            ->values()
-            ->sortBy('nama_akun')
-            ->values();
+            });
+
+        // Ambil biaya dari projek_kerjas
+        $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
+            ->whereMonth('created_at', $bulan)
+            ->get(['biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items']);
+
+        $projekBiayaByAkun = collect();
+
+        foreach ($projekKerjas as $projek) {
+            // Proses biaya jalan
+            $jalanItems = $projek->biaya_jalan_items ?? [];
+            foreach ($jalanItems as $item) {
+                $oleh = $item['oleh'] ?? 'Unknown';
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                if ($nominal > 0) {
+                    // Gunakan lowercase key untuk case-insensitive grouping
+                    $lowerOleh = strtolower($oleh);
+                    $existing = $projekBiayaByAkun->get($lowerOleh);
+                    if ($existing) {
+                        $existing['jalan'] += $nominal;
+                        $existing['total'] += $nominal;
+                        $projekBiayaByAkun->put($lowerOleh, $existing);
+                    } else {
+                        $projekBiayaByAkun->put($lowerOleh, [
+                            'nama_akun' => $oleh, // Tetap simpan nama asli
+                            'jalan' => $nominal,
+                            'pengeluaran' => 0,
+                            'reimbursment' => 0,
+                            'total' => $nominal,
+                        ]);
+                    }
+                }
+            }
+
+            // Proses biaya pengeluaran
+            $pengeluaranItems = $projek->biaya_pengeluaran_items ?? [];
+            foreach ($pengeluaranItems as $item) {
+                $oleh = $item['oleh'] ?? 'Unknown';
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                if ($nominal > 0) {
+                    $lowerOleh = strtolower($oleh);
+                    $existing = $projekBiayaByAkun->get($lowerOleh);
+                    if ($existing) {
+                        $existing['pengeluaran'] += $nominal;
+                        $existing['total'] += $nominal;
+                        $projekBiayaByAkun->put($lowerOleh, $existing);
+                    } else {
+                        $projekBiayaByAkun->put($lowerOleh, [
+                            'nama_akun' => $oleh, // Tetap simpan nama asli
+                            'jalan' => 0,
+                            'pengeluaran' => $nominal,
+                            'reimbursment' => 0,
+                            'total' => $nominal,
+                        ]);
+                    }
+                }
+            }
+
+            // Proses biaya reimbursment
+            $reimbursmentItems = $projek->biaya_reimbursment_items ?? [];
+            foreach ($reimbursmentItems as $item) {
+                $oleh = $item['oleh'] ?? 'Unknown';
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                if ($nominal > 0) {
+                    $lowerOleh = strtolower($oleh);
+                    $existing = $projekBiayaByAkun->get($lowerOleh);
+                    if ($existing) {
+                        $existing['reimbursment'] += $nominal;
+                        $existing['total'] += $nominal;
+                        $projekBiayaByAkun->put($lowerOleh, $existing);
+                    } else {
+                        $projekBiayaByAkun->put($lowerOleh, [
+                            'nama_akun' => $oleh, // Tetap simpan nama asli
+                            'jalan' => 0,
+                            'pengeluaran' => 0,
+                            'reimbursment' => $nominal,
+                            'total' => $nominal,
+                        ]);
+                    }
+                }
+            }
+        }
+
+        // Gabungkan data dari dashboard_biayas dan projek_kerjas
+        $dataByAkun = collect();
+
+        // Tambah data dari dashboard_biayas (gunakan lowercase key untuk case-insensitive grouping)
+        foreach ($dashboardBiayaByAkun as $userId => $data) {
+            $namaAkun = $data['nama_akun'];
+            $lowerNama = strtolower($namaAkun); // Gunakan lowercase untuk grouping
+            $existing = $dataByAkun->get($lowerNama);
+            if ($existing) {
+                $existing['jalan'] += $data['jalan'];
+                $existing['pengeluaran'] += $data['pengeluaran'];
+                $existing['reimbursment'] += $data['reimbursment'];
+                $existing['total'] += $data['total'];
+                // Keep created_by if it exists
+                if (!$existing['created_by']) {
+                    $existing['created_by'] = $data['created_by'] ?? null;
+                }
+                $dataByAkun->put($lowerNama, $existing);
+            } else {
+                $dataByAkun->put($lowerNama, [
+                    'nama_akun' => $namaAkun, // Tetap simpan nama asli
+                    'created_by' => $data['created_by'] ?? null,
+                    'jalan' => $data['jalan'],
+                    'pengeluaran' => $data['pengeluaran'],
+                    'reimbursment' => $data['reimbursment'],
+                    'total' => $data['total'],
+                ]);
+            }
+        }
+
+        // Tambah data dari projek_kerjas (sudah menggunakan lowercase key)
+        foreach ($projekBiayaByAkun as $lowerNama => $data) {
+            $existing = $dataByAkun->get($lowerNama);
+            if ($existing) {
+                $existing['jalan'] += $data['jalan'];
+                $existing['pengeluaran'] += $data['pengeluaran'];
+                $existing['reimbursment'] += $data['reimbursment'];
+                $existing['total'] += $data['total'];
+                $dataByAkun->put($lowerNama, $existing);
+            } else {
+                $dataByAkun->put($lowerNama, [
+                    'nama_akun' => $data['nama_akun'], // Tetap simpan nama asli
+                    'jalan' => $data['jalan'],
+                    'pengeluaran' => $data['pengeluaran'],
+                    'reimbursment' => $data['reimbursment'],
+                    'total' => $data['total'],
+                ]);
+            }
+        }
+
+        // Sort by nama akun
+        $dataByAkun = $dataByAkun->values()->sortBy('nama_akun')->values();
 
         // Calculate total semua
         $allBiaya = [
@@ -314,15 +448,16 @@ class DashboardBiayaController extends Controller
             ], 422);
         }
 
+        $users = collect();
+
         // Jika bulan dan tahun disediakan, hanya cari user yang memiliki biaya di periode tersebut
         if ($bulan && $tahun) {
-            // Cari user dengan nama yang cocok DAN memiliki biaya di periode ini
-            $users = \App\Models\User::where('name', 'LIKE', "%{$nama}%")
+            // Cari user dengan nama yang cocok DAN memiliki biaya di dashboard_biayas
+            $usersFromDashboard = \App\Models\User::where('name', 'LIKE', "%{$nama}%")
                 ->whereHas('dashboardBiaya', function ($q) use ($bulan, $tahun) {
                     $q->whereYear('created_at', $tahun)
                       ->whereMonth('created_at', $bulan);
                 })
-                ->withCount('dashboardBiaya')
                 ->orderBy('name', 'asc')
                 ->limit(10)
                 ->get()
@@ -331,12 +466,39 @@ class DashboardBiayaController extends Controller
                         'id' => $u->id,
                         'nama_akun' => $u->name,
                         'name' => $u->name,
+                        'source' => 'dashboard',
                     ];
                 });
+            $users = $users->concat($usersFromDashboard);
+
+            // Cari user dari projek_kerjas yang memiliki biaya di periode ini
+            $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
+                ->whereMonth('created_at', $bulan)
+                ->get(['biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items']);
+
+            $olehNames = collect();
+            foreach ($projekKerjas as $projek) {
+                $items = array_merge(
+                    $projek->biaya_jalan_items ?? [],
+                    $projek->biaya_pengeluaran_items ?? [],
+                    $projek->biaya_reimbursment_items ?? []
+                );
+                foreach ($items as $item) {
+                    $oleh = $item['oleh'] ?? null;
+                    if ($oleh && stripos($oleh, $nama) !== false) {
+                        $olehNames->push([
+                            'id' => 0,
+                            'nama_akun' => $oleh,
+                            'name' => $oleh,
+                            'source' => 'projek',
+                        ]);
+                    }
+                }
+            }
+            $users = $users->concat($olehNames->unique('nama_akun'));
         } else {
             // Tanpa filter bulan/tahun, cari semua user dengan nama yang cocok
-            $users = \App\Models\User::where('name', 'LIKE', "%{$nama}%")
-                ->withCount('dashboardBiaya')
+            $usersFromDashboard = \App\Models\User::where('name', 'LIKE', "%{$nama}%")
                 ->orderBy('name', 'asc')
                 ->limit(10)
                 ->get()
@@ -345,9 +507,14 @@ class DashboardBiayaController extends Controller
                         'id' => $u->id,
                         'nama_akun' => $u->name,
                         'name' => $u->name,
+                        'source' => 'dashboard',
                     ];
                 });
+            $users = $users->concat($usersFromDashboard);
         }
+
+        // Sort dan limit
+        $users = $users->unique('nama_akun')->sortBy('nama_akun')->take(10)->values();
 
         return response()->json([
             'success' => true,
@@ -369,24 +536,145 @@ class DashboardBiayaController extends Controller
         $bulan = $request->input('bulan');
         $tahun = $request->input('tahun');
         $createdBy = $request->input('created_by');
+        $namaAkun = $request->input('nama_akun');
 
-        if (!$bulan || !$tahun || !$createdBy) {
+        if (!$bulan || !$tahun) {
             return response()->json([
                 'success' => false,
                 'message' => 'Parameter tidak lengkap.',
             ], 422);
         }
 
+        $data = collect();
+
+        // Ambil biaya dari dashboard_biayas
         $query = DashboardBiaya::query();
-
-        // Filter berdasarkan bulan, tahun, dan creator
         $query->whereYear('created_at', $tahun)
-              ->whereMonth('created_at', $bulan)
-              ->where('created_by', $createdBy);
+              ->whereMonth('created_at', $bulan);
 
-        $data = $query->with(['creator:id,name', 'updater:id,name'])
+        // Jika nama_akun disediakan (dari projek), cari user id dulu
+        $targetUserId = $createdBy;
+        if ($namaAkun && !$targetUserId) {
+            $user = \App\Models\User::where('name', $namaAkun)->first(['id']);
+            if ($user) {
+                $targetUserId = $user->id;
+            }
+        }
+
+        // Filter by user id
+        if ($targetUserId) {
+            $query->where('created_by', $targetUserId);
+        }
+
+        $dashboardBiaya = $query->with(['creator:id,name', 'updater:id,name'])
             ->orderBy('created_at', 'desc')
             ->get();
+
+        $data = $data->concat($dashboardBiaya);
+
+        // Gunakan nama_akun untuk filter project, atau ambil dari dashboard jika ada created_by
+        $filterNamaAkun = $namaAkun;
+        if (!$filterNamaAkun && $dashboardBiaya->isNotEmpty()) {
+            $firstItem = $dashboardBiaya->first();
+            if ($firstItem && $firstItem->creator) {
+                $filterNamaAkun = $firstItem->creator->name;
+            }
+        }
+
+        // Ambil biaya dari projek_kerjas
+        $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
+            ->whereMonth('created_at', $bulan)
+            ->get(['id', 'biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items', 'created_at', 'updated_at']);
+
+        foreach ($projekKerjas as $projek) {
+            // Proses biaya jalan
+            $jalanItems = $projek->biaya_jalan_items ?? [];
+            foreach ($jalanItems as $item) {
+                $oleh = $item['oleh'] ?? '';
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                // Filter oleh nama jika nama_akun disediakan (case-insensitive exact match)
+                $shouldInclude = false;
+                if ($filterNamaAkun && strtolower($oleh) === strtolower($filterNamaAkun)) {
+                    $shouldInclude = true;
+                }
+
+                if ($shouldInclude && $nominal > 0) {
+                    $data->push((object) [
+                        'id' => 'projek_' . $projek->id . '_jalan_' . uniqid(),
+                        'kategori' => 'jalan',
+                        'nominal' => $nominal,
+                        'keterangan' => $item['keterangan'] ?? '',
+                        'is_lunas' => $item['is_lunas'] ?? false,
+                        'oleh' => $oleh,
+                        'created_at' => $item['created_at'] ?? $projek->created_at,
+                        'updated_at' => $projek->updated_at,
+                        'creator' => (object) ['id' => 0, 'name' => $oleh],
+                        'updater' => null,
+                        'source' => 'projek',
+                    ]);
+                }
+            }
+
+            // Proses biaya pengeluaran
+            $pengeluaranItems = $projek->biaya_pengeluaran_items ?? [];
+            foreach ($pengeluaranItems as $item) {
+                $oleh = $item['oleh'] ?? '';
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                $shouldInclude = false;
+                if ($filterNamaAkun && strtolower($oleh) === strtolower($filterNamaAkun)) {
+                    $shouldInclude = true;
+                }
+
+                if ($shouldInclude && $nominal > 0) {
+                    $data->push((object) [
+                        'id' => 'projek_' . $projek->id . '_pengeluaran_' . uniqid(),
+                        'kategori' => 'pengeluaran',
+                        'nominal' => $nominal,
+                        'keterangan' => $item['keterangan'] ?? '',
+                        'is_lunas' => $item['is_lunas'] ?? false,
+                        'oleh' => $oleh,
+                        'created_at' => $item['created_at'] ?? $projek->created_at,
+                        'updated_at' => $projek->updated_at,
+                        'creator' => (object) ['id' => 0, 'name' => $oleh],
+                        'updater' => null,
+                        'source' => 'projek',
+                    ]);
+                }
+            }
+
+            // Proses biaya reimbursment
+            $reimbursmentItems = $projek->biaya_reimbursment_items ?? [];
+            foreach ($reimbursmentItems as $item) {
+                $oleh = $item['oleh'] ?? '';
+                $nominal = (float) ($item['nominal'] ?? 0);
+
+                $shouldInclude = false;
+                if ($filterNamaAkun && strtolower($oleh) === strtolower($filterNamaAkun)) {
+                    $shouldInclude = true;
+                }
+
+                if ($shouldInclude && $nominal > 0) {
+                    $data->push((object) [
+                        'id' => 'projek_' . $projek->id . '_reimbursment_' . uniqid(),
+                        'kategori' => 'reimbursment',
+                        'nominal' => $nominal,
+                        'keterangan' => $item['keterangan'] ?? '',
+                        'is_lunas' => $item['is_lunas'] ?? false,
+                        'oleh' => $oleh,
+                        'created_at' => $item['created_at'] ?? $projek->created_at,
+                        'updated_at' => $projek->updated_at,
+                        'creator' => (object) ['id' => 0, 'name' => $oleh],
+                        'updater' => null,
+                        'source' => 'projek',
+                    ]);
+                }
+            }
+        }
+
+        // Sort by created_at descending
+        $data = $data->sortByDesc('created_at')->values();
 
         return response()->json([
             'success' => true,

@@ -646,14 +646,20 @@ class ProjekKerjaController extends Controller
             'biaya_jalan_items.*.nominal' => 'nullable|numeric|min:0',
             'biaya_jalan_items.*.keterangan' => 'nullable|string',
             'biaya_jalan_items.*.is_lunas' => 'nullable|boolean',
+            'biaya_jalan_items.*.oleh' => 'nullable|string',
+            'biaya_jalan_items.*.created_at' => 'nullable|string',
             'biaya_pengeluaran_items' => 'nullable|array',
             'biaya_pengeluaran_items.*.nominal' => 'nullable|numeric|min:0',
             'biaya_pengeluaran_items.*.keterangan' => 'nullable|string',
             'biaya_pengeluaran_items.*.is_lunas' => 'nullable|boolean',
+            'biaya_pengeluaran_items.*.oleh' => 'nullable|string',
+            'biaya_pengeluaran_items.*.created_at' => 'nullable|string',
             'biaya_reimbursment_items' => 'nullable|array',
             'biaya_reimbursment_items.*.nominal' => 'nullable|numeric|min:0',
             'biaya_reimbursment_items.*.keterangan' => 'nullable|string',
             'biaya_reimbursment_items.*.is_lunas' => 'nullable|boolean',
+            'biaya_reimbursment_items.*.oleh' => 'nullable|string',
+            'biaya_reimbursment_items.*.created_at' => 'nullable|string',
         ]);
 
         try {
@@ -662,7 +668,7 @@ class ProjekKerjaController extends Controller
             $userName = auth()->user()->name ?? 'System';
             $isSuperAdmin = (auth()->user()->role ?? null) === 'super_admin';
 
-            $normalizeItems = function (?array $incoming, array $existing = []) use ($isSuperAdmin) {
+            $normalizeItems = function (?array $incoming, array $existing = []) use ($isSuperAdmin, $userName) {
                 $incoming = $incoming ?? [];
                 $existing = $existing ?? [];
 
@@ -681,12 +687,34 @@ class ProjekKerjaController extends Controller
 
                         $isLunas = (bool) ($row['is_lunas'] ?? false);
 
+                        // Get atau buat 'oleh' field
+                        $oleh = trim((string) ($row['oleh'] ?? ''));
+                        if ($oleh === '') {
+                            // Coba cari dari existing data berdasarkan index
+                            if (isset($existing[$idx]['oleh'])) {
+                                $oleh = $existing[$idx]['oleh'];
+                            } else {
+                                $oleh = $userName;
+                            }
+                        }
+
+                        // Get atau buat 'created_at' field
+                        $createdAt = trim((string) ($row['created_at'] ?? ''));
+                        if ($createdAt === '' && isset($existing[$idx]['created_at'])) {
+                            $createdAt = $existing[$idx]['created_at'];
+                        }
+
                         if ($nominal > 0 || $keterangan !== '') {
-                            $result[] = [
+                            $item = [
                                 'nominal' => round($nominal, 2),
                                 'keterangan' => $keterangan,
                                 'is_lunas' => $isLunas,
+                                'oleh' => $oleh,
                             ];
+                            if ($createdAt !== '') {
+                                $item['created_at'] = $createdAt;
+                            }
+                            $result[] = $item;
                         }
                     }
 
@@ -714,11 +742,16 @@ class ProjekKerjaController extends Controller
                             throw new \InvalidArgumentException('Baris yang sudah lunas tidak boleh diubah nominal atau keterangannya.');
                         }
                         array_shift($lunasQueue);
-                        $result[] = [
+                        $item = [
                             'nominal' => $ln,
                             'keterangan' => $lk,
                             'is_lunas' => true,
+                            'oleh' => $lun['oleh'] ?? $userName,
                         ];
+                        if (isset($lun['created_at'])) {
+                            $item['created_at'] = $lun['created_at'];
+                        }
+                        $result[] = $item;
 
                         continue;
                     }
@@ -729,12 +762,24 @@ class ProjekKerjaController extends Controller
                     }
                     $keterangan = trim((string) ($row['keterangan'] ?? ''));
 
+                    // Get atau buat 'oleh' field
+                    $oleh = trim((string) ($row['oleh'] ?? ''));
+                    if ($oleh === '') {
+                        $oleh = $userName;
+                    }
+
                     if ($nominal > 0 || $keterangan !== '') {
-                        $result[] = [
+                        $item = [
                             'nominal' => round($nominal, 2),
                             'keterangan' => $keterangan,
                             'is_lunas' => false,
+                            'oleh' => $oleh,
                         ];
+                        $createdAt = trim((string) ($row['created_at'] ?? ''));
+                        if ($createdAt !== '') {
+                            $item['created_at'] = $createdAt;
+                        }
+                        $result[] = $item;
                     }
                 }
 

@@ -35,8 +35,8 @@ function BiayaMetaFooter({ meta }) {
     <p className="text-[11px] text-gray-500 mt-2 pt-2 border-t border-gray-200/80 flex items-start gap-1.5">
       <User size={12} className="shrink-0 mt-0.5 text-gray-400" />
       <span>
-        Terakhir diubah: <span className="font-medium text-gray-600">{meta.by}</span>
-        {dateStr ? <span className="text-gray-400"> · {dateStr}</span> : null}
+        Oleh: <span className="font-medium text-gray-600">{meta.by}</span>
+        {dateStr ? <span className="text-gray-400">, {dateStr}</span> : null}
       </span>
     </p>
   );
@@ -189,7 +189,7 @@ export default function ProjekKerjaPage() {
   // Modal biaya (jalan, pengeluaran, reimbursment) — banyak baris per kategori
   const [showUangModal, setShowUangModal] = useState(false);
   const [editUang, setEditUang] = useState(false);
-  const emptyBiayaRow = () => ({ nominal: "", keterangan: "", is_lunas: false });
+  const emptyBiayaRow = () => ({ nominal: "", keterangan: "", is_lunas: false, oleh: user?.name || "", created_at: new Date().toISOString() });
   const [biayaEdit, setBiayaEdit] = useState({
     jalan: [emptyBiayaRow()],
     pengeluaran: [emptyBiayaRow()],
@@ -503,6 +503,8 @@ export default function ProjekKerjaPage() {
       nominal: nominalApiToInput(r.nominal),
       keterangan: r.keterangan ?? "",
       is_lunas: Boolean(r.is_lunas),
+      oleh: r.oleh ?? "",
+      created_at: r.created_at ?? new Date().toISOString(),
     }));
   };
 
@@ -521,6 +523,8 @@ export default function ProjekKerjaPage() {
       nominal: parseRibuanId(r.nominal),
       keterangan: (r.keterangan || "").trim(),
       is_lunas: Boolean(r.is_lunas),
+      oleh: (r.oleh || user?.name || "").trim(),
+      created_at: r.created_at || new Date().toISOString(),
     }));
 
   const openUangModal = (item) => {
@@ -640,6 +644,8 @@ export default function ProjekKerjaPage() {
         nominal: Number.isFinite(Number(r?.nominal)) ? Number(r.nominal) : 0,
         keterangan: String(r?.keterangan || ""),
         is_lunas: Boolean(r?.is_lunas),
+        oleh: r?.oleh || "",
+        created_at: r?.created_at || "",
       }));
 
     const payload = {
@@ -1470,19 +1476,36 @@ export default function ProjekKerjaPage() {
                           <ul className="space-y-1 text-gray-700 max-h-40 overflow-y-auto">
                             {shown.map((r, i) => (
                               <li key={i} className="text-xs border-b border-gray-200/80 pb-1">
-                                <span className="font-medium">{formatRupiah(parseRibuanId(r.nominal))}</span>
-                                {role === "super_admin" ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleItemLunas(col.key, r.__idx)}
-                                    className={`ml-2 px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200" : "bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200"}`}
-                                    title={r.is_lunas ? "Klik untuk batalkan lunas item" : "Klik untuk lunaskan item"}
-                                  >
-                                    {r.is_lunas ? "Lunas" : "Belum"}
-                                  </button>
-                                ) : (
-                                  <span className={`ml-2 px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}>
-                                    {r.is_lunas ? "Lunas" : "Belum"}
+                                <div className="flex items-center justify-between">
+                                  <span className="font-medium">{formatRupiah(parseRibuanId(r.nominal))}</span>
+                                  {role === "super_admin" ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleToggleItemLunas(col.key, r.__idx)}
+                                      className={`px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200" : "bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200"}`}
+                                      title={r.is_lunas ? "Klik untuk batalkan lunas item" : "Klik untuk lunaskan item"}
+                                    >
+                                      {r.is_lunas ? "Lunas" : "Belum"}
+                                    </button>
+                                  ) : (
+                                    <span className={`px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}>
+                                      {r.is_lunas ? "Lunas" : "Belum"}
+                                    </span>
+                                  )}
+                                </div>
+                                {r.oleh && (
+                                  <span className="block text-gray-500 mt-0.5 text-[10px]">
+                                    Oleh: {r.oleh}
+                                    {r.created_at && (
+                                      (() => {
+                                        const d = new Date(r.created_at);
+                                        if (!Number.isNaN(d.getTime())) {
+                                          const dateStr = d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
+                                          return `, ${dateStr}`;
+                                        }
+                                        return "";
+                                      })()
+                                    )}
                                   </span>
                                 )}
                                 {r.keterangan ? (
@@ -1593,6 +1616,21 @@ export default function ProjekKerjaPage() {
                                 key={idx}
                                 className={`bg-white rounded-lg border p-2 space-y-2 ${barisLunas ? "border-amber-200/80 bg-amber-50/30" : ""}`}
                               >
+                                {row.oleh && (
+                                  <p className="text-[10px] text-gray-500">
+                                    Oleh: <span className="font-medium">{row.oleh}</span>
+                                    {row.created_at && (
+                                      (() => {
+                                        const d = new Date(row.created_at);
+                                        if (!Number.isNaN(d.getTime())) {
+                                          const dateStr = d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
+                                          return `, ${dateStr}`;
+                                        }
+                                        return "";
+                                      })()
+                                    )}
+                                  </p>
+                                )}
                                 {barisLunas ? (
                                   <p className="text-[10px] text-amber-800 font-medium">
                                     Sudah lunas — isi tidak bisa diubah

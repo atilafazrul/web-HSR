@@ -90,7 +90,7 @@ export default React.memo(function RekapPerAkun({ user }) {
     }
   };
 
-  const fetchDetailBiaya = async (createdBy) => {
+  const fetchDetailBiaya = async (namaAkun, createdById = null) => {
     // Cancel previous request if exists
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -100,11 +100,23 @@ export default React.memo(function RekapPerAkun({ user }) {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    console.log("Fetching detail biaya for created_by:", createdBy, "bulan:", selectedMonth, "tahun:", selectedYear);
+    console.log("Fetching detail biaya for:", namaAkun, "createdById:", createdById, "bulan:", selectedMonth, "tahun:", selectedYear);
 
     try {
+      // Gunakan created_by jika ada (untuk dashboard), gunakan nama_akun untuk projects
+      const params = new URLSearchParams({
+        bulan: selectedMonth,
+        tahun: selectedYear,
+      });
+
+      if (createdById) {
+        params.append('created_by', createdById);
+      } else if (namaAkun) {
+        params.append('nama_akun', namaAkun);
+      }
+
       const res = await api.get(
-        `/dashboard-biaya/rekap-detail-akun?bulan=${selectedMonth}&tahun=${selectedYear}&created_by=${createdBy}`,
+        `/dashboard-biaya/rekap-detail-akun?${params.toString()}`,
         { signal: controller.signal }
       );
       console.log("Detail biaya response:", res);
@@ -231,12 +243,12 @@ export default React.memo(function RekapPerAkun({ user }) {
   const handleSelectAkun = async (akun) => {
     console.log("handleSelectAkun called with:", akun);
 
-    // Cari id dari mapping jika tidak ada di objek
+    // Cari id dari mapping atau gunakan id langsung
     let akunId = akun?.id || akunIdMap[akun?.nama_akun || akun?.name];
     const akunName = akun?.nama_akun || akun?.name;
 
-    // Jika ID tidak ditemukan di mapping, coba cari via API
-    if (!akunId && akunName) {
+    // Jika ID tidak ditemukan di mapping dan bukan dari projek, coba cari via API
+    if (!akunId && akunName && akun.source !== 'projek') {
       try {
         console.log("Mencari ID untuk akun:", akunName);
         const res = await api.get(`/dashboard-biaya/search-akun?nama=${encodeURIComponent(akunName)}&bulan=${selectedMonth}&tahun=${selectedYear}`);
@@ -247,7 +259,7 @@ export default React.memo(function RekapPerAkun({ user }) {
         const newMapping = {};
         results.forEach(r => {
           const name = r.nama_akun || r.name;
-          if (name && r.id) {
+          if (name && r.id && r.id !== 0) {
             newMapping[name] = r.id;
           }
         });
@@ -257,20 +269,22 @@ export default React.memo(function RekapPerAkun({ user }) {
         akunId = newMapping[akunName];
 
         if (!akunId) {
-          alert(`ID untuk "${akunName}" tidak ditemukan. Pastikan nama akun sesuai.`);
-          return;
+          // Lanjut saja dengan nama_akun jika tidak ada ID
+          console.log("No ID found, will use nama_akun only");
         }
       } catch (err) {
         console.error("Gagal mencari ID akun:", err);
-        alert(`Gagal mencari ID untuk "${akunName}". Silakan coba cari manual di kolom pencarian.`);
-        return;
+        // Lanjut saja dengan nama_akun jika search gagal
       }
-    } else if (!akunId) {
+    }
+
+    // Validasi minimal harus punya nama_akun
+    if (!akunName) {
       alert("Data akun tidak valid");
       return;
     }
 
-    console.log("Using akunId:", akunId);
+    console.log("Using akunId:", akunId, "akunName:", akunName, "source:", akun.source);
 
     // Buat objek akun dengan id yang ditemukan
     const akunWithId = { ...akun, id: akunId };
@@ -283,7 +297,13 @@ export default React.memo(function RekapPerAkun({ user }) {
     setSearchResults([]);
 
     try {
-      await fetchDetailBiaya(akunId);
+      // Jika akun dari projek atau tidak punya ID, gunakan nama_akun
+      // Jika dari dashboard dan punya ID, gunakan created_by
+      if (akun.source === 'projek' || !akunId || akunId === 0 || akunId === '0') {
+        await fetchDetailBiaya(akunName, null);
+      } else {
+        await fetchDetailBiaya(null, akunWithId.id);
+      }
     } catch (err) {
       console.error("Error fetching detail:", err);
       // Error sudah ditangani di fetchDetailBiaya
@@ -296,17 +316,19 @@ export default React.memo(function RekapPerAkun({ user }) {
     console.log("=== openDetailModal called ===");
     console.log("Input akun:", akun);
 
-    // Cari id dari mapping jika tidak ada di objek
+    // Cari id dari mapping atau gunakan created_by langsung
     const akunName = akun?.nama_akun || akun?.name;
-    let akunId = akun?.id || akunIdMap[akunName];
+    const createdByFromData = akun?.created_by; // Gunakan created_by dari dataByAkun jika ada
+    let akunId = akun?.id || createdByFromData || akunIdMap[akunName];
 
     console.log("Initial akunName:", akunName);
     console.log("Initial akunId from direct lookup:", akun?.id);
+    console.log("Initial created_by from data:", createdByFromData);
     console.log("Initial akunId from mapping:", akunIdMap[akunName]);
     console.log("Final initial akunId:", akunId);
 
-    // Jika ID tidak ditemukan di mapping, coba cari via API
-    if (!akunId && akunName) {
+    // Jika ID tidak ditemukan dan bukan dari projek, coba cari via API
+    if (!akunId && akunName && akun.source !== 'projek') {
       try {
         console.log("Searching for ID for akun:", akunName);
         const res = await api.get(`/dashboard-biaya/search-akun?nama=${encodeURIComponent(akunName)}&bulan=${selectedMonth}&tahun=${selectedYear}`);
@@ -319,7 +341,7 @@ export default React.memo(function RekapPerAkun({ user }) {
         const newMapping = {};
         results.forEach(r => {
           const name = r.nama_akun || r.name;
-          if (name && r.id) {
+          if (name && r.id && r.id !== 0) {
             newMapping[name] = r.id;
           }
         });
@@ -333,21 +355,23 @@ export default React.memo(function RekapPerAkun({ user }) {
         console.log("akunId after search:", akunId);
 
         if (!akunId) {
-          alert(`ID untuk "${akunName}" tidak ditemukan. Pastikan nama akun sesuai.`);
-          return;
+          // Jika tidak ada ID, gunakan nama_akun saja
+          console.log("No ID found, will use nama_akun only");
         }
       } catch (err) {
         console.error("Gagal mencari ID akun:", err);
         console.error("Error response:", err.response?.data);
-        alert(`Gagal mencari ID untuk "${akunName}". Silakan coba cari manual di kolom pencarian.`);
-        return;
+        // Lanjut saja dengan nama_akun jika search gagal
       }
-    } else if (!akunId) {
+    }
+
+    // Validasi minimal harus punya nama_akun
+    if (!akunName) {
       alert("Data akun tidak valid");
       return;
     }
 
-    console.log("=== Calling fetchDetailBiaya with akunId:", akunId, "===");
+    console.log("=== Calling fetchDetailBiaya with akunId:", akunId, "akunName:", akunName, "===");
 
     // Buat objek akun dengan id yang ditemukan
     const akunWithId = { ...akun, id: akunId };
@@ -358,7 +382,13 @@ export default React.memo(function RekapPerAkun({ user }) {
     setShowDetailModal(true); // Show modal immediately with loading state
 
     try {
-      await fetchDetailBiaya(akunId);
+      // Jika akun dari projek atau tidak punya ID, gunakan nama_akun
+      // Jika dari dashboard dan punya ID, gunakan created_by
+      if (akun.source === 'projek' || !akunId || akunId === 0 || akunId === '0') {
+        await fetchDetailBiaya(akunName, null);
+      } else {
+        await fetchDetailBiaya(null, akunId);
+      }
       console.log("fetchDetailBiaya completed");
     } catch (err) {
       console.error("Error opening modal:", err);
