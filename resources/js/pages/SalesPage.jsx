@@ -11,11 +11,14 @@ const SalesPage = () => {
   // =============================
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
+  const isUserRole = role === "user";
 
   const basePath =
     role === "super_admin"
       ? "/super_admin"
-      : "/admin";
+      : role === "user"
+        ? "/user"
+        : "/admin";
 
 
   return (
@@ -39,12 +42,14 @@ const SalesPage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         {/* TARGET */}
-        <Card
-          icon={<BarChart3 size={30} className="text-blue-600" />}
-          title="Target"
-          desc="Kelola target dan performa penjualan"
-          onClick={() => navigate(`${basePath}/sales/target`)}
-        />
+        {!isUserRole && (
+          <Card
+            icon={<BarChart3 size={30} className="text-blue-600" />}
+            title="Target"
+            desc="Kelola target dan performa penjualan"
+            onClick={() => navigate(`${basePath}/sales/target`)}
+          />
+        )}
 
         {/* PROGRES */}
         <Card
@@ -54,20 +59,24 @@ const SalesPage = () => {
           onClick={() => navigate(`${basePath}/sales/projek`)}
         />
 
-        <Card
-          icon={<Archive size={30} className="text-amber-600" />}
-          title="Archive Pekerjaan"
-          desc="Lihat pekerjaan selesai yang sudah di-archive"
-          onClick={() => navigate(`${basePath}/sales/projek/archive`)}
-        />
+        {!isUserRole && (
+          <Card
+            icon={<Archive size={30} className="text-amber-600" />}
+            title="Archive Pekerjaan"
+            desc="Lihat pekerjaan selesai yang sudah di-archive"
+            onClick={() => navigate(`${basePath}/sales/projek/archive`)}
+          />
+        )}
 
         {/* BUAT PDF */}
-        <Card
-          icon={<FileText size={30} className="text-purple-600" />}
-          title="Buat PDF"
-          desc="Buat PDF pekerjaan sales"
-          onClick={() => navigate(`${basePath}/sales/buat-pdf`)}
-        />
+        {!isUserRole && (
+          <Card
+            icon={<FileText size={30} className="text-purple-600" />}
+            title="Buat PDF"
+            desc="Buat PDF pekerjaan sales"
+            onClick={() => navigate(`${basePath}/sales/buat-pdf`)}
+          />
+        )}
 
       </div>
 

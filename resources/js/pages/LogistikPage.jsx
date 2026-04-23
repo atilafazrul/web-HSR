@@ -7,11 +7,14 @@ const LogistikPage = () => {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
+  const isUserRole = role === "user";
 
   const basePath =
     role === "super_admin"
       ? "/super_admin"
-      : "/admin";
+      : role === "user"
+        ? "/user"
+        : "/admin";
 
   return (
     <div>
@@ -30,18 +33,22 @@ const LogistikPage = () => {
           desc="Pantau status dan perkembangan logistik"
           onClick={() => navigate(`${basePath}/logistik/projek`)}
         />
-        <Card
-          icon={<Archive size={30} className="text-amber-600" />}
-          title="Archive Pekerjaan"
-          desc="Lihat pekerjaan selesai yang sudah di-archive"
-          onClick={() => navigate(`${basePath}/logistik/projek/archive`)}
-        />
-        <Card
-          icon={<Package size={30} className="text-blue-600" />}
-          title="Inventory"
-          desc="Kelola perangkat dan stok barang logistik"
-          onClick={() => navigate(`${basePath}/logistik/inventory`)}
-        />
+        {!isUserRole && (
+          <Card
+            icon={<Archive size={30} className="text-amber-600" />}
+            title="Archive Pekerjaan"
+            desc="Lihat pekerjaan selesai yang sudah di-archive"
+            onClick={() => navigate(`${basePath}/logistik/projek/archive`)}
+          />
+        )}
+        {!isUserRole && (
+          <Card
+            icon={<Package size={30} className="text-blue-600" />}
+            title="Inventory"
+            desc="Kelola perangkat dan stok barang logistik"
+            onClick={() => navigate(`${basePath}/logistik/inventory`)}
+          />
+        )}
       </div>
     </div>
   );

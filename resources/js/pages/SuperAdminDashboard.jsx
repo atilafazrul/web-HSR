@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Routes,
   Route,
@@ -352,9 +352,24 @@ const Dashboard = ({ user, windowWidth }) => {
   );
 
   const total = projek.length;
-  const selesai = projek.filter(p => p.status === "Selesai").length;
-  const proses = projek.filter(p => p.status === "Proses").length;
-  const terlambat = projek.filter(p => p.status === "Terlambat").length;
+  const statusSummary = useMemo(() => {
+    const counter = new Map();
+    projek.forEach((item) => {
+      const label = String(item?.status || "Tanpa Status").trim() || "Tanpa Status";
+      counter.set(label, (counter.get(label) || 0) + 1);
+    });
+    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Selesai", "Terlambat"];
+    return Array.from(counter.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => {
+        const ai = preferredOrder.indexOf(a.label);
+        const bi = preferredOrder.indexOf(b.label);
+        if (ai === -1 && bi === -1) return a.label.localeCompare(b.label);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+  }, [projek]);
 
   // Tentukan ukuran berdasarkan windowWidth
   const isMobile = windowWidth < 640;
@@ -431,13 +446,31 @@ const Dashboard = ({ user, windowWidth }) => {
 
       {/* SUMMARY */}
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-5 md:mb-6 lg:mb-8 xl:mb-12">
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 md:mb-5 lg:mb-6">Summary</h3>
+        <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-1">Summary Status</h3>
+        <p className="text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4 md:mb-5 lg:mb-6">Ringkasan pekerjaan berdasarkan semua status yang aktif.</p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
           <SummaryCard title="Total Tugas" value={total} icon={<ListTodo size={isMobile ? 16 : 20} />} color="blue" isMobile={isMobile} />
-          <SummaryCard title="Tugas Selesai" value={selesai} icon={<CheckCircle size={isMobile ? 16 : 20} />} color="green" isMobile={isMobile} />
-          <SummaryCard title="Sedang Dikerjakan" value={proses} icon={<Clock size={isMobile ? 16 : 20} />} color="yellow" isMobile={isMobile} />
-          <SummaryCard title="Tugas Terlambat" value={terlambat} icon={<AlertTriangle size={isMobile ? 16 : 20} />} color="red" isMobile={isMobile} />
+          {statusSummary.map((status) => (
+            <SummaryCard
+              key={status.label}
+              title={status.label}
+              value={status.count}
+              icon={
+                status.label === "Selesai" ? <CheckCircle size={isMobile ? 16 : 20} />
+                  : status.label.includes("Proses") ? <Clock size={isMobile ? 16 : 20} />
+                    : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
+                      : <Activity size={isMobile ? 16 : 20} />
+              }
+              color={
+                status.label === "Selesai" ? "green"
+                  : status.label.includes("Proses") ? "yellow"
+                    : status.label === "Terlambat" ? "red"
+                      : "blue"
+              }
+              isMobile={isMobile}
+            />
+          ))}
         </div>
       </div>
 
@@ -796,21 +829,35 @@ const DivisiCard = ({ title, count, image, onClick, isMobile }) => {
 /* ================= SUMMARY CARD ================= */
 const SummaryCard = ({ title, value, icon, color, isMobile }) => {
   const map = {
-    blue: "bg-blue-100 text-blue-600",
-    green: "bg-green-100 text-green-600",
-    yellow: "bg-yellow-100 text-yellow-600",
-    red: "bg-red-100 text-red-600",
+    blue: {
+      badge: "bg-blue-100 text-blue-700 ring-blue-200",
+      dot: "bg-blue-500",
+    },
+    green: {
+      badge: "bg-green-100 text-green-700 ring-green-200",
+      dot: "bg-green-500",
+    },
+    yellow: {
+      badge: "bg-yellow-100 text-yellow-700 ring-yellow-200",
+      dot: "bg-yellow-500",
+    },
+    red: {
+      badge: "bg-red-100 text-red-700 ring-red-200",
+      dot: "bg-red-500",
+    },
   };
+  const theme = map[color] || map.blue;
 
   return (
-    <div className="bg-white p-3 sm:p-4 md:p-5 lg:p-6 rounded-lg sm:rounded-xl md:rounded-2xl shadow-sm hover:shadow-lg transition flex justify-between items-center">
-      <div>
-        <p className="text-gray-500 text-xs sm:text-xs md:text-sm">{title}</p>
-        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold">{value}</h2>
+    <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/80 border border-slate-200/70 p-3 sm:p-4 md:p-5 lg:p-6 rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all flex justify-between items-center">
+      <div className="min-w-0">
+        <p className="text-slate-500 text-[11px] sm:text-xs md:text-sm tracking-wide">{title}</p>
+        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900">{value}</h2>
       </div>
-      <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 flex items-center justify-center rounded-lg md:rounded-xl ${map[color]}`}>
+      <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 flex items-center justify-center rounded-lg md:rounded-xl ring-1 ring-inset ${theme.badge}`}>
         {icon}
       </div>
+      <span className={`absolute top-0 left-0 h-1 w-full ${theme.dot}`} />
     </div>
   );
 };

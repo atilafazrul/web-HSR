@@ -49,12 +49,15 @@ export default function ProjekKerjaPage() {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
   const role = user?.role;
   const divisiUser = user?.divisi;
-  const basePath = role === "super_admin" ? "/super_admin" : "/admin";
+  const isUserRole = role === "user";
+  const canManageProject = role === "super_admin" || role === "admin";
+  const basePath = role === "super_admin" ? "/super_admin" : role === "user" ? "/user" : "/admin";
   const canEditProjectByDivisi = (projectDivisi) =>
-    role === "super_admin" ||
-    String(projectDivisi || "")
-      .toLowerCase()
-      .trim() === String(divisiUser || "").toLowerCase().trim();
+    canManageProject &&
+    (role === "super_admin" ||
+      String(projectDivisi || "")
+        .toLowerCase()
+        .trim() === String(divisiUser || "").toLowerCase().trim());
 
   const divisiLabel = (d) => {
     const key = String(d || "").toLowerCase().trim();
@@ -331,7 +334,7 @@ export default function ProjekKerjaPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (role !== "admin" && role !== "super_admin") {
+    if (!canManageProject) {
       alert("Tidak ada akses");
       return;
     }
@@ -422,7 +425,7 @@ export default function ProjekKerjaPage() {
   };
 
   const handleViewPhoto = (id) => {
-    const base = role === "super_admin" ? "/super_admin" : "/admin";
+    const base = role === "super_admin" ? "/super_admin" : role === "user" ? "/user" : "/admin";
     navigate(`${base}/projek-kerja/foto/${id}`);
   };
 
@@ -812,7 +815,7 @@ export default function ProjekKerjaPage() {
     <div className="space-y-12 p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
 
       {/* ================= FORM ================= */}
-      {!isArchiveContext && (role === "super_admin" || divisiUser === "Sales") && (
+      {!isArchiveContext && canManageProject && (role === "super_admin" || divisiUser === "Sales") && (
         <div className="bg-white rounded-3xl shadow-xl border p-4 sm:p-8 min-w-0 overflow-x-hidden">
           <div className="mb-8">
             <h2 className="text-3xl font-bold flex items-center gap-3">
@@ -1229,15 +1232,15 @@ export default function ProjekKerjaPage() {
                   </td>
                   <td className="p-2">
                     <div className="flex justify-center gap-1">
-                      {item.file_url && (
+                      <button onClick={() => handleViewPhoto(item.id)} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded-lg" title="Lihat Foto">
+                        <FileText size={14} />
+                      </button>
+                      {!isUserRole && item.file_url && (
                         <a href={item.file_url} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-lg" title="Download File">
                           <Download size={14} />
                         </a>
                       )}
-                      <button onClick={() => handleViewPhoto(item.id)} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded-lg" title="Lihat Foto">
-                        <FileText size={14} />
-                      </button>
-                      {(role === "super_admin" || String(item.divisi || "").toLowerCase().trim() === String(divisiUser || "").toLowerCase().trim()) && (
+                      {!isUserRole && (role === "super_admin" || String(item.divisi || "").toLowerCase().trim() === String(divisiUser || "").toLowerCase().trim()) && (
                         <>
                           {!isArchiveContext ? (
                             <button
@@ -1266,7 +1269,7 @@ export default function ProjekKerjaPage() {
                           ) : null}
                         </>
                       )}
-                      {!isArchiveContext && (role === "super_admin" || item.divisi === divisiUser) && (
+                      {!isUserRole && !isArchiveContext && (role === "super_admin" || item.divisi === divisiUser) && (
                         <button
                           onClick={() => handleDelete(item.id)}
                           className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-lg"

@@ -61,6 +61,7 @@ export default function Sidebar({
 
   const isSuperAdmin = role === "super_admin";
   const isAdmin = role === "admin";
+  const isUser = role === "user";
 
   const isActive = (path) => {
     return (
@@ -72,7 +73,9 @@ export default function Sidebar({
   const basePath =
     user?.role === "super_admin"
       ? "/super_admin"
-      : "/admin";
+      : user?.role === "user"
+        ? "/user"
+        : "/admin";
 
   const allDivisis = [
     { name: "IT", path: "it", icon: <Monitor size={18} /> },
@@ -250,7 +253,7 @@ export default function Sidebar({
             )}
 
             {/* ================= ADMIN: SINGLE DIVISI ================= */}
-            {isAdmin && !isSuperAdmin && (
+            {(isAdmin || isUser) && !isSuperAdmin && (
               <div onClick={() => {
                 navigate(`${basePath}/${user?.divisi?.toLowerCase() || "service"}`);
                 if (isMobile) setSidebarOpen(false);

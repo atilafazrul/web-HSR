@@ -48,6 +48,7 @@ export default function KaryawanPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [error, setError] = useState(null);
 
   // State untuk file upload hanya untuk create dan edit photo
@@ -177,7 +178,7 @@ export default function KaryawanPage() {
 
       await api.post("/karyawan", {
         ...createData,
-        role: "admin"
+        role: createData.role || "user"
       });
 
       alert("Karyawan berhasil ditambahkan ✅");
@@ -210,12 +211,20 @@ export default function KaryawanPage() {
     }
   };
 
-  const filteredEmployees = employees.filter((emp) =>
-    emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.divisi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.nik?.includes(searchTerm) ||
-    emp.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredEmployees = employees.filter((emp) => {
+    const matchesSearch =
+      emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.divisi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      emp.nik?.includes(searchTerm) ||
+      emp.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesRole =
+      roleFilter === "all"
+        ? true
+        : String(emp.role || "").toLowerCase() === roleFilter;
+
+    return matchesSearch && matchesRole;
+  });
 
   const toggleSectionEdit = (section) => {
     setExpandedSectionsEdit(prev => ({
@@ -268,6 +277,16 @@ export default function KaryawanPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition"
+            >
+              <option value="all">Semua Role</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+
             <div className="relative flex-1 sm:flex-none">
               <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
@@ -280,7 +299,7 @@ export default function KaryawanPage() {
             </div>
 
             <button
-              onClick={() => setCreateData({ name: "", email: "", password: "", divisi: "" })}
+              onClick={() => setCreateData({ name: "", email: "", password: "", divisi: "", role: "user" })}
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium"
             >
               <UserPlus size={18} />
@@ -444,6 +463,7 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
       <div className="pt-14 pb-5 px-4 text-center">
         <h4 className="font-bold text-gray-800 text-lg truncate">{employee.name}</h4>
         <p className="text-purple-600 text-sm font-medium mt-1">{employee.divisi || "-"}</p>
+        <p className="text-xs text-gray-500 uppercase mt-0.5">{employee.role || "-"}</p>
         <p className="text-gray-400 text-xs mt-1 truncate">{employee.email}</p>
 
         <div className="flex justify-center gap-2 mt-4">
@@ -863,6 +883,14 @@ const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, o
         onChange={(v) => setCreateData({ ...createData, divisi: v })}
         type="select"
         options={["IT", "Service", "Sales", "Kontraktor", "Logistik", "Purchasing"]}
+      />
+      <FormField
+        label="Role Akun"
+        value={createData.role}
+        onChange={(v) => setCreateData({ ...createData, role: v })}
+        type="select"
+        options={["user", "admin"]}
+        required
       />
 
       <div className="flex gap-3 pt-4 border-t">

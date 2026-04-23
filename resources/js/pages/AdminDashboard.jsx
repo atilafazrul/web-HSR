@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Routes,
   Route,
@@ -79,6 +79,9 @@ export default function AdminDashboard({ user, logout }) {
   const itemsPerPage = 5;
 
   const currentDivisi = user?.divisi || "Service";
+  const currentRole = user?.role || "admin";
+  const basePath = currentRole === "super_admin" ? "/super_admin" : currentRole === "user" ? "/user" : "/admin";
+  const isUserRole = currentRole === "user";
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -156,14 +159,33 @@ export default function AdminDashboard({ user, logout }) {
   const filteredDashboardData = dashboardData.filter(
     item => item.divisi === currentDivisi
   );
+  const statusSummary = useMemo(() => {
+    const counter = new Map();
+    filteredDashboardData.forEach((item) => {
+      const label = String(item?.status || "Tanpa Status").trim() || "Tanpa Status";
+      counter.set(label, (counter.get(label) || 0) + 1);
+    });
+    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Selesai", "Terlambat"];
+    return Array.from(counter.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => {
+        const ai = preferredOrder.indexOf(a.label);
+        const bi = preferredOrder.indexOf(b.label);
+        if (ai === -1 && bi === -1) return a.label.localeCompare(b.label);
+        if (ai === -1) return 1;
+        if (bi === -1) return -1;
+        return ai - bi;
+      });
+  }, [filteredDashboardData]);
 
   // Filter untuk tabel aktivitas semua divisi
   const filteredAllProjek = allProjekData.filter(item => {
+    const sameDivisiForUser = isUserRole ? item.divisi === currentDivisi : true;
     const text = (item.jenis_pekerjaan || "") + (item.karyawan || "") + (item.alamat || "");
     const matchSearch = text.toLowerCase().includes(search.toLowerCase());
-    const matchDivisi = filterDivisi ? item.divisi === filterDivisi : true;
+    const matchDivisi = isUserRole ? true : (filterDivisi ? item.divisi === filterDivisi : true);
     const matchStatus = filterStatus ? item.status === filterStatus : true;
-    return matchSearch && matchDivisi && matchStatus;
+    return sameDivisiForUser && matchSearch && matchDivisi && matchStatus;
   });
 
   // Pagination
@@ -198,7 +220,7 @@ export default function AdminDashboard({ user, logout }) {
         isExpanded={sidebarExpanded}
         setIsExpanded={setSidebarExpanded}
         navigate={navigate}
-        role="admin"
+        role={currentRole}
       />
 
       <main
@@ -233,7 +255,7 @@ export default function AdminDashboard({ user, logout }) {
                       title={`Divisi ${currentDivisi}`}
                       count={filteredDashboardData.length}
                       onClick={() =>
-                        navigate(`/admin/${currentDivisi.toLowerCase()}`)
+                        navigate(`${basePath}/${currentDivisi.toLowerCase()}`)
                       }
                       image={getDivisiImage(currentDivisi)}
                       isMobile={isMobile}
@@ -241,10 +263,15 @@ export default function AdminDashboard({ user, logout }) {
                   </div>
 
                   {/* ================= SUMMARY ================= */}
-                  <BiayaDashboardPanel user={currentUser} />
+                  {!isUserRole && <BiayaDashboardPanel user={currentUser} />}
 
                   {/* ================= SUMMARY ================= */}
-                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6 mb-6 sm:mb-8 md:mb-10">
+                  <div className="mb-6 sm:mb-8 md:mb-10">
+                    <div className="mb-3 sm:mb-4">
+                      <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800">Summary Status</h3>
+                      <p className="text-xs sm:text-sm text-slate-500">Ringkasan progres pekerjaan berdasarkan status terbaru.</p>
+                    </div>
+                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                     <SummaryCard
                       title="Total Tugas"
                       value={filteredDashboardData.length}
@@ -252,36 +279,33 @@ export default function AdminDashboard({ user, logout }) {
                       color="blue"
                       isMobile={isMobile}
                     />
-
-                    <SummaryCard
-                      title="Selesai"
-                      value={filteredDashboardData.filter(d => d.status === "Selesai").length}
-                      icon={<CheckCircle size={isMobile ? 16 : 20} />}
-                      color="green"
-                      isMobile={isMobile}
-                    />
-
-                    <SummaryCard
-                      title="Proses"
-                      value={filteredDashboardData.filter(d => d.status === "Proses").length}
-                      icon={<Clock size={isMobile ? 16 : 20} />}
-                      color="yellow"
-                      isMobile={isMobile}
-                    />
-
-                    <SummaryCard
-                      title="Terlambat"
-                      value={filteredDashboardData.filter(d => d.status === "Terlambat").length}
-                      icon={<AlertTriangle size={isMobile ? 16 : 20} />}
-                      color="red"
-                      isMobile={isMobile}
-                    />
+                    {statusSummary.map((status) => (
+                      <SummaryCard
+                        key={status.label}
+                        title={status.label}
+                        value={status.count}
+                        icon={
+                          status.label === "Selesai" ? <CheckCircle size={isMobile ? 16 : 20} />
+                            : status.label.includes("Proses") ? <Clock size={isMobile ? 16 : 20} />
+                              : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
+                                : <Activity size={isMobile ? 16 : 20} />
+                        }
+                        color={
+                          status.label === "Selesai" ? "green"
+                            : status.label.includes("Proses") ? "yellow"
+                              : status.label === "Terlambat" ? "red"
+                                : "blue"
+                        }
+                        isMobile={isMobile}
+                      />
+                    ))}
+                    </div>
                   </div>
 
                   {/* ================= TABLE AKTIVITAS PEKERJAAN ================= */}
                   <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
                     <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 sm:mb-5 md:mb-6">
-                      Aktivitas Pekerjaan Semua Divisi
+                      {isUserRole ? "Aktivitas Pekerjaan Divisi Anda" : "Aktivitas Pekerjaan Semua Divisi"}
                     </h3>
 
                     {/* SEARCH + FILTER */}
@@ -301,22 +325,24 @@ export default function AdminDashboard({ user, logout }) {
                       </div>
 
                       <div className="flex flex-col xs:flex-row sm:flex-row gap-3">
-                        <select
-                          value={filterDivisi}
-                          onChange={(e) => {
-                            setFilterDivisi(e.target.value);
-                            setPage(0);
-                          }}
-                          className="border border-gray-200 px-3 py-2 rounded-xl w-full sm:w-36 text-sm"
-                        >
-                          <option value="">Semua Divisi</option>
-                          <option value="IT">IT</option>
-                          <option value="Service">Service</option>
-                          <option value="Sales">Sales</option>
-                          <option value="Kontraktor">Kontraktor</option>
-                          <option value="Logistik">Logistik</option>
-                          <option value="Purchasing">Purchasing</option>
-                        </select>
+                        {!isUserRole && (
+                          <select
+                            value={filterDivisi}
+                            onChange={(e) => {
+                              setFilterDivisi(e.target.value);
+                              setPage(0);
+                            }}
+                            className="border border-gray-200 px-3 py-2 rounded-xl w-full sm:w-36 text-sm"
+                          >
+                            <option value="">Semua Divisi</option>
+                            <option value="IT">IT</option>
+                            <option value="Service">Service</option>
+                            <option value="Sales">Sales</option>
+                            <option value="Kontraktor">Kontraktor</option>
+                            <option value="Logistik">Logistik</option>
+                            <option value="Purchasing">Purchasing</option>
+                          </select>
+                        )}
 
                         <select
                           value={filterStatus}
@@ -594,7 +620,7 @@ export default function AdminDashboard({ user, logout }) {
             />
 
             {/* Fallback harus absolute biar tidak jadi /.../dashboard/dashboard */}
-            <Route path="*" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="*" element={<Navigate to={`${basePath}/dashboard`} replace />} />
           </Routes>
         </div>
       </main>
@@ -637,21 +663,35 @@ const DivisiCard = ({ title, count, onClick, image, isMobile }) => {
 /* ================= SUMMARY CARD ================= */
 const SummaryCard = ({ title, value, icon, color, isMobile }) => {
   const map = {
-    blue: "bg-blue-100 text-blue-600",
-    green: "bg-green-100 text-green-600",
-    yellow: "bg-yellow-100 text-yellow-600",
-    red: "bg-red-100 text-red-600",
+    blue: {
+      badge: "bg-blue-100 text-blue-700 ring-blue-200",
+      dot: "bg-blue-500",
+    },
+    green: {
+      badge: "bg-green-100 text-green-700 ring-green-200",
+      dot: "bg-green-500",
+    },
+    yellow: {
+      badge: "bg-yellow-100 text-yellow-700 ring-yellow-200",
+      dot: "bg-yellow-500",
+    },
+    red: {
+      badge: "bg-red-100 text-red-700 ring-red-200",
+      dot: "bg-red-500",
+    },
   };
+  const theme = map[color] || map.blue;
 
   return (
-    <div className="bg-white p-3 sm:p-4 md:p-5 lg:p-6 rounded-lg sm:rounded-xl md:rounded-2xl shadow hover:shadow-lg transition flex justify-between items-center">
-      <div>
-        <p className="text-gray-500 text-xs sm:text-sm">{title}</p>
-        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold">{value}</h2>
+    <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/80 border border-slate-200/70 p-3 sm:p-4 md:p-5 lg:p-6 rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all flex justify-between items-center">
+      <div className="min-w-0">
+        <p className="text-slate-500 text-[11px] sm:text-xs tracking-wide">{title}</p>
+        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900">{value}</h2>
       </div>
-      <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-lg sm:rounded-xl flex items-center justify-center ${map[color]}`}>
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-lg sm:rounded-xl ring-1 ring-inset flex items-center justify-center ${theme.badge}`}>
         {icon}
       </div>
+      <span className={`absolute top-0 left-0 h-1 w-full ${theme.dot}`} />
     </div>
   );
 };

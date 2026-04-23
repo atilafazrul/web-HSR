@@ -12,6 +12,7 @@ import Login from "./pages/Login.jsx";
 
 import SuperAdminDashboard from "./pages/SuperAdminDashboard.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
+import UserDashboard from "./pages/UserDashboard.jsx";
 
 import ITPage from "./pages/ITPage.jsx";
 import ServicePage from "./pages/ServicePage.jsx";
@@ -50,6 +51,7 @@ export default function App() {
     const paths = {
       super_admin: "/super_admin/dashboard",
       admin: "/admin/dashboard",
+      user: "/user/dashboard",
       it: "/it/dashboard",
       service: "/service/dashboard",
       kontraktor: "/kontraktor/dashboard",
@@ -97,6 +99,11 @@ export default function App() {
         {/* ADMIN ROUTES */}
         {role === "admin" && (
           <Route path="/admin/*" element={<AdminDashboard user={user} logout={handleLogout} />} />
+        )}
+
+        {/* USER ROUTES */}
+        {role === "user" && (
+          <Route path="/user/*" element={<UserDashboard user={user} logout={handleLogout} />} />
         )}
 
         {/* IT ROUTES */}

@@ -7,11 +7,14 @@ const PurchasingPage = () => {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
+  const isUserRole = role === "user";
 
   const basePath =
     role === "super_admin"
       ? "/super_admin"
-      : "/admin";
+      : role === "user"
+        ? "/user"
+        : "/admin";
 
   return (
     <div>
@@ -30,18 +33,22 @@ const PurchasingPage = () => {
           desc="Pantau status dan perkembangan purchasing"
           onClick={() => navigate(`${basePath}/purchasing/projek`)}
         />
-        <Card
-          icon={<Archive size={30} className="text-amber-600" />}
-          title="Archive Pekerjaan"
-          desc="Lihat pekerjaan selesai yang sudah di-archive"
-          onClick={() => navigate(`${basePath}/purchasing/projek/archive`)}
-        />
-        <Card
-          icon={<ShoppingCart size={30} className="text-blue-600" />}
-          title="Pembelian"
-          desc="Kelola pembelian barang"
-          onClick={() => navigate(`${basePath}/purchasing/pembelian`)}
-        />
+        {!isUserRole && (
+          <Card
+            icon={<Archive size={30} className="text-amber-600" />}
+            title="Archive Pekerjaan"
+            desc="Lihat pekerjaan selesai yang sudah di-archive"
+            onClick={() => navigate(`${basePath}/purchasing/projek/archive`)}
+          />
+        )}
+        {!isUserRole && (
+          <Card
+            icon={<ShoppingCart size={30} className="text-blue-600" />}
+            title="Pembelian"
+            desc="Kelola pembelian barang"
+            onClick={() => navigate(`${basePath}/purchasing/pembelian`)}
+          />
+        )}
       </div>
     </div>
   );

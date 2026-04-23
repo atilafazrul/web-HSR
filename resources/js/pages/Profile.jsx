@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 
 export default function Profile({ user, logout, onProfileUpdate }) {
+  const effectiveUserId = user?.id || tokenManager.getUser()?.id;
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -75,32 +76,45 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   // Fetch Profile
   useEffect(() => {
     const fetchProfile = async () => {
-      if (!user?.id) return;
+      if (!effectiveUserId) return;
       try {
-        const res = await api.get(`/profile?user_id=${user.id}`);
-        const data = res.data;
-        if (data.success) {
+        let profileUser = null;
+        try {
+          const res = await api.get(`/profile?user_id=${effectiveUserId}`);
+          const data = res.data;
+          if (data?.success && data?.user) {
+            profileUser = data.user;
+          }
+        } catch (profileErr) {
+          const meRes = await api.get("/me");
+          profileUser = meRes.data?.data?.user || null;
+        }
+
+        if (profileUser) {
           const newData = {
-            name: data.user.name || "",
-            email: data.user.email || "",
-            no_telepon: data.user.no_telepon || "",
-            alamat: data.user.alamat || data.user.address || "",
-            profile_photo: data.user.profile_photo || null,
-            ktp: data.user.ktp || null,
-            kk: data.user.kk || null,
-            akte: data.user.akte || null,
-            ijazah: data.user.ijazah || [],
-            sertifikat: data.user.sertifikat || []
+            name: profileUser.name || "",
+            email: profileUser.email || "",
+            no_telepon: profileUser.no_telepon || "",
+            alamat: profileUser.alamat || profileUser.address || "",
+            profile_photo: profileUser.profile_photo || null,
+            ktp: profileUser.ktp || null,
+            kk: profileUser.kk || null,
+            akte: profileUser.akte || null,
+            ijazah: profileUser.ijazah || [],
+            sertifikat: profileUser.sertifikat || []
           };
           setProfileData(newData);
           setFormData(newData);
+        } else {
+          setError("Gagal memuat data profile");
         }
       } catch (err) {
-        setError("Gagal memuat data profile");
+        const msg = err?.response?.data?.message || "Gagal memuat data profile";
+        setError(msg);
       }
     };
     fetchProfile();
-  }, [user?.id]);
+  }, [effectiveUserId]);
 
   // Handlers
   const handleEdit = () => {
@@ -208,7 +222,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     if (token) params.append("token", token);
 
     const query = params.toString();
-    return `/api/karyawan/${user.id}/${type}${query ? `?${query}` : ""}`;
+    return `/api/karyawan/${effectiveUserId}/${type}${query ? `?${query}` : ""}`;
   };
 
   const previewFile = (type, index = null) => {
@@ -218,11 +232,11 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   const handleDeleteExistingFile = async (type, index) => {
     if (!confirm("Yakin mau hapus file ini?")) return;
     try {
-      const res = await api.post(`/karyawan/${user.id}/delete-file`, { type, index });
+      const res = await api.post(`/karyawan/${effectiveUserId}/delete-file`, { type, index });
       const data = res.data;
       if (data.success) {
         setSuccess("File berhasil dihapus ✅");
-        const refresh = await api.get(`/profile?user_id=${user.id}`);
+        const refresh = await api.get(`/profile?user_id=${effectiveUserId}`);
         const result = refresh.data;
         if (result.success) {
           setProfileData({
@@ -260,7 +274,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     setLoading(true);
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append("user_id", user.id);
+      formDataToSend.append("user_id", effectiveUserId);
       formDataToSend.append("name", formData.name);
       formDataToSend.append("email", formData.email);
       formDataToSend.append("no_telepon", formData.no_telepon);
@@ -274,11 +288,11 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       ijazahFiles.forEach((file) => formDataToSend.append(`ijazah[]`, file));
       sertifikatFiles.forEach((file) => formDataToSend.append(`sertifikat[]`, file));
 
-      const res = await api.post(`/karyawan/${user.id}`, formDataToSend);
+      const res = await api.post(`/karyawan/${effectiveUserId}`, formDataToSend);
       const data = res.data;
 
       if (res.status === 200 && data.success) {
-        const verify = await api.get(`/profile?user_id=${user.id}`);
+        const verify = await api.get(`/profile?user_id=${effectiveUserId}`);
         const verifyData = verify.data;
         if (verifyData.success) {
           const verified = {
@@ -330,7 +344,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     setUploadingPhoto(true);
     try {
       const fd = new FormData();
-      fd.append("user_id", user.id);
+      fd.append("user_id", effectiveUserId);
       fd.append("photo", file);
       const res = await api.post("/profile/photo", fd);
       const data = res.data;
@@ -353,7 +367,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   const handleDeletePhoto = async () => {
     if (!confirm("Hapus foto profile?")) return;
     try {
-      const res = await api.delete("/profile/photo", { data: { user_id: user.id } });
+      const res = await api.delete("/profile/photo", { data: { user_id: effectiveUserId } });
       const data = res.data;
       if (res.status === 200 && data.success) {
         setProfileData(prev => ({ ...prev, profile_photo: null }));
@@ -595,7 +609,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                         onFileSelect={(f) => handleMultipleFiles(f, setIjazahFiles, setPreviewIjazah)}
                         onRemoveFile={(idx) => removeFile(idx, ijazahFiles, setIjazahFiles, previewIjazah, setPreviewIjazah)}
                         existingFiles={profileData.ijazah}
-                        userId={user.id}
+                        userId={effectiveUserId}
                         onDeleteFile={handleDeleteExistingFile}
                         acceptedFormats="PDF, JPG, PNG"
                       />
@@ -609,7 +623,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                         onFileSelect={(f) => handleMultipleFiles(f, setSertifikatFiles, setPreviewSertifikat)}
                         onRemoveFile={(idx) => removeFile(idx, sertifikatFiles, setSertifikatFiles, previewSertifikat, setPreviewSertifikat)}
                         existingFiles={profileData.sertifikat}
-                        userId={user.id}
+                        userId={effectiveUserId}
                         onDeleteFile={handleDeleteExistingFile}
                         acceptedFormats="PDF, JPG, PNG"
                       />
