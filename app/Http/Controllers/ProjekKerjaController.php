@@ -38,9 +38,18 @@ class ProjekKerjaController extends Controller
             fn ($v) => trim((string) $v),
             $candidates
         )));
+        $fallback = $fallback !== null ? trim((string) $fallback) : null;
+        if ($fallback === '') {
+            $fallback = null;
+        }
 
         if (empty($names)) {
             return $fallback ?: null;
+        }
+
+        // Jika user memilih PIC secara eksplisit dan ada di kandidat, jangan dioverride otomatis.
+        if ($fallback && in_array($fallback, $names, true)) {
+            return $fallback;
         }
 
         $target = strtolower(trim((string) $targetDivisi));
@@ -92,7 +101,10 @@ class ProjekKerjaController extends Controller
                       ->orWhere('divisi_flow', 'like', '%' . $divisiFilter . '%');
                 });
             } else {
-                $query->whereRaw('LOWER(divisi) = ?', [$divisiFilter]);
+                $query->where(function($q) use ($divisiFilter) {
+                    $q->whereRaw('LOWER(divisi) = ?', [$divisiFilter])
+                      ->orWhere('divisi_flow', 'like', '%' . $divisiFilter . '%');
+                });
             }
         }
 
