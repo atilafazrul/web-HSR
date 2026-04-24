@@ -105,6 +105,16 @@ export default function ProjekKerjaPage() {
     }
     return false;
   };
+  const canEditBiayaAction = (item) => {
+    if (isUserRole) return false;
+    if (role === "super_admin") return true;
+    if (role === "admin") {
+      const sameOrInvolvedDivisi = projectRelatedToDivisi(item, divisiUser);
+      const inProgress = !Boolean(item?.is_archived) && String(item?.status || "").toLowerCase().trim() !== "selesai";
+      return sameOrInvolvedDivisi && inProgress;
+    }
+    return false;
+  };
   const karyawanProjectList = (item) => {
     const karyawanFromString = String(item?.karyawan || "")
       .split(",")
@@ -660,7 +670,7 @@ export default function ProjekKerjaPage() {
   const handleUpdateUang = async () => {
     if (!currentId) return;
     const item = dataList.find(i => i.id === currentId);
-    if (!canEditCurrentProject) {
+    if (!canEditCurrentBiayaProject) {
       alert("Anda tidak punya akses untuk mengubah project ini.");
       return;
     }
@@ -885,6 +895,7 @@ export default function ProjekKerjaPage() {
 
   const currentProject = dataList.find((i) => i.id === currentId);
   const canEditCurrentProject = canEditProjectByDivisi(currentProject?.divisi);
+  const canEditCurrentBiayaProject = canEditBiayaAction(currentProject);
   const canEditTimelineProject = canEditProjectByDivisi(selectedItem?.divisi);
 
   const handlePrevPage = () => {
@@ -1671,10 +1682,10 @@ export default function ProjekKerjaPage() {
                     type="button"
                     onClick={() => setEditUang(true)}
                     disabled={(() => {
-                      return !canEditCurrentProject;
+                      return !canEditCurrentBiayaProject;
                     })()}
                     className={`px-4 py-2 rounded-lg text-white ${(() => {
-                      const locked = !canEditCurrentProject;
+                      const locked = !canEditCurrentBiayaProject;
                       return locked ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700";
                     })()}`}
                   >
@@ -1816,7 +1827,7 @@ export default function ProjekKerjaPage() {
                   <button
                     type="button"
                     onClick={handleUpdateUang}
-                    disabled={!canEditCurrentProject}
+                    disabled={!canEditCurrentBiayaProject}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Simpan
