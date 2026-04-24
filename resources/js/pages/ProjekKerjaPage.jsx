@@ -20,6 +20,8 @@ import {
   DollarSign,
   Plus,
   RotateCcw,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 
 function BiayaMetaFooter({ meta }) {
@@ -242,6 +244,10 @@ export default function ProjekKerjaPage() {
   // Modal biaya (jalan, pengeluaran, reimbursment) — banyak baris per kategori
   const [showUangModal, setShowUangModal] = useState(false);
   const [editUang, setEditUang] = useState(false);
+
+  // State untuk modal konfirmasi status lunas
+  const [showLunasConfirmModal, setShowLunasConfirmModal] = useState(false);
+  const [lunasConfirmAction, setLunasConfirmAction] = useState(null);
   const emptyBiayaRow = () => ({ nominal: "", keterangan: "", is_lunas: false, oleh: user?.name || "", created_at: new Date().toISOString() });
   const [biayaEdit, setBiayaEdit] = useState({
     jalan: [emptyBiayaRow()],
@@ -251,6 +257,7 @@ export default function ProjekKerjaPage() {
 
   useEffect(() => {
     fetchData();
+    setCurrentPage(1);
   }, [currentDivisi, divisiUser, isArchiveContext]);
 
   useEffect(() => {
@@ -315,7 +322,7 @@ export default function ProjekKerjaPage() {
       const sorted = [...data].sort((a, b) => b.id - a.id);
       console.log("Sorted data:", sorted);
       setDataList(sorted);
-      setCurrentPage(1);
+      // Jangan reset currentPage agar pagination tetap di halaman yang sama
     } catch (err) {
       console.error("Fetch error:", err);
       setDataList([]);
@@ -720,10 +727,27 @@ export default function ProjekKerjaPage() {
     }
   };
 
-  const handleSetLunas = async (item, nextLunas) => {
+  const handleSetLunas = (item, nextLunas) => {
     if (role !== "super_admin") return;
+
+    const newStatus = nextLunas;
+    const statusText = newStatus ? "Lunas" : "Belum Lunas";
+
+    setLunasConfirmAction({
+      type: "project",
+      item,
+      newStatus,
+      statusText,
+    });
+    setShowLunasConfirmModal(true);
+  };
+
+  const handleConfirmProjectLunas = async () => {
+    if (!lunasConfirmAction) return;
+    const { item, newStatus } = lunasConfirmAction;
+
     try {
-      await api.patch(`/projek-kerja/${item.id}/lunas`, { is_lunas: nextLunas });
+      await api.patch(`/projek-kerja/${item.id}/lunas`, { is_lunas: newStatus });
       fetchData();
       if (currentId === item.id) {
         setEditUang(false);
@@ -731,6 +755,9 @@ export default function ProjekKerjaPage() {
     } catch (err) {
       const msg = err.response?.data?.message || "Gagal update status lunas";
       alert(msg);
+    } finally {
+      setShowLunasConfirmModal(false);
+      setLunasConfirmAction(null);
     }
   };
 
@@ -762,12 +789,34 @@ export default function ProjekKerjaPage() {
     const field = mapKey[kategoriKey];
     if (!field || !payload[field]?.[index]) return;
 
-    payload[field][index].is_lunas = !payload[field][index].is_lunas;
-    const nextValue = payload[field][index].is_lunas;
+    const currentLunas = payload[field][index].is_lunas;
+    const newStatus = !currentLunas;
+    const statusText = newStatus ? "Lunas" : "Belum Lunas";
+
+    setLunasConfirmAction({
+      type: "item",
+      kategoriKey,
+      index,
+      payload,
+      field,
+      newStatus,
+      statusText,
+      nominal: payload[field][index].nominal,
+      keterangan: payload[field][index].keterangan,
+    });
+    setShowLunasConfirmModal(true);
+  };
+
+  const handleConfirmItemLunas = async () => {
+    if (!lunasConfirmAction) return;
+    const { kategoriKey, index, payload, field, newStatus } = lunasConfirmAction;
+
+    payload[field][index].is_lunas = newStatus;
+
     setBiayaEdit((prev) => ({
       ...prev,
       [kategoriKey]: (prev[kategoriKey] || []).map((r, i) =>
-        i === index ? { ...r, is_lunas: nextValue } : r
+        i === index ? { ...r, is_lunas: newStatus } : r
       ),
     }));
 
@@ -777,7 +826,15 @@ export default function ProjekKerjaPage() {
     } catch (err) {
       const msg = err.response?.data?.message || "Gagal update lunas per item";
       alert(msg);
+    } finally {
+      setShowLunasConfirmModal(false);
+      setLunasConfirmAction(null);
     }
+  };
+
+  const handleCancelLunasConfirm = () => {
+    setShowLunasConfirmModal(false);
+    setLunasConfirmAction(null);
   };
 
   const handleSaveStatus = async () => {
@@ -1852,6 +1909,82 @@ export default function ProjekKerjaPage() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL KONFIRMASI STATUS LUNAS ================= */}
+      {showLunasConfirmModal && lunasConfirmAction && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all animate-in fade-in zoom-in duration-200">
+            {/* Header dengan icon */}
+            <div className="pt-6 pb-2 px-6 flex flex-col items-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
+                lunasConfirmAction.newStatus
+                  ? 'bg-emerald-100'
+                  : 'bg-amber-100'
+              }`}>
+                {lunasConfirmAction.newStatus ? (
+                  <CheckCircle size={32} className="text-emerald-600" />
+                ) : (
+                  <AlertCircle size={32} className="text-amber-600" />
+                )}
+              </div>
+
+              <h3 className="text-lg font-bold text-gray-800 mb-1">
+                {lunasConfirmAction.type === 'project' ? 'Ubah Status Pembayaran' : 'Ubah Status Biaya'}
+              </h3>
+              <p className="text-sm text-gray-500 text-center">
+                Apakah Anda yakin ingin mengubah status menjadi
+              </p>
+            </div>
+
+            {/* Status yang akan diubah */}
+            <div className="px-6 pb-4">
+              <div className={`py-3 px-4 rounded-xl text-center font-semibold ${
+                lunasConfirmAction.newStatus
+                  ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
+                  : 'bg-amber-50 text-amber-700 border-2 border-amber-200'
+              }`}>
+                {lunasConfirmAction.statusText}
+              </div>
+            </div>
+
+            {/* Info tambahan untuk item */}
+            {lunasConfirmAction.type === 'item' && (
+              <div className="px-6 pb-4">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Nominal:</p>
+                  <p className="font-semibold text-gray-700">{formatRupiah(lunasConfirmAction.nominal)}</p>
+                  {lunasConfirmAction.keterangan && (
+                    <>
+                      <p className="text-xs text-gray-500 mb-1 mt-2">Keterangan:</p>
+                      <p className="text-sm text-gray-700 truncate">{lunasConfirmAction.keterangan}</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tombol Action */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={handleCancelLunasConfirm}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={lunasConfirmAction.type === 'project' ? handleConfirmProjectLunas : handleConfirmItemLunas}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm ${
+                  lunasConfirmAction.newStatus
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-amber-600 hover:bg-amber-700'
+                }`}
+              >
+                Ya, Ubah Status
+              </button>
+            </div>
           </div>
         </div>
       )}
