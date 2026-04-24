@@ -7,6 +7,13 @@ export default function FotoProjekPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const storedUser = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  }, []);
 
   const [photos, setPhotos] = useState([]);
   const [files, setFiles] = useState([]);
@@ -97,6 +104,31 @@ export default function FotoProjekPage() {
     if (idx < 0) return "";
     return location.pathname.slice(0, idx);
   }, [location.pathname, id]);
+
+  const divisiToPath = (divisi) => {
+    const key = String(divisi || "").toLowerCase().trim();
+    const map = {
+      it: "it",
+      service: "service",
+      sales: "sales",
+      kontraktor: "kontraktor",
+      logistik: "logistik",
+      purchasing: "purchasing",
+    };
+    return map[key] || "";
+  };
+
+  const backToProjekPath = useMemo(() => {
+    const role = String(storedUser?.role || "").toLowerCase().trim().replace(/[\s-]+/g, "_");
+    const divisiPath = divisiToPath(storedUser?.divisi);
+    if (role === "user" && divisiPath) return `/user/${divisiPath}/projek`;
+    if (role === "admin" && divisiPath) return `/admin/${divisiPath}/projek`;
+    if (role === "super_admin" && divisiPath) return `/super_admin/${divisiPath}/projek`;
+    if (role === "super_admin") return "/super_admin/projek-kerja";
+    if (role === "admin") return "/admin/dashboard";
+    if (role === "user") return "/user/dashboard";
+    return "/";
+  }, [storedUser]);
 
   const openFolder = (type, folderName) => {
     if (!folderName) return;
@@ -277,7 +309,7 @@ export default function FotoProjekPage() {
           </p>
         </div>
         <button
-          onClick={() => (folderRouteState.inFolder ? goFolderHome() : navigate(-1))}
+          onClick={() => (folderRouteState.inFolder ? goFolderHome() : navigate(backToProjekPath))}
           className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
         >
           {folderRouteState.inFolder ? "Kembali ke Folder" : "Kembali"}

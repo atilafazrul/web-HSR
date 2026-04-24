@@ -27,14 +27,18 @@ export default function EditProjekKerjaPage() {
   const [saving, setSaving] = useState(false);
   const [project, setProject] = useState(null);
   const [usersByDivisi, setUsersByDivisi] = useState([]);
+  const [userAccountOptions, setUserAccountOptions] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [karyawanInput, setKaryawanInput] = useState("");
+  const [inviteUserInput, setInviteUserInput] = useState("");
+  const [inviteUserError, setInviteUserError] = useState("");
   const [form, setForm] = useState({
     divisi: "",
     jenis_pekerjaan: "",
     karyawan: "",
     pic_karyawan: "",
     karyawan_terlibat: [],
+    invited_user_ids: [],
     alamat: "",
     status: "Dibuat",
     start_date: "",
@@ -57,6 +61,9 @@ export default function EditProjekKerjaPage() {
           karyawan_terlibat: Array.isArray(data?.karyawan_terlibat) && data.karyawan_terlibat.length > 0
             ? data.karyawan_terlibat
             : [data?.karyawan, data?.pic_karyawan].filter(Boolean),
+          invited_user_ids: Array.isArray(data?.invited_user_ids)
+            ? data.invited_user_ids.map((v) => String(v || "").trim()).filter((v) => v !== "")
+            : [],
           alamat: data?.alamat || "",
           status: data?.status || "Dibuat",
           start_date: data?.start_date ? String(data.start_date).split("T")[0] : "",
@@ -87,7 +94,15 @@ export default function EditProjekKerjaPage() {
         const filtered = users.filter(
           (u) => String(u?.divisi || "").toLowerCase().trim() === target
         );
+        const userOnly = users.filter((u) => {
+          const roleName = String(u?.role || "")
+            .toLowerCase()
+            .trim()
+            .replace(/[\s-]+/g, "_");
+          return roleName === "user";
+        });
         setUsersByDivisi(filtered);
+        setUserAccountOptions(userOnly);
       } catch (err) {
         console.error("Fetch users by divisi error:", err);
       } finally {
@@ -110,6 +125,7 @@ export default function EditProjekKerjaPage() {
     }
     setSaving(true);
     try {
+      const finalInvitedNames = getFinalInvitedNamesForSave();
       // Buat karyawan string dari karyawan_terlibat array (dipisahkan koma)
       const karyawanString = Array.isArray(form.karyawan_terlibat) && form.karyawan_terlibat.length > 0
         ? form.karyawan_terlibat.join(", ")
@@ -123,6 +139,7 @@ export default function EditProjekKerjaPage() {
           ? form.karyawan_terlibat[form.karyawan_terlibat.length - 1]
           : form.karyawan || "",
         karyawan_terlibat: form.karyawan_terlibat || [],
+        invited_user_ids: finalInvitedNames,
         alamat: form.alamat,
         status: form.status,
         start_date: form.start_date,
@@ -167,6 +184,60 @@ export default function EditProjekKerjaPage() {
         (x) => String(x).toLowerCase() !== String(name).toLowerCase()
       ),
     }));
+  };
+
+  const inviteDisplayName = (u) => (u?.name || u?.email || `#${u?.id}`).trim();
+
+  const addInviteUser = () => {
+    const keyword = inviteUserInput.trim();
+    if (!keyword) return;
+
+    const match = userAccountOptions.find(
+      (u) => inviteDisplayName(u).toLowerCase() === keyword.toLowerCase()
+    );
+    if (!match) {
+      setInviteUserError("Pilih akun user dari daftar");
+      return;
+    }
+
+    setForm((prev) => {
+      const nextNames = Array.isArray(prev.invited_user_ids) ? [...prev.invited_user_ids] : [];
+      const selectedName = inviteDisplayName(match);
+      if (nextNames.some((name) => String(name).toLowerCase() === selectedName.toLowerCase())) {
+        setInviteUserError("Akun user ini sudah di-invite");
+        return prev;
+      }
+      setInviteUserError("");
+      return { ...prev, invited_user_ids: [...nextNames, selectedName] };
+    });
+    setInviteUserInput("");
+  };
+
+  const removeInviteUser = (name) => {
+    setForm((prev) => ({
+      ...prev,
+      invited_user_ids: (prev.invited_user_ids || []).filter(
+        (item) => String(item).toLowerCase() !== String(name).toLowerCase()
+      ),
+    }));
+  };
+
+  const getFinalInvitedNamesForSave = () => {
+    const current = Array.isArray(form.invited_user_ids) ? [...form.invited_user_ids] : [];
+    const pending = inviteUserInput.trim();
+    if (pending) {
+      const match = userAccountOptions.find(
+        (u) => inviteDisplayName(u).toLowerCase() === pending.toLowerCase()
+      );
+      if (match) {
+        const selectedName = inviteDisplayName(match);
+        const exists = current.some((name) => String(name).toLowerCase() === selectedName.toLowerCase());
+        if (!exists) current.push(selectedName);
+      }
+    }
+    return current
+      .map((name) => String(name || "").trim())
+      .filter((name) => name !== "");
   };
 
   return (
@@ -306,6 +377,58 @@ export default function EditProjekKerjaPage() {
                   </button>
                 </span>
               ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              Invite User (Monitoring)
+            </label>
+            <div className="flex gap-2">
+              <input
+                value={inviteUserInput}
+                onChange={(e) => setInviteUserInput(e.target.value)}
+                list="invite-user-edit-list"
+                placeholder="Tambahkan akun user"
+                className="border p-3 rounded-xl w-full"
+                disabled={!canEdit || saving || usersLoading}
+              />
+              <button
+                type="button"
+                onClick={addInviteUser}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 rounded-xl disabled:opacity-50"
+                disabled={!canEdit || saving || usersLoading}
+              >
+                Invite
+              </button>
+            </div>
+            <datalist id="invite-user-edit-list">
+              {userAccountOptions.map((u) => (
+                <option key={u.id} value={inviteDisplayName(u)} />
+              ))}
+            </datalist>
+            {inviteUserError ? (
+              <p className="text-[11px] text-red-600 mt-1">{inviteUserError}</p>
+            ) : null}
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(form.invited_user_ids || []).map((name) => {
+                return (
+                  <span
+                    key={name}
+                    className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs border border-indigo-200"
+                  >
+                    {name}
+                    <button
+                      type="button"
+                      onClick={() => removeInviteUser(name)}
+                      className="text-red-600 hover:text-red-700"
+                      disabled={!canEdit || saving}
+                    >
+                      ×
+                    </button>
+                  </span>
+                );
+              })}
             </div>
           </div>
 

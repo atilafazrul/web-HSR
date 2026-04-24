@@ -37,6 +37,13 @@ const formatDateTime = (v) => {
   return `${datePart} ${timePart}`;
 };
 
+const getPhotoUrlsFromItem = (item) => {
+  const raw = Array.isArray(item?.photo_urls) ? item.photo_urls : [];
+  return raw
+    .map((u) => String(u || "").trim())
+    .filter((u) => u !== "");
+};
+
 // Menggunakan React.memo untuk mencegah unmount/remount yang tidak perlu
 export default React.memo(function RekapPerAkun({ user }) {
   const isSuperAdmin = user?.role === "super_admin";
@@ -1051,6 +1058,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                                           <th className="p-2 font-semibold">No</th>
                                           <th className="p-2 font-semibold">Nominal</th>
                                           <th className="p-2 font-semibold">Keterangan</th>
+                                          <th className="p-2 font-semibold">Foto</th>
                                           <th className="p-2 font-semibold">Status</th>
                                           <th className="p-2 font-semibold">Tanggal</th>
                                         </tr>
@@ -1058,7 +1066,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                                       <tbody>
                                         {rows.length === 0 ? (
                                           <tr>
-                                            <td colSpan={5} className="p-3 text-gray-400 text-center">
+                                            <td colSpan={6} className="p-3 text-gray-400 text-center">
                                               Tidak ada data
                                             </td>
                                           </tr>
@@ -1068,6 +1076,30 @@ export default React.memo(function RekapPerAkun({ user }) {
                                               <td className="p-2">{idx + 1}</td>
                                               <td className="p-2 font-medium">{rupiah(item.nominal)}</td>
                                               <td className="p-2 text-gray-600">{item.keterangan || "-"}</td>
+                                              <td className="p-2">
+                                                {(() => {
+                                                  const photoUrls = getPhotoUrlsFromItem(item);
+                                                  if (photoUrls.length === 0) {
+                                                    return <span className="text-gray-400">-</span>;
+                                                  }
+                                                  return (
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                      {photoUrls.map((url, photoIdx) => (
+                                                        <a
+                                                          key={`${item.id}-photo-${photoIdx}`}
+                                                          href={url}
+                                                          target="_blank"
+                                                          rel="noreferrer"
+                                                          className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 text-[11px]"
+                                                          title={`Lihat foto ${photoIdx + 1}`}
+                                                        >
+                                                          {photoUrls.length === 1 ? "Lihat" : `Foto ${photoIdx + 1}`}
+                                                        </a>
+                                                      ))}
+                                                    </div>
+                                                  );
+                                                })()}
+                                              </td>
                                               <td className="p-2">
                                                 {isSuperAdmin ? (
                                                   <button

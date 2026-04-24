@@ -110,10 +110,16 @@ export default function ProjekKerjaPage() {
       .split(",")
       .map((v) => String(v || "").trim())
       .filter((v) => v !== "");
+    const invitedUsers = Array.isArray(item?.invited_user_ids)
+      ? item.invited_user_ids
+          .map((v) => String(v || "").trim())
+          .filter((v) => v !== "")
+      : [];
     const arr = [
       item?.pic_karyawan,
       ...(Array.isArray(item?.karyawan_terlibat) ? item.karyawan_terlibat : []),
       ...karyawanFromString,
+      ...invitedUsers,
     ]
       .map((v) => String(v || "").trim())
       .filter((v) => v !== "");
@@ -134,6 +140,12 @@ export default function ProjekKerjaPage() {
       .filter(Boolean);
     return fromString.length > 0 ? fromString[fromString.length - 1] : "-";
   };
+  const invitedUserSet = (item) =>
+    new Set(
+      (Array.isArray(item?.invited_user_ids) ? item.invited_user_ids : [])
+        .map((v) => String(v || "").trim())
+        .filter(Boolean)
+    );
 
   const getCurrentDivisi = () => {
     const pathSegments = location.pathname.split('/');
@@ -185,10 +197,14 @@ export default function ProjekKerjaPage() {
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [salesUsers, setSalesUsers] = useState([]);
+  const [inviteUsers, setInviteUsers] = useState([]);
   const [salesUsersLoading, setSalesUsersLoading] = useState(false);
   const [selectedSalesUsers, setSelectedSalesUsers] = useState([]);
+  const [selectedInviteUsers, setSelectedInviteUsers] = useState([]);
   const [salesUserError, setSalesUserError] = useState("");
+  const [inviteUserError, setInviteUserError] = useState("");
   const [karyawanInput, setKaryawanInput] = useState("");
+  const [inviteUserInput, setInviteUserInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   // State untuk pagination
@@ -236,7 +252,15 @@ export default function ProjekKerjaPage() {
         const sales = users.filter(
           (u) => String(u?.divisi || "").toLowerCase() === "sales"
         );
+        const userAccounts = users.filter((u) => {
+          const roleName = String(u?.role || "")
+            .toLowerCase()
+            .trim()
+            .replace(/[\s-]+/g, "_");
+          return roleName === "user";
+        });
         setSalesUsers(sales);
+        setInviteUsers(userAccounts);
       } catch (err) {
         console.error("Fetch sales users error:", err);
       } finally {
@@ -248,6 +272,8 @@ export default function ProjekKerjaPage() {
   }, []);
 
   const salesDisplayName = (u) =>
+    (u?.name || u?.email || `#${u?.id || ""}`).trim();
+  const inviteDisplayName = (u) =>
     (u?.name || u?.email || `#${u?.id || ""}`).trim();
 
   const fetchData = async () => {
@@ -342,6 +368,50 @@ export default function ProjekKerjaPage() {
     );
   };
 
+  const addInviteUser = () => {
+    const val = inviteUserInput.trim();
+    if (!val) return;
+
+    const match = inviteUsers.find(
+      (u) => inviteDisplayName(u).toLowerCase() === val.toLowerCase()
+    );
+    if (!match) {
+      setInviteUserError("Pilih akun user dari daftar yang tersedia");
+      return;
+    }
+
+    const exists = selectedInviteUsers.some((u) => Number(u.id) === Number(match.id));
+    if (exists) {
+      setInviteUserError("Akun user ini sudah ditambahkan");
+      return;
+    }
+
+    setSelectedInviteUsers((prev) => [...prev, match]);
+    setInviteUserInput("");
+    setInviteUserError("");
+  };
+
+  const removeInviteUser = (userId) => {
+    setSelectedInviteUsers((prev) => prev.filter((u) => Number(u.id) !== Number(userId)));
+  };
+
+  const getFinalInviteNamesForSubmit = () => {
+    const selected = [...selectedInviteUsers];
+    const pending = inviteUserInput.trim();
+    if (pending) {
+      const match = inviteUsers.find(
+        (u) => inviteDisplayName(u).toLowerCase() === pending.toLowerCase()
+      );
+      if (match) {
+        const exists = selected.some((u) => Number(u.id) === Number(match.id));
+        if (!exists) selected.push(match);
+      }
+    }
+    return selected
+      .map((u) => inviteDisplayName(u))
+      .filter((v) => String(v || "").trim() !== "");
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canManageProject) {
@@ -361,6 +431,7 @@ export default function ProjekKerjaPage() {
     }
 
     const karyawanNames = selectedSalesUsers.map(salesDisplayName).join(", ");
+    const finalInviteNames = getFinalInviteNamesForSubmit();
     setLoading(true);
     try {
       const formData = new FormData();
@@ -381,8 +452,13 @@ export default function ProjekKerjaPage() {
         barang_dibeli: form.barang_dibeli,
         file_folder_name: form.file_folder_name,
         photo_folder_name: form.photo_folder_name,
+        invited_user_ids: finalInviteNames,
       }).forEach(([key, val]) => {
-        formData.append(key, val || "");
+        if (Array.isArray(val)) {
+          val.forEach((item) => formData.append(`${key}[]`, String(item)));
+        } else {
+          formData.append(key, val || "");
+        }
       });
 
       const createRes = await api.post("/projek-kerja", formData);
@@ -391,6 +467,9 @@ export default function ProjekKerjaPage() {
       }
       alert("Data berhasil disimpan");
       setForm(initialForm);
+      setSelectedInviteUsers([]);
+      setInviteUserInput("");
+      setInviteUserError("");
       if (createRes?.data?.data) {
         setDataList((prev) => [createRes.data.data, ...prev].sort((a, b) => b.id - a.id));
       }
@@ -939,6 +1018,55 @@ export default function ProjekKerjaPage() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                Invite User (Monitoring)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  value={inviteUserInput}
+                  onChange={(e) => setInviteUserInput(e.target.value)}
+                  list="invite-user-list"
+                  placeholder="Pilih akun user untuk monitoring"
+                  className="border p-3 rounded-xl w-full"
+                  disabled={salesUsersLoading}
+                />
+                <button
+                  type="button"
+                  onClick={addInviteUser}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 rounded-xl disabled:opacity-50"
+                  disabled={salesUsersLoading}
+                >
+                  Invite
+                </button>
+              </div>
+              <datalist id="invite-user-list">
+                {inviteUsers.map((u) => (
+                  <option key={u.id} value={inviteDisplayName(u)} />
+                ))}
+              </datalist>
+              {inviteUserError ? (
+                <p className="text-[11px] text-red-600 mt-1">{inviteUserError}</p>
+              ) : null}
+              <div className="mt-2 flex flex-wrap gap-2">
+                {selectedInviteUsers.map((inviteUser) => (
+                  <span
+                    key={inviteUser.id}
+                    className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs border border-indigo-200"
+                  >
+                    {inviteDisplayName(inviteUser)}
+                    <button
+                      type="button"
+                      onClick={() => removeInviteUser(inviteUser.id)}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+
             <div className="relative">
               <MapPin className="absolute left-3 top-3 text-gray-400" size={18} />
               <input
@@ -1160,7 +1288,7 @@ export default function ProjekKerjaPage() {
                         >
                           {karyawanList.map((nama, idx) => (
                             <option key={`${nama}-${idx}`} value={nama}>
-                              {nama}
+                              {invitedUserSet(item).has(String(nama || "").trim()) ? `${nama} (Tamu)` : nama}
                             </option>
                           ))}
                         </select>

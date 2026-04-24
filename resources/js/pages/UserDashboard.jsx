@@ -77,7 +77,7 @@ export default function UserDashboard({ user, logout }) {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const res = await api.get(`/projek-kerja?divisi=${encodeURIComponent(currentDivisi)}`);
+        const res = await api.get("/projek-kerja");
         const rows = Array.isArray(res.data?.data) ? res.data.data : [];
         setDivisiData(rows);
         setData(rows);

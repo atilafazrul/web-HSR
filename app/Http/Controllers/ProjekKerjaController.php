@@ -12,6 +12,62 @@ use Illuminate\Support\Facades\DB;
 
 class ProjekKerjaController extends Controller
 {
+    protected function sanitizeUploadedFileName(string $fileName): string
+    {
+        $info = pathinfo($fileName);
+        $name = trim((string) ($info['filename'] ?? ''));
+        $ext = trim((string) ($info['extension'] ?? ''));
+
+        $name = preg_replace('/[^a-zA-Z0-9._ -]/', '', $name);
+        $name = preg_replace('/\s+/', ' ', (string) $name);
+        $name = trim((string) $name);
+        if ($name === '') {
+            $name = 'upload';
+        }
+
+        $ext = preg_replace('/[^a-zA-Z0-9]/', '', $ext);
+        if ($ext !== '') {
+            return $name . '.' . strtolower($ext);
+        }
+
+        return $name;
+    }
+
+    protected function storePublicFileWithOriginalName($uploadedFile, string $targetDir): string
+    {
+        $originalName = $this->sanitizeUploadedFileName((string) $uploadedFile->getClientOriginalName());
+        $info = pathinfo($originalName);
+        $base = (string) ($info['filename'] ?? 'upload');
+        $ext = trim((string) ($info['extension'] ?? ''));
+        $candidate = $originalName;
+        $counter = 1;
+
+        while (Storage::disk('public')->exists(trim($targetDir, '/') . '/' . $candidate)) {
+            $candidate = $base . ' (' . $counter . ')' . ($ext !== '' ? '.' . $ext : '');
+            $counter++;
+        }
+
+        return $uploadedFile->storeAs($targetDir, $candidate, 'public');
+    }
+
+    protected function normalizeInvitedUsers(Request $request, array $validated): array
+    {
+        $raw = $validated['invited_user_ids'] ?? $request->input('invited_user_ids', []);
+        if (is_string($raw)) {
+            $raw = explode(',', $raw);
+        }
+        if (!is_array($raw)) {
+            $raw = [];
+        }
+
+        return collect($raw)
+            ->map(fn ($name) => trim((string) $name))
+            ->filter(fn ($name) => $name !== '')
+            ->unique()
+            ->values()
+            ->all();
+    }
+
     protected function sanitizeFolderName(?string $name): ?string
     {
         $raw = trim((string) $name);
@@ -46,7 +102,10 @@ class ProjekKerjaController extends Controller
 
         $user = User::query()
             ->whereRaw('LOWER(divisi) = ?', [$target])
-            ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') != ?", ['super_admin'])
+            ->whereRaw(
+                "REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') NOT IN (?, ?)",
+                ['super_admin', 'user']
+            )
             ->orderByDesc('id')
             ->first();
 
@@ -72,24 +131,28 @@ class ProjekKerjaController extends Controller
             return $fallback ?: null;
         }
 
-        // Jika user memilih PIC secara eksplisit dan ada di kandidat, jangan dioverride otomatis.
-        if ($fallback && in_array($fallback, $names, true)) {
-            return $fallback;
-        }
-
         $target = strtolower(trim((string) $targetDivisi));
         if ($target === '') {
-            return end($names) ?: ($fallback ?: null);
+            return $this->resolveDefaultPicFromDivisi($targetDivisi);
         }
 
         $users = User::query()
             ->whereRaw('LOWER(divisi) = ?', [$target])
+            ->whereRaw(
+                "REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') NOT IN (?, ?)",
+                ['super_admin', 'user']
+            )
             ->pluck('name')
             ->map(fn ($n) => strtolower(trim((string) $n)))
             ->filter()
             ->values()
             ->all();
         $nameSet = array_fill_keys($users, true);
+
+        // Jika user memilih PIC secara eksplisit dan role-nya valid, jangan dioverride otomatis.
+        if ($fallback && isset($nameSet[strtolower($fallback)])) {
+            return $fallback;
+        }
 
         for ($i = count($names) - 1; $i >= 0; $i--) {
             $key = strtolower($names[$i]);
@@ -103,7 +166,7 @@ class ProjekKerjaController extends Controller
             return $defaultByDivisi;
         }
 
-        return end($names) ?: ($fallback ?: null);
+        return null;
     }
 
     /**
@@ -112,13 +175,30 @@ class ProjekKerjaController extends Controller
     public function index(Request $request)
     {
         $query = ProjekKerja::query();
+        $authUser = auth()->user();
+        $normalizedRole = strtolower(trim((string) ($authUser->role ?? '')));
+        $normalizedRole = str_replace([' ', '-'], '_', $normalizedRole);
         $archiveFlag = filter_var($request->query('archive', false), FILTER_VALIDATE_BOOLEAN);
         $query->where('is_archived', $archiveFlag);
+
+        // User biasa hanya boleh monitor proyek yang benar-benar di-invite.
+        // invited_user_ids disimpan sebagai nama user (string).
+        // Tetap dukung data lama berbasis ID untuk kompatibilitas.
+        if ($authUser && $normalizedRole === 'user') {
+            $userId = (int) $authUser->id;
+            $userName = trim((string) ($authUser->name ?? ''));
+            $query->where(function ($q) use ($userId, $userName) {
+                $q->whereJsonContains('invited_user_ids', $userId);
+                if ($userName !== '') {
+                    $q->orWhereJsonContains('invited_user_ids', $userName);
+                }
+            });
+        }
 
         // Filter by divisi if provided
         // Untuk data aktif: hanya divisi saat ini.
         // Untuk archive: boleh tampil juga yang pernah lewat divisi ini (divisi_flow).
-        if ($request->has('divisi') && $request->divisi) {
+        if ($normalizedRole !== 'user' && $request->has('divisi') && $request->divisi) {
             $divisiFilter = strtolower($request->divisi);
             if ($archiveFlag) {
                 $query->where(function($q) use ($divisiFilter) {
@@ -216,6 +296,8 @@ class ProjekKerjaController extends Controller
             'divisi_flow' => 'nullable|array',
             'pic_karyawan' => 'nullable|string',
             'karyawan_terlibat' => 'nullable|array',
+            'invited_user_ids' => 'nullable|array',
+            'invited_user_ids.*' => 'string',
             'folder_name' => 'nullable|string|max:100',
             'file_folder_name' => 'nullable|string|max:100',
             'photo_folder_name' => 'nullable|string|max:100',
@@ -282,6 +364,7 @@ class ProjekKerjaController extends Controller
             if ($picKaryawan && !in_array($picKaryawan, $karyawanTerlibat, true)) {
                 $karyawanTerlibat[] = $picKaryawan;
             }
+            $invitedUserIds = $this->normalizeInvitedUsers($request, $validated);
 
             $data = [
                 'report_no' => $reportNo,
@@ -298,6 +381,7 @@ class ProjekKerjaController extends Controller
                 'divisi_flow' => $divisiFlow,
                 'pic_karyawan' => $picKaryawan,
                 'karyawan_terlibat' => $karyawanTerlibat,
+                'invited_user_ids' => !empty($invitedUserIds) ? $invitedUserIds : null,
                 'status_history' => [
                     [
                         'status' => $validated['status'],
@@ -326,12 +410,13 @@ class ProjekKerjaController extends Controller
             // Handle file upload
             if ($request->hasFile('file')) {
                 $filePath = $this->buildProjectMediaPath('projek-kerja-files', (int) $projek->id, $validated['folder_name'] ?? null);
-                $path = $request->file('file')->store($filePath, 'public');
+                $path = $this->storePublicFileWithOriginalName($request->file('file'), $filePath);
                 $projek->update(['file_url' => asset('storage/' . $path)]);
                 // Simpan juga ke tabel dokumentasi supaya langsung muncul di halaman Foto/Dokumen Projek.
                 ProjekKerjaFile::create([
                     'projek_kerja_id' => $projek->id,
                     'file' => $path,
+                    'name' => $request->file('file')->getClientOriginalName(),
                 ]);
             }
 
@@ -339,7 +424,7 @@ class ProjekKerjaController extends Controller
             if ($request->hasFile('photos')) {
                 $photoPathBase = $this->buildProjectMediaPath('projek-kerja-photos', (int) $projek->id, $validated['folder_name'] ?? null);
                 foreach ($request->file('photos') as $photo) {
-                    $photoPath = $photo->store($photoPathBase, 'public');
+                    $photoPath = $this->storePublicFileWithOriginalName($photo, $photoPathBase);
                     ProjekKerjaPhoto::create([
                         'projek_kerja_id' => $projek->id,
                         'photo' => $photoPath,
@@ -410,6 +495,8 @@ class ProjekKerjaController extends Controller
             'divisi_flow' => 'nullable|array',
             'pic_karyawan' => 'nullable|string',
             'karyawan_terlibat' => 'nullable|array',
+            'invited_user_ids' => 'nullable|array',
+            'invited_user_ids.*' => 'string',
         ]);
 
         DB::beginTransaction();
@@ -481,6 +568,10 @@ class ProjekKerjaController extends Controller
             }
             if (isset($validated['barang_dibeli'])) {
                 $data['barang_dibeli'] = $validated['barang_dibeli'];
+            }
+            if (array_key_exists('invited_user_ids', $validated)) {
+                $invitedUserIds = $this->normalizeInvitedUsers($request, $validated);
+                $data['invited_user_ids'] = !empty($invitedUserIds) ? $invitedUserIds : null;
             }
 
             // Parse karyawan (string dengan nama dipisahkan koma) menjadi array
@@ -1121,7 +1212,7 @@ class ProjekKerjaController extends Controller
 
         try {
             $targetDir = $this->buildProjectMediaPath('projek-kerja-photos', (int) $projek->id, $validated['folder_name'] ?? null);
-            $path = $request->file('photo')->store($targetDir, 'public');
+            $path = $this->storePublicFileWithOriginalName($request->file('photo'), $targetDir);
 
             $photo = ProjekKerjaPhoto::create([
                 'projek_kerja_id' => $projek->id,
@@ -1293,7 +1384,7 @@ class ProjekKerjaController extends Controller
 
         try {
             $targetDir = $this->buildProjectMediaPath('projek-kerja-files', (int) $projek->id, $validated['folder_name'] ?? null);
-            $path = $request->file('file')->store($targetDir, 'public');
+            $path = $this->storePublicFileWithOriginalName($request->file('file'), $targetDir);
 
             $file = ProjekKerjaFile::create([
                 'projek_kerja_id' => $projek->id,
