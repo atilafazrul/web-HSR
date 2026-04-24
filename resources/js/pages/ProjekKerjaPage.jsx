@@ -1042,28 +1042,28 @@ export default function ProjekKerjaPage() {
                 Karyawan (Sales)
               </label>
               <div className="flex gap-2">
-                <input
+                <select
                   value={karyawanInput}
                   onChange={handleKaryawanChange}
-                  list="sales-karyawan-list"
-                  placeholder={salesUsersLoading ? "Memuat karyawan..." : "Cari nama karyawan..."}
                   className="border p-3 rounded-xl w-full"
                   disabled={salesUsersLoading}
-                />
+                >
+                  <option value="">{salesUsersLoading ? "Memuat karyawan..." : "Pilih karyawan Sales..."}</option>
+                  {salesUsers.map((u) => (
+                    <option key={u.id} value={salesDisplayName(u)}>
+                      {salesDisplayName(u)}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={addSalesKaryawan}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl disabled:opacity-50"
-                  disabled={salesUsersLoading}
+                  disabled={salesUsersLoading || !karyawanInput}
                 >
                   Tambah
                 </button>
               </div>
-              <datalist id="sales-karyawan-list">
-                {salesUsers.map((u) => (
-                  <option key={u.id} value={salesDisplayName(u)} />
-                ))}
-              </datalist>
               {salesUserError ? (
                 <p className="text-[11px] text-red-600 mt-1">{salesUserError}</p>
               ) : null}
@@ -1091,28 +1091,28 @@ export default function ProjekKerjaPage() {
                 Invite User (Monitoring)
               </label>
               <div className="flex gap-2">
-                <input
+                <select
                   value={inviteUserInput}
                   onChange={(e) => setInviteUserInput(e.target.value)}
-                  list="invite-user-list"
-                  placeholder="Pilih akun user untuk monitoring"
                   className="border p-3 rounded-xl w-full"
                   disabled={salesUsersLoading}
-                />
+                >
+                  <option value="">{salesUsersLoading ? "Memuat akun user..." : "Pilih akun user untuk monitoring"}</option>
+                  {inviteUsers.map((u) => (
+                    <option key={u.id} value={inviteDisplayName(u)}>
+                      {inviteDisplayName(u)}
+                    </option>
+                  ))}
+                </select>
                 <button
                   type="button"
                   onClick={addInviteUser}
                   className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 rounded-xl disabled:opacity-50"
-                  disabled={salesUsersLoading}
+                  disabled={salesUsersLoading || !inviteUserInput}
                 >
                   Invite
                 </button>
               </div>
-              <datalist id="invite-user-list">
-                {inviteUsers.map((u) => (
-                  <option key={u.id} value={inviteDisplayName(u)} />
-                ))}
-              </datalist>
               {inviteUserError ? (
                 <p className="text-[11px] text-red-600 mt-1">{inviteUserError}</p>
               ) : null}

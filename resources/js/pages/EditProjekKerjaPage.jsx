@@ -338,28 +338,28 @@ export default function EditProjekKerjaPage() {
               Karyawan Terlibat ({form?.divisi || project?.divisi || "-"})
             </label>
             <div className="flex gap-2">
-              <input
+              <select
                 value={karyawanInput}
                 onChange={(e) => setKaryawanInput(e.target.value)}
-                list="pic-karyawan-list"
-                placeholder={usersLoading ? "Memuat karyawan..." : `Tambah karyawan ${form?.divisi || project?.divisi || ""}`}
                 className="border p-3 rounded-xl w-full"
                 disabled={!canEdit || saving || usersLoading}
-              />
+              >
+                <option value="">{usersLoading ? "Memuat karyawan..." : `Pilih karyawan ${form?.divisi || project?.divisi || ""}`}</option>
+                {usersByDivisi.map((u) => (
+                  <option key={u.id} value={(u?.name || u?.email || `#${u?.id}`).trim()}>
+                    {u?.name || u?.email || `#${u?.id}`}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={addKaryawanTerlibat}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl disabled:opacity-50"
-                disabled={!canEdit || saving || usersLoading}
+                disabled={!canEdit || saving || usersLoading || !karyawanInput}
               >
                 Tambah
               </button>
             </div>
-            <datalist id="pic-karyawan-list">
-              {usersByDivisi.map((u) => (
-                <option key={u.id} value={(u?.name || u?.email || `#${u?.id}`).trim()} />
-              ))}
-            </datalist>
             <div className="mt-2 flex flex-wrap gap-2">
               {(form.karyawan_terlibat || []).map((nama) => (
                 <span
@@ -385,28 +385,28 @@ export default function EditProjekKerjaPage() {
               Invite User (Monitoring)
             </label>
             <div className="flex gap-2">
-              <input
+              <select
                 value={inviteUserInput}
                 onChange={(e) => setInviteUserInput(e.target.value)}
-                list="invite-user-edit-list"
-                placeholder="Tambahkan akun user"
                 className="border p-3 rounded-xl w-full"
                 disabled={!canEdit || saving || usersLoading}
-              />
+              >
+                <option value="">{usersLoading ? "Memuat akun user..." : "Pilih akun user"}</option>
+                {userAccountOptions.map((u) => (
+                  <option key={u.id} value={inviteDisplayName(u)}>
+                    {inviteDisplayName(u)}
+                  </option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={addInviteUser}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 rounded-xl disabled:opacity-50"
-                disabled={!canEdit || saving || usersLoading}
+                disabled={!canEdit || saving || usersLoading || !inviteUserInput}
               >
                 Invite
               </button>
             </div>
-            <datalist id="invite-user-edit-list">
-              {userAccountOptions.map((u) => (
-                <option key={u.id} value={inviteDisplayName(u)} />
-              ))}
-            </datalist>
             {inviteUserError ? (
               <p className="text-[11px] text-red-600 mt-1">{inviteUserError}</p>
             ) : null}
