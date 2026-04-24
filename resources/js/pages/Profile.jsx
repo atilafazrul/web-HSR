@@ -692,6 +692,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
 
           {/* Logout Button - REMOVED as requested */}
         </div>
+
       </div>
     </div>
   );

@@ -45,7 +45,7 @@ class UserController extends Controller
     // ================= LIST =================
     public function index()
     {
-        $users = User::where('role', '!=', 'super_admin')->get();
+        $users = User::whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') != ?", ['super_admin'])->get();
 
         $users->transform(function ($user) {
             $user->ijazah = $this->cleanArray($user->ijazah);

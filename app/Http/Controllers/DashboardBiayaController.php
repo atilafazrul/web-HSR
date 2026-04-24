@@ -20,7 +20,10 @@ class DashboardBiayaController extends Controller
         $query = DashboardBiaya::query();
 
         if (($user->role ?? null) !== 'super_admin') {
-            $query->where('divisi', $user->divisi);
+            // Non-superadmin: hanya boleh melihat/mengubah biaya milik akunnya sendiri.
+            $query->where('created_by', $user->id);
+        } elseif ($request->filled('user_id')) {
+            $query->where('created_by', (int) $request->input('user_id'));
         } elseif ($request->filled('divisi')) {
             $query->where('divisi', $request->input('divisi'));
         }
@@ -178,19 +181,23 @@ class DashboardBiayaController extends Controller
             ], 403);
         }
 
-        $wantsContentChange = $request->has('keterangan')
-            || $request->has('nominal')
-            || $request->hasFile('photos');
+        $wantsKeteranganChange = $request->has('keterangan');
+        $wantsLockedContentChange = $request->has('nominal') || $request->hasFile('photos');
 
         $pendingLunasOff = ($user->role ?? null) === 'super_admin'
             && $request->has('is_lunas')
             && ! $request->boolean('is_lunas');
 
-        if ($row->is_lunas && $wantsContentChange && ! $pendingLunasOff) {
+        if ($row->is_lunas && $wantsLockedContentChange && ! $pendingLunasOff) {
             return response()->json([
                 'success' => false,
-                'message' => 'Biaya sudah lunas tidak bisa diubah.',
+                'message' => 'Biaya sudah lunas: nominal/foto tidak bisa diubah.',
             ], 403);
+        }
+
+        // Keterangan tetap boleh diubah meskipun sudah lunas (untuk koreksi/admin note).
+        if ($row->is_lunas && $wantsKeteranganChange && ! $pendingLunasOff) {
+            // no-op: explicitly allowed
         }
 
         $payload = ['updated_by' => $user->id ?? null];
@@ -536,7 +543,7 @@ class DashboardBiayaController extends Controller
         $bulan = $request->input('bulan');
         $tahun = $request->input('tahun');
         $createdBy = $request->input('created_by');
-        $namaAkun = $request->input('nama_akun');
+        $namaAkun = trim((string) $request->input('nama_akun', ''));
 
         if (!$bulan || !$tahun) {
             return response()->json([
@@ -554,8 +561,8 @@ class DashboardBiayaController extends Controller
 
         // Jika nama_akun disediakan (dari projek), cari user id dulu
         $targetUserId = $createdBy;
-        if ($namaAkun && !$targetUserId) {
-            $user = \App\Models\User::where('name', $namaAkun)->first(['id']);
+        if ($namaAkun !== '' && !$targetUserId) {
+            $user = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($namaAkun)])->first(['id']);
             if ($user) {
                 $targetUserId = $user->id;
             }
@@ -568,7 +575,11 @@ class DashboardBiayaController extends Controller
 
         $dashboardBiaya = $query->with(['creator:id,name', 'updater:id,name'])
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($row) {
+                $row->source = 'dashboard';
+                return $row;
+            });
 
         $data = $data->concat($dashboardBiaya);
 
@@ -577,7 +588,7 @@ class DashboardBiayaController extends Controller
         if (!$filterNamaAkun && $dashboardBiaya->isNotEmpty()) {
             $firstItem = $dashboardBiaya->first();
             if ($firstItem && $firstItem->creator) {
-                $filterNamaAkun = $firstItem->creator->name;
+                $filterNamaAkun = trim((string) $firstItem->creator->name);
             }
         }
 
@@ -589,19 +600,21 @@ class DashboardBiayaController extends Controller
         foreach ($projekKerjas as $projek) {
             // Proses biaya jalan
             $jalanItems = $projek->biaya_jalan_items ?? [];
-            foreach ($jalanItems as $item) {
-                $oleh = $item['oleh'] ?? '';
+            foreach ($jalanItems as $idx => $item) {
+                $oleh = trim((string) ($item['oleh'] ?? ''));
                 $nominal = (float) ($item['nominal'] ?? 0);
 
                 // Filter oleh nama jika nama_akun disediakan (case-insensitive exact match)
                 $shouldInclude = false;
-                if ($filterNamaAkun && strtolower($oleh) === strtolower($filterNamaAkun)) {
+                if ($filterNamaAkun !== '' && strtolower($oleh) === strtolower(trim((string) $filterNamaAkun))) {
                     $shouldInclude = true;
                 }
 
                 if ($shouldInclude && $nominal > 0) {
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_jalan_' . uniqid(),
+                        'project_id' => $projek->id,
+                        'item_index' => $idx,
                         'kategori' => 'jalan',
                         'nominal' => $nominal,
                         'keterangan' => $item['keterangan'] ?? '',
@@ -618,18 +631,20 @@ class DashboardBiayaController extends Controller
 
             // Proses biaya pengeluaran
             $pengeluaranItems = $projek->biaya_pengeluaran_items ?? [];
-            foreach ($pengeluaranItems as $item) {
-                $oleh = $item['oleh'] ?? '';
+            foreach ($pengeluaranItems as $idx => $item) {
+                $oleh = trim((string) ($item['oleh'] ?? ''));
                 $nominal = (float) ($item['nominal'] ?? 0);
 
                 $shouldInclude = false;
-                if ($filterNamaAkun && strtolower($oleh) === strtolower($filterNamaAkun)) {
+                if ($filterNamaAkun !== '' && strtolower($oleh) === strtolower(trim((string) $filterNamaAkun))) {
                     $shouldInclude = true;
                 }
 
                 if ($shouldInclude && $nominal > 0) {
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_pengeluaran_' . uniqid(),
+                        'project_id' => $projek->id,
+                        'item_index' => $idx,
                         'kategori' => 'pengeluaran',
                         'nominal' => $nominal,
                         'keterangan' => $item['keterangan'] ?? '',
@@ -646,18 +661,20 @@ class DashboardBiayaController extends Controller
 
             // Proses biaya reimbursment
             $reimbursmentItems = $projek->biaya_reimbursment_items ?? [];
-            foreach ($reimbursmentItems as $item) {
-                $oleh = $item['oleh'] ?? '';
+            foreach ($reimbursmentItems as $idx => $item) {
+                $oleh = trim((string) ($item['oleh'] ?? ''));
                 $nominal = (float) ($item['nominal'] ?? 0);
 
                 $shouldInclude = false;
-                if ($filterNamaAkun && strtolower($oleh) === strtolower($filterNamaAkun)) {
+                if ($filterNamaAkun !== '' && strtolower($oleh) === strtolower(trim((string) $filterNamaAkun))) {
                     $shouldInclude = true;
                 }
 
                 if ($shouldInclude && $nominal > 0) {
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_reimbursment_' . uniqid(),
+                        'project_id' => $projek->id,
+                        'item_index' => $idx,
                         'kategori' => 'reimbursment',
                         'nominal' => $nominal,
                         'keterangan' => $item['keterangan'] ?? '',

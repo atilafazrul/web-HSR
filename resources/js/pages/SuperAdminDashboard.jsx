@@ -217,7 +217,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             </Route>
 
             <Route path="projek-kerja" element={<ProjekKerjaPage />} />
-            <Route path="projek-kerja/foto/:id" element={<FotoProjekPage />} />
+            <Route path="projek-kerja/foto/:id/*" element={<FotoProjekPage />} />
             <Route path="projek-kerja/edit/:id" element={<EditProjekKerjaPage />} />
 
             <Route
@@ -440,9 +440,6 @@ const Dashboard = ({ user, windowWidth }) => {
           />
         </div>
       </div>
-
-      {/* SUMMARY */}
-      <BiayaDashboardPanel user={user} />
 
       {/* SUMMARY */}
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-5 md:mb-6 lg:mb-8 xl:mb-12">

@@ -73,6 +73,35 @@ class User extends Authenticatable
     protected $appends = ['phone'];
 
     /**
+     * Normalize role values from legacy variants
+     * (e.g. "Super Admin", "super-admin") into "super_admin".
+     */
+    private function normalizeRoleValue($value)
+    {
+        if (!is_string($value) || $value === '') {
+            return $value;
+        }
+
+        return str_replace('-', '_', str_replace(' ', '_', strtolower(trim($value))));
+    }
+
+    /**
+     * Ensure role is always stored in canonical format.
+     */
+    public function setRoleAttribute($value)
+    {
+        $this->attributes['role'] = $this->normalizeRoleValue($value);
+    }
+
+    /**
+     * Ensure role is always returned in canonical format.
+     */
+    public function getRoleAttribute($value)
+    {
+        return $this->normalizeRoleValue($value);
+    }
+
+    /**
      * ================= ACCESSOR =================
      * Frontend baca -> phone
      */

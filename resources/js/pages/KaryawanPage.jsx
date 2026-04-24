@@ -40,6 +40,13 @@ import { useNavigate } from "react-router-dom";
 
 export default function KaryawanPage() {
   const navigate = useNavigate();
+  const currentUser = tokenManager.getUser();
+  const normalizeRole = (role) =>
+    String(role || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[\s-]+/g, "_");
+  const isSuperAdmin = normalizeRole(currentUser?.role) === "super_admin";
 
   const [employees, setEmployees] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -409,6 +416,7 @@ export default function KaryawanPage() {
           />
         </Modal>
       )}
+
     </div>
   );
 }
@@ -479,6 +487,7 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
 const ActionButton = ({ icon, onClick, color, tooltip }) => {
   const colors = {
     blue: "bg-blue-50 hover:bg-blue-100 text-blue-600",
+    emerald: "bg-emerald-50 hover:bg-emerald-100 text-emerald-600",
     purple: "bg-purple-50 hover:bg-purple-100 text-purple-600",
     red: "bg-red-50 hover:bg-red-100 text-red-600"
   };

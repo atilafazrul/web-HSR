@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import api from "../api/axiosConfig";
 import { DollarSign, Calendar, User, TrendingUp, Download, Search, X, FileText, ChevronRight } from "lucide-react";
 import ExcelJS from 'exceljs';
@@ -61,6 +61,8 @@ export default React.memo(function RekapPerAkun({ user }) {
   const [detailBiaya, setDetailBiaya] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [confirmStatusItem, setConfirmStatusItem] = useState(null);
+  const [activeDetailSourceTab, setActiveDetailSourceTab] = useState("projek");
   // Mapping nama_akun ke id untuk mencari id dari dataByAkun yang tidak punya id
   const [akunIdMap, setAkunIdMap] = useState({});
 
@@ -109,9 +111,13 @@ export default React.memo(function RekapPerAkun({ user }) {
         tahun: selectedYear,
       });
 
+      // Kirim keduanya jika tersedia:
+      // - created_by untuk data dashboard_biayas
+      // - nama_akun untuk data biaya dari projek (field "oleh")
       if (createdById) {
         params.append('created_by', createdById);
-      } else if (namaAkun) {
+      }
+      if (namaAkun) {
         params.append('nama_akun', namaAkun);
       }
 
@@ -302,7 +308,8 @@ export default React.memo(function RekapPerAkun({ user }) {
       if (akun.source === 'projek' || !akunId || akunId === 0 || akunId === '0') {
         await fetchDetailBiaya(akunName, null);
       } else {
-        await fetchDetailBiaya(null, akunWithId.id);
+        // Kirim juga nama akun agar detail dari sumber projek tetap ikut terambil.
+        await fetchDetailBiaya(akunName, akunWithId.id);
       }
     } catch (err) {
       console.error("Error fetching detail:", err);
@@ -387,7 +394,8 @@ export default React.memo(function RekapPerAkun({ user }) {
       if (akun.source === 'projek' || !akunId || akunId === 0 || akunId === '0') {
         await fetchDetailBiaya(akunName, null);
       } else {
-        await fetchDetailBiaya(null, akunId);
+        // Kirim juga nama akun agar detail dari sumber projek tetap ikut terambil.
+        await fetchDetailBiaya(akunName, akunId);
       }
       console.log("fetchDetailBiaya completed");
     } catch (err) {
@@ -402,6 +410,59 @@ export default React.memo(function RekapPerAkun({ user }) {
     setShowDetailModal(false);
     // Don't reset selectedAkun so it can be used for other actions
   };
+
+  const handleToggleDetailLunas = async (item) => {
+    if (!isSuperAdmin) return;
+    setConfirmStatusItem(item);
+  };
+
+  const executeToggleDetailLunas = async () => {
+    if (!confirmStatusItem || !isSuperAdmin) return;
+    const item = confirmStatusItem;
+    const targetStatus = !Boolean(item?.is_lunas);
+    try {
+      if (item?.source === "projek") {
+        if (item?.project_id == null || item?.item_index == null) {
+          alert("Data item projek tidak lengkap untuk update status lunas.");
+          return;
+        }
+        await api.patch(`/projek-kerja/${item.project_id}/biaya-item-lunas`, {
+          kategori: item.kategori,
+          item_index: item.item_index,
+          is_lunas: targetStatus,
+        });
+      } else {
+        await api.patch(`/dashboard-biaya/${item.id}`, { is_lunas: targetStatus });
+      }
+
+      setDetailBiaya((prev) =>
+        (prev || []).map((row) =>
+          row.id === item.id ? { ...row, is_lunas: targetStatus } : row
+        )
+      );
+    } catch (err) {
+      alert(err?.response?.data?.message || "Gagal update status lunas");
+    } finally {
+      setConfirmStatusItem(null);
+    }
+  };
+
+  const detailBySource = useMemo(() => {
+    const rows = Array.isArray(detailBiaya) ? detailBiaya : [];
+    return {
+      projek: rows.filter((r) => r.source === "projek"),
+      diluar: rows.filter((r) => r.source !== "projek"),
+    };
+  }, [detailBiaya]);
+
+  useEffect(() => {
+    if (!showDetailModal) return;
+    if (detailBySource.projek.length > 0) {
+      setActiveDetailSourceTab("projek");
+    } else {
+      setActiveDetailSourceTab("diluar");
+    }
+  }, [showDetailModal, detailBySource.projek.length, detailBySource.diluar.length]);
 
   useEffect(() => {
     fetchRekap();
@@ -892,12 +953,6 @@ export default React.memo(function RekapPerAkun({ user }) {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* Debug info */}
-                  <div className="text-xs text-gray-400 bg-gray-50 p-2 rounded">
-                    detailBiaya.length: {detailBiaya?.length || 0}
-                  </div>
-
-                  {/* Summary di Modal - Hitung dari detailBiaya */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
                     <div className="text-center">
                       <p className="text-xs text-gray-500 mb-1">Biaya Jalan</p>
@@ -925,46 +980,129 @@ export default React.memo(function RekapPerAkun({ user }) {
                     </div>
                   </div>
 
-                  {/* Detail Biaya per Kategori */}
-                  <div className="space-y-4">
-                    {['jalan', 'pengeluaran', 'reimbursment'].map(kategori => (
-                      <div key={kategori} className="border rounded-xl overflow-hidden">
-                        <div className="bg-gray-100 px-4 py-2 font-semibold text-sm text-gray-700">
-                          {kategori === 'jalan' ? 'Biaya Jalan' : kategori === 'pengeluaran' ? 'Biaya Pengeluaran' : 'Biaya Reimbursment'}
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full text-xs">
-                            <thead className="bg-white text-gray-600">
-                              <tr className="text-left">
-                                <th className="p-3 font-semibold">No</th>
-                                <th className="p-3 font-semibold">Nominal</th>
-                                <th className="p-3 font-semibold">Keterangan</th>
-                                <th className="p-3 font-semibold">Status</th>
-                                <th className="p-3 font-semibold">Tanggal</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {detailBiaya
-                                .filter(item => item.kategori === kategori)
-                                .map((item, idx) => (
-                                  <tr key={idx} className="border-b hover:bg-gray-50">
-                                    <td className="p-3">{idx + 1}</td>
-                                    <td className="p-3 text-sm font-medium">{rupiah(item.nominal)}</td>
-                                    <td className="p-3 text-xs text-gray-600">{item.keterangan || '-'}</td>
-                                    <td className="p-3">
-                                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_lunas ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                                        {item.is_lunas ? 'Lunas' : 'Belum Lunas'}
-                                      </span>
-                                    </td>
-                                    <td className="p-3 text-xs text-gray-500">{formatDateTime(item.created_at)}</td>
-                                  </tr>
-                                ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </div>
-                    ))}
+                  <div className="mb-4">
+                    <div className="inline-flex rounded-lg bg-gray-100 p-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveDetailSourceTab("projek")}
+                        className={`px-3 py-1.5 text-xs sm:text-sm rounded-md font-medium transition ${
+                          activeDetailSourceTab === "projek"
+                            ? "bg-white text-blue-700 shadow-sm"
+                            : "text-gray-600 hover:text-gray-800"
+                        }`}
+                      >
+                        Biaya Projek
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveDetailSourceTab("diluar")}
+                        className={`px-3 py-1.5 text-xs sm:text-sm rounded-md font-medium transition ${
+                          activeDetailSourceTab === "diluar"
+                            ? "bg-white text-blue-700 shadow-sm"
+                            : "text-gray-600 hover:text-gray-800"
+                        }`}
+                      >
+                        Biaya Diluar Projek
+                      </button>
+                    </div>
                   </div>
+
+                  {[
+                    {
+                      key: "projek",
+                      title: "Biaya Projek",
+                      rows: detailBySource.projek,
+                    },
+                    {
+                      key: "diluar",
+                      title: "Biaya Diluar Projek",
+                      rows: detailBySource.diluar,
+                    },
+                  ]
+                    .filter((sourceBlock) => sourceBlock.key === activeDetailSourceTab)
+                    .map((sourceBlock) => (
+                    <div key={sourceBlock.key} className="border rounded-xl p-4 bg-white">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-800">{sourceBlock.title}</h4>
+                        <span className="text-xs text-gray-500">{sourceBlock.rows.length} transaksi</span>
+                      </div>
+
+                      {["belum", "lunas"].map((statusKey) => {
+                        const statusRows = sourceBlock.rows.filter((r) =>
+                          statusKey === "lunas" ? Boolean(r.is_lunas) : !Boolean(r.is_lunas)
+                        );
+                        return (
+                          <div key={`${sourceBlock.key}-${statusKey}`} className="mb-4 last:mb-0">
+                            <h5 className={`text-sm font-semibold mb-2 ${statusKey === "lunas" ? "text-emerald-700" : "text-amber-700"}`}>
+                              {statusKey === "lunas" ? "Lunas" : "Belum Lunas"}
+                            </h5>
+
+                            {["jalan", "pengeluaran", "reimbursment"].map((kategori) => {
+                              const rows = statusRows.filter((item) => item.kategori === kategori);
+                              return (
+                                <div key={`${sourceBlock.key}-${statusKey}-${kategori}`} className="border rounded-lg overflow-hidden mb-3 last:mb-0">
+                                  <div className="bg-gray-100 px-3 py-2 font-medium text-xs text-gray-700">
+                                    {kategori === "jalan" ? "Biaya Jalan" : kategori === "pengeluaran" ? "Biaya Pengeluaran" : "Biaya Reimbursment"}
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                    <table className="min-w-full text-xs">
+                                      <thead className="bg-white text-gray-600">
+                                        <tr className="text-left">
+                                          <th className="p-2 font-semibold">No</th>
+                                          <th className="p-2 font-semibold">Nominal</th>
+                                          <th className="p-2 font-semibold">Keterangan</th>
+                                          <th className="p-2 font-semibold">Status</th>
+                                          <th className="p-2 font-semibold">Tanggal</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {rows.length === 0 ? (
+                                          <tr>
+                                            <td colSpan={5} className="p-3 text-gray-400 text-center">
+                                              Tidak ada data
+                                            </td>
+                                          </tr>
+                                        ) : (
+                                          rows.map((item, idx) => (
+                                            <tr key={`${item.id}-${idx}`} className="border-b hover:bg-gray-50">
+                                              <td className="p-2">{idx + 1}</td>
+                                              <td className="p-2 font-medium">{rupiah(item.nominal)}</td>
+                                              <td className="p-2 text-gray-600">{item.keterangan || "-"}</td>
+                                              <td className="p-2">
+                                                {isSuperAdmin ? (
+                                                  <button
+                                                    type="button"
+                                                    onClick={() => handleToggleDetailLunas(item)}
+                                                    className={`px-2 py-1 rounded-full text-xs font-medium transition ${
+                                                      item.is_lunas
+                                                        ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                                                        : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
+                                                    }`}
+                                                    title={item.is_lunas ? "Klik untuk ubah ke Belum Lunas" : "Klik untuk ubah ke Lunas"}
+                                                  >
+                                                    {item.is_lunas ? "Lunas" : "Belum Lunas"}
+                                                  </button>
+                                                ) : (
+                                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_lunas ? "bg-emerald-100 text-emerald-700" : "bg-yellow-100 text-yellow-700"}`}>
+                                                    {item.is_lunas ? "Lunas" : "Belum Lunas"}
+                                                  </span>
+                                                )}
+                                              </td>
+                                              <td className="p-2 text-gray-500">{formatDateTime(item.created_at)}</td>
+                                            </tr>
+                                          ))
+                                        )}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -979,6 +1117,66 @@ export default React.memo(function RekapPerAkun({ user }) {
                 className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition"
               >
                 Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmStatusItem && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[10000] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="pt-6 pb-2 px-6 flex flex-col items-center">
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
+                !confirmStatusItem.is_lunas ? "bg-emerald-100" : "bg-amber-100"
+              }`}>
+                <FileText size={30} className={!confirmStatusItem.is_lunas ? "text-emerald-600" : "text-amber-600"} />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">Ubah Status Biaya</h3>
+              <p className="text-sm text-gray-500 text-center">
+                Apakah Anda yakin ingin mengubah status menjadi
+              </p>
+            </div>
+
+            <div className="px-6 pb-4">
+              <div className={`py-3 px-4 rounded-xl text-center font-semibold ${
+                !confirmStatusItem.is_lunas
+                  ? "bg-emerald-50 text-emerald-700 border-2 border-emerald-200"
+                  : "bg-amber-50 text-amber-700 border-2 border-amber-200"
+              }`}>
+                {!confirmStatusItem.is_lunas ? "Lunas" : "Belum Lunas"}
+              </div>
+            </div>
+
+            <div className="px-6 pb-4">
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-gray-500 mb-1">Nominal:</p>
+                <p className="font-semibold text-gray-700">{rupiah(confirmStatusItem.nominal)}</p>
+                {confirmStatusItem.keterangan && (
+                  <>
+                    <p className="text-xs text-gray-500 mb-1 mt-2">Keterangan:</p>
+                    <p className="text-sm text-gray-700">{confirmStatusItem.keterangan}</p>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => setConfirmStatusItem(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={executeToggleDetailLunas}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm ${
+                  !confirmStatusItem.is_lunas
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : "bg-amber-600 hover:bg-amber-700"
+                }`}
+              >
+                Ya, Ubah Status
               </button>
             </div>
           </div>

@@ -12,6 +12,31 @@ use Illuminate\Support\Facades\DB;
 
 class ProjekKerjaController extends Controller
 {
+    protected function sanitizeFolderName(?string $name): ?string
+    {
+        $raw = trim((string) $name);
+        if ($raw === '') {
+            return null;
+        }
+
+        $sanitized = preg_replace('/[^a-zA-Z0-9 _-]/', '', $raw);
+        $sanitized = preg_replace('/\s+/', '_', (string) $sanitized);
+        $sanitized = trim((string) $sanitized, '_- ');
+
+        return $sanitized !== '' ? $sanitized : null;
+    }
+
+    protected function buildProjectMediaPath(string $baseDir, int $projectId, ?string $folderName = null): string
+    {
+        $path = $baseDir . '/' . $projectId;
+        $folder = $this->sanitizeFolderName($folderName);
+        if ($folder) {
+            $path .= '/' . $folder;
+        }
+
+        return $path;
+    }
+
     protected function resolveDefaultPicFromDivisi(?string $targetDivisi): ?string
     {
         $target = strtolower(trim((string) $targetDivisi));
@@ -21,7 +46,7 @@ class ProjekKerjaController extends Controller
 
         $user = User::query()
             ->whereRaw('LOWER(divisi) = ?', [$target])
-            ->where('role', '!=', 'super_admin')
+            ->whereRaw("REPLACE(REPLACE(LOWER(role), ' ', '_'), '-', '_') != ?", ['super_admin'])
             ->orderByDesc('id')
             ->first();
 
@@ -177,6 +202,7 @@ class ProjekKerjaController extends Controller
     {
         $validated = $request->validate([
             'divisi' => 'required|string',
+            'sender_divisi' => 'nullable|string',
             'jenis_pekerjaan' => 'required|string',
             'karyawan' => 'required|string',
             'alamat' => 'required|string',
@@ -190,6 +216,9 @@ class ProjekKerjaController extends Controller
             'divisi_flow' => 'nullable|array',
             'pic_karyawan' => 'nullable|string',
             'karyawan_terlibat' => 'nullable|array',
+            'folder_name' => 'nullable|string|max:100',
+            'file_folder_name' => 'nullable|string|max:100',
+            'photo_folder_name' => 'nullable|string|max:100',
         ]);
 
         DB::beginTransaction();
@@ -200,9 +229,17 @@ class ProjekKerjaController extends Controller
             $newId = $lastId + 1;
             $reportNo = 'SR' . str_pad($newId, 3, '0', STR_PAD_LEFT) . '/HSR/' . date('ymd');
 
-            // created_by_divisi harus selalu divisi dari user yang membuat (authenticated user's divisi)
-            // Ini menunjukkan siapa yang AWAL membuat projek tersebut
-            $createdByDivisi = auth()->user()->divisi ?? 'Sales';
+            // created_by_divisi = divisi pengirim saat membuat project.
+            // Untuk superadmin (divisi akun bisa null), ambil dari sender_divisi (konteks halaman).
+            $createdByDivisi = trim((string) (
+                $validated['sender_divisi']
+                ?? auth()->user()->divisi
+                ?? $validated['divisi']
+                ?? 'Sales'
+            ));
+            if ($createdByDivisi === '') {
+                $createdByDivisi = $validated['divisi'] ?? 'Sales';
+            }
 
             // Initialize divisi_flow berdasarkan user yang membuat dan divisi yang dipilih
             // Flow dimulai dari user yang membuat, lalu divisi target
@@ -257,6 +294,7 @@ class ProjekKerjaController extends Controller
                 'start_date' => $validated['start_date'],
                 'problem_description' => $validated['problem_description'] ?? null,
                 'barang_dibeli' => $validated['barang_dibeli'] ?? null,
+                'is_archived' => false,
                 'divisi_flow' => $divisiFlow,
                 'pic_karyawan' => $picKaryawan,
                 'karyawan_terlibat' => $karyawanTerlibat,
@@ -271,9 +309,24 @@ class ProjekKerjaController extends Controller
 
             $projek = ProjekKerja::create($data);
 
+            // Optional: buat folder awal saat create project (tanpa upload file/foto dulu).
+            $initialFileFolder = $this->sanitizeFolderName($validated['file_folder_name'] ?? null);
+            if ($initialFileFolder) {
+                Storage::disk('public')->makeDirectory(
+                    $this->buildProjectMediaPath('projek-kerja-files', (int) $projek->id, $initialFileFolder)
+                );
+            }
+            $initialPhotoFolder = $this->sanitizeFolderName($validated['photo_folder_name'] ?? null);
+            if ($initialPhotoFolder) {
+                Storage::disk('public')->makeDirectory(
+                    $this->buildProjectMediaPath('projek-kerja-photos', (int) $projek->id, $initialPhotoFolder)
+                );
+            }
+
             // Handle file upload
             if ($request->hasFile('file')) {
-                $path = $request->file('file')->store('projek-kerja-files', 'public');
+                $filePath = $this->buildProjectMediaPath('projek-kerja-files', (int) $projek->id, $validated['folder_name'] ?? null);
+                $path = $request->file('file')->store($filePath, 'public');
                 $projek->update(['file_url' => asset('storage/' . $path)]);
                 // Simpan juga ke tabel dokumentasi supaya langsung muncul di halaman Foto/Dokumen Projek.
                 ProjekKerjaFile::create([
@@ -284,8 +337,9 @@ class ProjekKerjaController extends Controller
 
             // Handle photo uploads
             if ($request->hasFile('photos')) {
+                $photoPathBase = $this->buildProjectMediaPath('projek-kerja-photos', (int) $projek->id, $validated['folder_name'] ?? null);
                 foreach ($request->file('photos') as $photo) {
-                    $photoPath = $photo->store('projek-kerja-photos', 'public');
+                    $photoPath = $photo->store($photoPathBase, 'public');
                     ProjekKerjaPhoto::create([
                         'projek_kerja_id' => $projek->id,
                         'photo' => $photoPath,
@@ -733,7 +787,7 @@ class ProjekKerjaController extends Controller
                     return $result;
                 }
 
-                // Non–super admin: baris is_lunas tidak boleh diubah isi / dihapus; urutan baris lunas harus sama.
+                // Non–super admin: baris is_lunas tidak boleh diubah nominal / dihapus; keterangan masih boleh diubah.
                 $lunasQueue = array_values(array_filter($existing, fn ($r) => is_array($r) && ! empty($r['is_lunas'])));
                 $result = [];
                 foreach ($incoming as $row) {
@@ -750,13 +804,14 @@ class ProjekKerjaController extends Controller
                         $lk = trim((string) ($lun['keterangan'] ?? ''));
                         $rn = round((float) ($row['nominal'] ?? 0), 2);
                         $rk = trim((string) ($row['keterangan'] ?? ''));
-                        if ($ln !== $rn || $lk !== $rk) {
-                            throw new \InvalidArgumentException('Baris yang sudah lunas tidak boleh diubah nominal atau keterangannya.');
+                        if ($ln !== $rn) {
+                            throw new \InvalidArgumentException('Baris yang sudah lunas tidak boleh diubah nominalnya.');
                         }
                         array_shift($lunasQueue);
                         $item = [
                             'nominal' => $ln,
-                            'keterangan' => $lk,
+                            // Izinkan update keterangan untuk catatan koreksi/admin.
+                            'keterangan' => $rk,
                             'is_lunas' => true,
                             'oleh' => $lun['oleh'] ?? $userName,
                         ];
@@ -905,6 +960,60 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Update status lunas untuk item biaya tertentu di dalam project.
+     */
+    public function updateBiayaItemLunas(Request $request, $id)
+    {
+        if ((auth()->user()->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang bisa mengubah status lunas item biaya project',
+            ], 403);
+        }
+
+        $projek = ProjekKerja::find($id);
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'kategori' => 'required|in:jalan,pengeluaran,reimbursment',
+            'item_index' => 'required|integer|min:0',
+            'is_lunas' => 'required|boolean',
+        ]);
+
+        $fieldMap = [
+            'jalan' => 'biaya_jalan_items',
+            'pengeluaran' => 'biaya_pengeluaran_items',
+            'reimbursment' => 'biaya_reimbursment_items',
+        ];
+
+        $field = $fieldMap[$validated['kategori']];
+        $items = $projek->{$field} ?? [];
+        $index = (int) $validated['item_index'];
+
+        if (!isset($items[$index]) || !is_array($items[$index])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Item biaya tidak ditemukan pada project ini',
+            ], 404);
+        }
+
+        $items[$index]['is_lunas'] = (bool) $validated['is_lunas'];
+        $projek->{$field} = array_values($items);
+        $projek->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status lunas item biaya project berhasil diupdate',
+            'data' => $items[$index],
+        ]);
+    }
+
+    /**
      * Export biaya to CSV
      */
     public function exportBiayaCsv($id)
@@ -1006,11 +1115,13 @@ class ProjekKerjaController extends Controller
         }
 
         $validated = $request->validate([
-            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240'
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240',
+            'folder_name' => 'nullable|string|max:100',
         ]);
 
         try {
-            $path = $request->file('photo')->store('projek-kerja-photos', 'public');
+            $targetDir = $this->buildProjectMediaPath('projek-kerja-photos', (int) $projek->id, $validated['folder_name'] ?? null);
+            $path = $request->file('photo')->store($targetDir, 'public');
 
             $photo = ProjekKerjaPhoto::create([
                 'projek_kerja_id' => $projek->id,
@@ -1086,6 +1197,82 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Get folder list for file/photo media.
+     */
+    public function getMediaFolders($id)
+    {
+        $projek = ProjekKerja::find($id);
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan'
+            ], 404);
+        }
+
+        $fileRoot = 'projek-kerja-files/' . $projek->id;
+        $photoRoot = 'projek-kerja-photos/' . $projek->id;
+
+        // `exists()` tidak konsisten untuk direktori pada beberapa driver.
+        // Ambil langsung daftar sub-direktori; jika root belum ada, hasilnya array kosong.
+        $fileFolders = collect(Storage::disk('public')->directories($fileRoot))
+            ->map(fn ($dir) => basename($dir))
+            ->filter()
+            ->values()
+            ->all();
+
+        $photoFolders = collect(Storage::disk('public')->directories($photoRoot))
+            ->map(fn ($dir) => basename($dir))
+            ->filter()
+            ->values()
+            ->all();
+
+        return response()->json([
+            'success' => true,
+            'file_folders' => $fileFolders,
+            'photo_folders' => $photoFolders,
+        ]);
+    }
+
+    /**
+     * Create media folder (file/photo) for a project.
+     */
+    public function createMediaFolder(Request $request, $id)
+    {
+        $projek = ProjekKerja::find($id);
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|string|in:file,photo',
+            'folder_name' => 'required|string|max:100',
+        ]);
+
+        $folderName = $this->sanitizeFolderName($validated['folder_name'] ?? null);
+        if (!$folderName) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama folder tidak valid',
+            ], 422);
+        }
+
+        $baseDir = $validated['type'] === 'file' ? 'projek-kerja-files' : 'projek-kerja-photos';
+        $path = $this->buildProjectMediaPath($baseDir, (int) $projek->id, $folderName);
+
+        Storage::disk('public')->makeDirectory($path);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Folder berhasil dibuat',
+            'folder_name' => $folderName,
+            'type' => $validated['type'],
+        ]);
+    }
+
+    /**
      * Add file to a project
      */
     public function addFile(Request $request, $id)
@@ -1100,11 +1287,13 @@ class ProjekKerjaController extends Controller
         }
 
         $validated = $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:10240'
+            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
+            'folder_name' => 'nullable|string|max:100',
         ]);
 
         try {
-            $path = $request->file('file')->store('projek-kerja-files', 'public');
+            $targetDir = $this->buildProjectMediaPath('projek-kerja-files', (int) $projek->id, $validated['folder_name'] ?? null);
+            $path = $request->file('file')->store($targetDir, 'public');
 
             $file = ProjekKerjaFile::create([
                 'projek_kerja_id' => $projek->id,

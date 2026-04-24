@@ -34,7 +34,7 @@ const formatDateTime = (v) => {
   return `${datePart} ${timePart}`;
 };
 
-export default function BiayaDashboardPanel({ user }) {
+export default function BiayaDashboardPanel({ user, showInput = true, scopeUserId = null }) {
   const isSuperAdmin = user?.role === "super_admin";
 
   const [summary, setSummary] = useState({
@@ -105,9 +105,10 @@ export default function BiayaDashboardPanel({ user }) {
   const fetchAll = async () => {
     setLoading(true);
     try {
+      const queryParams = isSuperAdmin && scopeUserId ? { user_id: scopeUserId } : undefined;
       const [sumRes, listRes] = await Promise.all([
-        api.get("/dashboard-biaya/summary"),
-        api.get("/dashboard-biaya"),
+        api.get("/dashboard-biaya/summary", { params: queryParams }),
+        api.get("/dashboard-biaya", { params: queryParams }),
       ]);
       setSummary(sumRes.data?.data || {});
       setItems(listRes.data?.data || []);
@@ -120,20 +121,18 @@ export default function BiayaDashboardPanel({ user }) {
 
   useEffect(() => {
     fetchAll();
-  }, []);
+  }, [scopeUserId]);
 
-  const grouped = useMemo(() => {
-    const sortBelumLunasFirst = (arr) =>
-      [...arr].sort((a, b) => {
-        const la = a.is_lunas ? 1 : 0;
-        const lb = b.is_lunas ? 1 : 0;
-        if (la !== lb) return la - lb;
-        return new Date(b.created_at) - new Date(a.created_at);
-      });
+  const groupedByLunas = useMemo(() => {
+    const byNewest = (arr) => [...arr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const build = (isLunas) => ({
+      jalan: byNewest((items || []).filter((i) => i.kategori === "jalan" && Boolean(i.is_lunas) === isLunas)),
+      pengeluaran: byNewest((items || []).filter((i) => i.kategori === "pengeluaran" && Boolean(i.is_lunas) === isLunas)),
+      reimbursment: byNewest((items || []).filter((i) => i.kategori === "reimbursment" && Boolean(i.is_lunas) === isLunas)),
+    });
     return {
-      jalan: sortBelumLunasFirst(items.filter((i) => i.kategori === "jalan")),
-      pengeluaran: sortBelumLunasFirst(items.filter((i) => i.kategori === "pengeluaran")),
-      reimbursment: sortBelumLunasFirst(items.filter((i) => i.kategori === "reimbursment")),
+      belum: build(false),
+      lunas: build(true),
     };
   }, [items]);
 
@@ -232,7 +231,6 @@ export default function BiayaDashboardPanel({ user }) {
   };
 
   const startEdit = (row) => {
-    if (row.is_lunas) return;
     setEditingId(row.id);
     setEditForm({
       nominal: nominalApiToInput(row.nominal) || formatRibuanId(String(Math.round(Number(row.nominal || 0)))),
@@ -250,30 +248,20 @@ export default function BiayaDashboardPanel({ user }) {
 
   const saveEdit = async () => {
     const row = items.find((i) => i.id === editingId);
-    if (!row || row.is_lunas) return;
+    if (!row) return;
     const nominal = parseRibuanId(editForm.nominal);
-    if (!nominal || nominal <= 0) {
+    if (!row.is_lunas && (!nominal || nominal <= 0)) {
       alert("Nominal harus lebih dari 0");
       return;
     }
-    if (compressingKey === "edit") {
-      alert("Foto masih dikompres. Tunggu sebentar lalu coba simpan lagi.");
-      return;
-    }
     try {
-      const kat = row.kategori;
-      if (kategoriWithPhotos(kat)) {
-        const fd = new FormData();
-        fd.append("nominal", String(nominal));
-        fd.append("keterangan", editForm.keterangan || "");
-        (editForm.photoFiles || []).forEach((file) => fd.append("photos[]", file));
-        await api.patch(`/dashboard-biaya/${row.id}`, fd);
-      } else {
-        await api.patch(`/dashboard-biaya/${row.id}`, {
-          nominal,
-          keterangan: editForm.keterangan || "",
-        });
+      const payload = {
+        keterangan: editForm.keterangan || "",
+      };
+      if (!row.is_lunas) {
+        payload.nominal = nominal;
       }
+      await api.patch(`/dashboard-biaya/${row.id}`, payload);
       cancelEdit();
       fetchAll();
     } catch (err) {
@@ -282,7 +270,133 @@ export default function BiayaDashboardPanel({ user }) {
   };
 
   const canDeleteRow = (row) => !row.is_lunas;
-  const canEditRow = (row) => !row.is_lunas;
+  const canEditRow = () => true;
+
+  const renderKategoriCard = (k, rows) => (
+    <div key={k.key} className="border rounded-xl p-3">
+      <p className="text-sm font-semibold mb-2">{k.label}</p>
+      <div className="space-y-2 max-h-56 overflow-y-auto">
+        {(rows || []).map((row) => (
+          <div key={row.id} className="text-xs border rounded-lg p-2">
+            {editingId === row.id ? (
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={editForm.nominal}
+                  onChange={(e) =>
+                    setEditForm((f) => ({
+                      ...f,
+                      nominal: formatRibuanId(digitsOnly(e.target.value)),
+                    }))
+                  }
+                  placeholder="Biaya"
+                  disabled={row.is_lunas}
+                  readOnly={row.is_lunas}
+                  className={`w-full border rounded-lg p-2 text-sm ${row.is_lunas ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+                />
+                <textarea
+                  value={editForm.keterangan}
+                  onChange={(e) => setEditForm((f) => ({ ...f, keterangan: e.target.value }))}
+                  placeholder="Keterangan"
+                  className="w-full border rounded-lg p-2 text-sm resize-y min-h-[60px]"
+                  rows="2"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={saveEdit}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-1.5 text-xs"
+                  >
+                    Simpan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelEdit}
+                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg py-1.5 text-xs"
+                  >
+                    Batal
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="flex justify-between items-start">
+                  <p className="font-semibold">{rupiah(row.nominal)}</p>
+                  {row.lunas_at && (
+                    <div className="flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                      <Clock size={10} />
+                      <span>Updated: {formatDateTime(row.lunas_at)}</span>
+                    </div>
+                  )}
+                </div>
+                {row.keterangan ? <p className="text-gray-600 whitespace-pre-wrap break-words">{row.keterangan}</p> : null}
+                <p className="mt-1 text-[11px] text-gray-500">
+                  <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
+                </p>
+                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                  {isSuperAdmin ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleLunas(row)}
+                      className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                    >
+                      {row.is_lunas ? "Lunas" : "Belum"}
+                    </button>
+                  ) : (
+                    <span
+                      className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                    >
+                      {row.is_lunas ? "Lunas" : "Belum"}
+                    </span>
+                  )}
+                  {(row.photo_urls || []).map((url, idx) => (
+                    <a
+                      key={`${row.id}-ph-${idx}`}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`Lihat lampiran ${idx + 1}`}
+                      className="inline-flex items-center justify-center px-2 py-1 rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                    >
+                      <Eye size={12} aria-hidden />
+                      {(row.photo_urls || []).length > 1 ? (
+                        <span className="ml-0.5 text-[10px] font-medium tabular-nums">{idx + 1}</span>
+                      ) : null}
+                    </a>
+                  ))}
+                  {canEditRow(row) ? (
+                    <button
+                      type="button"
+                      onClick={() => startEdit(row)}
+                      title="Edit"
+                      className="inline-flex items-center justify-center px-2 py-1 rounded border bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                    >
+                      <Pencil size={12} aria-hidden />
+                    </button>
+                  ) : null}
+                  {canDeleteRow(row) ? (
+                    <button
+                      type="button"
+                      onClick={() => removeRow(row.id)}
+                      title="Hapus"
+                      className="px-2 py-1 rounded border bg-red-100 text-red-600 border-red-300"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  ) : null}
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+        {(rows || []).length === 0 ? (
+          <p className="text-xs text-gray-400">Belum ada data</p>
+        ) : null}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -292,71 +406,73 @@ export default function BiayaDashboardPanel({ user }) {
         Biaya Diluar Projek
       </h3>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
-        {kategoriConfig.map((k) => (
-          <div key={k.key} className="rounded-xl border p-3 bg-gray-50">
-            <p className="text-sm font-semibold mb-2">{k.label}</p>
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              value={form[k.key].nominal}
-              onChange={(e) =>
-                setForm((p) => ({
-                  ...p,
-                  [k.key]: {
-                    ...p[k.key],
-                    nominal: formatRibuanId(digitsOnly(e.target.value)),
-                  },
-                }))
-              }
-              placeholder="Biaya"
-              className="w-full border rounded-lg p-2 text-sm mb-2"
-            />
-            <textarea
-              value={form[k.key].keterangan}
-              onChange={(e) =>
-                setForm((p) => ({
-                  ...p,
-                  [k.key]: { ...p[k.key], keterangan: e.target.value },
-                }))
-              }
-              placeholder="Keterangan"
-              className="w-full border rounded-lg p-2 text-sm mb-2 resize-y min-h-[60px]"
-              rows="2"
-            />
-            {kategoriWithPhotos(k.key) ? (
-              <div className="mb-2">
-                <label className="block text-xs text-gray-600 mb-1">Upload foto</label>
-                <input
-                  ref={k.key === "pengeluaran" ? pengeluaranPhotoInputRef : reimbPhotoInputRef}
-                  type="file"
-                  multiple
-                  accept="image/jpeg,image/jpg,image/png,image/webp"
-                  onChange={(e) => handlePhotoSelection(k.key, e.target.files)}
-                  className="w-full text-xs border rounded-lg p-1.5 bg-white"
-                />
-                {isCompressingKategori(k.key) ? (
-                  <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
-                ) : null}
-                {form[k.key].photoFiles?.length > 0 ? (
-                  <p className="text-[11px] text-gray-500 mt-1">
-                    {form[k.key].photoFiles.length} file dipilih
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-            <button
-              type="button"
-              onClick={() => submitKategori(k.key)}
-              disabled={isCompressingKategori(k.key)}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-lg py-2 text-sm"
-            >
-              {isCompressingKategori(k.key) ? "Mengompres foto..." : `Simpan ${k.label}`}
-            </button>
-          </div>
-        ))}
-      </div>
+      {showInput && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+          {kategoriConfig.map((k) => (
+            <div key={k.key} className="rounded-xl border p-3 bg-gray-50">
+              <p className="text-sm font-semibold mb-2">{k.label}</p>
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={form[k.key].nominal}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    [k.key]: {
+                      ...p[k.key],
+                      nominal: formatRibuanId(digitsOnly(e.target.value)),
+                    },
+                  }))
+                }
+                placeholder="Biaya"
+                className="w-full border rounded-lg p-2 text-sm mb-2"
+              />
+              <textarea
+                value={form[k.key].keterangan}
+                onChange={(e) =>
+                  setForm((p) => ({
+                    ...p,
+                    [k.key]: { ...p[k.key], keterangan: e.target.value },
+                  }))
+                }
+                placeholder="Keterangan"
+                className="w-full border rounded-lg p-2 text-sm mb-2 resize-y min-h-[60px]"
+                rows="2"
+              />
+              {kategoriWithPhotos(k.key) ? (
+                <div className="mb-2">
+                  <label className="block text-xs text-gray-600 mb-1">Upload foto</label>
+                  <input
+                    ref={k.key === "pengeluaran" ? pengeluaranPhotoInputRef : reimbPhotoInputRef}
+                    type="file"
+                    multiple
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    onChange={(e) => handlePhotoSelection(k.key, e.target.files)}
+                    className="w-full text-xs border rounded-lg p-1.5 bg-white"
+                  />
+                  {isCompressingKategori(k.key) ? (
+                    <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
+                  ) : null}
+                  {form[k.key].photoFiles?.length > 0 ? (
+                    <p className="text-[11px] text-gray-500 mt-1">
+                      {form[k.key].photoFiles.length} file dipilih
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => submitKategori(k.key)}
+                disabled={isCompressingKategori(k.key)}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-lg py-2 text-sm"
+              >
+                {isCompressingKategori(k.key) ? "Mengompres foto..." : `Simpan ${k.label}`}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
         <Summary title="Biaya Jalan" value={summary.jalan} />
@@ -365,147 +481,19 @@ export default function BiayaDashboardPanel({ user }) {
         <Summary title="Total" value={summary.total} highlight />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        {kategoriConfig.map((k) => (
-          <div key={k.key} className="border rounded-xl p-3">
-            <p className="text-sm font-semibold mb-2">{k.label}</p>
-            <div className="space-y-2 max-h-56 overflow-y-auto">
-              {(grouped[k.key] || []).map((row) => (
-                <div key={row.id} className="text-xs border rounded-lg p-2">
-                  {editingId === row.id ? (
-                    <div className="space-y-2">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        autoComplete="off"
-                        value={editForm.nominal}
-                        onChange={(e) =>
-                          setEditForm((f) => ({
-                            ...f,
-                            nominal: formatRibuanId(digitsOnly(e.target.value)),
-                          }))
-                        }
-                        placeholder="Biaya"
-                        className="w-full border rounded-lg p-2 text-sm"
-                      />
-                      <textarea
-                        value={editForm.keterangan}
-                        onChange={(e) => setEditForm((f) => ({ ...f, keterangan: e.target.value }))}
-                        placeholder="Keterangan"
-                        className="w-full border rounded-lg p-2 text-sm resize-y min-h-[60px]"
-                        rows="2"
-                      />
-                      {kategoriWithPhotos(row.kategori) ? (
-                        <div>
-                          <label className="block text-[11px] text-gray-600 mb-0.5">Upload foto</label>
-                          <input
-                            ref={editPhotoInputRef}
-                            type="file"
-                            multiple
-                            accept="image/jpeg,image/jpg,image/png,image/webp"
-                            onChange={(e) => handleEditPhotoSelection(e.target.files)}
-                            className="w-full text-[11px] border rounded-lg p-1 bg-white"
-                          />
-                          {compressingKey === "edit" ? (
-                            <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
-                          ) : null}
-                        </div>
-                      ) : null}
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={saveEdit}
-                          disabled={compressingKey === "edit"}
-                          className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 disabled:cursor-not-allowed text-white rounded-lg py-1.5 text-xs"
-                        >
-                          {compressingKey === "edit" ? "Mengompres foto..." : "Simpan"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={cancelEdit}
-                          className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg py-1.5 text-xs"
-                        >
-                          Batal
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="flex justify-between items-start">
-                        <p className="font-semibold">{rupiah(row.nominal)}</p>
-                        {row.lunas_at && (
-                          <div className="flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
-                            <Clock size={10} />
-                            <span>Updated: {formatDateTime(row.lunas_at)}</span>
-                          </div>
-                        )}
-                      </div>
-                      {row.keterangan ? <p className="text-gray-600 whitespace-pre-wrap break-words">{row.keterangan}</p> : null}
-                      <p className="mt-1 text-[11px] text-gray-500">
-                        <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
-                      </p>
-                      <div className="mt-2 flex items-center gap-2 flex-wrap">
-                        {isSuperAdmin ? (
-                          <button
-                            type="button"
-                            onClick={() => toggleLunas(row)}
-                            className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
-                          >
-                            {row.is_lunas ? "Lunas" : "Belum"}
-                          </button>
-                        ) : (
-                          <span
-                            className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
-                          >
-                            {row.is_lunas ? "Lunas" : "Belum"}
-                          </span>
-                        )}
-                        {(row.photo_urls || []).map((url, idx) => (
-                          <a
-                            key={`${row.id}-ph-${idx}`}
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title={`Lihat lampiran ${idx + 1}`}
-                            className="inline-flex items-center justify-center px-2 py-1 rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
-                          >
-                            <Eye size={12} aria-hidden />
-                            {(row.photo_urls || []).length > 1 ? (
-                              <span className="ml-0.5 text-[10px] font-medium tabular-nums">{idx + 1}</span>
-                            ) : null}
-                          </a>
-                        ))}
-                        {canEditRow(row) ? (
-                          <button
-                            type="button"
-                            onClick={() => startEdit(row)}
-                            title="Edit"
-                            className="inline-flex items-center justify-center px-2 py-1 rounded border bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
-                          >
-                            <Pencil size={12} aria-hidden />
-                          </button>
-                        ) : null}
-                        {canDeleteRow(row) ? (
-                          <button
-                            type="button"
-                            onClick={() => removeRow(row.id)}
-                            title="Hapus"
-                            className="px-2 py-1 rounded border bg-red-100 text-red-600 border-red-300"
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        ) : null}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-              {(grouped[k.key] || []).length === 0 ? (
-                <p className="text-xs text-gray-400">Belum ada data</p>
-              ) : null}
-            </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="border rounded-xl p-4 bg-amber-50/40">
+          <h4 className="text-sm font-bold text-amber-800 mb-3">Belum Lunas</h4>
+          <div className="grid grid-cols-1 gap-3">
+            {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.belum[k.key]))}
           </div>
-        ))}
+        </div>
+        <div className="border rounded-xl p-4 bg-emerald-50/40">
+          <h4 className="text-sm font-bold text-emerald-800 mb-3">Sudah Lunas</h4>
+          <div className="grid grid-cols-1 gap-3">
+            {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.lunas[k.key]))}
+          </div>
+        </div>
       </div>
 
       {loading ? <p className="text-xs text-gray-400 mt-3">Memuat...</p> : null}

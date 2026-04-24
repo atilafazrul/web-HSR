@@ -334,6 +334,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ProjekKerjaController::class,
         'setLunas'
     ]);
+    Route::patch('/projek-kerja/{id}/biaya-item-lunas', [
+        ProjekKerjaController::class,
+        'updateBiayaItemLunas'
+    ]);
     Route::patch('/projek-kerja/{id}/archive', [
         ProjekKerjaController::class,
         'archive'
@@ -383,6 +387,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/projek-kerja/{id}/files', [
         ProjekKerjaController::class,
         'getFiles'
+    ]);
+
+    Route::get('/projek-kerja/{id}/folders', [
+        ProjekKerjaController::class,
+        'getMediaFolders'
+    ]);
+
+    Route::post('/projek-kerja/{id}/folders', [
+        ProjekKerjaController::class,
+        'createMediaFolder'
     ]);
 
     Route::post('/projek-kerja/{id}/add-file', [

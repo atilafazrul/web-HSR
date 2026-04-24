@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import api from "../api/axiosConfig";
-import { compressImage } from "../utils/imageCompress";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -11,7 +10,6 @@ import {
   User,
   MapPin,
   Calendar,
-  Upload,
   FileText,
   Building,
   Activity,
@@ -79,6 +77,33 @@ export default function ProjekKerjaPage() {
     if (divisiKey(item?.divisi) === target) return true;
     const flow = Array.isArray(item?.divisi_flow) ? item.divisi_flow : [];
     return flow.some((d) => divisiKey(d) === target);
+  };
+  const isTransferredProjectInCurrentDivisiContext = (item) => {
+    if (!currentDivisi) return false;
+    const current = divisiKey(currentDivisi);
+    const active = divisiKey(item?.divisi);
+    return active !== current && projectRelatedToDivisi(item, currentDivisi);
+  };
+  const canOpenBiayaAction = (item) => {
+    if (isUserRole) return false;
+    if (role === "super_admin") return true;
+    const sameAdminDivisi =
+      role === "admin" &&
+      divisiKey(item?.divisi) === divisiKey(divisiUser);
+    return sameAdminDivisi || isTransferredProjectInCurrentDivisiContext(item);
+  };
+  const canEditProjectAction = (item) => {
+    if (isUserRole) return false;
+    if (role === "super_admin") {
+      return !isTransferredProjectInCurrentDivisiContext(item);
+    }
+    if (role === "admin") {
+      return (
+        divisiKey(item?.divisi) === divisiKey(divisiUser) &&
+        !isTransferredProjectInCurrentDivisiContext(item)
+      );
+    }
+    return false;
   };
   const karyawanProjectList = (item) => {
     const karyawanFromString = String(item?.karyawan || "")
@@ -152,14 +177,13 @@ export default function ProjekKerjaPage() {
     start_date: "",
     problem_description: "",
     barang_dibeli: "",
-    file: null,
-    photos: []
+    file_folder_name: "",
+    photo_folder_name: "",
   };
 
   const [form, setForm] = useState(initialForm);
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [processingUpload, setProcessingUpload] = useState(false);
   const [salesUsers, setSalesUsers] = useState([]);
   const [salesUsersLoading, setSalesUsersLoading] = useState(false);
   const [selectedSalesUsers, setSelectedSalesUsers] = useState([]);
@@ -233,8 +257,15 @@ export default function ProjekKerjaPage() {
         query.set("divisi", divisiUser);
       }
       query.set("archive", isArchiveContext ? "1" : "0");
+      query.set("_ts", String(Date.now()));
       const params = query.toString();
-      const res = await api.get(`/projek-kerja${params ? `?${params}` : ""}`);
+      const res = await api.get(`/projek-kerja${params ? `?${params}` : ""}`, {
+        headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
       console.log("API Response raw:", res.data);
       // Handle response dari API yang berformat {success: true, data: [...]}
       // Ambil hanya property 'data' dari response
@@ -245,7 +276,7 @@ export default function ProjekKerjaPage() {
         data = [];
       }
       console.log("Final data:", data);
-      const sorted = data.sort((a, b) => b.id - a.id);
+      const sorted = [...data].sort((a, b) => b.id - a.id);
       console.log("Sorted data:", sorted);
       setDataList(sorted);
       setCurrentPage(1);
@@ -311,27 +342,6 @@ export default function ProjekKerjaPage() {
     );
   };
 
-  const handleFileUpload = async (e) => {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (!f) return;
-    // Dokumen (pdf/doc/xls) tidak perlu dan tidak boleh dikompres sebagai gambar.
-    setForm(prev => ({ ...prev, file: f }));
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const list = Array.from(e.target.files || []);
-    e.target.value = "";
-    if (!list.length) return;
-    setProcessingUpload(true);
-    try {
-      const compressed = await Promise.all(list.map((file) => compressImage(file)));
-      setForm(prev => ({ ...prev, photos: compressed }));
-    } finally {
-      setProcessingUpload(false);
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canManageProject) {
@@ -351,11 +361,11 @@ export default function ProjekKerjaPage() {
     }
 
     const karyawanNames = selectedSalesUsers.map(salesDisplayName).join(", ");
-
     setLoading(true);
     try {
       const formData = new FormData();
       Object.entries({
+        sender_divisi: currentDivisi || divisiUser || "",
         divisi:
           role === "super_admin"
             ? form.divisi
@@ -369,18 +379,21 @@ export default function ProjekKerjaPage() {
         start_date: form.start_date,
         problem_description: form.problem_description,
         barang_dibeli: form.barang_dibeli,
+        file_folder_name: form.file_folder_name,
+        photo_folder_name: form.photo_folder_name,
       }).forEach(([key, val]) => {
         formData.append(key, val || "");
       });
 
-      if (form.file) formData.append("file", form.file);
-      if (form.photos.length > 0) {
-        Array.from(form.photos).forEach(photo => formData.append("photos[]", photo));
+      const createRes = await api.post("/projek-kerja", formData);
+      if (createRes?.data?.success === false) {
+        throw new Error(createRes?.data?.message || "Gagal simpan data");
       }
-
-      await api.post("/projek-kerja", formData);
       alert("Data berhasil disimpan");
       setForm(initialForm);
+      if (createRes?.data?.data) {
+        setDataList((prev) => [createRes.data.data, ...prev].sort((a, b) => b.id - a.id));
+      }
       fetchData();
     } catch (err) {
       console.error("Error response:", err.response?.data);
@@ -572,11 +585,6 @@ export default function ProjekKerjaPage() {
       alert("Anda tidak punya akses untuk mengubah project ini.");
       return;
     }
-    if (item && role !== "super_admin" && item.is_lunas) {
-      alert("Data sudah lunas, hanya superadmin yang bisa mengubah biaya.");
-      return;
-    }
-
     try {
       await api.patch(`/projek-kerja/${currentId}/uang`, {
         biaya_jalan_items: biayaToPayload(biayaEdit.jalan),
@@ -771,7 +779,9 @@ export default function ProjekKerjaPage() {
       if (isSelesaiContext && String(item.status || "").trim().toLowerCase() !== "selesai") {
         return false;
       }
-      if (currentDivisi && (isArchiveContext ? !projectRelatedToDivisi(item, currentDivisi) : divisiKey(item.divisi) !== divisiKey(currentDivisi))) {
+      // Untuk super admin, project tetap terlihat di divisi asal/tujuan berdasarkan riwayat divisi_flow.
+      // Jadi saat project dioper, tidak hilang dari daftar divisi yang pernah menangani.
+      if (currentDivisi && !projectRelatedToDivisi(item, currentDivisi)) {
         return false;
       }
     }
@@ -832,13 +842,11 @@ export default function ProjekKerjaPage() {
             className="relative grid min-w-0 grid-cols-1 md:grid-cols-2 gap-6 [&>*]:min-w-0"
             encType="multipart/form-data"
           >
-            {(processingUpload || loading) && (
+            {loading && (
               <div className="absolute inset-0 z-20 bg-white/75 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
                 <div className="flex flex-col items-center gap-2 text-blue-700">
                   <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm font-medium">
-                    {processingUpload ? "Mengompres file/foto..." : "Mengunggah..."}
-                  </p>
+                  <p className="text-sm font-medium">Menyimpan...</p>
                 </div>
               </div>
             )}
@@ -971,45 +979,21 @@ export default function ProjekKerjaPage() {
               <option value="Selesai">Selesai</option>
             </select>
 
-            <label
-              htmlFor="uploadFile"
-              className="border-2 border-dashed rounded-xl p-4 text-center hover:bg-blue-50 transition cursor-pointer block"
-            >
-              <Upload className="mx-auto mb-1 text-blue-600" size={22} />
-              <span className="font-semibold text-blue-700 text-sm block">Upload File</span>
-              <span className="text-xs text-gray-500">
-                {form.file ? form.file.name : "Choose file No file chosen"}
-              </span>
-              <input
-                id="uploadFile"
-                type="file"
-                onChange={handleFileUpload}
-                className="hidden"
-                disabled={processingUpload || loading}
-              />
-            </label>
+            <input
+              name="file_folder_name"
+              value={form.file_folder_name}
+              onChange={handleChange}
+              placeholder="Folder Dokumen awal (opsional)"
+              className="border p-3 rounded-xl"
+            />
 
-            <label
-              htmlFor="uploadFoto"
-              className="border-2 border-dashed rounded-xl p-4 text-center hover:bg-green-50 transition cursor-pointer block"
-            >
-              <Upload className="mx-auto mb-1 text-green-600" size={22} />
-              <span className="font-semibold text-green-700 text-sm block">Upload Foto</span>
-              <span className="text-xs text-gray-500">
-                {form.photos.length > 0
-                  ? `${form.photos.length} foto dipilih`
-                  : "Choose files No file chosen"}
-              </span>
-              <input
-                id="uploadFoto"
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                className="hidden"
-                disabled={processingUpload || loading}
-              />
-            </label>
+            <input
+              name="photo_folder_name"
+              value={form.photo_folder_name}
+              onChange={handleChange}
+              placeholder="Folder Foto awal (opsional)"
+              className="border p-3 rounded-xl"
+            />
 
             <textarea
               name="problem_description"
@@ -1035,12 +1019,10 @@ export default function ProjekKerjaPage() {
               />
             </div>
 
-
             <button
               type="submit"
               disabled={
                 loading ||
-                processingUpload ||
                 salesUsersLoading ||
                 selectedSalesUsers.length === 0 ||
                 ((role === "super_admin" || divisiUser === "Sales") && !form.divisi)
@@ -1240,9 +1222,9 @@ export default function ProjekKerjaPage() {
                           <Download size={14} />
                         </a>
                       )}
-                      {!isUserRole && (role === "super_admin" || String(item.divisi || "").toLowerCase().trim() === String(divisiUser || "").toLowerCase().trim()) && (
+                      {!isUserRole && canOpenBiayaAction(item) && (
                         <>
-                          {!isArchiveContext ? (
+                          {!isArchiveContext && canEditProjectAction(item) ? (
                             <button
                               onClick={() => goToEditProjectPage(item)}
                               className="bg-purple-600 hover:bg-purple-700 text-white p-1.5 rounded-lg"
@@ -1269,7 +1251,7 @@ export default function ProjekKerjaPage() {
                           ) : null}
                         </>
                       )}
-                      {!isUserRole && !isArchiveContext && (role === "super_admin" || item.divisi === divisiUser) && (
+                      {!isUserRole && !isArchiveContext && canEditProjectAction(item) && (
                         <button
                           onClick={() => handleDelete(item.id)}
                           className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-lg"
@@ -1561,17 +1543,10 @@ export default function ProjekKerjaPage() {
                     type="button"
                     onClick={() => setEditUang(true)}
                     disabled={(() => {
-                      const item = dataList.find(i => i.id === currentId);
-                      return (
-                        !canEditCurrentProject ||
-                        (role !== "super_admin" && item?.is_lunas)
-                      );
+                      return !canEditCurrentProject;
                     })()}
                     className={`px-4 py-2 rounded-lg text-white ${(() => {
-                      const item = dataList.find(i => i.id === currentId);
-                      const locked =
-                        !canEditCurrentProject ||
-                        (role !== "super_admin" && item?.is_lunas);
+                      const locked = !canEditCurrentProject;
                       return locked ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700";
                     })()}`}
                   >
@@ -1612,7 +1587,8 @@ export default function ProjekKerjaPage() {
                         <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                           {biayaEdit[col.key].map((row, idx) => {
                             const barisLunas = Boolean(row.is_lunas);
-                            const bolehEditIsi = !barisLunas;
+                            const bolehEditNominal = !barisLunas;
+                            const bolehEditKeterangan = true;
                             const bolehHapus = !barisLunas || role === "super_admin";
                             return (
                               <div
@@ -1636,7 +1612,10 @@ export default function ProjekKerjaPage() {
                                 )}
                                 {barisLunas ? (
                                   <p className="text-[10px] text-amber-800 font-medium">
-                                    Sudah lunas — isi tidak bisa diubah
+                                    Sudah lunas
+                                    {role === "super_admin"
+                                      ? " — nominal dikunci, keterangan masih bisa diubah"
+                                      : " — nominal dikunci, keterangan masih bisa diubah"}
                                     {role === "super_admin" ? "; hanya super admin bisa hapus baris ini" : ""}
                                   </p>
                                 ) : null}
@@ -1654,9 +1633,9 @@ export default function ProjekKerjaPage() {
                                         formatRibuanId(digitsOnly(e.target.value))
                                       )
                                     }
-                                    readOnly={!bolehEditIsi}
-                                    disabled={!bolehEditIsi}
-                                    className={`border w-full p-2 rounded-lg text-sm ${!bolehEditIsi ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
+                                    readOnly={!bolehEditNominal}
+                                    disabled={!bolehEditNominal}
+                                    className={`border w-full p-2 rounded-lg text-sm ${!bolehEditNominal ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
                                     placeholder="Biaya"
                                   />
                                   {bolehHapus ? (
@@ -1678,9 +1657,9 @@ export default function ProjekKerjaPage() {
                                   type="text"
                                   value={row.keterangan}
                                   onChange={(e) => updateBiayaCell(col.key, idx, "keterangan", e.target.value)}
-                                  readOnly={!bolehEditIsi}
-                                  disabled={!bolehEditIsi}
-                                  className={`border w-full p-2 rounded-lg text-sm ${!bolehEditIsi ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
+                                  readOnly={!bolehEditKeterangan}
+                                  disabled={!bolehEditKeterangan}
+                                  className={`border w-full p-2 rounded-lg text-sm ${!bolehEditKeterangan ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
                                   placeholder="Keterangan"
                                 />
                               </div>

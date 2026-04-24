@@ -262,9 +262,11 @@ export default function AdminDashboard({ user, logout }) {
                     />
                   </div>
 
-                  {/* ================= SUMMARY ================= */}
-                  {!isUserRole && <BiayaDashboardPanel user={currentUser} />}
+                  <div className="mb-6 sm:mb-8 md:mb-10">
+                    <BiayaDashboardPanel user={currentUser} showInput={currentRole === "admin"} />
+                  </div>
 
+                  {/* ================= SUMMARY ================= */}
                   {/* ================= SUMMARY ================= */}
                   <div className="mb-6 sm:mb-8 md:mb-10">
                     <div className="mb-3 sm:mb-4">
@@ -557,7 +559,7 @@ export default function AdminDashboard({ user, logout }) {
 
             {/* ================= FOTO PROJEK ================= */}
             <Route
-              path="projek-kerja/foto/:id"
+              path="projek-kerja/foto/:id/*"
               element={<FotoProjekPage />}
             />
             <Route path="projek-kerja/edit/:id" element={<EditProjekKerjaPage />} />

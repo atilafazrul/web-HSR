@@ -10,6 +10,19 @@ const EXPIRES_AT_KEY = 'auth_expires_at';
 const REMEMBER_ME_KEY = 'auth_remember_me';
 const USER_KEY = 'user';
 
+const normalizeRole = (role) => {
+    if (typeof role !== 'string') return role;
+    return role.trim().toLowerCase().replace(/[\s-]+/g, '_');
+};
+
+const normalizeUser = (user) => {
+    if (!user || typeof user !== 'object') return user;
+    return {
+        ...user,
+        role: normalizeRole(user.role),
+    };
+};
+
 export const tokenManager = {
     /**
      * Simpan token dan data autentikasi
@@ -23,7 +36,7 @@ export const tokenManager = {
         localStorage.setItem(EXPIRES_AT_KEY, expiresAt);
         localStorage.setItem(REMEMBER_ME_KEY, JSON.stringify(rememberMe));
         if (user) {
-            localStorage.setItem(USER_KEY, JSON.stringify(user));
+            localStorage.setItem(USER_KEY, JSON.stringify(normalizeUser(user)));
         }
     },
 
@@ -58,7 +71,14 @@ export const tokenManager = {
      */
     getUser() {
         const value = localStorage.getItem(USER_KEY);
-        return value ? JSON.parse(value) : null;
+        if (!value) return null;
+
+        try {
+            return normalizeUser(JSON.parse(value));
+        } catch (error) {
+            console.error('Failed to parse user from storage:', error);
+            return null;
+        }
     },
 
     /**

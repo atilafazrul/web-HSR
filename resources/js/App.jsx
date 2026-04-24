@@ -133,7 +133,7 @@ export default function App() {
 
         {/* FOTO PROJEK - bisa diakses semua role yang authenticated */}
         <Route
-          path="/projek-kerja/foto/:id"
+          path="/projek-kerja/foto/:id/*"
           element={<FotoProjekPage />}
         />
 
