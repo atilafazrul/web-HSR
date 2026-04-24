@@ -26,7 +26,7 @@ class DatabaseSeeder extends Seeder
                 'phone' => null,
                 'address' => null,
                 'profile_photo' => null,
-                'password' => Hash::make('123456'),
+                'password' => Hash::make('pthsr2021'),
                 'role' => 'super_admin',
                 'divisi' => null,
             ]
