@@ -1052,6 +1052,7 @@ class ProjekKerjaController extends Controller
 
     /**
      * Update status lunas untuk item biaya tertentu di dalam project.
+     * Hanya field is_lunas yang diubah, field lain (oleh, nominal, keterangan, created_at) tetap sama.
      */
     public function updateBiayaItemLunas(Request $request, $id)
     {
@@ -1093,8 +1094,10 @@ class ProjekKerjaController extends Controller
             ], 404);
         }
 
+        // Hanya update field is_lunas, semua field lain tetap sama
+        // Ini untuk mencegah perubahan tidak sengaja pada field 'oleh' atau field lainnya
         $items[$index]['is_lunas'] = (bool) $validated['is_lunas'];
-        $projek->{$field} = array_values($items);
+        $projek->{$field} = $items; // Gunakan items langsung tanpa array_values untuk menjaga index
         $projek->save();
 
         return response()->json([

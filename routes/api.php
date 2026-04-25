@@ -11,7 +11,7 @@ use App\Models\User;
 /* ================= CONTROLLER ================= */
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjekKerjaController;
-use App\Http\Controllers\NotificationController;
+// use App\Http\Controllers\NotificationController; // Controller belum dibuat
 use App\Http\Controllers\FormPekerjaanController;
 use App\Http\Controllers\BarangController;
 use App\Http\Controllers\LogistikInventoryController;
@@ -224,9 +224,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    Route::get('/notifications', [NotificationController::class, 'index']);
-    Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
-    Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    // Route::get('/notifications', [NotificationController::class, 'index']);
+    // Route::put('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+    // Route::put('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
 
 
     /*

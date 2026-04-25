@@ -471,6 +471,9 @@ const Dashboard = ({ user, windowWidth }) => {
         </div>
       </div>
 
+      {/* ================= BIAYA DILUAR PROJEK ================= */}
+      <BiayaDashboardPanel user={user} showInput={true} />
+
       {/* AKTIVITAS PEKERJAAN */}
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8">
         <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 md:mb-5 lg:mb-6">

@@ -260,6 +260,12 @@ export default React.memo(function RekapPerAkun({ user }) {
     let akunId = akun?.id || akunIdMap[akun?.nama_akun || akun?.name];
     const akunName = akun?.nama_akun || akun?.name;
 
+    // Jika nama akun adalah "Unknown", user sudah dihapus dan data tidak valid
+    if (akunName === 'Unknown' || akunName === 'unknown') {
+      alert("Data akun tidak valid. User terkait mungkin sudah dihapus dari sistem.");
+      return;
+    }
+
     // Jika ID tidak ditemukan di mapping dan bukan dari projek, coba cari via API
     if (!akunId && akunName && akun.source !== 'projek') {
       try {
@@ -332,6 +338,14 @@ export default React.memo(function RekapPerAkun({ user }) {
 
     // Cari id dari mapping atau gunakan created_by langsung
     const akunName = akun?.nama_akun || akun?.name;
+
+    // Jika nama akun adalah "Unknown", user sudah dihapus dan data tidak valid
+    // Jangan gunakan created_by sebagai fallback untuk "Unknown" karena akan menampilkan data user yang sudah dihapus
+    if (akunName === 'Unknown' || akunName === 'unknown') {
+      alert("Data akun tidak valid. User terkait mungkin sudah dihapus dari sistem.");
+      return;
+    }
+
     const createdByFromData = akun?.created_by; // Gunakan created_by dari dataByAkun jika ada
     let akunId = akun?.id || createdByFromData || akunIdMap[akunName];
 

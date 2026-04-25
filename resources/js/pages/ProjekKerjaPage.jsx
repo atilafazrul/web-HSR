@@ -660,8 +660,12 @@ export default function ProjekKerjaPage() {
   const removeBiayaRow = (key, index) => {
     setBiayaEdit((prev) => {
       const next = [...prev[key]];
-      if (next.length <= 1) return prev;
-      next.splice(index, 1);
+      if (next.length <= 1) {
+        // Jika hanya ada 1 baris, ganti dengan baris kosong
+        next[0] = emptyBiayaRow();
+      } else {
+        next.splice(index, 1);
+      }
       return { ...prev, [key]: next };
     });
   };

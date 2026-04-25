@@ -261,13 +261,18 @@ class DashboardBiayaController extends Controller
         // Ambil biaya dari dashboard_biayas
         $query = DashboardBiaya::query();
         $query->whereYear('created_at', $tahun)
-              ->whereMonth('created_at', $bulan);
+              ->whereMonth('created_at', $bulan)
+              ->whereNotNull('created_by'); // Hanya ambil data user yang masih ada
 
         $dashboardBiayaByAkun = $query->with(['creator:id,name'])
             ->get()
             ->groupBy('created_by')
             ->map(function ($items) {
                 $akun = $items->first()->creator;
+                // Skip jika user sudah dihapus (creator = null)
+                if (!$akun) {
+                    return null;
+                }
                 return [
                     'nama_akun' => $akun->name ?? 'Unknown',
                     'created_by' => $items->first()->created_by,
@@ -276,12 +281,17 @@ class DashboardBiayaController extends Controller
                     'reimbursment' => $items->where('kategori', 'reimbursment')->sum('nominal'),
                     'total' => $items->sum('nominal'),
                 ];
-            });
+            })->filter(); // Hapus nilai null
 
         // Ambil biaya dari projek_kerjas
         $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
             ->whereMonth('created_at', $bulan)
             ->get(['biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items']);
+
+        // Ambil semua user yang masih aktif untuk validasi
+        $activeUserNames = \App\Models\User::pluck('name')
+            ->map(fn ($name) => strtolower(trim($name)))
+            ->flip(); // Untuk O(1) lookup
 
         $projekBiayaByAkun = collect();
 
@@ -289,10 +299,11 @@ class DashboardBiayaController extends Controller
             // Proses biaya jalan
             $jalanItems = $projek->biaya_jalan_items ?? [];
             foreach ($jalanItems as $item) {
-                $oleh = $item['oleh'] ?? 'Unknown';
+                $oleh = trim($item['oleh'] ?? '');
                 $nominal = (float) ($item['nominal'] ?? 0);
 
-                if ($nominal > 0) {
+                // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
+                if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     // Gunakan lowercase key untuk case-insensitive grouping
                     $lowerOleh = strtolower($oleh);
                     $existing = $projekBiayaByAkun->get($lowerOleh);
@@ -315,10 +326,10 @@ class DashboardBiayaController extends Controller
             // Proses biaya pengeluaran
             $pengeluaranItems = $projek->biaya_pengeluaran_items ?? [];
             foreach ($pengeluaranItems as $item) {
-                $oleh = $item['oleh'] ?? 'Unknown';
+                $oleh = trim($item['oleh'] ?? '');
                 $nominal = (float) ($item['nominal'] ?? 0);
 
-                if ($nominal > 0) {
+                if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $lowerOleh = strtolower($oleh);
                     $existing = $projekBiayaByAkun->get($lowerOleh);
                     if ($existing) {
@@ -340,10 +351,10 @@ class DashboardBiayaController extends Controller
             // Proses biaya reimbursment
             $reimbursmentItems = $projek->biaya_reimbursment_items ?? [];
             foreach ($reimbursmentItems as $item) {
-                $oleh = $item['oleh'] ?? 'Unknown';
+                $oleh = trim($item['oleh'] ?? '');
                 $nominal = (float) ($item['nominal'] ?? 0);
 
-                if ($nominal > 0) {
+                if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $lowerOleh = strtolower($oleh);
                     $existing = $projekBiayaByAkun->get($lowerOleh);
                     if ($existing) {
@@ -457,6 +468,11 @@ class DashboardBiayaController extends Controller
 
         $users = collect();
 
+        // Ambil semua user yang masih aktif untuk validasi
+        $activeUserNames = \App\Models\User::pluck('name')
+            ->map(fn ($name) => strtolower(trim($name)))
+            ->flip(); // Untuk O(1) lookup
+
         // Jika bulan dan tahun disediakan, hanya cari user yang memiliki biaya di periode tersebut
         if ($bulan && $tahun) {
             // Cari user dengan nama yang cocok DAN memiliki biaya di dashboard_biayas
@@ -491,8 +507,9 @@ class DashboardBiayaController extends Controller
                     $projek->biaya_reimbursment_items ?? []
                 );
                 foreach ($items as $item) {
-                    $oleh = $item['oleh'] ?? null;
-                    if ($oleh && stripos($oleh, $nama) !== false) {
+                    $oleh = trim($item['oleh'] ?? '');
+                    // Skip jika user sudah dihapus atau tidak cocok dengan pencarian
+                    if ($oleh !== '' && stripos($oleh, $nama) !== false && $activeUserNames->has(strtolower($oleh))) {
                         $olehNames->push([
                             'id' => 0,
                             'nama_akun' => $oleh,
@@ -557,7 +574,8 @@ class DashboardBiayaController extends Controller
         // Ambil biaya dari dashboard_biayas
         $query = DashboardBiaya::query();
         $query->whereYear('created_at', $tahun)
-              ->whereMonth('created_at', $bulan);
+              ->whereMonth('created_at', $bulan)
+              ->whereNotNull('created_by'); // Hanya ambil data user yang masih ada
 
         // Jika nama_akun disediakan (dari projek), cari user id dulu
         $targetUserId = $createdBy;
@@ -576,6 +594,7 @@ class DashboardBiayaController extends Controller
         $dashboardBiaya = $query->with(['creator:id,name', 'updater:id,name'])
             ->orderBy('created_at', 'desc')
             ->get()
+            ->filter(fn ($row) => $row->creator !== null) // Skip jika user sudah dihapus
             ->map(function ($row) {
                 $row->source = 'dashboard';
                 return $row;
@@ -591,6 +610,11 @@ class DashboardBiayaController extends Controller
                 $filterNamaAkun = trim((string) $firstItem->creator->name);
             }
         }
+
+        // Ambil semua user yang masih aktif untuk validasi
+        $activeUserNames = \App\Models\User::pluck('name')
+            ->map(fn ($name) => strtolower(trim($name)))
+            ->flip(); // Untuk O(1) lookup
 
         // Ambil biaya dari projek_kerjas
         $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
@@ -610,7 +634,8 @@ class DashboardBiayaController extends Controller
                     $shouldInclude = true;
                 }
 
-                if ($shouldInclude && $nominal > 0) {
+                // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
+                if ($shouldInclude && $nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_jalan_' . uniqid(),
                         'project_id' => $projek->id,
@@ -640,7 +665,8 @@ class DashboardBiayaController extends Controller
                     $shouldInclude = true;
                 }
 
-                if ($shouldInclude && $nominal > 0) {
+                // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
+                if ($shouldInclude && $nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_pengeluaran_' . uniqid(),
                         'project_id' => $projek->id,
@@ -670,7 +696,8 @@ class DashboardBiayaController extends Controller
                     $shouldInclude = true;
                 }
 
-                if ($shouldInclude && $nominal > 0) {
+                // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
+                if ($shouldInclude && $nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_reimbursment_' . uniqid(),
                         'project_id' => $projek->id,
