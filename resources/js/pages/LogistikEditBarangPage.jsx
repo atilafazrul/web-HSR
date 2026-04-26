@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
+import { useI18n } from "../i18n";
 
 const ASSET_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
 
@@ -9,6 +10,8 @@ function newId() {
 }
 
 export default function LogistikEditBarangPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -54,7 +57,7 @@ export default function LogistikEditBarangPage() {
         }
 
         if (!data) {
-          alert("Data barang tidak ditemukan ❌");
+          alert(tr("Data barang tidak ditemukan ❌", "Item data not found ❌"));
           navigate(-1);
           return;
         }
@@ -82,7 +85,7 @@ export default function LogistikEditBarangPage() {
       } catch (err) {
 
         console.error("LOAD ERROR:", err);
-        alert("Gagal mengambil data barang ❌");
+        alert(tr("Gagal mengambil data barang ❌", "Failed to load item data ❌"));
 
       } finally {
 
@@ -108,7 +111,7 @@ export default function LogistikEditBarangPage() {
 
       for (const f of selected) {
         if (next.length >= 6) {
-          alert("Maksimal 6 foto ❗");
+          alert(tr("Maksimal 6 foto ❗", "Maximum 6 photos ❗"));
           break;
         }
         const k = keyOf(f);
@@ -147,7 +150,7 @@ export default function LogistikEditBarangPage() {
 
     if (!file || idx == null) return;
     if (!file.type.startsWith("image/")) {
-      alert("Pilih file gambar");
+      alert(tr("Pilih file gambar", "Please select an image file"));
       return;
     }
 
@@ -215,7 +218,7 @@ export default function LogistikEditBarangPage() {
         }
       );
 
-      alert("Barang berhasil diupdate ✅");
+      alert(tr("Barang berhasil diupdate ✅", "Item updated successfully ✅"));
 
       navigate(`${basePath}/logistik/inventory`);
 
@@ -223,7 +226,7 @@ export default function LogistikEditBarangPage() {
 
       console.error("UPDATE ERROR:", err.response || err);
       const msg = err.response?.data?.message;
-      alert(msg || "Gagal update barang ❌");
+      alert(msg || tr("Gagal update barang ❌", "Failed to update item ❌"));
 
     }
 
@@ -241,7 +244,7 @@ export default function LogistikEditBarangPage() {
     <div>
 
       <h2 className="text-3xl font-bold mb-6">
-        Edit Barang Logistik
+        {tr("Edit Barang Logistik", "Edit Logistics Item")}
       </h2>
 
       <form
@@ -268,7 +271,7 @@ export default function LogistikEditBarangPage() {
         <input
           type="text"
           name="kategori"
-          placeholder="Kategori"
+          placeholder={tr("Kategori", "Category")}
           value={form.kategori}
           onChange={handleChange}
           className="w-full border p-3 rounded"
@@ -278,7 +281,7 @@ export default function LogistikEditBarangPage() {
           type="number"
           name="stok"
           min="0"
-          placeholder="Stok"
+          placeholder={tr("Stok", "Stock")}
           value={form.stok}
           onChange={handleChange}
           className="w-full border p-3 rounded"
@@ -287,7 +290,7 @@ export default function LogistikEditBarangPage() {
         <input
           type="text"
           name="lokasi"
-          placeholder="Lokasi Barang"
+          placeholder={tr("Lokasi Barang", "Item Location")}
           value={form.lokasi}
           onChange={handleChange}
           className="w-full border p-3 rounded"
@@ -303,7 +306,7 @@ export default function LogistikEditBarangPage() {
 
         <div>
           <label className="block mb-1 text-sm font-medium">
-            Foto barang
+            {tr("Foto barang", "Item Photos")}
           </label>
           <input
             type="file"
@@ -314,7 +317,7 @@ export default function LogistikEditBarangPage() {
             className="w-full border p-3 rounded disabled:opacity-50"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Maksimal 6 foto. <strong>Ganti</strong> mengganti satu foto, silang untuk hapus.
+            {tr("Maksimal 6 foto. ", "Maximum 6 photos. ")}<strong>{tr("Ganti", "Replace")}</strong>{tr(" mengganti satu foto, silang untuk hapus.", " replaces one photo, X deletes it.")}
           </p>
 
           {photoItems.length > 0 && (
@@ -329,14 +332,14 @@ export default function LogistikEditBarangPage() {
                   <div key={it.id} className="relative w-full">
                     <img
                       src={src}
-                      alt={`Foto ${idx + 1}`}
+                      alt={`${tr("Foto", "Photo")} ${idx + 1}`}
                       className="w-full h-28 object-cover rounded-lg border bg-gray-50"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
                       className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center hover:bg-red-700"
-                      title="Hapus"
+                      title={tr("Hapus", "Delete")}
                     >
                       ×
                     </button>
@@ -345,7 +348,7 @@ export default function LogistikEditBarangPage() {
                       onClick={() => openReplace(idx)}
                       className="mt-1 w-full text-xs py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-800"
                     >
-                      Ganti
+                      {tr("Ganti", "Replace")}
                     </button>
                   </div>
                 );
@@ -360,7 +363,7 @@ export default function LogistikEditBarangPage() {
             type="submit"
             className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
           >
-            Update
+            {tr("Update", "Update")}
           </button>
 
           <button
@@ -368,7 +371,7 @@ export default function LogistikEditBarangPage() {
             onClick={() => navigate(-1)}
             className="bg-gray-400 px-5 py-2 rounded hover:bg-gray-500"
           >
-            Batal
+            {tr("Batal", "Cancel")}
           </button>
 
         </div>

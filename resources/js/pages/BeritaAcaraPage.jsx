@@ -1,9 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText, ClipboardCheck, Wrench, FileSignature } from "lucide-react";
+import { useI18n } from "../i18n";
 
 export default function BeritaAcaraPage() {
   const navigate = useNavigate();
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
@@ -18,12 +21,15 @@ export default function BeritaAcaraPage() {
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <h2 className="text-3xl font-bold">
-          Berita Acara
+          {tr("Berita Acara", "Minutes Report")}
         </h2>
       </div>
 
       <p className="text-gray-500 mb-8">
-        Pilih jenis berita acara yang ingin Anda buat atau kelola
+        {tr(
+          "Pilih jenis berita acara yang ingin Anda buat atau kelola",
+          "Choose the type of minutes report you want to create or manage"
+        )}
       </p>
 
       {/* Cards */}
@@ -32,7 +38,7 @@ export default function BeritaAcaraPage() {
         <Card
           icon={<Wrench size={30} className="text-purple-600" />}
           title="BAM"
-          subtitle="Berita Acara Maintenance"
+          subtitle={tr("Berita Acara Maintenance", "Maintenance Minutes Report")}
           onClick={() => navigate(`${basePath}/berita-acara/bam`)}
         />
 
@@ -40,7 +46,7 @@ export default function BeritaAcaraPage() {
         <Card
           icon={<ClipboardCheck size={30} className="text-blue-600" />}
           title="BAUF"
-          subtitle="Berita Acara Uji Fungsi"
+          subtitle={tr("Berita Acara Uji Fungsi", "Function Test Minutes Report")}
           onClick={() => navigate(`${basePath}/berita-acara/bauf`)}
         />
 
@@ -48,7 +54,7 @@ export default function BeritaAcaraPage() {
         <Card
           icon={<FileText size={30} className="text-green-600" />}
           title="BAST"
-          subtitle="Berita Acara Serah Terima"
+          subtitle={tr("Berita Acara Serah Terima", "Handover Minutes Report")}
           onClick={() => navigate(`${basePath}/berita-acara/bast`)}
         />
 
@@ -56,7 +62,7 @@ export default function BeritaAcaraPage() {
         <Card
           icon={<FileSignature size={30} className="text-orange-600" />}
           title="SPPD"
-          subtitle="Surat Perintah Perjalanan Dinas"
+          subtitle={tr("Surat Perintah Perjalanan Dinas", "Official Travel Order")}
           onClick={() => navigate(`${basePath}/berita-acara/sppd`)}
         />
       </div>

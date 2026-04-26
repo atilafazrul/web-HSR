@@ -1,6 +1,11 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axiosConfig";
 
+const tr = (id, en) => {
+  if (typeof window === "undefined") return id;
+  return localStorage.getItem("app_language") === "en" ? en : id;
+};
+
 export const usePdf = (user, currentDivisi = "IT") => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
@@ -195,7 +200,7 @@ export const usePdf = (user, currentDivisi = "IT") => {
 
     // Validasi dasar
     if (!formData.customer || !formData.nama_teknisi) {
-      alert("Harap lengkapi field wajib (Customer, Nama Teknisi)!");
+      alert(tr("Harap lengkapi field wajib (Customer, Nama Teknisi)!", "Please fill required fields (Customer, Technician Name)!"));
       return;
     }
 
@@ -251,7 +256,7 @@ export const usePdf = (user, currentDivisi = "IT") => {
       const result = response.data;
 
       if (response.status === 200 || response.status === 201) {
-        alert(isEditing ? "Dokumen berhasil diperbarui!" : "Dokumen berhasil disimpan!");
+        alert(isEditing ? tr("Dokumen berhasil diperbarui!", "Document updated successfully!") : tr("Dokumen berhasil disimpan!", "Document saved successfully!"));
         resetForm();
         setIsEditing(false);
         setEditId(null);
@@ -263,13 +268,13 @@ export const usePdf = (user, currentDivisi = "IT") => {
         console.error("Validation errors:", result.errors);
         const errorMsg = result.errors
           ? Object.entries(result.errors).map(([field, msgs]) => `${field}: ${msgs.join(', ')}`).join('\n')
-          : (result.message || "Gagal menyimpan data");
-        alert("Validasi gagal:\n" + errorMsg);
+          : (result.message || tr("Gagal menyimpan data", "Failed to save data"));
+        alert(tr("Validasi gagal:\n", "Validation failed:\n") + errorMsg);
       }
 
     } catch (error) {
       console.error("Error submitting:", error);
-      alert("Terjadi error saat menyimpan data");
+      alert(tr("Terjadi error saat menyimpan data", "An error occurred while saving data"));
     } finally {
       setLoading(false);
     }
@@ -351,7 +356,7 @@ export const usePdf = (user, currentDivisi = "IT") => {
       }
     } catch (error) {
       console.error("Error fetching report detail:", error);
-      alert("Gagal memuat data untuk diedit");
+      alert(tr("Gagal memuat data untuk diedit", "Failed to load data for editing"));
     }
   };
 
@@ -385,11 +390,11 @@ export const usePdf = (user, currentDivisi = "IT") => {
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       } else {
-        alert('Gagal generate PDF');
+        alert(tr("Gagal generate PDF", "Failed to generate PDF"));
       }
     } catch (error) {
       console.error('Error generating PDF:', error);
-      alert('Terjadi error saat generate PDF');
+      alert(tr("Terjadi error saat generate PDF", "An error occurred while generating PDF"));
     }
   };
 

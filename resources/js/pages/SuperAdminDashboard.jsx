@@ -35,6 +35,7 @@ import Profile from "./Profile.jsx";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
 import BiayaDashboardPanel from "../components/BiayaDashboardPanel";
+import { useI18n } from "../i18n/index.jsx";
 
 import ITPage from "./ITPage";
 import InventoryPage from "./InventoryPage";
@@ -70,6 +71,8 @@ import LogistikEditBarangPage from "./LogistikEditBarangPage";
 /* ================= MAIN ================= */
 
 export default function SuperAdminDashboard({ user, logout }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -96,29 +99,29 @@ export default function SuperAdminDashboard({ user, logout }) {
   const getPageTitle = () => {
     const path = location.pathname;
 
-    if (path.includes("projek-kerja/foto")) return "Kelola Foto & dokumen";
-    if (path.includes("projek-kerja")) return "Projek Kerja";
-    if (path.includes("/it/buat-pdf")) return "Buat PDF - IT";
-    if (path.includes("/service/buat-pdf")) return "Buat PDF - Service";
-    if (path.includes("/sales/buat-pdf")) return "Buat PDF - Sales";
-    if (path.includes("/sales/target")) return "Target Penjualan";
-    if (path.includes("/kontraktor/buat-pdf")) return "Buat PDF - Kontraktor";
+    if (path.includes("projek-kerja/foto")) return language === "en" ? "Manage Photos & Documents" : "Kelola Foto & dokumen";
+    if (path.includes("projek-kerja")) return language === "en" ? "Project Work" : "Projek Kerja";
+    if (path.includes("/it/buat-pdf")) return language === "en" ? "Create PDF - IT" : "Buat PDF - IT";
+    if (path.includes("/service/buat-pdf")) return language === "en" ? "Create PDF - Service" : "Buat PDF - Service";
+    if (path.includes("/sales/buat-pdf")) return language === "en" ? "Create PDF - Sales" : "Buat PDF - Sales";
+    if (path.includes("/sales/target")) return language === "en" ? "Sales Target" : "Target Penjualan";
+    if (path.includes("/kontraktor/buat-pdf")) return language === "en" ? "Create PDF - Kontraktor" : "Buat PDF - Kontraktor";
     if (path.includes("/it")) return "Divisi IT";
     if (path.includes("service")) return "Divisi Service";
     if (path.includes("sales")) return "Divisi Sales";
     if (path.includes("kontraktor")) return "Divisi Kontraktor";
     if (path.includes("logistik")) return "Divisi Logistik";
     if (path.includes("purchasing")) return "Divisi Purchasing";
-    if (path.includes("profile")) return "Profile";
+    if (path.includes("profile")) return language === "en" ? "Profile" : "Profil";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("karyawan")) return "Profil Karyawan";
 
-    return "Super Admin";
+    return language === "en" ? "Super Admin" : "Super Admin";
   };
 
   useEffect(() => {
     document.title = `WEB HSR - ${getPageTitle()}`;
-  }, [location.pathname]);
+  }, [language, location.pathname]);
 
   return (
     <div className="flex min-h-screen bg-[#f4f6fb] w-full overflow-x-hidden">
@@ -237,6 +240,8 @@ export default function SuperAdminDashboard({ user, logout }) {
 /* ================= DASHBOARD ================= */
 
 const Dashboard = ({ user, windowWidth }) => {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const [projek, setProjek] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -289,7 +294,7 @@ const Dashboard = ({ user, windowWidth }) => {
 
   /* ================= DELETE ================= */
   const handleDelete = async (id) => {
-    if (!window.confirm("Yakin ingin menghapus projek ini?")) return;
+    if (!window.confirm(language === "en" ? "Are you sure you want to delete this project?" : "Yakin ingin menghapus projek ini?")) return;
 
     try {
       await axios.delete(
@@ -297,7 +302,7 @@ const Dashboard = ({ user, windowWidth }) => {
       );
       setProjek(prev => prev.filter(p => p.id !== id));
     } catch {
-      alert("Gagal menghapus data");
+      alert(language === "en" ? "Failed to delete data" : "Gagal menghapus data");
     }
   };
 
@@ -323,7 +328,7 @@ const Dashboard = ({ user, windowWidth }) => {
       setShowDesc(false);
     } catch (err) {
       console.log(err.response);
-      alert("Gagal update deskripsi");
+      alert(language === "en" ? "Failed to update description" : "Gagal update deskripsi");
     }
   };
 
@@ -371,6 +376,22 @@ const Dashboard = ({ user, windowWidth }) => {
       });
   }, [projek]);
 
+  const displayStatus = (status) => {
+    const map = {
+      Dibuat: "Created",
+      Persiapan: "Preparation",
+      "Proses Pekerjaan": "Work In Progress",
+      Proses: "In Progress",
+      Editing: "Editing",
+      Invoicing: "Invoicing",
+      Selesai: "Completed",
+      Terlambat: "Delayed",
+      "Barang sudah siap": "Items Ready",
+      "Tanpa Status": "No Status",
+    };
+    return language === "en" ? (map[status] || status) : status;
+  };
+
   // Tentukan ukuran berdasarkan windowWidth
   const isMobile = windowWidth < 640;
   const isTablet = windowWidth >= 640 && windowWidth < 1024;
@@ -388,55 +409,62 @@ const Dashboard = ({ user, windowWidth }) => {
     <>
       {/* DIVISI CARD */}
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-5 md:mb-6 lg:mb-8 xl:mb-12">
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 md:mb-5 lg:mb-6">Divisi</h3>
-
+        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 md:mb-5 lg:mb-6">
+          {language === "en" ? "Divisions" : "Divisi"}
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
           <DivisiCard
-            title="Divisi IT"
+            title={language === "en" ? "IT Division" : "Divisi IT"}
             image="/images/IT meet.jpg"
             count={projek.filter(p => p.divisi === "IT").length}
             onClick={() => navigate(`${basePath}/it`)}
             isMobile={isMobile}
+            language={language}
           />
 
           <DivisiCard
-            title="Divisi Service"
+            title={language === "en" ? "Service Division" : "Divisi Service"}
             image="/images/Service Card.jpg"
             count={projek.filter(p => p.divisi === "Service").length}
             onClick={() => navigate(`${basePath}/service`)}
             isMobile={isMobile}
+            language={language}
           />
 
           <DivisiCard
-            title="Divisi Sales"
+            title={language === "en" ? "Sales Division" : "Divisi Sales"}
             image="/images/Sales Card.jpg"
             count={projek.filter(p => p.divisi === "Sales").length}
             onClick={() => navigate(`${basePath}/sales`)}
             isMobile={isMobile}
+            language={language}
           />
 
           <DivisiCard
-            title="Divisi Kontraktor"
+            title={language === "en" ? "Contractor Division" : "Divisi Kontraktor"}
             image="/images/Kontraktor Card.jpg"
             count={projek.filter(p => p.divisi === "Kontraktor").length}
             onClick={() => navigate(`${basePath}/kontraktor`)}
             isMobile={isMobile}
+            language={language}
           />
 
           <DivisiCard
-            title="Divisi Logistik"
+            title={language === "en" ? "Logistics Division" : "Divisi Logistik"}
             image="/images/IT meet.jpg"
             count={projek.filter(p => p.divisi === "Logistik").length}
             onClick={() => navigate(`${basePath}/logistik`)}
             isMobile={isMobile}
+            language={language}
           />
 
           <DivisiCard
-            title="Divisi Purchasing"
+            title={language === "en" ? "Purchasing Division" : "Divisi Purchasing"}
             image="/images/IT meet.jpg"
             count={projek.filter(p => p.divisi === "Purchasing").length}
             onClick={() => navigate(`${basePath}/purchasing`)}
             isMobile={isMobile}
+            language={language}
           />
         </div>
       </div>
@@ -444,24 +472,26 @@ const Dashboard = ({ user, windowWidth }) => {
       {/* SUMMARY */}
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-5 md:mb-6 lg:mb-8 xl:mb-12">
         <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-1">Summary Status</h3>
-        <p className="text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4 md:mb-5 lg:mb-6">Ringkasan pekerjaan berdasarkan semua status yang aktif.</p>
+        <p className="text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4 md:mb-5 lg:mb-6">
+          {tr("Ringkasan pekerjaan berdasarkan semua status yang aktif.", "Work summary based on all active statuses.")}
+        </p>
 
         <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
-          <SummaryCard title="Total Tugas" value={total} icon={<ListTodo size={isMobile ? 16 : 20} />} color="blue" isMobile={isMobile} />
+          <SummaryCard title={tr("Total Tugas", "Total Tasks")} value={total} icon={<ListTodo size={isMobile ? 16 : 20} />} color="blue" isMobile={isMobile} />
           {statusSummary.map((status) => (
             <SummaryCard
               key={status.label}
-              title={status.label}
+              title={displayStatus(status.label)}
               value={status.count}
               icon={
                 status.label === "Selesai" ? <CheckCircle size={isMobile ? 16 : 20} />
-                  : status.label.includes("Proses") ? <Clock size={isMobile ? 16 : 20} />
+                  : (status.label.includes("Proses") || status.label === "Proses") ? <Clock size={isMobile ? 16 : 20} />
                     : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
                       : <Activity size={isMobile ? 16 : 20} />
               }
               color={
                 status.label === "Selesai" ? "green"
-                  : status.label.includes("Proses") ? "yellow"
+                  : (status.label.includes("Proses") || status.label === "Proses") ? "yellow"
                     : status.label === "Terlambat" ? "red"
                       : "blue"
               }
@@ -797,7 +827,7 @@ const Dashboard = ({ user, windowWidth }) => {
 };
 
 /* ================= DIVISI CARD ================= */
-const DivisiCard = ({ title, count, image, onClick, isMobile }) => {
+const DivisiCard = ({ title, count, image, onClick, isMobile, language = "id" }) => {
   const defaultImage = image || "https://via.placeholder.com/400x300?text=Divisi";
 
   return (
@@ -816,10 +846,10 @@ const DivisiCard = ({ title, count, image, onClick, isMobile }) => {
       <div className="absolute bottom-0 p-3 sm:p-4 md:p-5 lg:p-6 text-white">
         <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">{title}</h3>
         <p className="text-xs sm:text-xs md:text-sm mb-1 sm:mb-2">
-          Total {count} Pekerjaan
+          {language === "en" ? "Total" : "Total"} {count} {language === "en" ? "Tasks" : "Pekerjaan"}
         </p>
         <button className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 rounded-lg sm:rounded-xl text-xs">
-          Masuk →
+          {language === "en" ? "Open" : "Masuk"} →
         </button>
       </div>
     </div>

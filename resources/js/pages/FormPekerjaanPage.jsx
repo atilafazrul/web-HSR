@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
+import { useI18n } from "../i18n";
 
 export default function FormPekerjaanPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const navigate = useNavigate();
 
@@ -65,12 +68,12 @@ export default function FormPekerjaanPage() {
 
       window.open(url);
 
-      alert("PDF berhasil dibuat ✅");
+      alert(tr("PDF berhasil dibuat ✅", "PDF generated successfully ✅"));
 
     } catch (err) {
 
       console.error(err);
-      alert("Gagal membuat PDF ❌");
+      alert(tr("Gagal membuat PDF ❌", "Failed to generate PDF ❌"));
 
     } finally {
 
@@ -86,7 +89,7 @@ export default function FormPekerjaanPage() {
       <div className="flex items-center gap-4 mb-6">
 
         <h2 className="text-3xl font-bold">
-          Form Service Report
+          {tr("Form Service Report", "Service Report Form")}
         </h2>
 
       </div>
@@ -99,25 +102,25 @@ export default function FormPekerjaanPage() {
           className="space-y-4"
         >
 
-          <input name="report_no" onChange={handleChange} placeholder="Report No" className="input" />
+          <input name="report_no" onChange={handleChange} placeholder={tr("Nomor Laporan", "Report No")} className="input" />
 
-          <input name="customer" onChange={handleChange} placeholder="Customer" className="input" />
+          <input name="customer" onChange={handleChange} placeholder={tr("Pelanggan", "Customer")} className="input" />
 
-          <input name="contact_person" onChange={handleChange} placeholder="Contact Person" className="input" />
+          <input name="contact_person" onChange={handleChange} placeholder={tr("Kontak Person", "Contact Person")} className="input" />
 
-          <input name="address" onChange={handleChange} placeholder="Address" className="input" />
+          <input name="address" onChange={handleChange} placeholder={tr("Alamat", "Address")} className="input" />
 
-          <input name="phone" onChange={handleChange} placeholder="Phone" className="input" />
+          <input name="phone" onChange={handleChange} placeholder={tr("Telepon", "Phone")} className="input" />
 
           <hr />
 
-          <input name="brand" onChange={handleChange} placeholder="Brand" className="input" />
+          <input name="brand" onChange={handleChange} placeholder={tr("Merek", "Brand")} className="input" />
 
-          <input name="model" onChange={handleChange} placeholder="Model" className="input" />
+          <input name="model" onChange={handleChange} placeholder={tr("Model", "Model")} className="input" />
 
-          <input name="serial_no" onChange={handleChange} placeholder="Serial No" className="input" />
+          <input name="serial_no" onChange={handleChange} placeholder={tr("Nomor Serial", "Serial No")} className="input" />
 
-          <input name="description" onChange={handleChange} placeholder="Description" className="input" />
+          <input name="description" onChange={handleChange} placeholder={tr("Deskripsi", "Description")} className="input" />
 
           <div className="grid grid-cols-2 gap-4">
 
@@ -129,18 +132,18 @@ export default function FormPekerjaanPage() {
 
           <hr />
 
-          <textarea name="problem" onChange={handleChange} placeholder="Problem Description" className="input h-24" />
+          <textarea name="problem" onChange={handleChange} placeholder={tr("Deskripsi Masalah", "Problem Description")} className="input h-24" />
 
-          <textarea name="service_performed" onChange={handleChange} placeholder="Service Performed" className="input h-24" />
+          <textarea name="service_performed" onChange={handleChange} placeholder={tr("Layanan yang Dikerjakan", "Service Performed")} className="input h-24" />
 
-          <textarea name="recommendation" onChange={handleChange} placeholder="Recommendation" className="input h-24" />
+          <textarea name="recommendation" onChange={handleChange} placeholder={tr("Rekomendasi", "Recommendation")} className="input h-24" />
 
 
           <button
             disabled={loading}
             className="bg-blue-600 text-white py-3 rounded-xl w-full"
           >
-            {loading ? "Membuat PDF..." : "Download PDF"}
+            {loading ? tr("Membuat PDF...", "Generating PDF...") : tr("Unduh PDF", "Download PDF")}
           </button>
 
         </form>

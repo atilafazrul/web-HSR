@@ -1,8 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Archive, BarChart3, FileText, ListTodo } from "lucide-react";
+import { useI18n } from "../i18n/index.jsx";
 
 const SalesPage = () => {
+  const { language } = useI18n();
 
   const navigate = useNavigate();
 
@@ -28,13 +30,15 @@ const SalesPage = () => {
       <div className="flex items-center gap-4 mb-6">
 
         <h2 className="text-3xl font-bold">
-          Divisi Sales
+          {language === "en" ? "Sales Division" : "Divisi Sales"}
         </h2>
       </div>
 
 
       <p className="text-gray-500 mb-8">
-        Kelola target, progres pekerjaan, dan dokumentasi penjualan
+        {language === "en"
+          ? "Manage targets, work progress, and sales documentation"
+          : "Kelola target, progres pekerjaan, dan dokumentasi penjualan"}
       </p>
 
 
@@ -45,8 +49,8 @@ const SalesPage = () => {
         {!isUserRole && (
           <Card
             icon={<BarChart3 size={30} className="text-blue-600" />}
-            title="Target"
-            desc="Kelola target dan performa penjualan"
+            title={language === "en" ? "Target" : "Target"}
+            desc={language === "en" ? "Manage sales targets and performance" : "Kelola target dan performa penjualan"}
             onClick={() => navigate(`${basePath}/sales/target`)}
           />
         )}
@@ -54,16 +58,16 @@ const SalesPage = () => {
         {/* PROGRES */}
         <Card
           icon={<ListTodo size={30} className="text-green-600" />}
-          title="Progres Pekerjaan"
-          desc="Pantau status dan perkembangan penjualan"
+          title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
+          desc={language === "en" ? "Track sales status and progress" : "Pantau status dan perkembangan penjualan"}
           onClick={() => navigate(`${basePath}/sales/projek`)}
         />
 
         {!isUserRole && (
           <Card
             icon={<Archive size={30} className="text-amber-600" />}
-            title="Archive Pekerjaan"
-            desc="Lihat pekerjaan selesai yang sudah di-archive"
+            title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
+            desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/sales/projek/archive`)}
           />
         )}
@@ -72,8 +76,8 @@ const SalesPage = () => {
         {!isUserRole && (
           <Card
             icon={<FileText size={30} className="text-purple-600" />}
-            title="Buat PDF"
-            desc="Buat PDF pekerjaan sales"
+            title={language === "en" ? "Create PDF" : "Buat PDF"}
+            desc={language === "en" ? "Generate sales work PDF" : "Buat PDF pekerjaan sales"}
             onClick={() => navigate(`${basePath}/sales/buat-pdf`)}
           />
         )}

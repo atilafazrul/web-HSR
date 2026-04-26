@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
+import { useI18n } from "../i18n";
 
 const ASSET_BASE = (import.meta.env.VITE_API_URL || "").replace(/\/api\/?$/, "");
 
@@ -10,6 +11,8 @@ function newId() {
 }
 
 export default function EditBarangPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -65,7 +68,7 @@ export default function EditBarangPage() {
         }
 
         if (!data) {
-          alert("Data barang tidak ditemukan ❌");
+          alert(tr("Data barang tidak ditemukan ❌", "Item data not found ❌"));
           navigate(-1);
           return;
         }
@@ -97,7 +100,7 @@ export default function EditBarangPage() {
       } catch (err) {
 
         console.error("LOAD ERROR:", err);
-        alert("Gagal mengambil data barang ❌");
+        alert(tr("Gagal mengambil data barang ❌", "Failed to load item data ❌"));
 
       } finally {
 
@@ -130,7 +133,7 @@ export default function EditBarangPage() {
 
       for (const f of compressed) {
         if (next.length >= 6) {
-          alert("Maksimal 6 foto ❗");
+          alert(tr("Maksimal 6 foto ❗", "Maximum 6 photos ❗"));
           break;
         }
         const k = keyOf(f);
@@ -170,7 +173,7 @@ export default function EditBarangPage() {
 
     if (!file || idx == null) return;
     if (!file.type.startsWith("image/")) {
-      alert("Pilih file gambar");
+      alert(tr("Pilih file gambar", "Please select an image file"));
       return;
     }
     setProcessingPhotos(true);
@@ -252,7 +255,7 @@ export default function EditBarangPage() {
         }
       );
 
-      alert("Barang berhasil diupdate ✅");
+      alert(tr("Barang berhasil diupdate ✅", "Item updated successfully ✅"));
 
       navigate(`${basePath}/it/inventory`);
 
@@ -260,7 +263,7 @@ export default function EditBarangPage() {
 
       console.error("UPDATE ERROR:", err.response || err);
       const msg = err.response?.data?.message;
-      alert(msg || "Gagal update barang ❌");
+      alert(msg || tr("Gagal update barang ❌", "Failed to update item ❌"));
 
     } finally {
       setSaving(false);
@@ -286,7 +289,7 @@ export default function EditBarangPage() {
     <div>
 
       <h2 className="text-3xl font-bold mb-6">
-        Edit Barang
+        {tr("Edit Barang", "Edit Item")}
       </h2>
 
       <form
@@ -298,7 +301,7 @@ export default function EditBarangPage() {
             <div className="flex flex-col items-center gap-2 text-blue-700">
               <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <p className="text-sm font-medium">
-                {processingPhotos ? "Memproses foto..." : "Menyimpan perubahan..."}
+                {processingPhotos ? tr("Memproses foto...", "Processing photos...") : tr("Menyimpan perubahan...", "Saving changes...")}
               </p>
             </div>
           </div>
@@ -323,7 +326,7 @@ export default function EditBarangPage() {
         <input
           type="text"
           name="merek"
-          placeholder="Merek"
+          placeholder={tr("Merek", "Brand")}
           value={form.merek}
           onChange={handleChange}
           className="w-full border p-3 rounded"
@@ -350,7 +353,7 @@ export default function EditBarangPage() {
         <input
           type="text"
           name="kategori"
-          placeholder="Kategori"
+          placeholder={tr("Kategori", "Category")}
           value={form.kategori}
           onChange={handleChange}
           className="w-full border p-3 rounded"
@@ -360,7 +363,7 @@ export default function EditBarangPage() {
           type="number"
           name="stok"
           min="0"
-          placeholder="Stok"
+          placeholder={tr("Stok", "Stock")}
           value={form.stok}
           onChange={handleChange}
           className="w-full border p-3 rounded"
@@ -375,14 +378,14 @@ export default function EditBarangPage() {
             : "bg-green-100 text-green-600"
             }`}
         >
-          <option value="Siap Pakai">Siap Pakai</option>
-          <option value="Rusak">Rusak</option>
+          <option value="Siap Pakai">{tr("Siap Pakai", "Ready to Use")}</option>
+          <option value="Rusak">{tr("Rusak", "Damaged")}</option>
         </select>
 
         <input
           type="text"
           name="lokasi"
-          placeholder="Lokasi Barang"
+          placeholder={tr("Lokasi Barang", "Item Location")}
           value={form.lokasi}
           onChange={handleChange}
           className="w-full border p-3 rounded"
@@ -398,7 +401,7 @@ export default function EditBarangPage() {
 
         <div>
           <label className="block mb-1 text-sm font-medium">
-            Foto barang
+            {tr("Foto barang", "Item Photos")}
           </label>
           <input
             type="file"
@@ -410,12 +413,12 @@ export default function EditBarangPage() {
             className="w-full border p-3 rounded disabled:opacity-50"
           />
           <p className="text-xs text-gray-500 mt-1">
-            Maksimal 6 foto. Klik <strong>Ganti</strong> untuk mengganti satu foto, atau silang untuk hapus. Foto otomatis dikompres.
+            {tr("Maksimal 6 foto. Klik ", "Maximum 6 photos. Click ")}<strong>{tr("Ganti", "Replace")}</strong>{tr(" untuk mengganti satu foto, atau silang untuk hapus. Foto otomatis dikompres.", " to replace one photo, or X to delete. Photos are automatically compressed.")}
           </p>
           {processingPhotos && (
             <div className="mt-2 inline-flex items-center gap-2 text-xs text-blue-600">
               <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              Memproses foto...
+              {tr("Memproses foto...", "Processing photos...")}
             </div>
           )}
 
@@ -431,14 +434,14 @@ export default function EditBarangPage() {
                   <div key={it.id} className="relative w-full">
                     <img
                       src={src}
-                      alt={`Foto ${idx + 1}`}
+                      alt={`${tr("Foto", "Photo")} ${idx + 1}`}
                       className="w-full h-28 object-cover rounded-lg border bg-gray-50"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(idx)}
                       className="absolute -top-2 -right-2 bg-red-600 text-white w-6 h-6 rounded-full text-sm flex items-center justify-center hover:bg-red-700"
-                      title="Hapus"
+                      title={tr("Hapus", "Delete")}
                     >
                       ×
                     </button>
@@ -447,7 +450,7 @@ export default function EditBarangPage() {
                       onClick={() => openReplace(idx)}
                       className="mt-1 w-full text-xs py-1 rounded bg-gray-100 hover:bg-gray-200 text-gray-800"
                     >
-                      Ganti
+                      {tr("Ganti", "Replace")}
                     </button>
                   </div>
                 );
@@ -463,7 +466,7 @@ export default function EditBarangPage() {
             disabled={saving || processingPhotos}
             className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
-            {saving ? "Mengupdate..." : "Update"}
+            {saving ? tr("Mengupdate...", "Updating...") : tr("Update", "Update")}
           </button>
 
           <button
@@ -471,7 +474,7 @@ export default function EditBarangPage() {
             onClick={() => navigate(-1)}
             className="bg-gray-400 px-5 py-2 rounded hover:bg-gray-500"
           >
-            Batal
+            {tr("Batal", "Cancel")}
           </button>
 
         </div>

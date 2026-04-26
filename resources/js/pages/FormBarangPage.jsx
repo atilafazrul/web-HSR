@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
+import { useI18n } from "../i18n/index.jsx";
 
 export default function TambahBarangPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const navigate = useNavigate();
 
@@ -61,7 +64,7 @@ export default function TambahBarangPage() {
         const limited = merged.slice(0, 6);
 
         if (merged.length > 6) {
-          alert("Maksimal 6 foto ❗");
+          alert(tr("Maksimal 6 foto ❗", "Maximum 6 photos ❗"));
         }
 
         // Update previews in sync with files (append, not replace)
@@ -115,7 +118,7 @@ export default function TambahBarangPage() {
     e.preventDefault();
 
     if (!form.kode_barang || !form.nama_barang || !form.kategori) {
-      alert("Mohon lengkapi data wajib ❗");
+      alert(tr("Mohon lengkapi data wajib ❗", "Please complete required fields ❗"));
       return;
     }
 
@@ -149,7 +152,7 @@ export default function TambahBarangPage() {
         }
       );
 
-      alert("Barang berhasil ditambahkan ✅");
+      alert(tr("Barang berhasil ditambahkan ✅", "Item added successfully ✅"));
 
       navigate(`${basePath}/it/inventory`);
 
@@ -160,7 +163,7 @@ export default function TambahBarangPage() {
       if (err.response?.data?.message) {
         alert(err.response.data.message);
       } else {
-        alert("Gagal menambahkan barang ❌");
+        alert(tr("Gagal menambahkan barang ❌", "Failed to add item ❌"));
       }
 
     } finally {
@@ -174,7 +177,7 @@ export default function TambahBarangPage() {
     <div>
 
       <h2 className="text-3xl font-bold mb-6">
-        Tambah Barang
+        {tr("Tambah Barang", "Add Item")}
       </h2>
 
       <form
@@ -186,7 +189,7 @@ export default function TambahBarangPage() {
             <div className="flex flex-col items-center gap-2 text-blue-700">
               <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
               <p className="text-sm font-medium">
-                {processingPhotos ? "Memproses foto..." : "Mengupload data..."}
+                {processingPhotos ? tr("Memproses foto...", "Processing photos...") : tr("Mengupload data...", "Uploading data...")}
               </p>
             </div>
           </div>
@@ -195,7 +198,7 @@ export default function TambahBarangPage() {
         <input
           type="text"
           name="kode_barang"
-          placeholder="Kode Barang"
+          placeholder={tr("Kode Barang", "Item Code")}
           value={form.kode_barang}
           onChange={handleChange}
           required
@@ -205,7 +208,7 @@ export default function TambahBarangPage() {
         <input
           type="text"
           name="nama_barang"
-          placeholder="Nama Barang"
+          placeholder={tr("Nama Barang", "Item Name")}
           value={form.nama_barang}
           onChange={handleChange}
           required
@@ -242,7 +245,7 @@ export default function TambahBarangPage() {
         <input
           type="text"
           name="kategori"
-          placeholder="Kategori"
+          placeholder={tr("Kategori", "Category")}
           value={form.kategori}
           onChange={handleChange}
           required
@@ -252,7 +255,7 @@ export default function TambahBarangPage() {
         <input
           type="number"
           name="stok"
-          placeholder="Stok"
+          placeholder={tr("Stok", "Stock")}
           value={form.stok}
           onChange={handleChange}
           required
@@ -268,15 +271,15 @@ export default function TambahBarangPage() {
           required
           className="w-full border p-3 rounded-lg"
         >
-          <option value="">Pilih Keterangan</option>
-          <option value="Siap Pakai">Siap Pakai</option>
-          <option value="Rusak">Rusak</option>
+          <option value="">{tr("Pilih Keterangan", "Select Condition")}</option>
+          <option value="Siap Pakai">{tr("Siap Pakai", "Ready to Use")}</option>
+          <option value="Rusak">{tr("Rusak", "Damaged")}</option>
         </select>
 
         <input
           type="text"
           name="lokasi"
-          placeholder="Lokasi Barang"
+          placeholder={tr("Lokasi Barang", "Item Location")}
           value={form.lokasi}
           onChange={handleChange}
           className="w-full border p-3 rounded-lg"
@@ -284,7 +287,7 @@ export default function TambahBarangPage() {
 
         <div>
           <label className="block mb-1 text-sm font-medium">
-            Foto Barang
+            {tr("Foto Barang", "Item Photos")}
           </label>
 
           <input
@@ -296,11 +299,11 @@ export default function TambahBarangPage() {
             disabled={processingPhotos || loading}
             className="w-full border p-2 rounded-lg disabled:opacity-60"
           />
-          <p className="text-xs text-gray-500 mt-1">Maksimal 6 foto (otomatis dikompres)</p>
+          <p className="text-xs text-gray-500 mt-1">{tr("Maksimal 6 foto (otomatis dikompres)", "Maximum 6 photos (auto compressed)")}</p>
           {processingPhotos && (
             <div className="mt-2 inline-flex items-center gap-2 text-xs text-blue-600">
               <span className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-              Memproses foto...
+              {tr("Memproses foto...", "Processing photos...")}
             </div>
           )}
 
@@ -317,7 +320,7 @@ export default function TambahBarangPage() {
                     type="button"
                     onClick={() => handleRemovePhoto(idx)}
                     className="absolute -top-2 -right-2 bg-red-600 text-white w-5 h-5 rounded-full text-xs flex items-center justify-center hover:bg-red-700"
-                    title="Hapus foto"
+                    title={tr("Hapus foto", "Delete photo")}
                   >
                     ×
                   </button>
@@ -334,7 +337,7 @@ export default function TambahBarangPage() {
             disabled={loading || processingPhotos}
             className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "Menyimpan..." : "Simpan"}
+            {loading ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
           </button>
 
           <button
@@ -342,7 +345,7 @@ export default function TambahBarangPage() {
             onClick={() => navigate(-1)}
             className="bg-gray-300 px-5 py-2 rounded-lg hover:bg-gray-400"
           >
-            Batal
+            {tr("Batal", "Cancel")}
           </button>
 
         </div>

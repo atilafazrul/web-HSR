@@ -3,6 +3,7 @@ import api from "../api/axiosConfig";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useI18n } from "../i18n/index.jsx";
 import {
   Download,
   Eye,
@@ -45,8 +46,10 @@ function BiayaMetaFooter({ meta }) {
 }
 
 export default function ProjekKerjaPage() {
+  const { language } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
   const role = user?.role;
@@ -529,6 +532,21 @@ export default function ProjekKerjaPage() {
       case "Selesai": return "bg-green-100 text-green-700 border-green-400";
       default: return "bg-gray-100 text-gray-700 border-gray-400";
     }
+  };
+
+  const displayStatus = (status) => {
+    const map = {
+      Dibuat: "Created",
+      Persiapan: "Preparation",
+      "Proses Pekerjaan": "Work In Progress",
+      Editing: "Editing",
+      Invoicing: "Invoicing",
+      Selesai: "Completed",
+      Terlambat: "Delayed",
+      Proses: "In Progress",
+    };
+    if (language !== "en") return status;
+    return map[status] || status;
   };
 
   const handleStatusChange = async (id, status) => {
@@ -1169,10 +1187,10 @@ export default function ProjekKerjaPage() {
           <div className="mb-8">
             <h2 className="text-3xl font-bold flex items-center gap-3">
               <Briefcase className="text-blue-600" />
-              Tambah Projek Kerja
+              {tr("Tambah Projek Kerja", "Add Work Project")}
             </h2>
             <p className="text-gray-500 text-sm mt-1">
-              Tambahkan data projek kerja baru ke dalam sistem
+              {tr("Tambahkan data projek kerja baru ke dalam sistem", "Add new work project data into the system")}
             </p>
           </div>
 
@@ -1193,7 +1211,7 @@ export default function ProjekKerjaPage() {
               selectedSalesUsers.length === 0 ? (
                 <input
                   disabled
-                  value="Pilih karyawan Sales dulu"
+                  value={tr("Pilih karyawan Sales dulu", "Select Sales employee first")}
                   className="border p-3 rounded-xl bg-gray-100"
                 />
               ) : (
@@ -1204,7 +1222,7 @@ export default function ProjekKerjaPage() {
                   className="border p-3 rounded-xl focus:ring-2 focus:ring-blue-400"
                   required
                 >
-                  <option value="">Pilih Divisi</option>
+                  <option value="">{tr("Pilih Divisi", "Select Division")}</option>
                   <option value="IT">IT</option>
                   <option value="Service">Service</option>
                   <option value="Kontraktor">Kontraktor</option>
@@ -1224,6 +1242,7 @@ export default function ProjekKerjaPage() {
                 value={form.jenis_pekerjaan}
                 onChange={handleChange}
                 placeholder="Jenis Pekerjaan"
+                placeholder={tr("Jenis Pekerjaan", "Work Type")}
                 className="border pl-10 p-3 rounded-xl w-full"
                 required
               />
@@ -1231,7 +1250,7 @@ export default function ProjekKerjaPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Karyawan (Sales)
+                {tr("Karyawan (Sales)", "Employee (Sales)")}
               </label>
               <div className="flex gap-2">
                 <select
@@ -1240,7 +1259,11 @@ export default function ProjekKerjaPage() {
                   className="border p-3 rounded-xl w-full"
                   disabled={salesUsersLoading}
                 >
-                  <option value="">{salesUsersLoading ? "Memuat karyawan..." : "Pilih karyawan Sales..."}</option>
+                  <option value="">
+                    {salesUsersLoading
+                      ? tr("Memuat karyawan...", "Loading employees...")
+                      : tr("Pilih karyawan Sales...", "Select Sales employee...")}
+                  </option>
                   {salesUsers.map((u) => (
                     <option key={u.id} value={salesDisplayName(u)}>
                       {salesDisplayName(u)}
@@ -1253,7 +1276,7 @@ export default function ProjekKerjaPage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl disabled:opacity-50"
                   disabled={salesUsersLoading || !karyawanInput}
                 >
-                  Tambah
+                  {tr("Tambah", "Add")}
                 </button>
               </div>
               {salesUserError ? (
@@ -1280,7 +1303,7 @@ export default function ProjekKerjaPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
-                Invite User (Monitoring)
+                {tr("Invite User (Monitoring)", "Invite User (Monitoring)")}
               </label>
               <div className="flex gap-2">
                 <select
@@ -1289,7 +1312,11 @@ export default function ProjekKerjaPage() {
                   className="border p-3 rounded-xl w-full"
                   disabled={salesUsersLoading}
                 >
-                  <option value="">{salesUsersLoading ? "Memuat akun user..." : "Pilih akun user untuk monitoring"}</option>
+                  <option value="">
+                    {salesUsersLoading
+                      ? tr("Memuat akun user...", "Loading user accounts...")
+                      : tr("Pilih akun user untuk monitoring", "Select user account for monitoring")}
+                  </option>
                   {inviteUsers.map((u) => (
                     <option key={u.id} value={inviteDisplayName(u)}>
                       {inviteDisplayName(u)}
@@ -1334,6 +1361,7 @@ export default function ProjekKerjaPage() {
                 value={form.alamat}
                 onChange={handleChange}
                 placeholder="Lokasi"
+                placeholder={tr("Lokasi", "Location")}
                 className="border pl-10 p-3 rounded-xl w-full"
               />
             </div>
@@ -1359,19 +1387,19 @@ export default function ProjekKerjaPage() {
               onChange={handleChange}
               className="border p-3 rounded-xl"
             >
-              <option value="Dibuat">Dibuat</option>
-              <option value="Persiapan">Persiapan</option>
-              <option value="Proses Pekerjaan">Proses Pekerjaan</option>
+              <option value="Dibuat">{tr("Dibuat", "Created")}</option>
+              <option value="Persiapan">{tr("Persiapan", "Preparation")}</option>
+              <option value="Proses Pekerjaan">{tr("Proses Pekerjaan", "Work In Progress")}</option>
               <option value="Editing">Editing</option>
               <option value="Invoicing">Invoicing</option>
-              <option value="Selesai">Selesai</option>
+              <option value="Selesai">{tr("Selesai", "Completed")}</option>
             </select>
 
             <input
               name="file_folder_name"
               value={form.file_folder_name}
               onChange={handleChange}
-              placeholder="Folder Dokumen awal (opsional)"
+              placeholder={tr("Folder Dokumen awal (opsional)", "Initial Document Folder (optional)")}
               className="border p-3 rounded-xl"
             />
 
@@ -1379,7 +1407,7 @@ export default function ProjekKerjaPage() {
               name="photo_folder_name"
               value={form.photo_folder_name}
               onChange={handleChange}
-              placeholder="Folder Foto awal (opsional)"
+              placeholder={tr("Folder Foto awal (opsional)", "Initial Photo Folder (optional)")}
               className="border p-3 rounded-xl"
             />
 
@@ -1387,7 +1415,7 @@ export default function ProjekKerjaPage() {
               name="problem_description"
               value={form.problem_description}
               onChange={handleChange}
-              placeholder="Deskripsi"
+              placeholder={tr("Deskripsi", "Description")}
               className="border p-3 rounded-xl md:col-span-2"
             />
 
@@ -1395,13 +1423,13 @@ export default function ProjekKerjaPage() {
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-1">
                 <ShoppingCart size={16} className="text-blue-600" />
-                Barang yang Dibeli
+                {tr("Barang yang Dibeli", "Purchased Items")}
               </label>
               <textarea
                 name="barang_dibeli"
                 value={form.barang_dibeli}
                 onChange={handleChange}
-                placeholder="Contoh: 2 pcs kabel HDMI, 1 unit monitor, dll."
+                placeholder={tr("Contoh: 2 pcs kabel HDMI, 1 unit monitor, dll.", "Example: 2 HDMI cables, 1 monitor unit, etc.")}
                 className="border p-3 rounded-xl w-full"
                 rows={3}
               />
@@ -1417,7 +1445,7 @@ export default function ProjekKerjaPage() {
               }
               className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl md:col-span-2 font-semibold shadow-lg transition disabled:opacity-60"
             >
-              {loading ? "Menyimpan..." : "Simpan Projek"}
+              {loading ? tr("Menyimpan...", "Saving...") : tr("Simpan Projek", "Save Project")}
             </button>
           </form>
         </div>
@@ -1429,7 +1457,7 @@ export default function ProjekKerjaPage() {
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
               <Activity className="text-blue-600" />
-              Data Projek Kerja
+              {tr("Data Projek Kerja", "Project Data")}
             </h2>
             {role === "super_admin" && isSelesaiContext ? (
               <p className="text-xs text-gray-500 mt-1">
@@ -1453,7 +1481,7 @@ export default function ProjekKerjaPage() {
           <div className="relative mt-2 sm:mt-0 w-full sm:w-64 shrink-0">
             <input
               type="text"
-              placeholder="Cari divisi, tugas, karyawan, lokasi, status..."
+              placeholder={tr("Cari divisi, tugas, karyawan, lokasi, status...", "Search division, task, employee, location, status...")}
               value={searchTerm}
               onChange={handleSearchChange}
               className="border rounded-lg pl-10 pr-4 py-2 w-full focus:ring-2 focus:ring-blue-400"
@@ -1473,45 +1501,45 @@ export default function ProjekKerjaPage() {
           </div>
         </div>
 
-        <div className="w-full" style={{ overflowX: 'auto' }}>
-          <table className="text-sm" style={{ minWidth: '1100px', width: '100%', tableLayout: 'fixed' }}>
+        <div className="w-full overflow-x-auto">
+          <table className="text-sm" style={{ minWidth: '1280px', width: '100%', tableLayout: 'fixed' }}>
             <thead className="bg-gray-100 text-gray-700">
               <tr className="text-left">
-                <th className="p-2 font-semibold" style={{ width: '70px' }}>
-                  <Building size={16} className="inline mr-1 text-gray-400" /> Divisi
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '90px' }}>
+                  <Building size={16} className="inline mr-1 text-gray-400" /> {tr("Divisi", "Division")}
                 </th>
-                <th className="p-2 font-semibold" style={{ width: '140px' }}>
-                  <Briefcase size={16} className="inline mr-1 text-gray-400" /> Tugas
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '220px' }}>
+                  <Briefcase size={16} className="inline mr-1 text-gray-400" /> {tr("Tugas", "Task")}
                 </th>
-                <th className="p-2 font-semibold" style={{ width: '110px' }}>
-                  <User size={16} className="inline mr-1 text-gray-400" /> Karyawan
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '150px' }}>
+                  <User size={16} className="inline mr-1 text-gray-400" /> {tr("Karyawan", "Employee")}
                 </th>
-                <th className="p-2 font-semibold" style={{ width: '140px' }}>
-                  <MapPin size={16} className="inline mr-1 text-gray-400" /> Lokasi
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '180px' }}>
+                  <MapPin size={16} className="inline mr-1 text-gray-400" /> {tr("Lokasi", "Location")}
                 </th>
-                <th className="p-2 font-semibold" style={{ width: '95px' }}>
-                  <Calendar size={16} className="inline mr-1 text-gray-400" /> Tanggal
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '110px' }}>
+                  <Calendar size={16} className="inline mr-1 text-gray-400" /> {tr("Tanggal", "Date")}
                 </th>
-                <th className="p-2 font-semibold" style={{ width: '90px' }}>
-                  <FileText size={16} className="inline mr-1 text-gray-400" /> Deskripsi
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '120px' }}>
+                  <FileText size={16} className="inline mr-1 text-gray-400" /> {tr("Deskripsi", "Description")}
                 </th>
-                <th className="p-2 font-semibold" style={{ width: '100px' }}>
-                  <ShoppingCart size={16} className="inline mr-1 text-gray-400" /> Barang
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '110px' }}>
+                  <ShoppingCart size={16} className="inline mr-1 text-gray-400" /> {tr("Barang", "Items")}
                 </th>
-                <th className="p-2 font-semibold" style={{ width: '115px' }}>
-                  <Activity size={16} className="inline mr-1 text-gray-400" /> Status
+                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '140px' }}>
+                  <Activity size={16} className="inline mr-1 text-gray-400" /> {tr("Status", "Status")}
                 </th>
-                <th className="p-2 font-semibold text-center" style={{ width: '140px' }}>
-                  <Settings size={16} className="inline mr-1 text-gray-400" /> Aksi
+                <th className="p-2.5 font-semibold text-center whitespace-nowrap" style={{ width: '160px' }}>
+                  <Settings size={16} className="inline mr-1 text-gray-400" /> {tr("Aksi", "Actions")}
                 </th>
               </tr>
             </thead>
             <tbody>
               {currentItems.map((item) => (
                 <tr key={item.id} className="border-b hover:bg-gray-50 transition">
-                  <td className="p-2">
+                  <td className="p-2.5">
                     <select
-                      className="border rounded-lg px-2 py-1 text-xs bg-white w-full max-w-[120px]"
+                      className="border rounded-lg px-2 py-1 text-xs bg-white w-full"
                       value={divisiKey(item.divisi)}
                       title="Divisi yang pernah terlibat (klik untuk lihat)"
                       onChange={(e) => {
@@ -1529,8 +1557,8 @@ export default function ProjekKerjaPage() {
                       )}
                     </select>
                   </td>
-                  <td className="p-2 font-medium truncate">{item.jenis_pekerjaan}</td>
-                  <td className="p-2">
+                  <td className="p-2.5 font-medium truncate">{item.jenis_pekerjaan}</td>
+                  <td className="p-2.5">
                     {(() => {
                       const karyawanList = karyawanProjectList(item);
                       const currentName = getCurrentKaryawanName(item);
@@ -1539,7 +1567,7 @@ export default function ProjekKerjaPage() {
                       }
                       return (
                         <select
-                          className="border rounded-lg px-2 py-1 text-xs bg-white w-full max-w-[140px]"
+                          className="border rounded-lg px-2 py-1 text-xs bg-white w-full"
                           value={currentName}
                           onChange={(e) => {
                             e.target.value = currentName;
@@ -1555,9 +1583,9 @@ export default function ProjekKerjaPage() {
                       );
                     })()}
                   </td>
-                  <td className="p-2 truncate">{item.alamat}</td>
-                  <td className="p-2 whitespace-nowrap">{new Date(item.start_date).toLocaleDateString("id-ID")}</td>
-                  <td className="p-2">
+                  <td className="p-2.5 truncate">{item.alamat}</td>
+                  <td className="p-2.5 whitespace-nowrap">{new Date(item.start_date).toLocaleDateString("id-ID")}</td>
+                  <td className="p-2.5">
                     {item.problem_description ? (
                       <button
                         onClick={() => {
@@ -1570,11 +1598,11 @@ export default function ProjekKerjaPage() {
                         className="px-2 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
                       >
                         <Eye size={14} />
-                        <span className="hidden sm:inline">Lihat</span>
+                        <span className="hidden sm:inline">{tr("Lihat", "View")}</span>
                       </button>
                     ) : "-"}
                   </td>
-                  <td className="p-2">
+                  <td className="p-2.5">
                     {item.barang_dibeli ? (
                       <button
                         onClick={() => {
@@ -1587,26 +1615,26 @@ export default function ProjekKerjaPage() {
                         className="px-2 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
                       >
                         <Eye size={14} />
-                        <span className="hidden sm:inline">Lihat</span>
+                        <span className="hidden sm:inline">{tr("Lihat", "View")}</span>
                       </button>
                     ) : "-"}
                   </td>
-                  <td className="p-2">
+                  <td className="p-2.5">
                     <button
                       onClick={() => openTimelineModal(item)}
                       className={`px-2 py-1 rounded-full text-xs border cursor-pointer hover:opacity-80 transition ${getStatusColor(item.status)} whitespace-nowrap inline-block max-w-full truncate`}
                       title="Klik untuk lihat timeline"
                     >
-                      {item.status}
+                      {displayStatus(item.status)}
                     </button>
                   </td>
-                  <td className="p-2">
+                  <td className="p-2.5">
                     <div className="flex justify-center gap-1">
-                      <button onClick={() => handleViewPhoto(item.id)} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded-lg" title="Lihat Foto">
+                      <button onClick={() => handleViewPhoto(item.id)} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded-lg" title={tr("Lihat Foto", "View Photos")}>
                         <FileText size={14} />
                       </button>
                       {!isUserRole && item.file_url && (
-                        <a href={item.file_url} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-lg" title="Download File">
+                        <a href={item.file_url} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-lg" title={tr("Download File", "Download File")}>
                           <Download size={14} />
                         </a>
                       )}
@@ -1632,7 +1660,7 @@ export default function ProjekKerjaPage() {
                             <button
                               onClick={() => handleUnarchiveProject(item)}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white p-1.5 rounded-lg"
-                              title="Batalkan Archive"
+                              title={tr("Batalkan Archive", "Cancel Archive")}
                             >
                               <RotateCcw size={14} />
                             </button>
@@ -1643,7 +1671,7 @@ export default function ProjekKerjaPage() {
                         <button
                           onClick={() => handleDelete(item.id)}
                           className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-lg"
-                          title="Hapus"
+                          title={tr("Hapus", "Delete")}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -1655,7 +1683,7 @@ export default function ProjekKerjaPage() {
             </tbody>
           </table>
           {filteredData.length === 0 && (
-            <p className="text-center text-gray-500 py-8">Tidak ada data yang cocok</p>
+            <p className="text-center text-gray-500 py-8">{tr("Tidak ada data yang cocok", "No matching data")}</p>
           )}
         </div>
 
@@ -1663,7 +1691,7 @@ export default function ProjekKerjaPage() {
         {filteredData.length > 0 && (
           <div className="flex items-center justify-between mt-6">
             <div className="text-sm text-gray-700">
-              Menampilkan {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} dari {totalItems} data
+              {tr("Menampilkan", "Showing")} {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} {tr("dari", "of")} {totalItems} {tr("data", "records")}
             </div>
             <div className="flex gap-2">
               <button
@@ -1812,17 +1840,17 @@ export default function ProjekKerjaPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl p-6 relative my-8 max-h-[92vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
               <DollarSign className="text-amber-600" />
-              Biaya Jalan, Pengeluaran & Reimbursment
+              {tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs")}
             </h3>
             <p className="text-sm text-gray-500 mb-4">
-              Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.
+              {tr("Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.", "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.")}
             </p>
             {(() => {
               const item = dataList.find(i => i.id === currentId);
               if (!item?.is_lunas) return null;
               return (
                 <div className="mb-4 text-xs text-amber-800 bg-amber-100 border border-amber-300 px-3 py-2 rounded-lg">
-                  Status pembayaran: <span className="font-semibold">Lunas</span>. {role === "super_admin" ? "Superadmin tetap bisa edit." : "Admin tidak bisa edit."}
+                  {tr("Status pembayaran", "Payment status")}: <span className="font-semibold">{tr("Lunas", "Paid")}</span>. {role === "super_admin" ? tr("Superadmin tetap bisa edit.", "Super admin can still edit.") : tr("Admin tidak bisa edit.", "Admin cannot edit.")}
                 </div>
               );
             })()}
@@ -1831,9 +1859,9 @@ export default function ProjekKerjaPage() {
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
                   {[
-                    { key: "jalan", label: "Biaya Jalan", rows: biayaEdit.jalan },
-                    { key: "pengeluaran", label: "Biaya Pengeluaran", rows: biayaEdit.pengeluaran },
-                    { key: "reimbursment", label: "Biaya Reimbursment", rows: biayaEdit.reimbursment },
+                    { key: "jalan", label: tr("Biaya Jalan", "Travel Cost"), rows: biayaEdit.jalan },
+                    { key: "pengeluaran", label: tr("Biaya Pengeluaran", "Expense Cost"), rows: biayaEdit.pengeluaran },
+                    { key: "reimbursment", label: tr("Biaya Reimbursment", "Reimbursement Cost"), rows: biayaEdit.reimbursment },
                   ].map((col) => {
                     const shown = displayBiayaRows(
                       col.rows.map((r, idx) => ({ ...r, __idx: idx }))
@@ -1844,7 +1872,7 @@ export default function ProjekKerjaPage() {
                       <div key={col.key} className="border rounded-xl p-3 bg-gray-50/80">
                         <p className="font-semibold text-gray-800 mb-2">{col.label}</p>
                         {shown.length === 0 ? (
-                          <p className="text-xs text-gray-400">Belum ada entri</p>
+                          <p className="text-xs text-gray-400">{tr("Belum ada entri", "No entries yet")}</p>
                         ) : (
                           <ul className="space-y-1 text-gray-700 max-h-40 overflow-y-auto">
                             {shown.map((r, i) => (
@@ -1856,19 +1884,19 @@ export default function ProjekKerjaPage() {
                                       type="button"
                                       onClick={() => handleToggleItemLunas(col.key, r.__idx)}
                                       className={`px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200" : "bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200"}`}
-                                      title={r.is_lunas ? "Klik untuk batalkan lunas item" : "Klik untuk lunaskan item"}
+                                      title={r.is_lunas ? tr("Klik untuk batalkan lunas item", "Click to mark item as unpaid") : tr("Klik untuk lunaskan item", "Click to mark item as paid")}
                                     >
-                                      {r.is_lunas ? "Lunas" : "Belum"}
+                                      {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
                                     </button>
                                   ) : (
                                     <span className={`px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}>
-                                      {r.is_lunas ? "Lunas" : "Belum"}
+                                      {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
                                     </span>
                                   )}
                                 </div>
                                 {r.oleh && (
                                   <span className="block text-gray-500 mt-0.5 text-[10px]">
-                                    Oleh: {r.oleh}
+                                    {tr("Oleh", "By")}: {r.oleh}
                                     {r.created_at && (
                                       (() => {
                                         const d = new Date(r.created_at);
@@ -1894,9 +1922,9 @@ export default function ProjekKerjaPage() {
                                         target="_blank"
                                         rel="noreferrer"
                                         className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] hover:bg-blue-200"
-                                        title="Klik untuk lihat foto"
+                                        title={tr("Klik untuk lihat foto", "Click to view photo")}
                                       >
-                                        Foto {photoIdx + 1}
+                                        {tr("Foto", "Photo")} {photoIdx + 1}
                                       </a>
                                     ))}
                                   </div>
@@ -1906,7 +1934,7 @@ export default function ProjekKerjaPage() {
                           </ul>
                         )}
                         <p className="mt-2 pt-2 border-t text-amber-800 font-semibold">
-                          Subtotal: {formatRupiah(sumBiayaRows(col.rows))}
+                          {tr("Subtotal", "Subtotal")}: {formatRupiah(sumBiayaRows(col.rows))}
                         </p>
                         <BiayaMetaFooter meta={meta} />
                       </div>
@@ -1915,7 +1943,7 @@ export default function ProjekKerjaPage() {
                 </div>
                 <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <p className="text-lg font-bold text-amber-900">
-                    Total keseluruhan:{" "}
+                    {tr("Total keseluruhan", "Grand total")}:{" "}
                     {formatRupiah(
                       sumBiayaRows(biayaEdit.jalan) +
                       sumBiayaRows(biayaEdit.pengeluaran) +
@@ -1932,7 +1960,7 @@ export default function ProjekKerjaPage() {
                         onClick={() => item && handleSetLunas(item, !item.is_lunas)}
                         className={`px-4 py-2 rounded-lg text-white ${item?.is_lunas ? "bg-slate-600 hover:bg-slate-700" : "bg-green-600 hover:bg-green-700"}`}
                       >
-                        {item?.is_lunas ? "Batalkan Lunas" : "Tandai Lunas"}
+                        {item?.is_lunas ? tr("Batalkan Lunas", "Mark Unpaid") : tr("Tandai Lunas", "Mark Paid")}
                       </button>
                     );
                   })()}
@@ -1942,7 +1970,7 @@ export default function ProjekKerjaPage() {
                     className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                   >
                     <Download size={18} />
-                    Unduh Excel (CSV)
+                    {tr("Unduh Excel (CSV)", "Download Excel (CSV)")}
                   </button>
                   <button
                     type="button"
@@ -1955,14 +1983,14 @@ export default function ProjekKerjaPage() {
                       return locked ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700";
                     })()}`}
                   >
-                    Edit
+                    {tr("Edit", "Edit")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowUangModal(false)}
                     className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
                   >
-                    Tutup
+                    {tr("Tutup", "Close")}
                   </button>
                 </div>
               </>
@@ -1970,9 +1998,9 @@ export default function ProjekKerjaPage() {
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                   {[
-                    { key: "jalan", label: "Biaya Jalan & Keterangan", color: "border-emerald-200 bg-emerald-50/50" },
-                    { key: "pengeluaran", label: "Biaya Pengeluaran & Keterangan", color: "border-blue-200 bg-blue-50/50" },
-                    { key: "reimbursment", label: "Biaya Reimbursment & Keterangan", color: "border-violet-200 bg-violet-50/50" },
+                    { key: "jalan", label: tr("Biaya Jalan & Keterangan", "Travel Cost & Description"), color: "border-emerald-200 bg-emerald-50/50" },
+                    { key: "pengeluaran", label: tr("Biaya Pengeluaran & Keterangan", "Expense Cost & Description"), color: "border-blue-200 bg-blue-50/50" },
+                    { key: "reimbursment", label: tr("Biaya Reimbursment & Keterangan", "Reimbursement Cost & Description"), color: "border-violet-200 bg-violet-50/50" },
                   ].map((col) => {
                     const editItem = dataList.find((i) => i.id === currentId);
                     const meta = editItem?.biaya_edit_meta?.[col.key];
@@ -1984,7 +2012,7 @@ export default function ProjekKerjaPage() {
                             type="button"
                             onClick={() => addBiayaRow(col.key)}
                             className="p-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 text-emerald-700"
-                            title="Tambah baris"
+                            title={tr("Tambah baris", "Add row")}
                           >
                             <Plus size={18} />
                           </button>
@@ -2002,7 +2030,7 @@ export default function ProjekKerjaPage() {
                               >
                                 {row.oleh && (
                                   <p className="text-[10px] text-gray-500">
-                                    Oleh: <span className="font-medium">{row.oleh}</span>
+                                    {tr("Oleh", "By")}: <span className="font-medium">{row.oleh}</span>
                                     {row.created_at && (
                                       (() => {
                                         const d = new Date(row.created_at);
@@ -2017,11 +2045,11 @@ export default function ProjekKerjaPage() {
                                 )}
                                 {barisLunas ? (
                                   <p className="text-[10px] text-amber-800 font-medium">
-                                    Sudah lunas
+                                    {tr("Sudah lunas", "Already paid")}
                                     {role === "super_admin"
-                                      ? " — nominal dikunci, keterangan masih bisa diubah"
-                                      : " — nominal dikunci, keterangan masih bisa diubah"}
-                                    {role === "super_admin" ? "; hanya super admin bisa hapus baris ini" : ""}
+                                      ? tr(" — nominal dikunci, keterangan masih bisa diubah", " - amount is locked, description can still be edited")
+                                      : tr(" — nominal dikunci, keterangan masih bisa diubah", " - amount is locked, description can still be edited")}
+                                    {role === "super_admin" ? tr("; hanya super admin bisa hapus baris ini", "; only super admin can delete this row") : ""}
                                   </p>
                                 ) : null}
                                 <div className="flex gap-2">
@@ -2041,19 +2069,19 @@ export default function ProjekKerjaPage() {
                                     readOnly={!bolehEditNominal}
                                     disabled={!bolehEditNominal}
                                     className={`border w-full p-2 rounded-lg text-sm ${!bolehEditNominal ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
-                                    placeholder="Biaya"
+                                    placeholder={tr("Biaya", "Amount")}
                                   />
                                   {bolehHapus ? (
                                     <button
                                       type="button"
                                       onClick={() => removeBiayaRow(col.key, idx)}
                                       className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 shrink-0"
-                                      title="Hapus baris"
+                                      title={tr("Hapus baris", "Delete row")}
                                     >
                                       <Trash2 size={16} />
                                     </button>
                                   ) : (
-                                    <span className="p-2 shrink-0 text-[10px] text-gray-400 w-10 text-center" title="Tidak bisa dihapus">
+                                    <span className="p-2 shrink-0 text-[10px] text-gray-400 w-10 text-center" title={tr("Tidak bisa dihapus", "Cannot be deleted")}>
                                       —
                                     </span>
                                   )}
@@ -2065,12 +2093,12 @@ export default function ProjekKerjaPage() {
                                   readOnly={!bolehEditKeterangan}
                                   disabled={!bolehEditKeterangan}
                                   className={`border w-full p-2 rounded-lg text-sm ${!bolehEditKeterangan ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
-                                  placeholder="Keterangan"
+                                  placeholder={tr("Keterangan", "Description")}
                                 />
                                 {/* Upload Foto - Hanya untuk Pengeluaran & Reimbursment */}
                                 {(col.key === "pengeluaran" || col.key === "reimbursment") && (
                                   <div className="mt-2">
-                                    <label className="block text-xs text-gray-600 mb-1">Upload Foto</label>
+                                    <label className="block text-xs text-gray-600 mb-1">{tr("Upload Foto", "Upload Photo")}</label>
                                     <input
                                       type="file"
                                       multiple
@@ -2080,7 +2108,7 @@ export default function ProjekKerjaPage() {
                                       className="w-full text-xs border rounded-lg p-1.5 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     />
                                     {compressingPhotoKey === `${col.key}_${idx}` ? (
-                                      <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
+                                      <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
                                     ) : null}
                                     {/* Tampilkan foto yang sudah diupload */}
                                     {row.photoFiles?.length > 0 && (
@@ -2093,7 +2121,7 @@ export default function ProjekKerjaPage() {
                                               onClick={() => handleRemovePhoto(col.key, idx, fileIdx)}
                                               className="text-red-500 hover:text-red-700"
                                               disabled={!bolehEditKeterangan}
-                                              title="Hapus foto"
+                                              title={tr("Hapus foto", "Delete photo")}
                                             >
                                               <X size={12} />
                                             </button>
@@ -2104,7 +2132,7 @@ export default function ProjekKerjaPage() {
                                     {/* Tampilkan foto yang sudah tersimpan di database */}
                                     {row.photoPaths && row.photoPaths.length > 0 && (
                                       <div className="mt-2 flex flex-wrap gap-1">
-                                        <span className="text-[11px] text-gray-500 w-full">Foto tersimpan:</span>
+                                        <span className="text-[11px] text-gray-500 w-full">{tr("Foto tersimpan:", "Saved photos:")}</span>
                                         {row.photoPaths.map((photoPath, photoIdx) => (
                                           <a
                                             key={photoIdx}
@@ -2112,9 +2140,9 @@ export default function ProjekKerjaPage() {
                                             target="_blank"
                                             rel="noreferrer"
                                             className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-[10px] border border-green-200 hover:bg-green-100"
-                                            title="Klik untuk lihat foto"
+                                            title={tr("Klik untuk lihat foto", "Click to view photo")}
                                           >
-                                            Foto {photoIdx + 1}
+                                            {tr("Foto", "Photo")} {photoIdx + 1}
                                             <Eye size={10} />
                                           </a>
                                         ))}
@@ -2127,7 +2155,7 @@ export default function ProjekKerjaPage() {
                           })}
                         </div>
                         <p className="mt-2 text-sm font-semibold text-gray-800">
-                          Subtotal: {formatRupiah(sumBiayaRows(biayaEdit[col.key]))}
+                          {tr("Subtotal", "Subtotal")}: {formatRupiah(sumBiayaRows(biayaEdit[col.key]))}
                         </p>
                         <BiayaMetaFooter meta={meta} />
                       </div>
@@ -2136,7 +2164,7 @@ export default function ProjekKerjaPage() {
                 </div>
                 <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                   <p className="text-base font-bold text-amber-900">
-                    Total keseluruhan:{" "}
+                    {tr("Total keseluruhan", "Grand total")}:{" "}
                     {formatRupiah(
                       sumBiayaRows(biayaEdit.jalan) +
                       sumBiayaRows(biayaEdit.pengeluaran) +
@@ -2151,7 +2179,7 @@ export default function ProjekKerjaPage() {
                     disabled={!canEditCurrentBiayaProject}
                     className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Simpan
+                    {tr("Simpan", "Save")}
                   </button>
                   <button
                     type="button"
@@ -2168,7 +2196,7 @@ export default function ProjekKerjaPage() {
                     }}
                     className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
                   >
-                    Batal
+                    {tr("Batal", "Cancel")}
                   </button>
                 </div>
               </>

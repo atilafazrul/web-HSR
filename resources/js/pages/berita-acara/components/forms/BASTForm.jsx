@@ -1,5 +1,6 @@
 import React from "react";
 import { Plus, Download, Trash2, FileText, Calendar } from "lucide-react";
+import { useI18n } from "../../../../i18n";
 
 export const BASTForm = ({ 
   formData, 
@@ -11,6 +12,8 @@ export const BASTForm = ({
   onReset, 
   loading 
 }) => {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   return (
     <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
       <form onSubmit={onSubmit}>
@@ -18,14 +21,14 @@ export const BASTForm = ({
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b flex items-center gap-2">
             <FileText size={20} className="text-blue-600" />
-            Informasi Dokumen
+            {tr("Informasi Dokumen", "Document Information")}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Hari - Auto from date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hari (Otomatis)
+                {tr("Hari (Otomatis)", "Day (Automatic)")}
               </label>
               <input
                 type="text"
@@ -33,15 +36,15 @@ export const BASTForm = ({
                 value={formData.nama_hari}
                 readOnly
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"
-                placeholder="Pilih tanggal terlebih dahulu"
+                placeholder={tr("Pilih tanggal terlebih dahulu", "Select a date first")}
               />
-              <p className="text-xs text-gray-500 mt-1">Hari akan terisi otomatis dari tanggal pelaksanaan</p>
+              <p className="text-xs text-gray-500 mt-1">{tr("Hari akan terisi otomatis dari tanggal pelaksanaan", "Day will be filled automatically from the execution date")}</p>
             </div>
 
             {/* Tanggal Pelaksanaan - Date Picker */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tanggal Pelaksanaan <span className="text-red-500">*</span>
+                {tr("Tanggal Pelaksanaan", "Execution Date")} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -56,7 +59,7 @@ export const BASTForm = ({
               </div>
               {formData.tanggal_bast_display && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Format: {formData.tanggal_bast_display}
+                  {tr("Format", "Format")}: {formData.tanggal_bast_display}
                 </p>
               )}
             </div>
@@ -64,7 +67,7 @@ export const BASTForm = ({
             {/* Tanggal Tanda Tangan - Date Picker */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tanggal Tanda Tangan <span className="text-red-500">*</span>
+                {tr("Tanggal Tanda Tangan", "Signature Date")} <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -79,7 +82,7 @@ export const BASTForm = ({
               </div>
               {formData.tanggal_tanda_tangan_display && (
                 <p className="text-sm text-gray-600 mt-1">
-                  Format: {formData.tanggal_tanda_tangan_display}
+                  {tr("Format", "Format")}: {formData.tanggal_tanda_tangan_display}
                 </p>
               )}
             </div>
@@ -87,14 +90,14 @@ export const BASTForm = ({
             {/* Nama Klien */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nama Klien <span className="text-red-500">*</span>
+                {tr("Nama Klien", "Client Name")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="nama_klient"
                 value={formData.nama_klient}
                 onChange={onInputChange}
-                placeholder="Contoh: RS Medika"
+                placeholder={tr("Contoh: RS Medika", "Example: Medika Hospital")}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                 required
               />
@@ -103,19 +106,19 @@ export const BASTForm = ({
             {/* Hasil - Text Input */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Hasil Pemeriksaan <span className="text-red-500">*</span>
+                {tr("Hasil Pemeriksaan", "Inspection Result")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 name="hasil"
                 value={formData.hasil}
                 onChange={onInputChange}
-                placeholder="Contoh: BAIK, CUKUP, RUSAK, dll."
+                placeholder={tr("Contoh: BAIK, CUKUP, RUSAK, dll.", "Example: GOOD, FAIR, DAMAGED, etc.")}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                 required
               />
               <p className="text-xs text-gray-500 mt-1">
-                Ketik hasil pemeriksaan/kondisi barang yang diserahkan
+                {tr("Ketik hasil pemeriksaan/kondisi barang yang diserahkan", "Enter inspection result/item condition")}
               </p>
             </div>
           </div>
@@ -126,7 +129,7 @@ export const BASTForm = ({
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 pb-2 border-b gap-3">
             <h3 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
               <FileText size={20} className="text-blue-600" />
-              Daftar Peralatan
+              {tr("Daftar Peralatan", "Equipment List")}
             </h3>
             <button
               type="button"
@@ -134,7 +137,7 @@ export const BASTForm = ({
               className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition flex items-center justify-center gap-2 text-sm"
             >
               <Plus size={16} />
-              Tambah Barang
+              {tr("Tambah Barang", "Add Item")}
             </button>
           </div>
 
@@ -142,7 +145,7 @@ export const BASTForm = ({
             <div key={index} className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4 mb-4 items-end bg-gray-50 p-3 sm:p-4 rounded-xl">
               {/* No - Mobile: inline, Desktop: separate */}
               <div className="hidden sm:block sm:col-span-1">
-                <label className="block text-sm font-medium text-gray-500 mb-2">No</label>
+                <label className="block text-sm font-medium text-gray-500 mb-2">{tr("No", "No")}</label>
                 <div className="px-3 py-3 bg-white border border-gray-200 rounded-xl text-center font-semibold">
                   {index + 1}
                 </div>
@@ -152,13 +155,13 @@ export const BASTForm = ({
               <div className="col-span-1 sm:col-span-5">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <span className="sm:hidden">{index + 1}. </span>
-                  Nama Alat <span className="text-red-500">*</span>
+                  {tr("Nama Alat", "Equipment Name")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={item.nama_alat}
                   onChange={(e) => onItemChange(index, 'nama_alat', e.target.value)}
-                  placeholder="Contoh: C - ARM"
+                  placeholder={tr("Contoh: C - ARM", "Example: C-ARM")}
                   className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   required
                 />
@@ -167,7 +170,7 @@ export const BASTForm = ({
               {/* Merk */}
               <div className="col-span-1 sm:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Merk <span className="text-red-500">*</span>
+                  {tr("Merk", "Brand")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -182,7 +185,7 @@ export const BASTForm = ({
               {/* Jumlah */}
               <div className="col-span-1 sm:col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Jumlah <span className="text-red-500">*</span>
+                  {tr("Jumlah", "Quantity")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -201,10 +204,10 @@ export const BASTForm = ({
                     type="button"
                     onClick={() => onRemoveItem(index)}
                     className="w-full sm:w-auto px-3 py-2.5 sm:py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition flex items-center justify-center gap-2 sm:gap-0"
-                    title="Hapus barang"
+                    title={tr("Hapus barang", "Delete item")}
                   >
                     <Trash2 size={18} />
-                    <span className="sm:hidden ml-2">Hapus</span>
+                    <span className="sm:hidden ml-2">{tr("Hapus", "Delete")}</span>
                   </button>
                 )}
               </div>
@@ -219,7 +222,7 @@ export const BASTForm = ({
             onClick={onReset}
             className="w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-xl font-medium text-gray-600 hover:bg-gray-50 transition"
           >
-            Reset
+            {tr("Reset", "Reset")}
           </button>
           <button
             type="submit"

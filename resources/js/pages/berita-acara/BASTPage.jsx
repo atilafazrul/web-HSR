@@ -3,8 +3,11 @@ import { History, Plus } from "lucide-react";
 import { useBAST } from "./hooks/useBAST";
 import { BASTForm } from "./components/forms/BASTForm";
 import { BASTHistory } from "./components/history/BASTHistory";
+import { useI18n } from "../../i18n";
 
 export default function BASTPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const {
     activeTab,
     setActiveTab,
@@ -34,7 +37,10 @@ export default function BASTPage() {
         <div>
           <h2 className="text-3xl font-bold">Generate BAST</h2>
           <p className="text-gray-500">
-            Buat dan kelola dokumen Berita Acara Serah Terima
+            {tr(
+              "Buat dan kelola dokumen Berita Acara Serah Terima",
+              "Create and manage Handover Minutes documents"
+            )}
           </p>
         </div>
       </div>
@@ -50,7 +56,7 @@ export default function BASTPage() {
           }`}
         >
           <Plus size={18} />
-          Buat Baru
+          {tr("Buat Baru", "Create New")}
         </button>
         <button
           onClick={() => setActiveTab("history")}
@@ -61,7 +67,7 @@ export default function BASTPage() {
           }`}
         >
           <History size={18} />
-          Riwayat ({filteredHistory.length})
+          {tr("Riwayat", "History")} ({filteredHistory.length})
         </button>
       </div>
 

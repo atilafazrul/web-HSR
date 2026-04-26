@@ -25,6 +25,7 @@ import PurchasingPage from "./PurchasingPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import Profile from "./Profile";
+import { useI18n } from "../i18n/index.jsx";
 
 const DIVISI_TO_PATH = {
   IT: "it",
@@ -45,6 +46,8 @@ const DIVISI_PAGE = {
 };
 
 export default function UserDashboard({ user, logout }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -61,11 +64,11 @@ export default function UserDashboard({ user, logout }) {
   const CurrentDivisiPage = DIVISI_PAGE[divisiPath] || ServicePage;
 
   const pageTitle = useMemo(() => {
-    if (location.pathname.includes("/profile")) return "Profile";
-    if (location.pathname.includes("/projek-kerja/foto/")) return "Foto Projek";
-    if (location.pathname.includes("/dashboard")) return "User Dashboard";
+    if (location.pathname.includes("/profile")) return language === "en" ? "Profile" : "Profil";
+    if (location.pathname.includes("/projek-kerja/foto/")) return language === "en" ? "Project Photos" : "Foto Projek";
+    if (location.pathname.includes("/dashboard")) return language === "en" ? "User Dashboard" : "Dashboard User";
     return "User";
-  }, [location.pathname]);
+  }, [language, location.pathname]);
 
   useEffect(() => {
     document.title = `WEB HSR - ${pageTitle}`;
@@ -118,6 +121,21 @@ export default function UserDashboard({ user, logout }) {
       });
   }, [summaryData]);
 
+  const displayStatus = (status) => {
+    const map = {
+      Dibuat: "Created",
+      Persiapan: "Preparation",
+      "Proses Pekerjaan": "Work In Progress",
+      Editing: "Editing",
+      Invoicing: "Invoicing",
+      Selesai: "Completed",
+      Terlambat: "Delayed",
+      Proses: "In Progress",
+      "Tanpa Status": "No Status",
+    };
+    return language === "en" ? (map[status] || status) : status;
+  };
+
   return (
     <div className="flex min-h-screen bg-[#f4f6fb] w-full overflow-x-hidden">
       <Sidebar
@@ -148,7 +166,9 @@ export default function UserDashboard({ user, logout }) {
               path="dashboard"
               element={
                 <div className="space-y-6">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">Selamat Datang, {user?.name}</h2>
+                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">
+                    {language === "en" ? "Welcome" : "Selamat Datang"}, {user?.name}
+                  </h2>
 
                   <div
                     onClick={() => navigate(`/user/${divisiPath}`)}
@@ -171,7 +191,7 @@ export default function UserDashboard({ user, logout }) {
                         Total <span className="font-semibold">{total}</span> Pekerjaan
                       </p>
                       <button className="flex items-center gap-2 bg-white/20 backdrop-blur-md hover:bg-white/30 transition px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium">
-                        Masuk
+                        {language === "en" ? "Open" : "Masuk"}
                         <span className="group-hover:translate-x-1 transition">→</span>
                       </button>
                     </div>
@@ -180,14 +200,18 @@ export default function UserDashboard({ user, logout }) {
                   <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8">
                     <div className="mb-3 sm:mb-4">
                       <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800">Summary Status</h3>
-                      <p className="text-xs sm:text-sm text-slate-500">Ringkasan pekerjaan berdasarkan semua status yang aktif.</p>
+                      <p className="text-xs sm:text-sm text-slate-500">
+                        {language === "en"
+                          ? "Work summary based on all active statuses."
+                          : "Ringkasan pekerjaan berdasarkan semua status yang aktif."}
+                      </p>
                     </div>
                     <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                    <SummaryCard title="Total Tugas" value={total} icon={<ListTodo size={18} />} color="blue" />
+                    <SummaryCard title={tr("Total Tugas", "Total Tasks")} value={total} icon={<ListTodo size={18} />} color="blue" />
                     {statusSummary.map((status) => (
                       <SummaryCard
                         key={status.label}
-                        title={status.label}
+                        title={displayStatus(status.label)}
                         value={status.count}
                         icon={
                           status.label === "Selesai" ? <CheckCircle size={18} />
@@ -208,7 +232,7 @@ export default function UserDashboard({ user, logout }) {
 
                   <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8">
                     <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 sm:mb-5 md:mb-6">
-                      Aktivitas Pekerjaan Divisi Anda
+                      {language === "en" ? "Your Division Work Activities" : "Aktivitas Pekerjaan Divisi Anda"}
                     </h3>
 
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
@@ -216,7 +240,7 @@ export default function UserDashboard({ user, logout }) {
                         <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
                         <input
                           type="text"
-                          placeholder="Cari..."
+                          placeholder={language === "en" ? "Search..." : "Cari..."}
                           value={search}
                           onChange={(e) => {
                             setSearch(e.target.value);
@@ -233,10 +257,10 @@ export default function UserDashboard({ user, logout }) {
                         }}
                         className="border border-gray-200 px-3 py-2 rounded-xl w-full sm:w-40 text-sm"
                       >
-                        <option value="">Semua Status</option>
-                        <option value="Proses">Proses</option>
-                        <option value="Selesai">Selesai</option>
-                        <option value="Terlambat">Terlambat</option>
+                        <option value="">{language === "en" ? "All Statuses" : "Semua Status"}</option>
+                        <option value="Proses">{tr("Proses", "In Progress")}</option>
+                        <option value="Selesai">{tr("Selesai", "Completed")}</option>
+                        <option value="Terlambat">{tr("Terlambat", "Delayed")}</option>
                       </select>
                     </div>
 
@@ -244,12 +268,12 @@ export default function UserDashboard({ user, logout }) {
                       <table className="w-full text-sm border-separate border-spacing-y-2">
                         <thead className="text-gray-500 text-xs uppercase bg-gray-50">
                           <tr className="text-left">
-                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Building size={15} className="text-gray-400" />Divisi</span></th>
-                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Briefcase size={15} className="text-gray-400" />Tugas</span></th>
-                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><User size={15} className="text-gray-400" />Karyawan</span></th>
-                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><MapPin size={15} className="text-gray-400" />Lokasi</span></th>
-                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Calendar size={15} className="text-gray-400" />Tanggal</span></th>
-                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Activity size={15} className="text-gray-400" />Status</span></th>
+                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Building size={15} className="text-gray-400" />{tr("Divisi", "Division")}</span></th>
+                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Briefcase size={15} className="text-gray-400" />{language === "en" ? "Task" : "Tugas"}</span></th>
+                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><User size={15} className="text-gray-400" />{language === "en" ? "Employee" : "Karyawan"}</span></th>
+                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><MapPin size={15} className="text-gray-400" />{language === "en" ? "Location" : "Lokasi"}</span></th>
+                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Calendar size={15} className="text-gray-400" />{language === "en" ? "Date" : "Tanggal"}</span></th>
+                            <th className="p-4"><span className="flex items-center gap-2 opacity-80"><Activity size={15} className="text-gray-400" />{tr("Status", "Status")}</span></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -268,7 +292,7 @@ export default function UserDashboard({ user, logout }) {
                                       ? "bg-yellow-100 text-yellow-600"
                                       : "bg-red-100 text-red-600"
                                 }`}>
-                                  {item.status}
+                                  {displayStatus(item.status)}
                                 </span>
                               </td>
                             </tr>
@@ -280,7 +304,7 @@ export default function UserDashboard({ user, logout }) {
                     {filteredData.length > 0 && (
                       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 mt-5">
                         <div className="text-xs sm:text-sm text-gray-600">
-                          Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredData.length)} dari {filteredData.length} data
+                          {language === "en" ? "Showing" : "Menampilkan"} {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredData.length)} {language === "en" ? "of" : "dari"} {filteredData.length} {language === "en" ? "records" : "data"}
                         </div>
                         <div className="flex gap-2">
                           <button
@@ -308,7 +332,9 @@ export default function UserDashboard({ user, logout }) {
                     )}
 
                     {filteredData.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">Tidak ada data yang ditemukan</div>
+                      <div className="text-center py-8 text-gray-500">
+                        {language === "en" ? "No data found" : "Tidak ada data yang ditemukan"}
+                      </div>
                     )}
                   </div>
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { Search, Download, Eye, Trash2, FileText } from "lucide-react";
 import { formatDate } from "../../utils/dateHelpers";
+import { useI18n } from "../../../../i18n";
 
 export const BAMHistory = ({
   filteredHistory,
@@ -13,6 +14,8 @@ export const BAMHistory = ({
   showViewModal,
   onCloseViewModal,
 }) => {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   return (
     <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
       {/* Search */}
@@ -24,7 +27,7 @@ export const BAMHistory = ({
           />
           <input
             type="text"
-            placeholder="Cari nomor surat atau nama klien..."
+            placeholder={tr("Cari nomor surat atau nama klien...", "Search letter number or client name...")}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full pl-9 sm:pl-12 pr-3 sm:pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
@@ -36,7 +39,7 @@ export const BAMHistory = ({
       {filteredHistory.length === 0 ? (
         <div className="text-center py-12">
           <FileText size={48} className="mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-500">Belum ada dokumen BAM yang dibuat</p>
+          <p className="text-gray-500">{tr("Belum ada dokumen BAM yang dibuat", "No BAM documents have been created yet")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -62,7 +65,7 @@ export const BAMHistory = ({
                     {item.nama_hari}, {item.tanggal_bam}
                   </p>
                   <p className="text-gray-400 text-xs mt-2">
-                    {item.items?.length || 0} barang • Dibuat:{" "}
+                    {item.items?.length || 0} {tr("barang", "items")} • {tr("Dibuat", "Created")}:{" "}
                     {formatDate(item.created_at)}
                   </p>
                 </div>
@@ -70,10 +73,10 @@ export const BAMHistory = ({
                   <button
                     onClick={() => onView(item)}
                     className="flex-1 sm:flex-none px-3 py-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition flex items-center justify-center gap-1"
-                    title="Lihat Detail"
+                    title={tr("Lihat Detail", "View Detail")}
                   >
                     <Eye size={16} />
-                    <span className="sm:hidden text-sm">Lihat</span>
+                    <span className="sm:hidden text-sm">{tr("Lihat", "View")}</span>
                   </button>
                   <button
                     onClick={() => onGeneratePDF(item)}
@@ -86,10 +89,10 @@ export const BAMHistory = ({
                   <button
                     onClick={() => onDelete(item.id)}
                     className="flex-1 sm:flex-none px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition flex items-center justify-center gap-1"
-                    title="Hapus"
+                    title={tr("Hapus", "Delete")}
                   >
                     <Trash2 size={16} />
-                    <span className="sm:hidden text-sm">Hapus</span>
+                    <span className="sm:hidden text-sm">{tr("Hapus", "Delete")}</span>
                   </button>
                 </div>
               </div>
@@ -103,7 +106,7 @@ export const BAMHistory = ({
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-lg sm:text-xl font-bold">Detail BAM</h3>
+              <h3 className="text-lg sm:text-xl font-bold">{tr("Detail BAM", "BAM Detail")}</h3>
               <button
                 onClick={onCloseViewModal}
                 className="p-2 hover:bg-gray-100 rounded-lg"
@@ -115,7 +118,7 @@ export const BAMHistory = ({
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-xl">
                 <label className="text-sm text-blue-600 font-medium">
-                  Nomor Surat
+                  {tr("Nomor Surat", "Letter Number")}
                 </label>
                 <p className="text-base sm:text-lg font-bold text-blue-800">
                   {selectedItem.nomor_surat}
@@ -124,26 +127,26 @@ export const BAMHistory = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm text-gray-500">Klien</label>
+                  <label className="text-sm text-gray-500">{tr("Klien", "Client")}</label>
                   <p className="font-medium">{selectedItem.nama_klient}</p>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-500">Hasil</label>
+                  <label className="text-sm text-gray-500">{tr("Hasil", "Result")}</label>
                   <p className="font-medium text-green-600">
                     {selectedItem.hasil || "BAIK"}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-500">Hari</label>
+                  <label className="text-sm text-gray-500">{tr("Hari", "Day")}</label>
                   <p className="font-medium">{selectedItem.nama_hari}</p>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-500">Tanggal BAM</label>
+                  <label className="text-sm text-gray-500">{tr("Tanggal BAM", "BAM Date")}</label>
                   <p className="font-medium">{selectedItem.tanggal_bam}</p>
                 </div>
                 <div>
                   <label className="text-sm text-gray-500">
-                    Tanggal Tanda Tangan
+                    {tr("Tanggal Tanda Tangan", "Signature Date")}
                   </label>
                   <p className="font-medium">
                     {selectedItem.tanggal_tanda_tangan}
@@ -153,16 +156,16 @@ export const BAMHistory = ({
 
               <div>
                 <label className="text-sm text-gray-500 mb-2 block">
-                  Daftar Peralatan
+                  {tr("Daftar Peralatan", "Equipment List")}
                 </label>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm border-collapse min-w-[300px]">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="p-2 text-left border">No</th>
-                        <th className="p-2 text-left border">Nama Alat</th>
-                        <th className="p-2 text-left border">Merk</th>
-                        <th className="p-2 text-left border">Jumlah</th>
+                        <th className="p-2 text-left border">{tr("No", "No")}</th>
+                        <th className="p-2 text-left border">{tr("Nama Alat", "Equipment Name")}</th>
+                        <th className="p-2 text-left border">{tr("Merk", "Brand")}</th>
+                        <th className="p-2 text-left border">{tr("Jumlah", "Quantity")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -185,7 +188,7 @@ export const BAMHistory = ({
                 onClick={onCloseViewModal}
                 className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
               >
-                Tutup
+                {tr("Tutup", "Close")}
               </button>
             </div>
           </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import { Search, Filter, FileText, User, Eye, Download, MapPin, X, Calendar, Wrench, Edit } from "lucide-react";
+import { useI18n } from "../../i18n";
 
 // Format tanggal dari ISO string ke format yang lebih mudah dibaca
 const formatDate = (dateString) => {
@@ -27,6 +28,8 @@ export default function pdfHistory({
   onEdit,
   selectedItem,
 }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   return (
     <div className="space-y-6">
       {/* SEARCH CARD */}
@@ -39,14 +42,14 @@ export default function pdfHistory({
                 type="text"
                 value={searchTerm}
                 onChange={(e) => onSearchChange(e.target.value)}
-                placeholder="Cari berdasarkan customer, contact person, phone, teknisi, atau brand..."
+                placeholder={tr("Cari berdasarkan customer, contact person, phone, teknisi, atau brand...", "Search by customer, contact person, phone, technician, or brand...")}
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-gray-500">
-            <span className="text-sm">{filteredHistory.length} dari {historyData.length} data</span>
+            <span className="text-sm">{filteredHistory.length} {tr("dari", "of")} {historyData.length} {tr("data", "records")}</span>
           </div>
         </div>
       </div>
@@ -61,9 +64,9 @@ export default function pdfHistory({
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Phone</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Brand/Model</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Teknisi</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">{tr("Teknisi", "Technician")}</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Status</th>
-                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Aksi</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">{tr("Aksi", "Actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -71,8 +74,8 @@ export default function pdfHistory({
                 <tr>
                   <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
                     <FileText size={48} className="mx-auto mb-4 text-gray-300" />
-                    <p className="text-lg font-medium">Tidak ada data ditemukan</p>
-                    <p className="text-sm">Coba kata kunci lain atau buat dokumen baru</p>
+                    <p className="text-lg font-medium">{tr("Tidak ada data ditemukan", "No data found")}</p>
+                    <p className="text-sm">{tr("Coba kata kunci lain atau buat dokumen baru", "Try another keyword or create a new document")}</p>
                   </td>
                 </tr>
               ) : (
@@ -110,14 +113,14 @@ export default function pdfHistory({
                         <button
                           onClick={() => onView(item)}
                           className="p-2 rounded-lg text-blue-600 hover:bg-blue-50 transition"
-                          title="Lihat detail"
+                          title={tr("Lihat detail", "View detail")}
                         >
                           <Eye size={18} />
                         </button>
                         <button
                           onClick={() => onEdit(item)}
                           className="p-2 rounded-lg text-orange-600 hover:bg-orange-50 transition"
-                          title="Edit dokumen"
+                          title={tr("Edit dokumen", "Edit document")}
                         >
                           <Edit size={18} />
                         </button>
@@ -164,7 +167,7 @@ export default function pdfHistory({
               <div className="bg-gray-50 rounded-2xl p-5">
                 <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <User size={18} className="text-blue-600" />
-                  Informasi Customer
+                  {tr("Informasi Customer", "Customer Information")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div>
@@ -181,12 +184,12 @@ export default function pdfHistory({
                   </div>
                   <div className="flex items-center">
                     <MapPin size={14} className="text-gray-400 mr-1" />
-                    <span className="text-gray-500">Kota:</span>
+                    <span className="text-gray-500">{tr("Kota", "City")}:</span>
                     <span className="ml-2 font-medium">{selectedItem.kota || "-"}</span>
                   </div>
                 </div>
                 <div className="mt-3">
-                  <span className="text-gray-500 text-sm">Alamat:</span>
+                  <span className="text-gray-500 text-sm">{tr("Alamat", "Address")}:</span>
                   <p className="mt-1 text-gray-900">{selectedItem.address || "-"}</p>
                 </div>
               </div>
@@ -195,7 +198,7 @@ export default function pdfHistory({
               <div className="bg-gray-50 rounded-2xl p-5">
                 <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Wrench size={18} className="text-blue-600" />
-                  Informasi Perangkat
+                  {tr("Informasi Perangkat", "Equipment Information")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                   <div>
@@ -217,11 +220,11 @@ export default function pdfHistory({
               <div className="bg-gray-50 rounded-2xl p-5">
                 <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                   <Calendar size={18} className="text-blue-600" />
-                  Tanggal & Teknisi
+                  {tr("Tanggal & Teknisi", "Date & Technician")}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                   <div>
-                    <span className="text-gray-500">Tanggal:</span>
+                    <span className="text-gray-500">{tr("Tanggal", "Date")}:</span>
                     <span className="ml-2 font-medium">{formatDate(selectedItem.tanggal)}</span>
                   </div>
                   <div>
@@ -233,11 +236,11 @@ export default function pdfHistory({
                     <span className="ml-2 font-medium">{formatDate(selectedItem.completed_date)}</span>
                   </div>
                   <div className="md:col-span-3">
-                    <span className="text-gray-500">Nama Teknisi:</span>
+                    <span className="text-gray-500">{tr("Nama Teknisi", "Technician Name")}:</span>
                     <span className="ml-2 font-medium">{selectedItem.nama_teknisi || "-"}</span>
                   </div>
                   <div className="md:col-span-3">
-                    <span className="text-gray-500">Nama Client:</span>
+                    <span className="text-gray-500">{tr("Nama Client", "Client Name")}:</span>
                     <span className="ml-2 font-medium">{selectedItem.nama_client || "-"}</span>
                   </div>
                 </div>
@@ -245,7 +248,7 @@ export default function pdfHistory({
 
               {/* DESCRIPTIONS */}
               <div className="bg-gray-50 rounded-2xl p-5">
-                <h3 className="font-semibold text-gray-900 mb-3">Deskripsi</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">{tr("Deskripsi", "Description")}</h3>
                 <div className="space-y-3 text-sm">
                   <div>
                     <span className="text-gray-500 block mb-1">Problem Description:</span>
@@ -270,7 +273,7 @@ export default function pdfHistory({
                 onClick={closeViewModal}
                 className="px-8 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-medium transition"
               >
-                Tutup
+                {tr("Tutup", "Close")}
               </button>
             </div>
 

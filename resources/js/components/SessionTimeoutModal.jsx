@@ -1,4 +1,5 @@
 import React from 'react';
+import { useI18n } from "../i18n/index.jsx";
 
 /**
  * SessionTimeoutModal Component
@@ -11,6 +12,7 @@ import React from 'react';
  * @param {Function} props.onLoginRedirect - Callback saat tombol login diklik
  */
 const SessionTimeoutModal = ({ isOpen, onLoginRedirect }) => {
+    const { t } = useI18n();
     if (!isOpen) return null;
 
     return (
@@ -18,12 +20,10 @@ const SessionTimeoutModal = ({ isOpen, onLoginRedirect }) => {
             <div style={styles.modal}>
                 <div style={styles.icon}>⏰</div>
 
-                <h2 style={styles.title}>Session Berakhir</h2>
+                <h2 style={styles.title}>{t("sessionEnded", "Session Ended")}</h2>
 
                 <p style={styles.message}>
-                    Session anda telah berakhir.
-                    <br />
-                    Login kembali untuk melanjutkan.
+                    {t("sessionEndedDesc", "Your session has ended. Please sign in again to continue.")}
                 </p>
 
                 <button
@@ -36,7 +36,7 @@ const SessionTimeoutModal = ({ isOpen, onLoginRedirect }) => {
                         e.target.style.backgroundColor = '#007bff';
                     }}
                 >
-                    Login Kembali
+                    {t("reLogin", "Sign In Again")}
                 </button>
             </div>
         </div>

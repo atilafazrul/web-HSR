@@ -3,8 +3,11 @@ import { History, Plus } from "lucide-react";
 import { useBAM } from "./hooks/useBAM";
 import { BAMForm } from "./components/forms/BAMForm";
 import { BAMHistory } from "./components/history/BAMHistory";
+import { useI18n } from "../../i18n";
 
 export default function BAMPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const {
     activeTab,
     setActiveTab,
@@ -34,7 +37,10 @@ export default function BAMPage() {
         <div>
           <h2 className="text-3xl font-bold">Generate BAM</h2>
           <p className="text-gray-500">
-            Buat dan kelola dokumen Berita Acara Maintenance
+            {tr(
+              "Buat dan kelola dokumen Berita Acara Maintenance",
+              "Create and manage Maintenance Minutes documents"
+            )}
           </p>
         </div>
       </div>
@@ -50,7 +56,7 @@ export default function BAMPage() {
           }`}
         >
           <Plus size={18} />
-          Buat Baru
+          {tr("Buat Baru", "Create New")}
         </button>
         <button
           onClick={() => setActiveTab("history")}
@@ -61,7 +67,7 @@ export default function BAMPage() {
           }`}
         >
           <History size={18} />
-          Riwayat ({filteredHistory.length})
+          {tr("Riwayat", "History")} ({filteredHistory.length})
         </button>
       </div>
 

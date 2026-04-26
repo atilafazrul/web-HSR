@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import api from "../api/axiosConfig";
 import tokenManager from "../utils/tokenManager";
+import { useI18n } from "../i18n/index.jsx";
 import {
   User,
   Mail,
@@ -29,6 +30,8 @@ import {
 } from "lucide-react";
 
 export default function Profile({ user, logout, onProfileUpdate }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const effectiveUserId = user?.id || tokenManager.getUser()?.id;
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -106,10 +109,10 @@ export default function Profile({ user, logout, onProfileUpdate }) {
           setProfileData(newData);
           setFormData(newData);
         } else {
-          setError("Gagal memuat data profile");
+          setError(tr("Gagal memuat data profile", "Failed to load profile data"));
         }
       } catch (err) {
-        const msg = err?.response?.data?.message || "Gagal memuat data profile";
+        const msg = err?.response?.data?.message || tr("Gagal memuat data profile", "Failed to load profile data");
         setError(msg);
       }
     };
@@ -163,13 +166,13 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     }
 
     if (!isAllowedDocFile(file)) {
-      setError("Format dokumen harus JPG, PNG, atau PDF");
+      setError(tr("Format dokumen harus JPG, PNG, atau PDF", "Document format must be JPG, PNG, or PDF"));
       setTimeout(() => setError(null), 3000);
       return;
     }
 
     if (file.size > DOC_MAX_BYTES) {
-      setError("Ukuran dokumen maksimal 2MB");
+      setError(tr("Ukuran dokumen maksimal 2MB", "Maximum document size is 2MB"));
       setTimeout(() => setError(null), 3000);
       return;
     }
@@ -185,11 +188,11 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     fileArray.forEach((file) => {
       if (!file) return;
       if (!isAllowedDocFile(file)) {
-        if (!firstError) firstError = "Format dokumen harus JPG, PNG, atau PDF";
+        if (!firstError) firstError = tr("Format dokumen harus JPG, PNG, atau PDF", "Document format must be JPG, PNG, or PDF");
         return;
       }
       if (file.size > DOC_MAX_BYTES) {
-        if (!firstError) firstError = "Ukuran dokumen maksimal 2MB";
+        if (!firstError) firstError = tr("Ukuran dokumen maksimal 2MB", "Maximum document size is 2MB");
         return;
       }
       validFiles.push(file);
@@ -230,12 +233,12 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   };
 
   const handleDeleteExistingFile = async (type, index) => {
-    if (!confirm("Yakin mau hapus file ini?")) return;
+    if (!confirm(tr("Yakin mau hapus file ini?", "Are you sure to delete this file?"))) return;
     try {
       const res = await api.post(`/karyawan/${effectiveUserId}/delete-file`, { type, index });
       const data = res.data;
       if (data.success) {
-        setSuccess("File berhasil dihapus ✅");
+        setSuccess(tr("File berhasil dihapus ✅", "File deleted successfully ✅"));
         const refresh = await api.get(`/profile?user_id=${effectiveUserId}`);
         const result = refresh.data;
         if (result.success) {
@@ -260,11 +263,11 @@ export default function Profile({ user, logout, onProfileUpdate }) {
         }
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError("Gagal hapus file");
+        setError(tr("Gagal hapus file", "Failed to delete file"));
         setTimeout(() => setError(null), 3000);
       }
     } catch (err) {
-      setError("Error hapus file");
+      setError(tr("Error hapus file", "File delete error"));
       setTimeout(() => setError(null), 3000);
     }
   };
@@ -310,21 +313,21 @@ export default function Profile({ user, logout, onProfileUpdate }) {
           setProfileData(verified);
           setFormData(verified);
           setIsEditing(false);
-          setSuccess("Profile berhasil diupdate! 🎉");
+          setSuccess(tr("Profile berhasil diupdate! 🎉", "Profile updated successfully! 🎉"));
           if (onProfileUpdate) onProfileUpdate({ ...user, ...verified });
           setTimeout(() => setSuccess(null), 3000);
         }
       } else {
-        setError(data.message || "Gagal update profile");
+        setError(data.message || tr("Gagal update profile", "Failed to update profile"));
       }
     } catch (error) {
       const validationErrors = error.response?.data?.errors;
       if (validationErrors) {
         const messages = Object.values(validationErrors).flat().join(", ");
-        setError(messages || "Validasi gagal");
+        setError(messages || tr("Validasi gagal", "Validation failed"));
         setTimeout(() => setError(null), 4000);
       } else {
-        setError(error.response?.data?.message || "Terjadi kesalahan pada server");
+        setError(error.response?.data?.message || tr("Terjadi kesalahan pada server", "A server error occurred"));
         setTimeout(() => setError(null), 4000);
       }
     } finally {
@@ -338,8 +341,8 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) return setError("File harus gambar");
-    if (file.size > 2 * 1024 * 1024) return setError("Max 2MB");
+    if (!file.type.startsWith("image/")) return setError(tr("File harus gambar", "File must be an image"));
+    if (file.size > 2 * 1024 * 1024) return setError(tr("Max 2MB", "Max 2MB"));
 
     setUploadingPhoto(true);
     try {
@@ -351,13 +354,13 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       if (res.status === 200 && data.success) {
         setProfileData(prev => ({ ...prev, profile_photo: data.profile_photo }));
         if (onProfileUpdate) onProfileUpdate({ ...user, profile_photo: data.profile_photo });
-        setSuccess("Foto diupdate! 📸");
+        setSuccess(tr("Foto diupdate! 📸", "Photo updated! 📸"));
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(data.message || "Upload gagal");
+        setError(data.message || tr("Upload gagal", "Upload failed"));
       }
     } catch {
-      setError("Upload gagal");
+      setError(tr("Upload gagal", "Upload failed"));
     } finally {
       setUploadingPhoto(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -365,20 +368,20 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   };
 
   const handleDeletePhoto = async () => {
-    if (!confirm("Hapus foto profile?")) return;
+    if (!confirm(tr("Hapus foto profile?", "Delete profile photo?"))) return;
     try {
       const res = await api.delete("/profile/photo", { data: { user_id: effectiveUserId } });
       const data = res.data;
       if (res.status === 200 && data.success) {
         setProfileData(prev => ({ ...prev, profile_photo: null }));
         if (onProfileUpdate) onProfileUpdate({ ...user, profile_photo: null });
-        setSuccess("Foto dihapus");
+        setSuccess(tr("Foto dihapus", "Photo deleted"));
         setTimeout(() => setSuccess(null), 3000);
       } else {
-        setError(data.message || "Hapus gagal");
+        setError(data.message || tr("Hapus gagal", "Delete failed"));
       }
     } catch {
-      setError("Hapus gagal");
+      setError(tr("Hapus gagal", "Delete failed"));
     }
   };
 
@@ -395,8 +398,8 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                          (profileData.ijazah?.length || 0) + (profileData.sertifikat?.length || 0);
 
   const tabs = [
-    { id: "personal", label: "Informasi Pribadi", icon: <User size={16} /> },
-    { id: "documents", label: "Dokumen", icon: <FileText size={16} />, badge: totalDocuments }
+    { id: "personal", label: tr("Informasi Pribadi", "Personal Information"), icon: <User size={16} /> },
+    { id: "documents", label: tr("Dokumen", "Documents"), icon: <FileText size={16} />, badge: totalDocuments }
   ];
 
   return (
@@ -477,7 +480,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     )}
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
                       <FileText size={12} />
-                      {totalDocuments} Dokumen
+                      {totalDocuments} {tr("Dokumen", "Documents")}
                     </span>
                   </div>
                 </div>
@@ -488,15 +491,15 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                       className="w-full md:w-auto px-5 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition flex items-center justify-center gap-2 shadow-md text-sm font-medium"
                     >
                       <Edit2 size={16} />
-                      Edit Profile
+                      {tr("Edit Profile", "Edit Profile")}
                     </button>
                   ) : (
                     <div className="grid grid-cols-2 md:flex gap-2">
                       <button onClick={handleCancel} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <X size={16} /> Batal
+                        <X size={16} /> {tr("Batal", "Cancel")}
                       </button>
                       <button onClick={handleSave} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
-                        <Save size={16} /> {loading ? "Menyimpan..." : "Simpan"}
+                        <Save size={16} /> {loading ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
                       </button>
                     </div>
                   )}
@@ -536,7 +539,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InfoField
                   icon={<User size={18} />}
-                  label="Nama Lengkap"
+                  label={tr("Nama Lengkap", "Full Name")}
                   value={formData.name}
                   display={profileData.name}
                   editing={isEditing}
@@ -553,7 +556,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                 />
                 <InfoField
                   icon={<Smartphone size={18} />}
-                  label="Nomor Telepon"
+                  label={tr("Nomor Telepon", "Phone Number")}
                   value={formData.no_telepon}
                   display={profileData.no_telepon}
                   editing={isEditing}
@@ -562,7 +565,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                 />
                 <InfoField
                   icon={<Home size={18} />}
-                  label="Alamat"
+                  label={tr("Alamat", "Address")}
                   value={formData.alamat}
                   display={profileData.alamat}
                   editing={isEditing}
@@ -577,7 +580,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                 {isEditing ? (
                   <>
                     {/* Dokumen Identitas - KTP, KK, Akte Kelahiran */}
-                    <DocumentSection title="Dokumen Identitas" icon={<FileSignature size={18} className="text-purple-600" />}>
+                    <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         <UploadCard 
                           label="KTP" 
@@ -587,13 +590,13 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                           required
                         />
                         <UploadCard 
-                          label="Kartu Keluarga (KK)" 
+                          label={tr("Kartu Keluarga (KK)", "Family Card (KK)")} 
                           file={files.kk} 
                           onFileChange={(f) => handleDocFilePick("kk", f)} 
                           existingFile={profileData.kk}
                         />
                         <UploadCard 
-                          label="Akte Kelahiran" 
+                          label={tr("Akte Kelahiran", "Birth Certificate")} 
                           file={files.akte} 
                           onFileChange={(f) => handleDocFilePick("akte", f)} 
                           existingFile={profileData.akte}
@@ -616,7 +619,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     </DocumentSection>
 
                     {/* Sertifikat */}
-                    <DocumentSection title="Sertifikat" icon={<Award size={18} className="text-purple-600" />}>
+                    <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
                       <MultiUploadCard
                         type="sertifikat"
                         files={sertifikatFiles}
@@ -630,18 +633,18 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     </DocumentSection>
 
                     <p className="text-xs text-gray-400 text-center flex items-center justify-center gap-1 pt-2 border-t border-gray-100">
-                      <Shield size={10} /> File akan dienkripsi untuk keamanan data
+                      <Shield size={10} /> {tr("File akan dienkripsi untuk keamanan data", "Files will be encrypted for data security")}
                     </p>
                   </>
                 ) : (
                   <>
                     {/* View Mode - Dokumen Identitas */}
                     {(profileData.ktp || profileData.kk || profileData.akte) && (
-                      <DocumentSection title="Dokumen Identitas" icon={<FileSignature size={18} className="text-purple-600" />}>
+                      <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {profileData.ktp && <DocCard label="KTP" filename={getFileName(profileData.ktp)} onPreview={() => previewFile('ktp')} />}
-                          {profileData.kk && <DocCard label="Kartu Keluarga (KK)" filename={getFileName(profileData.kk)} onPreview={() => previewFile('kk')} />}
-                          {profileData.akte && <DocCard label="Akte Kelahiran" filename={getFileName(profileData.akte)} onPreview={() => previewFile('akte')} />}
+                          {profileData.kk && <DocCard label={tr("Kartu Keluarga (KK)", "Family Card (KK)")} filename={getFileName(profileData.kk)} onPreview={() => previewFile('kk')} />}
+                          {profileData.akte && <DocCard label={tr("Akte Kelahiran", "Birth Certificate")} filename={getFileName(profileData.akte)} onPreview={() => previewFile('akte')} />}
                         </div>
                       </DocumentSection>
                     )}
@@ -664,12 +667,12 @@ export default function Profile({ user, logout, onProfileUpdate }) {
 
                     {/* View Mode - Sertifikat */}
                     {profileData.sertifikat?.length > 0 && (
-                      <DocumentSection title="Sertifikat" icon={<Award size={18} className="text-purple-600" />}>
+                      <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {profileData.sertifikat.map((f, i) => (
                             <DocCard 
                               key={`sertifikat-${i}`} 
-                              label={`Sertifikat ${i + 1}`} 
+                              label={`${tr("Sertifikat", "Certificate")} ${i + 1}`} 
                               filename={getFileName(f)} 
                               onPreview={() => previewFile('sertifikat', i)} 
                             />
@@ -681,7 +684,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     {totalDocuments === 0 && (
                       <div className="text-center py-12 text-gray-400">
                         <FolderOpen size={48} className="mx-auto mb-3 opacity-50" />
-                        <p>Belum ada dokumen</p>
+                        <p>{tr("Belum ada dokumen", "No documents yet")}</p>
                       </div>
                     )}
                   </>
@@ -742,6 +745,8 @@ const DocumentSection = ({ title, icon, children }) => (
 );
 
 const UploadCard = ({ label, file, onFileChange, existingFile, required = false }) => {
+  const language = localStorage.getItem("app_language") || "id";
+  const tr = (id, en) => (language === "en" ? en : id);
   const [isDragging, setIsDragging] = useState(false);
   const inputId = `upload-${label.replace(/\s/g, '-')}`;
 
@@ -768,16 +773,16 @@ const UploadCard = ({ label, file, onFileChange, existingFile, required = false 
           <div className="flex flex-col items-center gap-2">
             <Upload size={24} className="text-gray-400" />
             <span className="text-xs text-gray-500">
-              {file ? file.name : "Klik atau drag file di sini"}
+              {file ? file.name : tr("Klik atau drag file di sini", "Click or drag file here")}
             </span>
-            <span className="text-[10px] text-gray-400">PDF, JPG, PNG (max 2MB)</span>
+            <span className="text-[10px] text-gray-400">PDF, JPG, PNG ({tr("max", "max")} 2MB)</span>
           </div>
         </label>
       </div>
       {existingFile && !file && (
         <div className="mt-2 flex items-center gap-1 text-xs text-green-600 bg-green-50 p-1.5 rounded-lg">
           <CheckCircle size={12} />
-          <span className="truncate flex-1">File tersimpan: {existingFile.split('/').pop()}</span>
+          <span className="truncate flex-1">{tr("File tersimpan", "Saved file")}: {existingFile.split('/').pop()}</span>
         </div>
       )}
     </div>
@@ -785,6 +790,8 @@ const UploadCard = ({ label, file, onFileChange, existingFile, required = false 
 };
 
 const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFiles, userId, onDeleteFile, acceptedFormats = "PDF, JPG, PNG" }) => {
+  const language = localStorage.getItem("app_language") || "id";
+  const tr = (id, en) => (language === "en" ? en : id);
   const [isDragging, setIsDragging] = useState(false);
   const inputId = `multi-${type}`;
   const total = (existingFiles?.length || 0) + files.length;
@@ -792,7 +799,7 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
   return (
     <div>
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400">{total} file</span>
+        <span className="text-xs text-gray-400">{total} {tr("file", "files")}</span>
         <span className="text-[10px] text-gray-400">{acceptedFormats}</span>
       </div>
       <div
@@ -812,7 +819,7 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
         <label htmlFor={inputId} className="cursor-pointer block">
           <div className="flex flex-col items-center gap-2">
             <Upload size={24} className="text-gray-400" />
-            <span className="text-xs text-gray-500">Klik atau drag untuk tambah file</span>
+            <span className="text-xs text-gray-500">{tr("Klik atau drag untuk tambah file", "Click or drag to add files")}</span>
           </div>
         </label>
       </div>
@@ -826,10 +833,10 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
               <span className="truncate flex-1">{file.split('/').pop()}</span>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => window.open(buildPreviewUrl(type, idx), "_blank")} className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition" title="Lihat">
+              <button onClick={() => window.open(buildPreviewUrl(type, idx), "_blank")} className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition" title={tr("Lihat", "View")}>
                 <Eye size={12} />
               </button>
-              <button onClick={() => onDeleteFile(type, idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title="Hapus">
+              <button onClick={() => onDeleteFile(type, idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Hapus", "Delete")}>
                 <Trash2 size={12} />
               </button>
             </div>
@@ -842,7 +849,7 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
               <FileText size={12} className="text-purple-500 flex-shrink-0" />
               <span className="truncate flex-1">{file.name}</span>
             </div>
-            <button onClick={() => onRemoveFile(idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title="Batal">
+            <button onClick={() => onRemoveFile(idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Batal", "Cancel")}>
               <X size={12} />
             </button>
           </div>
@@ -866,7 +873,7 @@ const DocCard = ({ label, filename, onPreview }) => (
     <button 
       onClick={onPreview} 
       className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition opacity-100 md:opacity-60 md:group-hover:opacity-100"
-      title="Lihat Dokumen"
+      title={(localStorage.getItem("app_language") || "id") === "en" ? "View Document" : "Lihat Dokumen"}
     >
       <Eye size={16} />
     </button>

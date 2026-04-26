@@ -38,6 +38,11 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+const trText = (id, en) => {
+  if (typeof window === "undefined") return id;
+  return localStorage.getItem("app_language") === "en" ? en : id;
+};
+
 export default function KaryawanPage() {
   const navigate = useNavigate();
   const currentUser = tokenManager.getUser();
@@ -85,7 +90,7 @@ export default function KaryawanPage() {
       setEmployees(res.data.data || res.data || []);
     } catch (err) {
       console.error(err);
-      setError("Gagal mengambil data karyawan");
+      setError(trText("Gagal mengambil data karyawan", "Failed to load employee data"));
     } finally {
       setLoading(false);
     }
@@ -145,7 +150,7 @@ export default function KaryawanPage() {
 
       await api.post(`/karyawan/${editData.id}?_method=PUT`, formData);
 
-      alert("Data berhasil disimpan ✅");
+      alert(trText("Data berhasil disimpan ✅", "Data saved successfully ✅"));
       resetEditState();
       fetchData();
 
@@ -154,9 +159,9 @@ export default function KaryawanPage() {
       if (err.response?.data?.errors) {
         const errors = err.response.data.errors;
         const errorMessages = Object.values(errors).flat().join("\n");
-        alert(`Gagal menyimpan:\n${errorMessages}`);
+        alert(`${trText("Gagal menyimpan", "Failed to save")}:\n${errorMessages}`);
       } else {
-        alert(err.response?.data?.message || "Gagal menyimpan data ❌");
+        alert(err.response?.data?.message || trText("Gagal menyimpan data ❌", "Failed to save data ❌"));
       }
     } finally {
       setSaving(false);
@@ -178,7 +183,7 @@ export default function KaryawanPage() {
       setError(null);
 
       if (!createData.name || !createData.email || !createData.password) {
-        alert("Nama, Email, dan Password harus diisi!");
+        alert(trText("Nama, Email, dan Password harus diisi!", "Name, Email, and Password are required!"));
         setSaving(false);
         return;
       }
@@ -188,7 +193,7 @@ export default function KaryawanPage() {
         role: createData.role || "user"
       });
 
-      alert("Karyawan berhasil ditambahkan ✅");
+      alert(trText("Karyawan berhasil ditambahkan ✅", "Employee added successfully ✅"));
       setCreateData(null);
       fetchData();
 
@@ -197,9 +202,9 @@ export default function KaryawanPage() {
       if (err.response?.data?.errors) {
         const errors = err.response.data.errors;
         const errorMessages = Object.values(errors).flat().join("\n");
-        alert(`Gagal menambahkan:\n${errorMessages}`);
+        alert(`${trText("Gagal menambahkan", "Failed to add")}:\n${errorMessages}`);
       } else {
-        alert(err.response?.data?.message || "Gagal menambahkan karyawan ❌");
+        alert(err.response?.data?.message || trText("Gagal menambahkan karyawan ❌", "Failed to add employee ❌"));
       }
     } finally {
       setSaving(false);
@@ -207,14 +212,14 @@ export default function KaryawanPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Yakin ingin menghapus karyawan ini?")) return;
+    if (!window.confirm(trText("Yakin ingin menghapus karyawan ini?", "Are you sure you want to delete this employee?"))) return;
     try {
       await api.delete(`/karyawan/${id}`);
-      alert("Karyawan berhasil dihapus ✅");
+      alert(trText("Karyawan berhasil dihapus ✅", "Employee deleted successfully ✅"));
       fetchData();
     } catch (err) {
       console.error(err);
-      alert("Gagal menghapus karyawan ❌");
+      alert(trText("Gagal menghapus karyawan ❌", "Failed to delete employee ❌"));
     }
   };
 
@@ -252,7 +257,7 @@ export default function KaryawanPage() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">Memuat data karyawan...</p>
+          <p className="text-gray-500">{trText("Memuat data karyawan...", "Loading employee data...")}</p>
         </div>
       </div>
     );
@@ -276,10 +281,10 @@ export default function KaryawanPage() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
-              Kelola Karyawan
+              {trText("Kelola Karyawan", "Manage Employees")}
             </h1>
             <p className="text-gray-500 text-sm mt-1">
-              Kelola data lengkap seluruh karyawan perusahaan
+              {trText("Kelola data lengkap seluruh karyawan perusahaan", "Manage complete company employee data")}
             </p>
           </div>
 
@@ -289,7 +294,7 @@ export default function KaryawanPage() {
               onChange={(e) => setRoleFilter(e.target.value)}
               className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition"
             >
-              <option value="all">Semua Role</option>
+              <option value="all">{trText("Semua Role", "All Roles")}</option>
               <option value="admin">Admin</option>
               <option value="user">User</option>
             </select>
@@ -298,7 +303,7 @@ export default function KaryawanPage() {
               <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Cari karyawan..."
+                placeholder={trText("Cari karyawan...", "Search employees...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-full sm:w-[280px] bg-white shadow-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition"
@@ -310,7 +315,7 @@ export default function KaryawanPage() {
               className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium"
             >
               <UserPlus size={18} />
-              <span>Tambah Karyawan</span>
+              <span>{trText("Tambah Karyawan", "Add Employee")}</span>
             </button>
           </div>
         </div>
@@ -318,19 +323,19 @@ export default function KaryawanPage() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           <StatCard
-            title="Total Karyawan"
+            title={trText("Total Karyawan", "Total Employees")}
             value={employees.length}
             icon={<Users size={20} />}
             color="purple"
           />
           <StatCard
-            title="Divisi Aktif"
+            title={trText("Divisi Aktif", "Active Divisions")}
             value={new Set(employees.map(e => e.divisi).filter(Boolean)).size}
             icon={<Building2 size={20} />}
             color="blue"
           />
           <StatCard
-            title="Dokumen Terupload"
+            title={trText("Dokumen Terupload", "Uploaded Documents")}
             value={employees.reduce((total, emp) => {
               let count = 0;
               if (emp.ktp) count++;
@@ -349,8 +354,8 @@ export default function KaryawanPage() {
         {filteredEmployees.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
             <FolderOpen size={64} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500 text-lg">Tidak ada data karyawan</p>
-            <p className="text-gray-400 text-sm mt-1">Klik "Tambah Karyawan" untuk menambahkan data</p>
+            <p className="text-gray-500 text-lg">{trText("Tidak ada data karyawan", "No employee data")}</p>
+            <p className="text-gray-400 text-sm mt-1">{trText('Klik "Tambah Karyawan" untuk menambahkan data', 'Click "Add Employee" to add data')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -376,7 +381,7 @@ export default function KaryawanPage() {
 
       {/* Modal Detail - Dengan Accordion yang Rapi */}
       {selected && (
-        <Modal onClose={() => setSelected(null)} title="Detail Karyawan" size="large">
+        <Modal onClose={() => setSelected(null)} title={trText("Detail Karyawan", "Employee Details")} size="large">
           <EmployeeDetailModal
             employee={selected}
             previewFile={previewFile}
@@ -388,7 +393,7 @@ export default function KaryawanPage() {
 
       {/* Modal Edit - Hanya untuk edit data teks */}
       {editData && (
-        <Modal onClose={resetEditState} title="Edit Data Karyawan" size="large">
+        <Modal onClose={resetEditState} title={trText("Edit Data Karyawan", "Edit Employee Data")} size="large">
           <EditEmployeeForm
             key={editData.id} // Tambahkan key agar state ter-reset
             editData={editData}
@@ -406,7 +411,7 @@ export default function KaryawanPage() {
 
       {/* Modal Create */}
       {createData && (
-        <Modal onClose={() => setCreateData(null)} title="Tambah Karyawan Baru">
+        <Modal onClose={() => setCreateData(null)} title={trText("Tambah Karyawan Baru", "Add New Employee")}>
           <CreateEmployeeForm
             createData={createData}
             setCreateData={setCreateData}
@@ -475,9 +480,9 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
         <p className="text-gray-400 text-xs mt-1 truncate">{employee.email}</p>
 
         <div className="flex justify-center gap-2 mt-4">
-          <ActionButton icon={<Eye size={16} />} onClick={onView} color="blue" tooltip="Lihat Detail" />
+          <ActionButton icon={<Eye size={16} />} onClick={onView} color="blue" tooltip={trText("Lihat Detail", "View Detail")} />
           <ActionButton icon={<Pencil size={16} />} onClick={onEdit} color="purple" tooltip="Edit" />
-          <ActionButton icon={<Trash2 size={16} />} onClick={onDelete} color="red" tooltip="Hapus" />
+          <ActionButton icon={<Trash2 size={16} />} onClick={onDelete} color="red" tooltip={trText("Hapus", "Delete")} />
         </div>
       </div>
     </div>
@@ -509,23 +514,23 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
   const personalFields = [
     { label: "NIK", value: employee.nik },
     { label: "Email", value: employee.email },
-    { label: "No. Telepon", value: employee.phone || employee.no_telepon },
-    { label: "Tempat Lahir", value: employee.tempat_lahir },
-    { label: "Tanggal Lahir", value: employee.tanggal_lahir ? new Date(employee.tanggal_lahir).toLocaleDateString('id-ID') : "-" },
-    { label: "Jenis Kelamin", value: employee.jenis_kelamin },
-    { label: "Agama", value: employee.agama },
-    { label: "Status Perkawinan", value: employee.status_perkawinan },
-    { label: "Pekerjaan", value: employee.pekerjaan },
-    { label: "Golongan Darah", value: employee.golongan_darah },
-    { label: "Alamat", value: employee.alamat, fullWidth: true }
+    { label: trText("No. Telepon", "Phone No."), value: employee.phone || employee.no_telepon },
+    { label: trText("Tempat Lahir", "Place of Birth"), value: employee.tempat_lahir },
+    { label: trText("Tanggal Lahir", "Date of Birth"), value: employee.tanggal_lahir ? new Date(employee.tanggal_lahir).toLocaleDateString('id-ID') : "-" },
+    { label: trText("Jenis Kelamin", "Gender"), value: employee.jenis_kelamin },
+    { label: trText("Agama", "Religion"), value: employee.agama },
+    { label: trText("Status Perkawinan", "Marital Status"), value: employee.status_perkawinan },
+    { label: trText("Pekerjaan", "Occupation"), value: employee.pekerjaan },
+    { label: trText("Golongan Darah", "Blood Type"), value: employee.golongan_darah },
+    { label: trText("Alamat", "Address"), value: employee.alamat, fullWidth: true }
   ];
 
   // Kontak Darurat Fields
   const emergencyFields = [
-    { label: "Nama", value: employee.kontak_darurat_nama },
-    { label: "Hubungan", value: employee.kontak_darurat_hubungan },
-    { label: "Telepon", value: employee.kontak_darurat_telepon },
-    { label: "Alamat", value: employee.kontak_darurat_alamat, fullWidth: true }
+    { label: trText("Nama", "Name"), value: employee.kontak_darurat_nama },
+    { label: trText("Hubungan", "Relationship"), value: employee.kontak_darurat_hubungan },
+    { label: trText("Telepon", "Phone"), value: employee.kontak_darurat_telepon },
+    { label: trText("Alamat", "Address"), value: employee.kontak_darurat_alamat, fullWidth: true }
   ];
 
   // Dokumen Files
@@ -561,7 +566,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
 
       {/* Accordion Sections */}
       <AccordionSection
-        title="Data Pribadi"
+        title={trText("Data Pribadi", "Personal Data")}
         icon={<User size={18} />}
         expanded={expandedSections.personal}
         onToggle={() => toggleSection('personal')}
@@ -576,7 +581,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
       </AccordionSection>
 
       <AccordionSection
-        title="Kontak Darurat"
+        title={trText("Kontak Darurat", "Emergency Contact")}
         icon={<Heart size={18} />}
         expanded={expandedSections.emergency}
         onToggle={() => toggleSection('emergency')}
@@ -591,7 +596,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
       </AccordionSection>
 
       <AccordionSection
-        title="Dokumen"
+        title={trText("Dokumen", "Documents")}
         icon={<Shield size={18} />}
         expanded={expandedSections.documents}
         onToggle={() => toggleSection('documents')}
@@ -602,7 +607,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
           <div>
             <p className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
               <Shield size={14} className="text-purple-500" />
-              Dokumen Identitas
+              {trText("Dokumen Identitas", "Identity Documents")}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {documents.map((doc, idx) => doc.file && (
@@ -616,7 +621,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
               ))}
             </div>
             {!employee.ktp && !employee.kk && !employee.akte && (
-              <p className="text-gray-400 text-sm">Tidak ada dokumen identitas</p>
+              <p className="text-gray-400 text-sm">{trText("Tidak ada dokumen identitas", "No identity documents")}</p>
             )}
           </div>
 
@@ -646,7 +651,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
             <div>
               <p className="text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
                 <Award size={14} className="text-purple-500" />
-                Sertifikat ({employee.sertifikat.length} file)
+                {trText("Sertifikat", "Certificates")} ({employee.sertifikat.length} file)
               </p>
               <div className="grid grid-cols-1 gap-2">
                 {employee.sertifikat.map((file, index) => (
@@ -665,7 +670,7 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
           {totalDocuments === 0 && (
             <div className="text-center py-8">
               <FileText size={48} className="mx-auto text-gray-300 mb-2" />
-              <p className="text-gray-400">Tidak ada dokumen</p>
+              <p className="text-gray-400">{trText("Tidak ada dokumen", "No documents")}</p>
             </div>
           )}
         </div>
@@ -689,25 +694,25 @@ const EditEmployeeForm = ({
   const [newPassword, setNewPassword] = useState("");
 
   const personalFields = [
-    { label: "Nama Lengkap", key: "name", type: "text", required: true },
+    { label: trText("Nama Lengkap", "Full Name"), key: "name", type: "text", required: true },
     { label: "NIK", key: "nik", type: "text" },
     { label: "Email", key: "email", type: "email", required: true },
-    { label: "Nomor Telepon", key: "phone", type: "tel", altKey: "no_telepon" },
-    { label: "Tempat Lahir", key: "tempat_lahir", type: "text" },
-    { label: "Tanggal Lahir", key: "tanggal_lahir", type: "date" },
-    { label: "Jenis Kelamin", key: "jenis_kelamin", type: "select", options: ["Laki-laki", "Perempuan"] },
-    { label: "Agama", key: "agama", type: "text" },
-    { label: "Status Perkawinan", key: "status_perkawinan", type: "select", options: ["Belum Kawin", "Kawin", "Cerai", "Cerai Mati"] },
-    { label: "Pekerjaan", key: "pekerjaan", type: "text" },
-    { label: "Golongan Darah", key: "golongan_darah", type: "select", options: ["A", "B", "AB", "O"] },
-    { label: "Alamat", key: "alamat", type: "textarea", fullWidth: true }
+    { label: trText("Nomor Telepon", "Phone Number"), key: "phone", type: "tel", altKey: "no_telepon" },
+    { label: trText("Tempat Lahir", "Place of Birth"), key: "tempat_lahir", type: "text" },
+    { label: trText("Tanggal Lahir", "Date of Birth"), key: "tanggal_lahir", type: "date" },
+    { label: trText("Jenis Kelamin", "Gender"), key: "jenis_kelamin", type: "select", options: [trText("Laki-laki", "Male"), trText("Perempuan", "Female")] },
+    { label: trText("Agama", "Religion"), key: "agama", type: "text" },
+    { label: trText("Status Perkawinan", "Marital Status"), key: "status_perkawinan", type: "select", options: [trText("Belum Kawin", "Single"), trText("Kawin", "Married"), trText("Cerai", "Divorced"), trText("Cerai Mati", "Widowed")] },
+    { label: trText("Pekerjaan", "Occupation"), key: "pekerjaan", type: "text" },
+    { label: trText("Golongan Darah", "Blood Type"), key: "golongan_darah", type: "select", options: ["A", "B", "AB", "O"] },
+    { label: trText("Alamat", "Address"), key: "alamat", type: "textarea", fullWidth: true }
   ];
 
   const emergencyFields = [
-    { label: "Nama Kontak Darurat", key: "kontak_darurat_nama", type: "text" },
-    { label: "Hubungan", key: "kontak_darurat_hubungan", type: "text" },
-    { label: "Telepon Kontak Darurat", key: "kontak_darurat_telepon", type: "tel" },
-    { label: "Alamat Kontak Darurat", key: "kontak_darurat_alamat", type: "textarea", fullWidth: true }
+    { label: trText("Nama Kontak Darurat", "Emergency Contact Name"), key: "kontak_darurat_nama", type: "text" },
+    { label: trText("Hubungan", "Relationship"), key: "kontak_darurat_hubungan", type: "text" },
+    { label: trText("Telepon Kontak Darurat", "Emergency Contact Phone"), key: "kontak_darurat_telepon", type: "tel" },
+    { label: trText("Alamat Kontak Darurat", "Emergency Contact Address"), key: "kontak_darurat_alamat", type: "textarea", fullWidth: true }
   ];
 
   const handleFieldChange = (key, value, altKey = null) => {
@@ -735,7 +740,7 @@ const EditEmployeeForm = ({
           />
           <div>
             <FileUploadSimple
-              label="Ganti Foto"
+              label={trText("Ganti Foto", "Change Photo")}
               file={filePhoto}
               onFileChange={setFilePhoto}
               icon={<Camera size={14} />}
@@ -747,7 +752,7 @@ const EditEmployeeForm = ({
 
       {/* Accordion Sections */}
       <AccordionSection
-        title="Data Pribadi"
+        title={trText("Data Pribadi", "Personal Data")}
         icon={<User size={18} />}
         expanded={expandedSections.personal}
         onToggle={() => toggleSection('personal')}
@@ -768,13 +773,13 @@ const EditEmployeeForm = ({
           {/* Field Password Baru */}
           <div className="md:col-span-2">
             <label className="block text-xs font-medium text-gray-500 mb-1">
-              Password Baru <span className="text-gray-400">(kosongkan jika tidak diubah)</span>
+              {trText("Password Baru", "New Password")} <span className="text-gray-400">({trText("kosongkan jika tidak diubah", "leave blank if unchanged")})</span>
             </label>
             <input
               type="password"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Masukkan password baru"
+              placeholder={trText("Masukkan password baru", "Enter new password")}
               className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 outline-none"
             />
           </div>
@@ -782,7 +787,7 @@ const EditEmployeeForm = ({
       </AccordionSection>
 
       <AccordionSection
-        title="Kontak Darurat"
+        title={trText("Kontak Darurat", "Emergency Contact")}
         icon={<Heart size={18} />}
         expanded={expandedSections.emergency}
         onToggle={() => toggleSection('emergency')}
@@ -805,7 +810,7 @@ const EditEmployeeForm = ({
       <div className="bg-blue-50 rounded-xl p-3 flex items-center gap-2">
         <FileText size={14} className="text-blue-500" />
         <p className="text-xs text-blue-700">
-          Untuk melihat dokumen (KTP, KK, Ijazah, dll), silakan buka halaman Detail Karyawan.
+          {trText("Untuk melihat dokumen (KTP, KK, Ijazah, dll), silakan buka halaman Detail Karyawan.", "To view documents (ID card, family card, diploma, etc.), please open the Employee Detail page.")}
         </p>
       </div>
 
@@ -817,13 +822,13 @@ const EditEmployeeForm = ({
           className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-purple-600 hover:to-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
         >
           <Save size={18} />
-          {saving ? "Menyimpan..." : "Simpan Perubahan"}
+          {saving ? trText("Menyimpan...", "Saving...") : trText("Simpan Perubahan", "Save Changes")}
         </button>
         <button
           onClick={onCancel}
           className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition font-medium"
         >
-          Batal
+          {trText("Batal", "Cancel")}
         </button>
       </div>
     </div>
@@ -863,12 +868,12 @@ const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, o
   return (
     <div className="space-y-5">
       <FormField
-        label="Nama Lengkap"
+        label={trText("Nama Lengkap", "Full Name")}
         value={createData.name}
         onChange={(v) => setCreateData({ ...createData, name: v })}
         type="text"
         required
-        placeholder="Masukkan nama lengkap"
+        placeholder={trText("Masukkan nama lengkap", "Enter full name")}
       />
       <FormField
         label="Email"
@@ -879,22 +884,22 @@ const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, o
         placeholder="contoh@email.com"
       />
       <FormField
-        label="Password"
+        label={trText("Password", "Password")}
         value={createData.password}
         onChange={(v) => setCreateData({ ...createData, password: v })}
         type="password"
         required
-        placeholder="Minimal 6 karakter"
+        placeholder={trText("Minimal 6 karakter", "Minimum 6 characters")}
       />
       <FormField
-        label="Divisi"
+        label={trText("Divisi", "Division")}
         value={createData.divisi}
         onChange={(v) => setCreateData({ ...createData, divisi: v })}
         type="select"
         options={["IT", "Service", "Sales", "Kontraktor", "Logistik", "Purchasing"]}
       />
       <FormField
-        label="Role Akun"
+        label={trText("Role Akun", "Account Role")}
         value={createData.role}
         onChange={(v) => setCreateData({ ...createData, role: v })}
         type="select"
@@ -909,13 +914,13 @@ const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, o
           className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-purple-600 hover:to-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
         >
           <UserPlus size={18} />
-          {saving ? "Menyimpan..." : "Tambah Karyawan"}
+          {saving ? trText("Menyimpan...", "Saving...") : trText("Tambah Karyawan", "Add Employee")}
         </button>
         <button
           onClick={onCancel}
           className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition font-medium"
         >
-          Batal
+          {trText("Batal", "Cancel")}
         </button>
       </div>
     </div>
@@ -943,7 +948,7 @@ const FormField = ({ label, value, onChange, type = "text", options, required, p
           onChange={(e) => onChange(e.target.value)}
           className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition bg-white"
         >
-          <option value="">Pilih {label}</option>
+          <option value="">{trText("Pilih", "Select")} {label}</option>
           {options.map((opt, idx) => (
             <option key={idx} value={opt}>
               {opt}
@@ -1023,7 +1028,7 @@ const DocumentCard = ({ label, filename, icon, onPreview }) => (
     <button
       onClick={onPreview}
       className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-105 opacity-0 group-hover:opacity-100"
-      title="Lihat Dokumen"
+      title={trText("Lihat Dokumen", "View Document")}
     >
       <EyeIcon size={12} />
     </button>

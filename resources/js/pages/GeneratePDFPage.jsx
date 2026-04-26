@@ -4,8 +4,11 @@ import { ArrowLeft, FileText, History, Plus } from "lucide-react";
 import { usePdf } from "./generatepdf/usePdf";
 import pdfForm from "./generatepdf/pdfform";
 import DocumentationHistory from "./generatepdf/pdfHistory";
+import { useI18n } from "../i18n";
 
 export default function GeneratePDFPage({ user }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -59,7 +62,7 @@ export default function GeneratePDFPage({ user }) {
               {isEditing ? "Edit Service Report" : "Generate Service Report"}
             </h2>
             <p className="text-gray-500">
-              Divisi {currentDivisi} - {isEditing ? "Edit dokumen" : "Buat dan kelola dokumen Service Report"}
+              {tr("Divisi", "Division")} {currentDivisi} - {isEditing ? tr("Edit dokumen", "Edit document") : tr("Buat dan kelola dokumen Service Report", "Create and manage Service Report documents")}
             </p>
           </div>
         </div>
@@ -70,7 +73,7 @@ export default function GeneratePDFPage({ user }) {
         <button
           onClick={() => {
             if (isEditing) {
-              if (window.confirm("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan membuat dokumen baru?")) {
+              if (window.confirm(tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan membuat dokumen baru?", "You are editing a document. Are you sure you want to cancel and create a new one?"))) {
                 cancelEdit();
                 setActiveTab("form");
               }
@@ -84,12 +87,12 @@ export default function GeneratePDFPage({ user }) {
             }`}
         >
           <Plus size={18} />
-          {isEditing ? "Edit Dokumen" : "Buat Baru"}
+          {isEditing ? tr("Edit Dokumen", "Edit Document") : tr("Buat Baru", "Create New")}
         </button>
         <button
           onClick={() => {
             if (isEditing) {
-              if (window.confirm("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan melihat riwayat?")) {
+              if (window.confirm(tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan melihat riwayat?", "You are editing a document. Are you sure you want to cancel and view history?"))) {
                 cancelEdit();
                 setActiveTab("history");
               }
@@ -103,7 +106,7 @@ export default function GeneratePDFPage({ user }) {
             }`}
         >
           <History size={18} />
-          Riwayat ({historyData.length})
+          {tr("Riwayat", "History")} ({historyData.length})
         </button>
       </div>
 
@@ -132,7 +135,7 @@ export default function GeneratePDFPage({ user }) {
           {fetchingHistory ? (
             <div className="bg-white rounded-3xl shadow-md p-12 text-center">
               <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-              <p className="text-gray-500">Memuat riwayat dokumen...</p>
+              <p className="text-gray-500">{tr("Memuat riwayat dokumen...", "Loading document history...")}</p>
             </div>
           ) : (
             React.createElement(DocumentationHistory, {

@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 
 /* ================= HOOKS ================= */
 import { useAuth } from "./hooks/useAuth";
+import { useI18n } from "./i18n/index.jsx";
 
 /* ================= COMPONENTS ================= */
 import SessionTimeoutModal from "./components/SessionTimeoutModal.jsx";
@@ -23,6 +24,7 @@ import LogistikPage from "./pages/LogistikPage.jsx";
 import PurchasingPage from "./pages/PurchasingPage.jsx";
 
 export default function App() {
+  const { t } = useI18n();
 
   const { 
     user, 
@@ -64,7 +66,7 @@ export default function App() {
 
   // Show loading state
   if (isLoading) {
-    return <div className="p-10 text-center">Loading...</div>;
+    return <div className="p-10 text-center">{t("appLoading", "Loading...")}</div>;
   }
 
   // Not authenticated - show login

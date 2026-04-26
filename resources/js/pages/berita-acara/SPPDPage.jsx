@@ -3,8 +3,11 @@ import { History, Plus } from "lucide-react";
 import { useSPPD } from "./hooks/useSPPD";
 import { SPPDForm } from "./components/forms/SPPDForm";
 import { SPPDHistory } from "./components/history/SPPDHistory";
+import { useI18n } from "../../i18n";
 
 export default function SPPDPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const {
     activeTab,
     setActiveTab,
@@ -31,7 +34,7 @@ export default function SPPDPage() {
 
   const handleTabChange = (tab) => {
     if (isEditing) {
-      if (window.confirm("Anda sedang mengedit dokumen. Yakin ingin membatalkan?")) {
+      if (window.confirm(tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan?", "You are editing a document. Are you sure you want to cancel?"))) {
         cancelEdit();
         setActiveTab(tab);
       }
@@ -46,7 +49,9 @@ export default function SPPDPage() {
         <div>
           <h2 className="text-3xl font-bold">{isEditing ? "Edit SPPD" : "Generate SPPD"}</h2>
           <p className="text-gray-500">
-            {isEditing ? "Perbarui data dokumen SPPD" : "Buat dan kelola dokumen Surat Perintah Perjalanan Dinas"}
+            {isEditing
+              ? tr("Perbarui data dokumen SPPD", "Update SPPD document data")
+              : tr("Buat dan kelola dokumen Surat Perintah Perjalanan Dinas", "Create and manage Official Travel Order documents")}
           </p>
         </div>
       </div>
@@ -57,14 +62,14 @@ export default function SPPDPage() {
           className={'flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ' + (activeTab === "form" ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100')}
         >
           <Plus size={18} />
-          {isEditing ? "Edit Dokumen" : "Buat Baru"}
+          {isEditing ? tr("Edit Dokumen", "Edit Document") : tr("Buat Baru", "Create New")}
         </button>
         <button
           onClick={() => handleTabChange("history")}
           className={'flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ' + (activeTab === "history" ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100')}
         >
           <History size={18} />
-          Riwayat ({filteredHistory.length})
+          {tr("Riwayat", "History")} ({filteredHistory.length})
         </button>
       </div>
 

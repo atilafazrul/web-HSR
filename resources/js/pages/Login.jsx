@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Lock, Mail, Shield, Zap, Users, TrendingUp } from "lucide-react";
+import { useI18n } from "../i18n/index.jsx";
 
 export default function Login({ login, isLoading }) {
+  const { language, setLanguage, t } = useI18n();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -30,7 +32,6 @@ export default function Login({ login, isLoading }) {
 
   }, []); // ⚠️ DEPENDENCY TETAP
 
-
   /* ================= LOGIN ================= */
   // Cek flag untuk mencegah infinite redirect loop
   const REDIRECTED_TO_LOGIN = 'redirected_to_login';
@@ -41,7 +42,7 @@ export default function Login({ login, isLoading }) {
 
     // Cek flag infinite redirect loop
     if (localStorage.getItem(REDIRECTED_TO_LOGIN)) {
-      alert("Terlalu banyak redirect. Silakan coba lagi.");
+      alert(t("tooManyRedirect", "Too many redirects. Please try again."));
       return;
     }
 
@@ -52,7 +53,7 @@ export default function Login({ login, isLoading }) {
     if (result.success) {
       // User sudah otomatis di-set oleh useAuth.login()
     } else {
-      alert(result.error || "Login gagal");
+      alert(result.error || t("loginFailed", "Login failed"));
       setPassword("");
     }
   };
@@ -164,11 +165,24 @@ export default function Login({ login, isLoading }) {
 
             {/* Header */}
             <div className="text-center mb-8">
+              <div className="flex justify-end mb-4">
+                <label className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>{t("language", "Language")}</span>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  >
+                    <option value="id">Indonesia</option>
+                    <option value="en">English</option>
+                  </select>
+                </label>
+              </div>
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
-                Welcome Back
+                {t("welcomeBack", "Welcome Back")}
               </h2>
               <p className="text-gray-500">
-                Sign in to access your dashboard
+                {t("signInSubtitle", "Sign in to access your dashboard")}
               </p>
             </div>
 
@@ -177,7 +191,7 @@ export default function Login({ login, isLoading }) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
                   <Users size={16} />
-                  <span>Active Division:</span>
+                  <span>{t("activeDivision", "Active Division:")}</span>
                 </div>
                 <div className="flex items-center justify-center min-w-[100px]">
                   <span
@@ -198,7 +212,7 @@ export default function Login({ login, isLoading }) {
               {/* Email Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
+                  {t("emailAddress", "Email Address")}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -210,7 +224,7 @@ export default function Login({ login, isLoading }) {
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required
-                    placeholder="Enter your email"
+                    placeholder={t("emailPlaceholder", "Enter your email")}
                   />
                 </div>
               </div>
@@ -218,7 +232,7 @@ export default function Login({ login, isLoading }) {
               {/* Password Field */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
+                  {t("password", "Password")}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -230,7 +244,7 @@ export default function Login({ login, isLoading }) {
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required
-                    placeholder="Enter your password"
+                    placeholder={t("passwordPlaceholder", "Enter your password")}
                   />
                   <button
                     type="button"
@@ -256,7 +270,7 @@ export default function Login({ login, isLoading }) {
               <div className="flex items-center text-sm">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                  <span className="text-gray-600">Remember me</span>
+                  <span className="text-gray-600">{t("rememberMe", "Remember me")}</span>
                 </label>
               </div>
 
@@ -272,10 +286,10 @@ export default function Login({ login, isLoading }) {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Signing in...
+                    {t("signingIn", "Signing in...")}
                   </span>
                 ) : (
-                  "Sign In"
+                  t("signIn", "Sign In")
                 )}
               </button>
 
@@ -283,7 +297,7 @@ export default function Login({ login, isLoading }) {
 
             {/* Footer */}
             <div className="mt-8 text-center text-sm text-gray-500">
-              <p>Need help? Contact your system administrator</p>
+              <p>{t("needHelp", "Need help? Contact your system administrator")}</p>
             </div>
 
           </div>
@@ -291,7 +305,7 @@ export default function Login({ login, isLoading }) {
           {/* Security Badge */}
           <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400">
             <Shield size={14} />
-            <span>Secured with enterprise-grade encryption</span>
+            <span>{t("securedBadge", "Secured with enterprise-grade encryption")}</span>
           </div>
 
         </div>

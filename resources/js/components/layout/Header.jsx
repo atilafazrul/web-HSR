@@ -1,6 +1,7 @@
 import React from "react";
 import { Bell, Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useI18n } from "../../i18n/index.jsx";
 
 export default function Header({
   user,
@@ -11,6 +12,7 @@ export default function Header({
   setSidebarOpen,
 }) {
   const navigate = useNavigate();
+  const { language, setLanguage, t } = useI18n();
 
   // Get photo URL
   const getPhotoUrl = (photoPath) => {
@@ -73,6 +75,17 @@ export default function Header({
       </div>
 
       <div className="flex items-center gap-4 min-w-0">
+        <div className="hidden sm:flex items-center gap-2">
+          <span className="text-xs text-gray-500">{t("language", "Language")}</span>
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            className="border border-gray-200 rounded-lg px-2 py-1 text-sm bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          >
+            <option value="id">Indonesia</option>
+            <option value="en">English</option>
+          </select>
+        </div>
         {/* Bell */}
         {showBell && (
           <button

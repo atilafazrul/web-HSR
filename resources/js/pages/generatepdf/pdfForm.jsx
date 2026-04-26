@@ -14,6 +14,7 @@ import {
   X,
   Edit,
 } from "lucide-react";
+import { useI18n } from "../../i18n";
 
 export default function pdfForm({
   formData,
@@ -31,6 +32,8 @@ export default function pdfForm({
   user,
   isEditing,
 }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {/* HEADER FORM CARD */}
@@ -43,7 +46,7 @@ export default function pdfForm({
               <Edit size={20} className="text-orange-600" />
             </div>
             <div>
-              <p className="font-semibold text-orange-800">Mode Edit</p>
+              <p className="font-semibold text-orange-800">{tr("Mode Edit", "Edit Mode")}</p>
             </div>
           </div>
         )}
@@ -57,7 +60,7 @@ export default function pdfForm({
               {isEditing ? "Edit Service Report" : "Form Service Report"}
             </h3>
             <p className="text-gray-500 text-sm">
-              {isEditing ? "Perbarui data dokumen service report" : "Isi data lengkap untuk membuat dokumen service report"}
+              {isEditing ? tr("Perbarui data dokumen service report", "Update service report document data") : tr("Isi data lengkap untuk membuat dokumen service report", "Fill complete data to create a service report document")}
             </p>
           </div>
         </div>
@@ -129,7 +132,7 @@ export default function pdfForm({
           {isEditing ? (
             <>
               <X size={18} />
-              Batal Edit
+              {tr("Batal Edit", "Cancel Edit")}
             </>
           ) : (
             "Reset Form"
@@ -143,12 +146,12 @@ export default function pdfForm({
           {loading ? (
             <>
               <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {isEditing ? "Menyimpan..." : "Menyimpan..."}
+              {tr("Menyimpan...", "Saving...")}
             </>
           ) : (
             <>
               <FileText size={18} />
-              {isEditing ? "Simpan Perubahan" : "Simpan Dokumen"}
+              {isEditing ? tr("Simpan Perubahan", "Save Changes") : tr("Simpan Dokumen", "Save Document")}
             </>
           )}
         </button>
@@ -373,7 +376,7 @@ function PartsReplacementSection({ partsList, onPartsChange, onAddParts, onRemov
           className="flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm w-full sm:w-auto"
         >
           <Plus size={16} />
-          Tambah Part
+          {tr("Tambah Part", "Add Part")}
         </button>
       </div>
 
@@ -400,13 +403,13 @@ function PartsReplacementSection({ partsList, onPartsChange, onAddParts, onRemov
             </div>
 
             <div className="col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1 lg:hidden">Part Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1 lg:hidden">{tr("Part Name", "Part Name")}</label>
               <input
                 type="text"
                 value={part.name}
                 onChange={(e) => onPartsChange(index, "name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                placeholder="Nama part"
+                placeholder={tr("Nama part", "Part name")}
               />
             </div>
 
@@ -461,10 +464,10 @@ function PartsReplacementSection({ partsList, onPartsChange, onAddParts, onRemov
                 onClick={() => onRemoveParts(index)}
                 disabled={partsList.length <= 1}
                 className="flex items-center justify-center gap-2 w-full lg:w-8 h-10 lg:h-8 rounded-lg text-red-500 bg-red-50 lg:bg-transparent lg:hover:bg-red-50 transition disabled:opacity-30 disabled:cursor-not-allowed mx-auto"
-                title="Hapus baris"
+                title={tr("Hapus baris", "Delete row")}
               >
                 <Trash2 size={16} />
-                <span className="lg:hidden text-sm font-medium">Hapus Part</span>
+                <span className="lg:hidden text-sm font-medium">{tr("Hapus Part", "Delete Part")}</span>
               </button>
             </div>
 
@@ -487,7 +490,7 @@ function ProblemDescriptionSection({ formData, onInputChange }) {
         onChange={(e) => onInputChange("problem_description", e.target.value)}
         rows={4}
         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        placeholder="Jelaskan masalah atau keluhan yang dilaporkan customer..."
+        placeholder={tr("Jelaskan masalah atau keluhan yang dilaporkan customer...", "Explain the issue or complaint reported by the customer...")}
       />
     </div>
   );
@@ -505,7 +508,7 @@ function ServicePerformedSection({ formData, onInputChange }) {
         onChange={(e) => onInputChange("service_performed", e.target.value)}
         rows={4}
         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        placeholder="Jelaskan tindakan/perbaikan yang telah dilakukan..."
+        placeholder={tr("Jelaskan tindakan/perbaikan yang telah dilakukan...", "Describe actions/repairs that have been performed...")}
       />
     </div>
   );
@@ -523,7 +526,7 @@ function RecommendationSection({ formData, onInputChange }) {
         onChange={(e) => onInputChange("recommendation", e.target.value)}
         rows={3}
         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        placeholder="Saran atau rekomendasi untuk perawatan selanjutnya..."
+        placeholder={tr("Saran atau rekomendasi untuk perawatan selanjutnya...", "Suggestions or recommendations for next maintenance...")}
       />
     </div>
   );
@@ -541,7 +544,7 @@ function AdministrationSection({ formData, onInputChange, user }) {
         {/* Nama Teknisi */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nama Teknisi <span className="text-red-500">*</span>
+            {tr("Nama Teknisi", "Technician Name")} <span className="text-red-500">*</span>
           </label>
           <div className="relative">
             <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -557,7 +560,7 @@ function AdministrationSection({ formData, onInputChange, user }) {
 
         {/* Nama Client */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Nama Client</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Nama Client", "Client Name")}</label>
           <div className="relative">
             <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -565,14 +568,14 @@ function AdministrationSection({ formData, onInputChange, user }) {
               value={formData.nama_client}
               onChange={(e) => onInputChange("nama_client", e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              placeholder="Nama client"
+              placeholder={tr("Nama client", "Client name")}
             />
           </div>
         </div>
 
         {/* Kota */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Kota</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Kota", "City")}</label>
           <div className="relative">
             <MapPin size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
@@ -580,14 +583,14 @@ function AdministrationSection({ formData, onInputChange, user }) {
               value={formData.kota}
               onChange={(e) => onInputChange("kota", e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
-              placeholder="Nama kota"
+              placeholder={tr("Nama kota", "City name")}
             />
           </div>
         </div>
 
         {/* Tanggal */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Tanggal</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Tanggal", "Date")}</label>
           <div className="relative">
             <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input

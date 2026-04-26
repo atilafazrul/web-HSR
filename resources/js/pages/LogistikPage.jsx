@@ -1,8 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Truck, Package, ListTodo, Archive } from "lucide-react";
+import { useI18n } from "../i18n/index.jsx";
 
 const LogistikPage = () => {
+  const { language } = useI18n();
   const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
@@ -19,25 +21,27 @@ const LogistikPage = () => {
   return (
     <div>
       <div className="flex items-center gap-4 mb-6">
-        <h2 className="text-3xl font-bold">Divisi Logistik</h2>
+        <h2 className="text-3xl font-bold">{language === "en" ? "Logistics Division" : "Divisi Logistik"}</h2>
       </div>
 
       <p className="text-gray-500 mb-8">
-        Kelola pengiriman, progres pekerjaan, dan dokumentasi logistik
+        {language === "en"
+          ? "Manage deliveries, work progress, and logistics documentation"
+          : "Kelola pengiriman, progres pekerjaan, dan dokumentasi logistik"}
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card
           icon={<ListTodo size={30} className="text-green-600" />}
-          title="Progres Pekerjaan"
-          desc="Pantau status dan perkembangan logistik"
+          title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
+          desc={language === "en" ? "Track logistics status and progress" : "Pantau status dan perkembangan logistik"}
           onClick={() => navigate(`${basePath}/logistik/projek`)}
         />
         {!isUserRole && (
           <Card
             icon={<Archive size={30} className="text-amber-600" />}
-            title="Archive Pekerjaan"
-            desc="Lihat pekerjaan selesai yang sudah di-archive"
+            title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
+            desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/logistik/projek/archive`)}
           />
         )}
@@ -45,7 +49,7 @@ const LogistikPage = () => {
           <Card
             icon={<Package size={30} className="text-blue-600" />}
             title="Inventory"
-            desc="Kelola perangkat dan stok barang logistik"
+            desc={language === "en" ? "Manage logistics devices and stock" : "Kelola perangkat dan stok barang logistik"}
             onClick={() => navigate(`${basePath}/logistik/inventory`)}
           />
         )}

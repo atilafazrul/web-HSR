@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Package, Search, Eye, Pencil, Trash2 } from "lucide-react";
 import api from "../api/axiosConfig";
+import { useI18n } from "../i18n/index.jsx";
 
 export default function InventoryPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const navigate = useNavigate();
 
@@ -46,7 +49,7 @@ export default function InventoryPage() {
 
     } catch (err) {
       console.error(err);
-      setError("Gagal mengambil data barang");
+      setError(tr("Gagal mengambil data barang", "Failed to load item data"));
     } finally {
       setLoading(false);
     }
@@ -55,7 +58,7 @@ export default function InventoryPage() {
   /* ================= DELETE ================= */
   const handleDelete = async (id) => {
 
-    if (!window.confirm("Yakin hapus barang ini?")) return;
+    if (!window.confirm(tr("Yakin hapus barang ini?", "Are you sure you want to delete this item?"))) return;
 
     try {
 
@@ -65,7 +68,7 @@ export default function InventoryPage() {
         }
       });
 
-      alert("Barang berhasil dihapus ✅");
+      alert(tr("Barang berhasil dihapus ✅", "Item deleted successfully ✅"));
       getBarang();
 
     } catch (err) {
@@ -73,9 +76,9 @@ export default function InventoryPage() {
       console.error(err);
 
       if (err.response?.status === 403) {
-        alert("❌ Hanya super admin yang bisa menghapus barang");
+        alert(tr("❌ Hanya super admin yang bisa menghapus barang", "❌ Only super admin can delete items"));
       } else {
-        alert("Gagal menghapus barang ❌");
+        alert(tr("Gagal menghapus barang ❌", "Failed to delete item ❌"));
       }
     }
   };
@@ -101,7 +104,7 @@ export default function InventoryPage() {
   if (loading) {
     return (
       <div className="text-center p-10 text-gray-500">
-        Loading data inventory...
+        {tr("Loading data inventory...", "Loading inventory data...")}
       </div>
     );
   }
@@ -121,8 +124,8 @@ export default function InventoryPage() {
       <div className="flex items-center gap-4 mb-4 sm:mb-6">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-bold flex items-center gap-2">
           <Package size={24} className="sm:w-[28px] sm:h-[28px]" />
-          <span className="hidden xs:inline">Inventory Aset</span>
-          <span className="xs:hidden">Inventory Aset</span>
+          <span className="hidden xs:inline">{tr("Inventory Aset", "Asset Inventory")}</span>
+          <span className="xs:hidden">{tr("Inventory Aset", "Asset Inventory")}</span>
         </h2>
       </div>
 
@@ -137,7 +140,7 @@ export default function InventoryPage() {
           className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start"
         >
           <Plus size={18} />
-          <span className="hidden sm:inline">Tambah Barang</span>
+          <span className="hidden sm:inline">{tr("Tambah Barang", "Add Item")}</span>
         </button>
 
         {/* Search Bar */}
@@ -148,7 +151,7 @@ export default function InventoryPage() {
           />
           <input
             type="text"
-            placeholder="Cari barang..."
+            placeholder={tr("Cari barang...", "Search items...")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="border rounded-lg pl-9 pr-4 py-2 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
@@ -162,23 +165,23 @@ export default function InventoryPage() {
         <table className="w-full text-sm">
           <thead className="bg-gray-100">
             <tr>
-              <th className="p-3 text-left">Kode</th>
-              <th className="p-3 text-left">Nama</th>
-              <th className="p-3 text-left whitespace-nowrap">Merek</th>
-              <th className="p-3 text-left">Model</th>
-              <th className="p-3 text-left whitespace-nowrap">Serial</th>
-              <th className="p-3 text-left">Kategori</th>
-              <th className="p-3 text-left">Stok</th>
-              <th className="p-3 text-left">Keterangan</th>
-              <th className="p-3 text-left">Lokasi</th>
-              <th className="p-3 text-left">Aksi</th>
+              <th className="p-3 text-left">{tr("Kode", "Code")}</th>
+              <th className="p-3 text-left">{tr("Nama", "Name")}</th>
+              <th className="p-3 text-left whitespace-nowrap">{tr("Merek", "Brand")}</th>
+              <th className="p-3 text-left">{tr("Model", "Model")}</th>
+              <th className="p-3 text-left whitespace-nowrap">{tr("Serial", "Serial")}</th>
+              <th className="p-3 text-left">{tr("Kategori", "Category")}</th>
+              <th className="p-3 text-left">{tr("Stok", "Stock")}</th>
+              <th className="p-3 text-left">{tr("Keterangan", "Condition")}</th>
+              <th className="p-3 text-left">{tr("Lokasi", "Location")}</th>
+              <th className="p-3 text-left">{tr("Aksi", "Actions")}</th>
             </tr>
           </thead>
           <tbody>
             {filteredBarang.length === 0 ? (
               <tr>
                 <td colSpan="10" className="p-6 text-center text-gray-500">
-                  Data tidak ditemukan
+                  {tr("Data tidak ditemukan", "No data found")}
                 </td>
               </tr>
             ) : (
@@ -198,7 +201,9 @@ export default function InventoryPage() {
                           : "bg-green-100 text-green-600"
                         }`}
                     >
-                      {b.keterangan || "Siap Pakai"}
+                      {language === "en"
+                        ? (b.keterangan === "Rusak" ? "Damaged" : b.keterangan === "Siap Pakai" ? "Ready to Use" : (b.keterangan || "Ready to Use"))
+                        : (b.keterangan || "Siap Pakai")}
                     </span>
                   </td>
                   <td className="p-3">{b.lokasi}</td>
@@ -214,7 +219,7 @@ export default function InventoryPage() {
                             setPreviewIndex(0);
                           }}
                           className="text-gray-600 hover:text-black"
-                          title="Lihat Foto"
+                          title={tr("Lihat Foto", "View Photo")}
                         >
                           <Eye size={18} />
                         </button>
@@ -222,7 +227,7 @@ export default function InventoryPage() {
                       <button
                         onClick={() => navigate(`${basePath}/it/inventory/edit/${b.id}`)}
                         className="text-blue-600 hover:text-blue-800"
-                        title="Edit"
+                        title={tr("Edit", "Edit")}
                       >
                         <Pencil size={18} />
                       </button>
@@ -230,7 +235,7 @@ export default function InventoryPage() {
                         <button
                           onClick={() => handleDelete(b.id)}
                           className="text-red-600 hover:text-red-800"
-                          title="Hapus"
+                          title={tr("Hapus", "Delete")}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -248,7 +253,7 @@ export default function InventoryPage() {
       <div className="block md:hidden space-y-3">
         {filteredBarang.length === 0 ? (
           <div className="bg-white rounded-xl p-6 text-center text-gray-500">
-            Data tidak ditemukan
+            {tr("Data tidak ditemukan", "No data found")}
           </div>
         ) : (
           filteredBarang.map((b) => (
@@ -265,34 +270,36 @@ export default function InventoryPage() {
                       : "bg-green-100 text-green-600"
                     }`}
                 >
-                  {b.keterangan || "Siap Pakai"}
+                  {language === "en"
+                    ? (b.keterangan === "Rusak" ? "Damaged" : b.keterangan === "Siap Pakai" ? "Ready to Use" : (b.keterangan || "Ready to Use"))
+                    : (b.keterangan || "Siap Pakai")}
                 </span>
               </div>
 
               {/* Detail Barang */}
               <div className="grid grid-cols-2 gap-2 text-sm mb-4">
                 <div>
-                  <span className="text-gray-500">Merek:</span>
+                  <span className="text-gray-500">{tr("Merek", "Brand")}:</span>
                   <p className="font-medium">{b.merek || "—"}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Model:</span>
+                  <span className="text-gray-500">{tr("Model", "Model")}:</span>
                   <p className="font-medium">{b.model || "—"}</p>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-gray-500">Serial:</span>
+                  <span className="text-gray-500">{tr("Serial", "Serial")}:</span>
                   <p className="font-medium font-mono text-xs">{b.nomor_serial || "—"}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Kategori:</span>
+                  <span className="text-gray-500">{tr("Kategori", "Category")}:</span>
                   <p className="font-medium">{b.kategori}</p>
                 </div>
                 <div>
-                  <span className="text-gray-500">Stok:</span>
+                  <span className="text-gray-500">{tr("Stok", "Stock")}:</span>
                   <p className="font-medium">{b.stok}</p>
                 </div>
                 <div className="col-span-2">
-                  <span className="text-gray-500">Lokasi:</span>
+                  <span className="text-gray-500">{tr("Lokasi", "Location")}:</span>
                   <p className="font-medium">{b.lokasi}</p>
                 </div>
               </div>
@@ -309,7 +316,7 @@ export default function InventoryPage() {
                       setPreviewIndex(0);
                     }}
                     className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 p-3 rounded-lg transition flex items-center justify-center"
-                    title="Lihat Foto"
+                    title={tr("Lihat Foto", "View Photo")}
                   >
                     <Eye size={20} />
                   </button>
@@ -317,7 +324,7 @@ export default function InventoryPage() {
                 <button
                   onClick={() => navigate(`${basePath}/it/inventory/edit/${b.id}`)}
                   className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-600 p-3 rounded-lg transition flex items-center justify-center"
-                  title="Edit"
+                  title={tr("Edit", "Edit")}
                 >
                   <Pencil size={20} />
                 </button>
@@ -325,7 +332,7 @@ export default function InventoryPage() {
                   <button
                     onClick={() => handleDelete(b.id)}
                     className="flex-1 bg-red-100 hover:bg-red-200 text-red-600 p-3 rounded-lg transition flex items-center justify-center"
-                    title="Hapus"
+                    title={tr("Hapus", "Delete")}
                   >
                     <Trash2 size={20} />
                   </button>
@@ -380,7 +387,7 @@ export default function InventoryPage() {
                 setPreviewIndex(0);
               }}
               className="absolute -top-1 -right-1 sm:top-0 sm:right-0 bg-white w-9 h-9 rounded-full shadow flex items-center justify-center hover:bg-gray-100 text-lg leading-none"
-              aria-label="Tutup"
+              aria-label={tr("Tutup", "Close")}
             >
               ✕
             </button>

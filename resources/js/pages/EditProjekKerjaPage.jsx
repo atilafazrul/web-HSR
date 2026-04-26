@@ -2,8 +2,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { Edit3, ArrowLeft } from "lucide-react";
+import { useI18n } from "../i18n";
 
 export default function EditProjekKerjaPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -71,7 +74,7 @@ export default function EditProjekKerjaPage() {
           barang_dibeli: data?.barang_dibeli || "",
         });
       } catch (err) {
-        const msg = err.response?.data?.message || "Gagal memuat data project";
+      const msg = err.response?.data?.message || tr("Gagal memuat data project", "Failed to load project data");
         alert(msg);
         navigate(-1);
       } finally {
@@ -116,11 +119,11 @@ export default function EditProjekKerjaPage() {
 
   const handleSave = async () => {
     if (!canEdit) {
-      alert("Anda tidak punya akses untuk mengubah project ini.");
+      alert(tr("Anda tidak punya akses untuk mengubah project ini.", "You do not have access to edit this project."));
       return;
     }
     if (!form.divisi) {
-      alert("Pilih divisi tujuan (oper) dulu.");
+      alert(tr("Pilih divisi tujuan (oper) dulu.", "Please select target division first."));
       return;
     }
     setSaving(true);
@@ -146,7 +149,7 @@ export default function EditProjekKerjaPage() {
         problem_description: form.problem_description,
         barang_dibeli: form.barang_dibeli,
       });
-      alert("Berhasil disimpan");
+      alert(tr("Berhasil disimpan", "Saved successfully"));
       navigate(-1);
     } catch (err) {
       const msg =
@@ -154,7 +157,7 @@ export default function EditProjekKerjaPage() {
         (err.response?.data?.errors
           ? Object.values(err.response.data.errors).flat().join("\n")
           : null) ||
-        "Gagal menyimpan perubahan project";
+        tr("Gagal menyimpan perubahan project", "Failed to save project changes");
       alert(msg);
     } finally {
       setSaving(false);
@@ -162,7 +165,7 @@ export default function EditProjekKerjaPage() {
   };
 
   if (loading) {
-    return <div className="p-6 text-gray-500">Memuat...</div>;
+    return <div className="p-6 text-gray-500">{tr("Memuat...", "Loading...")}</div>;
   }
 
   const addKaryawanTerlibat = () => {
@@ -196,7 +199,7 @@ export default function EditProjekKerjaPage() {
       (u) => inviteDisplayName(u).toLowerCase() === keyword.toLowerCase()
     );
     if (!match) {
-      setInviteUserError("Pilih akun user dari daftar");
+      setInviteUserError(tr("Pilih akun user dari daftar", "Select a user account from the list"));
       return;
     }
 
@@ -204,7 +207,7 @@ export default function EditProjekKerjaPage() {
       const nextNames = Array.isArray(prev.invited_user_ids) ? [...prev.invited_user_ids] : [];
       const selectedName = inviteDisplayName(match);
       if (nextNames.some((name) => String(name).toLowerCase() === selectedName.toLowerCase())) {
-        setInviteUserError("Akun user ini sudah di-invite");
+        setInviteUserError(tr("Akun user ini sudah di-invite", "This user account is already invited"));
         return prev;
       }
       setInviteUserError("");
@@ -246,10 +249,10 @@ export default function EditProjekKerjaPage() {
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <Edit3 className="text-purple-600" />
-            Edit Projek Kerja
+            {tr("Edit Projek Kerja", "Edit Project")}
           </h2>
           <p className="text-sm text-gray-500">
-            Edit data projek dan oper ke divisi lain.
+            {tr("Edit data projek dan oper ke divisi lain.", "Edit project data and transfer it to another division.")}
           </p>
         </div>
         <button
@@ -258,13 +261,13 @@ export default function EditProjekKerjaPage() {
           className="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg"
         >
           <ArrowLeft size={16} />
-          Kembali
+          {tr("Kembali", "Back")}
         </button>
       </div>
 
       {!canEdit ? (
         <div className="text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded-xl">
-          Anda tidak punya akses untuk mengubah project ini.
+          {tr("Anda tidak punya akses untuk mengubah project ini.", "You do not have access to edit this project.")}
         </div>
       ) : null}
 
@@ -272,7 +275,7 @@ export default function EditProjekKerjaPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Divisi Tujuan (Oper)
+              {tr("Divisi Tujuan (Oper)", "Target Division (Transfer)")}
             </label>
             <select
               value={form.divisi}
@@ -281,7 +284,7 @@ export default function EditProjekKerjaPage() {
               disabled={!canEdit || saving}
               required
             >
-              <option value="">Pilih Divisi</option>
+              <option value="">{tr("Pilih Divisi", "Select Division")}</option>
               <option value="IT">IT</option>
               <option value="Service">Service</option>
               <option value="Kontraktor">Kontraktor</option>
@@ -293,7 +296,7 @@ export default function EditProjekKerjaPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Status
+              {tr("Status", "Status")}
             </label>
             <select
               value={form.status}
@@ -301,18 +304,18 @@ export default function EditProjekKerjaPage() {
               className="border p-3 rounded-xl w-full"
               disabled={!canEdit || saving}
             >
-              <option value="Dibuat">Dibuat</option>
-              <option value="Persiapan">Persiapan</option>
-              <option value="Proses Pekerjaan">Proses Pekerjaan</option>
+              <option value="Dibuat">{tr("Dibuat", "Created")}</option>
+              <option value="Persiapan">{tr("Persiapan", "Preparation")}</option>
+              <option value="Proses Pekerjaan">{tr("Proses Pekerjaan", "Work In Progress")}</option>
               <option value="Editing">Editing</option>
               <option value="Invoicing">Invoicing</option>
-              <option value="Selesai">Selesai</option>
+              <option value="Selesai">{tr("Selesai", "Completed")}</option>
             </select>
           </div>
 
           <div className="md:col-span-2">
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Jenis Pekerjaan
+              {tr("Jenis Pekerjaan", "Work Type")}
             </label>
             <input
               value={form.jenis_pekerjaan}
@@ -324,7 +327,7 @@ export default function EditProjekKerjaPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Karyawan (Sales)
+              {tr("Karyawan (Sales)", "Employee (Sales)")}
             </label>
             <input
               value={form.karyawan}
@@ -335,7 +338,7 @@ export default function EditProjekKerjaPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Karyawan Terlibat ({form?.divisi || project?.divisi || "-"})
+              {tr("Karyawan Terlibat", "Involved Employees")} ({form?.divisi || project?.divisi || "-"})
             </label>
             <div className="flex gap-2">
               <select
@@ -344,7 +347,7 @@ export default function EditProjekKerjaPage() {
                 className="border p-3 rounded-xl w-full"
                 disabled={!canEdit || saving || usersLoading}
               >
-                <option value="">{usersLoading ? "Memuat karyawan..." : `Pilih karyawan ${form?.divisi || project?.divisi || ""}`}</option>
+                <option value="">{usersLoading ? tr("Memuat karyawan...", "Loading employees...") : `${tr("Pilih karyawan", "Select employee")} ${form?.divisi || project?.divisi || ""}`}</option>
                 {usersByDivisi.map((u) => (
                   <option key={u.id} value={(u?.name || u?.email || `#${u?.id}`).trim()}>
                     {u?.name || u?.email || `#${u?.id}`}
@@ -357,7 +360,7 @@ export default function EditProjekKerjaPage() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl disabled:opacity-50"
                 disabled={!canEdit || saving || usersLoading || !karyawanInput}
               >
-                Tambah
+                {tr("Tambah", "Add")}
               </button>
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -382,7 +385,7 @@ export default function EditProjekKerjaPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Invite User (Monitoring)
+              {tr("Invite User (Monitoring)", "Invite User (Monitoring)")}
             </label>
             <div className="flex gap-2">
               <select
@@ -391,7 +394,7 @@ export default function EditProjekKerjaPage() {
                 className="border p-3 rounded-xl w-full"
                 disabled={!canEdit || saving || usersLoading}
               >
-                <option value="">{usersLoading ? "Memuat akun user..." : "Pilih akun user"}</option>
+                <option value="">{usersLoading ? tr("Memuat akun user...", "Loading user accounts...") : tr("Pilih akun user", "Select user account")}</option>
                 {userAccountOptions.map((u) => (
                   <option key={u.id} value={inviteDisplayName(u)}>
                     {inviteDisplayName(u)}
@@ -434,7 +437,7 @@ export default function EditProjekKerjaPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Tanggal
+              {tr("Tanggal", "Date")}
             </label>
             <input
               type="date"
@@ -447,7 +450,7 @@ export default function EditProjekKerjaPage() {
 
           <div className="md:col-span-2">
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Lokasi
+              {tr("Lokasi", "Location")}
             </label>
             <input
               value={form.alamat}
@@ -459,7 +462,7 @@ export default function EditProjekKerjaPage() {
 
           <div className="md:col-span-2">
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Deskripsi
+              {tr("Deskripsi", "Description")}
             </label>
             <textarea
               value={form.problem_description}
@@ -471,7 +474,7 @@ export default function EditProjekKerjaPage() {
 
           <div className="md:col-span-2">
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              Barang yang Dibeli
+              {tr("Barang yang Dibeli", "Purchased Items")}
             </label>
             <textarea
               value={form.barang_dibeli}
@@ -489,7 +492,7 @@ export default function EditProjekKerjaPage() {
             className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
             disabled={saving}
           >
-            Batal
+            {tr("Batal", "Cancel")}
           </button>
           <button
             type="button"
@@ -497,7 +500,7 @@ export default function EditProjekKerjaPage() {
             className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!canEdit || saving || !form.divisi}
           >
-            {saving ? "Menyimpan..." : "Simpan"}
+            {saving ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
           </button>
         </div>
       </div>

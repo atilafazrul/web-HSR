@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian } from "../utils/dateHelpers";
 
+const tr = (id, en) => {
+  if (typeof window === "undefined") return id;
+  return localStorage.getItem("app_language") === "en" ? en : id;
+};
+
 export const useSPPD = () => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
@@ -166,7 +171,11 @@ export const useSPPD = () => {
         response = await api.post("/sppd", submitData);
       }
 
-      alert(isEditing ? "Dokumen SPPD berhasil diperbarui!" : "Dokumen SPPD berhasil disimpan!");
+      alert(
+        isEditing
+          ? tr("Dokumen SPPD berhasil diperbarui!", "SPPD document updated successfully!")
+          : tr("Dokumen SPPD berhasil disimpan!", "SPPD document saved successfully!")
+      );
       resetForm();
       setIsEditing(false);
       setEditId(null);
@@ -174,7 +183,7 @@ export const useSPPD = () => {
       fetchHistory();
     } catch (error) {
       console.error("Error saving document:", error);
-      alert("Gagal menyimpan dokumen. Silakan coba lagi.");
+      alert(tr("Gagal menyimpan dokumen. Silakan coba lagi.", "Failed to save document. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -212,17 +221,17 @@ export const useSPPD = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      alert("PDF SPPD berhasil di-generate ulang!");
+      alert(tr("PDF SPPD berhasil di-generate ulang!", "SPPD PDF regenerated successfully!"));
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Gagal generate PDF. Silakan coba lagi.");
+      alert(tr("Gagal generate PDF. Silakan coba lagi.", "Failed to generate PDF. Please try again."));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Yakin ingin menghapus dokumen ini dari riwayat?")) {
+    if (window.confirm(tr("Yakin ingin menghapus dokumen ini dari riwayat?", "Are you sure you want to delete this document from history?"))) {
       try {
         await api.delete(`/sppd/${id}`);
         fetchHistory();
@@ -290,7 +299,7 @@ export const useSPPD = () => {
       setSelectedItem(null);
     } catch (error) {
       console.error("Error fetching document detail:", error);
-      alert("Gagal memuat data untuk diedit");
+      alert(tr("Gagal memuat data untuk diedit", "Failed to load data for editing"));
     }
   };
 

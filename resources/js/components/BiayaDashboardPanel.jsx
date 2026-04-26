@@ -3,6 +3,7 @@ import api from "../api/axiosConfig";
 import { DollarSign, Eye, Pencil, Trash2, Clock, CheckCircle, AlertCircle, X } from "lucide-react";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
+import { useI18n } from "../i18n/index.jsx";
 
 const kategoriConfig = [
   { key: "jalan", label: "Biaya Jalan" },
@@ -35,6 +36,8 @@ const formatDateTime = (v) => {
 };
 
 export default function BiayaDashboardPanel({ user, showInput = true, scopeUserId = null }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const isSuperAdmin = user?.role === "super_admin";
 
   const [summary, setSummary] = useState({
@@ -140,11 +143,11 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
     const row = form[kategori];
     const nominal = parseRibuanId(row.nominal);
     if (!nominal || nominal <= 0) {
-      alert("Nominal harus lebih dari 0");
+      alert(tr("Nominal harus lebih dari 0", "Amount must be greater than 0"));
       return;
     }
     if (isCompressingKategori(kategori)) {
-      alert("Foto masih dikompres. Tunggu sebentar lalu coba simpan lagi.");
+      alert(tr("Foto masih dikompres. Tunggu sebentar lalu coba simpan lagi.", "Photos are still being compressed. Please wait and try saving again."));
       return;
     }
     try {
@@ -175,13 +178,13 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       }
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || "Gagal simpan biaya");
+      alert(err.response?.data?.message || tr("Gagal simpan biaya", "Failed to save costs"));
     }
   };
 
   const toggleLunas = (row) => {
     const newStatus = !row.is_lunas;
-    const statusText = newStatus ? "Lunas" : "Belum Lunas";
+    const statusText = newStatus ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid");
     setConfirmAction({
       row,
       newStatus,
@@ -204,7 +207,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       );
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || "Gagal update lunas");
+      alert(err.response?.data?.message || tr("Gagal update lunas", "Failed to update payment status"));
     } finally {
       setShowConfirmModal(false);
       setConfirmAction(null);
@@ -217,7 +220,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   };
 
   const removeRow = async (id) => {
-    if (!window.confirm("Hapus data biaya ini?")) return;
+    if (!window.confirm(tr("Hapus data biaya ini?", "Delete this cost data?"))) return;
     try {
       await api.delete(`/dashboard-biaya/${id}`);
       if (editingId === id) {
@@ -226,7 +229,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       }
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || "Gagal hapus data");
+      alert(err.response?.data?.message || tr("Gagal hapus data", "Failed to delete data"));
     }
   };
 
@@ -251,7 +254,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
     if (!row) return;
     const nominal = parseRibuanId(editForm.nominal);
     if (!row.is_lunas && (!nominal || nominal <= 0)) {
-      alert("Nominal harus lebih dari 0");
+      alert(tr("Nominal harus lebih dari 0", "Amount must be greater than 0"));
       return;
     }
     try {
@@ -265,7 +268,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       cancelEdit();
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || "Gagal menyimpan perubahan");
+      alert(err.response?.data?.message || tr("Gagal menyimpan perubahan", "Failed to save changes"));
     }
   };
 
@@ -274,7 +277,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
 
   const renderKategoriCard = (k, rows) => (
     <div key={k.key} className="border rounded-xl p-3">
-      <p className="text-sm font-semibold mb-2">{k.label}</p>
+      <p className="text-sm font-semibold mb-2">{tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}</p>
       <div className="space-y-2 max-h-56 overflow-y-auto">
         {(rows || []).map((row) => (
           <div key={row.id} className="text-xs border rounded-lg p-2">
@@ -291,7 +294,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                       nominal: formatRibuanId(digitsOnly(e.target.value)),
                     }))
                   }
-                  placeholder="Biaya"
+                  placeholder={tr("Biaya", "Amount")}
                   disabled={row.is_lunas}
                   readOnly={row.is_lunas}
                   className={`w-full border rounded-lg p-2 text-sm ${row.is_lunas ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
@@ -299,7 +302,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                 <textarea
                   value={editForm.keterangan}
                   onChange={(e) => setEditForm((f) => ({ ...f, keterangan: e.target.value }))}
-                  placeholder="Keterangan"
+                  placeholder={tr("Keterangan", "Description")}
                   className="w-full border rounded-lg p-2 text-sm resize-y min-h-[60px]"
                   rows="2"
                 />
@@ -309,14 +312,14 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                     onClick={saveEdit}
                     className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-1.5 text-xs"
                   >
-                    Simpan
+                    {tr("Simpan", "Save")}
                   </button>
                   <button
                     type="button"
                     onClick={cancelEdit}
                     className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg py-1.5 text-xs"
                   >
-                    Batal
+                    {tr("Batal", "Cancel")}
                   </button>
                 </div>
               </div>
@@ -327,7 +330,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                   {row.lunas_at && (
                     <div className="flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
                       <Clock size={10} />
-                      <span>Updated: {formatDateTime(row.lunas_at)}</span>
+                      <span>{tr("Diperbarui", "Updated")}: {formatDateTime(row.lunas_at)}</span>
                     </div>
                   )}
                 </div>
@@ -342,13 +345,13 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                       onClick={() => toggleLunas(row)}
                       className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
                     >
-                      {row.is_lunas ? "Lunas" : "Belum"}
+                      {row.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
                     </button>
                   ) : (
                     <span
                       className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
                     >
-                      {row.is_lunas ? "Lunas" : "Belum"}
+                      {row.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
                     </span>
                   )}
                   {(row.photo_urls || []).map((url, idx) => (
@@ -357,7 +360,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                       href={url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      title={`Lihat lampiran ${idx + 1}`}
+                      title={`${tr("Lihat lampiran", "View attachment")} ${idx + 1}`}
                       className="inline-flex items-center justify-center px-2 py-1 rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
                     >
                       <Eye size={12} aria-hidden />
@@ -370,7 +373,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                     <button
                       type="button"
                       onClick={() => startEdit(row)}
-                      title="Edit"
+                      title={tr("Edit", "Edit")}
                       className="inline-flex items-center justify-center px-2 py-1 rounded border bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
                     >
                       <Pencil size={12} aria-hidden />
@@ -380,7 +383,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                     <button
                       type="button"
                       onClick={() => removeRow(row.id)}
-                      title="Hapus"
+                      title={tr("Hapus", "Delete")}
                       className="px-2 py-1 rounded border bg-red-100 text-red-600 border-red-300"
                     >
                       <Trash2 size={12} />
@@ -392,7 +395,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
           </div>
         ))}
         {(rows || []).length === 0 ? (
-          <p className="text-xs text-gray-400">Belum ada data</p>
+          <p className="text-xs text-gray-400">{tr("Belum ada data", "No data yet")}</p>
         ) : null}
       </div>
     </div>
@@ -403,14 +406,14 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
       <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
         <DollarSign size={18} className="text-emerald-600" />
-        Biaya Diluar Projek
+        {tr("Biaya Diluar Projek", "Non-Project Costs")}
       </h3>
 
       {showInput && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
           {kategoriConfig.map((k) => (
             <div key={k.key} className="rounded-xl border p-3 bg-gray-50">
-              <p className="text-sm font-semibold mb-2">{k.label}</p>
+              <p className="text-sm font-semibold mb-2">{tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}</p>
               <input
                 type="text"
                 inputMode="numeric"
@@ -425,7 +428,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                     },
                   }))
                 }
-                placeholder="Biaya"
+                placeholder={tr("Biaya", "Amount")}
                 className="w-full border rounded-lg p-2 text-sm mb-2"
               />
               <textarea
@@ -436,13 +439,13 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                     [k.key]: { ...p[k.key], keterangan: e.target.value },
                   }))
                 }
-                placeholder="Keterangan"
+                placeholder={tr("Keterangan", "Description")}
                 className="w-full border rounded-lg p-2 text-sm mb-2 resize-y min-h-[60px]"
                 rows="2"
               />
               {kategoriWithPhotos(k.key) ? (
                 <div className="mb-2">
-                  <label className="block text-xs text-gray-600 mb-1">Upload foto</label>
+                  <label className="block text-xs text-gray-600 mb-1">{tr("Upload foto", "Upload photos")}</label>
                   <input
                     ref={k.key === "pengeluaran" ? pengeluaranPhotoInputRef : reimbPhotoInputRef}
                     type="file"
@@ -452,11 +455,11 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                     className="w-full text-xs border rounded-lg p-1.5 bg-white"
                   />
                   {isCompressingKategori(k.key) ? (
-                    <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
+                    <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
                   ) : null}
                   {form[k.key].photoFiles?.length > 0 ? (
                     <p className="text-[11px] text-gray-500 mt-1">
-                      {form[k.key].photoFiles.length} file dipilih
+                      {form[k.key].photoFiles.length} {tr("file dipilih", "files selected")}
                     </p>
                   ) : null}
                 </div>
@@ -467,7 +470,9 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                 disabled={isCompressingKategori(k.key)}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-lg py-2 text-sm"
               >
-                {isCompressingKategori(k.key) ? "Mengompres foto..." : `Simpan ${k.label}`}
+                {isCompressingKategori(k.key)
+                  ? tr("Mengompres foto...", "Compressing photos...")
+                  : `${tr("Simpan", "Save")} ${tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}`}
               </button>
             </div>
           ))}
@@ -475,28 +480,28 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       )}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <Summary title="Biaya Jalan" value={summary.jalan} />
-        <Summary title="Pengeluaran" value={summary.pengeluaran} />
-        <Summary title="Reimbursment" value={summary.reimbursment} />
-        <Summary title="Total" value={summary.total} highlight />
+        <Summary title={tr("Biaya Jalan", "Travel Cost")} value={summary.jalan} />
+        <Summary title={tr("Pengeluaran", "Expenses")} value={summary.pengeluaran} />
+        <Summary title={tr("Reimbursment", "Reimbursement")} value={summary.reimbursment} />
+        <Summary title={tr("Total", "Total")} value={summary.total} highlight />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="border rounded-xl p-4 bg-amber-50/40">
-          <h4 className="text-sm font-bold text-amber-800 mb-3">Belum Lunas</h4>
+          <h4 className="text-sm font-bold text-amber-800 mb-3">{tr("Belum Lunas", "Unpaid")}</h4>
           <div className="grid grid-cols-1 gap-3">
             {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.belum[k.key]))}
           </div>
         </div>
         <div className="border rounded-xl p-4 bg-emerald-50/40">
-          <h4 className="text-sm font-bold text-emerald-800 mb-3">Sudah Lunas</h4>
+          <h4 className="text-sm font-bold text-emerald-800 mb-3">{tr("Sudah Lunas", "Paid")}</h4>
           <div className="grid grid-cols-1 gap-3">
             {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.lunas[k.key]))}
           </div>
         </div>
       </div>
 
-      {loading ? <p className="text-xs text-gray-400 mt-3">Memuat...</p> : null}
+      {loading ? <p className="text-xs text-gray-400 mt-3">{tr("Memuat...", "Loading...")}</p> : null}
     </div>
 
     {/* Modal Konfirmasi Status */}
@@ -518,10 +523,10 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
             </div>
 
             <h3 className="text-lg font-bold text-gray-800 mb-1">
-              Ubah Status Biaya
+              {tr("Ubah Status Biaya", "Change Cost Status")}
             </h3>
             <p className="text-sm text-gray-500 text-center">
-              Apakah Anda yakin ingin mengubah status menjadi
+              {tr("Apakah Anda yakin ingin mengubah status menjadi", "Are you sure you want to change status to")}
             </p>
           </div>
 
@@ -540,11 +545,11 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
           {confirmAction.row && (
             <div className="px-6 pb-4">
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">Nominal:</p>
+                <p className="text-xs text-gray-500 mb-1">{tr("Nominal", "Amount")}:</p>
                 <p className="font-semibold text-gray-700">{rupiah(confirmAction.row.nominal)}</p>
                 {confirmAction.row.keterangan && (
                   <>
-                    <p className="text-xs text-gray-500 mb-1 mt-2">Keterangan:</p>
+                    <p className="text-xs text-gray-500 mb-1 mt-2">{tr("Keterangan", "Description")}:</p>
                     <p className="text-sm text-gray-700 truncate">{confirmAction.row.keterangan}</p>
                   </>
                 )}
@@ -558,7 +563,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
               onClick={handleCancelConfirm}
               className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm"
             >
-              Batal
+              {tr("Batal", "Cancel")}
             </button>
             <button
               onClick={handleConfirmStatus}
@@ -568,7 +573,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                   : 'bg-amber-600 hover:bg-amber-700'
               }`}
             >
-              Ya, Ubah Status
+              {tr("Ya, Ubah Status", "Yes, Change Status")}
             </button>
           </div>
         </div>

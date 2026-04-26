@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
+import { useI18n } from "../i18n";
 
 export default function LogistikFormBarangPage() {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
 
   const navigate = useNavigate();
 
@@ -39,7 +42,7 @@ export default function LogistikFormBarangPage() {
       const limited = selected.slice(0, 6);
 
       if (selected.length > 6) {
-        alert("Maksimal 6 foto ❗");
+        alert(tr("Maksimal 6 foto ❗", "Maximum 6 photos ❗"));
       }
 
       setForm((prev) => ({
@@ -69,7 +72,7 @@ export default function LogistikFormBarangPage() {
     e.preventDefault();
 
     if (!form.kode_barang || !form.nama_barang || !form.kategori) {
-      alert("Mohon lengkapi data wajib ❗");
+      alert(tr("Mohon lengkapi data wajib ❗", "Please complete required fields ❗"));
       return;
     }
 
@@ -99,7 +102,7 @@ export default function LogistikFormBarangPage() {
         }
       );
 
-      alert("Barang berhasil ditambahkan ✅");
+      alert(tr("Barang berhasil ditambahkan ✅", "Item added successfully ✅"));
 
       navigate(`${basePath}/logistik/inventory`);
 
@@ -110,7 +113,7 @@ export default function LogistikFormBarangPage() {
       if (err.response?.data?.message) {
         alert(err.response.data.message);
       } else {
-        alert("Gagal menambahkan barang ❌");
+        alert(tr("Gagal menambahkan barang ❌", "Failed to add item ❌"));
       }
 
     } finally {
@@ -124,7 +127,7 @@ export default function LogistikFormBarangPage() {
     <div>
 
       <h2 className="text-3xl font-bold mb-6">
-        Tambah Barang Logistik
+        {tr("Tambah Barang Logistik", "Add Logistics Item")}
       </h2>
 
       <form
@@ -135,7 +138,7 @@ export default function LogistikFormBarangPage() {
         <input
           type="text"
           name="kode_barang"
-          placeholder="Kode Barang"
+          placeholder={tr("Kode Barang", "Item Code")}
           value={form.kode_barang}
           onChange={handleChange}
           required
@@ -145,7 +148,7 @@ export default function LogistikFormBarangPage() {
         <input
           type="text"
           name="nama_barang"
-          placeholder="Nama Barang"
+          placeholder={tr("Nama Barang", "Item Name")}
           value={form.nama_barang}
           onChange={handleChange}
           required
@@ -155,7 +158,7 @@ export default function LogistikFormBarangPage() {
         <input
           type="text"
           name="kategori"
-          placeholder="Kategori"
+          placeholder={tr("Kategori", "Category")}
           value={form.kategori}
           onChange={handleChange}
           required
@@ -165,7 +168,7 @@ export default function LogistikFormBarangPage() {
         <input
           type="number"
           name="stok"
-          placeholder="Stok"
+          placeholder={tr("Stok", "Stock")}
           value={form.stok}
           onChange={handleChange}
           required
@@ -176,7 +179,7 @@ export default function LogistikFormBarangPage() {
         <input
           type="text"
           name="lokasi"
-          placeholder="Lokasi Barang"
+          placeholder={tr("Lokasi Barang", "Item Location")}
           value={form.lokasi}
           onChange={handleChange}
           className="w-full border p-3 rounded-lg"
@@ -184,7 +187,7 @@ export default function LogistikFormBarangPage() {
 
         <div>
           <label className="block mb-1 text-sm font-medium">
-            Foto Barang
+            {tr("Foto Barang", "Item Photos")}
           </label>
 
           <input
@@ -217,7 +220,7 @@ export default function LogistikFormBarangPage() {
             disabled={loading}
             className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? "Menyimpan..." : "Simpan"}
+            {loading ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
           </button>
 
           <button
@@ -225,7 +228,7 @@ export default function LogistikFormBarangPage() {
             onClick={() => navigate(-1)}
             className="bg-gray-300 px-5 py-2 rounded-lg hover:bg-gray-400"
           >
-            Batal
+            {tr("Batal", "Cancel")}
           </button>
 
         </div>

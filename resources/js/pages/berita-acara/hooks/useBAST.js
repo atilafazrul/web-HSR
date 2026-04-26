@@ -2,6 +2,11 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian, getDayName } from "../utils/dateHelpers";
 
+const tr = (id, en) => {
+  if (typeof window === "undefined") return id;
+  return localStorage.getItem("app_language") === "en" ? en : id;
+};
+
 export const useBAST = () => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
@@ -163,12 +168,12 @@ export const useBAST = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      alert(`PDF BAST berhasil di-generate!\nNomor Surat: ${nextNomorSurat}`);
+      alert(`${tr("PDF BAST berhasil di-generate!", "BAST PDF generated successfully!")}\n${tr("Nomor Surat", "Letter Number")}: ${nextNomorSurat}`);
       resetForm();
       fetchNextNomorSurat();
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Gagal generate PDF. Silakan coba lagi.");
+      alert(tr("Gagal generate PDF. Silakan coba lagi.", "Failed to generate PDF. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -206,17 +211,17 @@ export const useBAST = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      alert("PDF BAST berhasil di-generate ulang!");
+      alert(tr("PDF BAST berhasil di-generate ulang!", "BAST PDF regenerated successfully!"));
     } catch (error) {
       console.error("Error generating PDF:", error);
-      alert("Gagal generate PDF. Silakan coba lagi.");
+      alert(tr("Gagal generate PDF. Silakan coba lagi.", "Failed to generate PDF. Please try again."));
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm("Yakin ingin menghapus dokumen ini dari riwayat?")) {
+    if (window.confirm(tr("Yakin ingin menghapus dokumen ini dari riwayat?", "Are you sure you want to delete this document from history?"))) {
       try {
         await api.delete(`/bast/${id}`);
         fetchHistory();

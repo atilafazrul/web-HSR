@@ -62,8 +62,11 @@ import LogistikEditBarangPage from "./LogistikEditBarangPage";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
 import BiayaDashboardPanel from "../components/BiayaDashboardPanel";
+import { useI18n } from "../i18n/index.jsx";
 
 export default function AdminDashboard({ user, logout }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -137,23 +140,38 @@ export default function AdminDashboard({ user, logout }) {
     const path = location.pathname;
 
     if (path.includes("inventory")) return "Inventory";
-    if (path.includes("target")) return "Target Penjualan";
-    if (path.includes("projek-kerja/foto")) return "Foto Projek";
+    if (path.includes("target")) return language === "en" ? "Sales Target" : "Target Penjualan";
+    if (path.includes("projek-kerja/foto")) return language === "en" ? "Project Photos" : "Foto Projek";
     if (path.includes("dashboard")) return "Dashboard";
-    if (path.includes("it")) return "Divisi IT";
-    if (path.includes("service")) return "Divisi Service";
-    if (path.includes("sales")) return "Divisi Sales";
-    if (path.includes("kontraktor")) return "Divisi Kontraktor";
-    if (path.includes("logistik")) return "Divisi Logistik";
-    if (path.includes("purchasing")) return "Divisi Purchasing";
-    if (path.includes("profile")) return "Profile";
+    if (path.includes("it")) return language === "en" ? "IT Division" : "Divisi IT";
+    if (path.includes("service")) return language === "en" ? "Service Division" : "Divisi Service";
+    if (path.includes("sales")) return language === "en" ? "Sales Division" : "Divisi Sales";
+    if (path.includes("kontraktor")) return language === "en" ? "Contractor Division" : "Divisi Kontraktor";
+    if (path.includes("logistik")) return language === "en" ? "Logistics Division" : "Divisi Logistik";
+    if (path.includes("purchasing")) return language === "en" ? "Purchasing Division" : "Divisi Purchasing";
+    if (path.includes("profile")) return language === "en" ? "Profile" : "Profil";
 
     return "Admin";
   };
 
   useEffect(() => {
     document.title = `WEB HSR - ${getPageTitle()}`;
-  }, [location.pathname]);
+  }, [language, location.pathname]);
+
+  const displayStatus = (status) => {
+    const map = {
+      Dibuat: "Created",
+      Persiapan: "Preparation",
+      "Proses Pekerjaan": "Work In Progress",
+      Editing: "Editing",
+      Invoicing: "Invoicing",
+      Selesai: "Completed",
+      Terlambat: "Delayed",
+      Proses: "In Progress",
+      "Tanpa Status": "No Status",
+    };
+    return language === "en" ? (map[status] || status) : status;
+  };
 
   // Data untuk card divisi (tetap filter berdasarkan divisi user)
   const filteredDashboardData = dashboardData.filter(
@@ -246,19 +264,21 @@ export default function AdminDashboard({ user, logout }) {
               element={
                 <>
                   <h2 className="text-xl sm:text-2xl md:text-3xl font-bold mb-6 sm:mb-8 md:mb-10">
-                    Selamat Datang, {currentUser?.name}
+                    {language === "en" ? "Welcome" : "Selamat Datang"}, {currentUser?.name}
                   </h2>
 
                   {/* ================= CARD DIVISI ================= */}
                   <div className="w-full mb-6 sm:mb-8 md:mb-10">
                     <DivisiCard
-                      title={`Divisi ${currentDivisi}`}
+                      title={language === "en" ? `${currentDivisi} Division` : `Divisi ${currentDivisi}`}
                       count={filteredDashboardData.length}
                       onClick={() =>
                         navigate(`${basePath}/${currentDivisi.toLowerCase()}`)
                       }
                       image={getDivisiImage(currentDivisi)}
                       isMobile={isMobile}
+                      countLabel={tr("Pekerjaan", "Tasks")}
+                      openLabel={tr("Masuk", "Open")}
                     />
                   </div>
 
@@ -271,11 +291,15 @@ export default function AdminDashboard({ user, logout }) {
                   <div className="mb-6 sm:mb-8 md:mb-10">
                     <div className="mb-3 sm:mb-4">
                       <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800">Summary Status</h3>
-                      <p className="text-xs sm:text-sm text-slate-500">Ringkasan progres pekerjaan berdasarkan status terbaru.</p>
+                      <p className="text-xs sm:text-sm text-slate-500">
+                        {language === "en"
+                          ? "Work progress summary based on latest status."
+                          : "Ringkasan progres pekerjaan berdasarkan status terbaru."}
+                      </p>
                     </div>
                     <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                     <SummaryCard
-                      title="Total Tugas"
+                      title={language === "en" ? "Total Tasks" : "Total Tugas"}
                       value={filteredDashboardData.length}
                       icon={<ListTodo size={isMobile ? 16 : 20} />}
                       color="blue"
@@ -284,17 +308,17 @@ export default function AdminDashboard({ user, logout }) {
                     {statusSummary.map((status) => (
                       <SummaryCard
                         key={status.label}
-                        title={status.label}
+                        title={displayStatus(status.label)}
                         value={status.count}
                         icon={
                           status.label === "Selesai" ? <CheckCircle size={isMobile ? 16 : 20} />
-                            : status.label.includes("Proses") ? <Clock size={isMobile ? 16 : 20} />
+                            : (status.label.includes("Proses") || status.label === "Proses") ? <Clock size={isMobile ? 16 : 20} />
                               : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
                                 : <Activity size={isMobile ? 16 : 20} />
                         }
                         color={
                           status.label === "Selesai" ? "green"
-                            : status.label.includes("Proses") ? "yellow"
+                            : (status.label.includes("Proses") || status.label === "Proses") ? "yellow"
                               : status.label === "Terlambat" ? "red"
                                 : "blue"
                         }
@@ -307,7 +331,9 @@ export default function AdminDashboard({ user, logout }) {
                   {/* ================= TABLE AKTIVITAS PEKERJAAN ================= */}
                   <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
                     <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 sm:mb-5 md:mb-6">
-                      {isUserRole ? "Aktivitas Pekerjaan Divisi Anda" : "Aktivitas Pekerjaan Semua Divisi"}
+                      {isUserRole
+                        ? (language === "en" ? "Your Division Work Activities" : "Aktivitas Pekerjaan Divisi Anda")
+                        : (language === "en" ? "All Division Work Activities" : "Aktivitas Pekerjaan Semua Divisi")}
                     </h3>
 
                     {/* SEARCH + FILTER */}
@@ -316,7 +342,7 @@ export default function AdminDashboard({ user, logout }) {
                         <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
                         <input
                           type="text"
-                          placeholder="Cari..."
+                          placeholder={language === "en" ? "Search..." : "Cari..."}
                           value={search}
                           onChange={(e) => {
                             setSearch(e.target.value);
@@ -336,7 +362,7 @@ export default function AdminDashboard({ user, logout }) {
                             }}
                             className="border border-gray-200 px-3 py-2 rounded-xl w-full sm:w-36 text-sm"
                           >
-                            <option value="">Semua Divisi</option>
+                            <option value="">{language === "en" ? "All Divisions" : "Semua Divisi"}</option>
                             <option value="IT">IT</option>
                             <option value="Service">Service</option>
                             <option value="Sales">Sales</option>
@@ -354,10 +380,10 @@ export default function AdminDashboard({ user, logout }) {
                           }}
                           className="border border-gray-200 px-3 py-2 rounded-xl w-full sm:w-36 text-sm"
                         >
-                          <option value="">Semua Status</option>
-                          <option value="Proses">Proses</option>
-                          <option value="Selesai">Selesai</option>
-                          <option value="Terlambat">Terlambat</option>
+                          <option value="">{language === "en" ? "All Statuses" : "Semua Status"}</option>
+                          <option value="Proses">{tr("Proses", "In Progress")}</option>
+                          <option value="Selesai">{tr("Selesai", "Completed")}</option>
+                          <option value="Terlambat">{tr("Terlambat", "Delayed")}</option>
                         </select>
                       </div>
                     </div>
@@ -371,37 +397,37 @@ export default function AdminDashboard({ user, logout }) {
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
                                   <Building size={15} className="text-gray-400" />
-                                  Divisi
+                                  {tr("Divisi", "Division")}
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
                                   <Briefcase size={15} className="text-gray-400" />
-                                  Tugas
+                                  {tr("Tugas", "Task")}
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
                                   <User size={15} className="text-gray-400" />
-                                  Karyawan
+                                  {tr("Karyawan", "Employee")}
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
                                   <MapPin size={15} className="text-gray-400" />
-                                  Lokasi
+                                  {tr("Lokasi", "Location")}
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
                                   <Calendar size={15} className="text-gray-400" />
-                                  Tanggal
+                                  {tr("Tanggal", "Date")}
                                 </div>
                               </th>
                               <th className="p-4">
                                 <div className="flex items-center gap-2 opacity-80">
                                   <Activity size={15} className="text-gray-400" />
-                                  Status
+                                  {tr("Status", "Status")}
                                 </div>
                               </th>
                             </tr>
@@ -423,7 +449,7 @@ export default function AdminDashboard({ user, logout }) {
                                         ? "bg-yellow-100 text-yellow-600"
                                         : "bg-red-100 text-red-600"
                                     }`}>
-                                    {item.status}
+                                    {displayStatus(item.status)}
                                   </span>
                                 </td>
                               </tr>
@@ -439,11 +465,11 @@ export default function AdminDashboard({ user, logout }) {
                         <table className="w-full text-sm border-separate border-spacing-y-2">
                           <thead className="text-gray-500 text-xs uppercase bg-gray-50">
                             <tr className="text-left">
-                              <th className="p-4">Divisi</th>
-                              <th className="p-4">Tugas</th>
-                              <th className="p-4">Karyawan</th>
-                              <th className="p-4">Status</th>
-                              <th className="p-4">Tanggal</th>
+                              <th className="p-4">{tr("Divisi", "Division")}</th>
+                              <th className="p-4">{tr("Tugas", "Task")}</th>
+                              <th className="p-4">{tr("Karyawan", "Employee")}</th>
+                              <th className="p-4">{tr("Status", "Status")}</th>
+                              <th className="p-4">{tr("Tanggal", "Date")}</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -459,7 +485,7 @@ export default function AdminDashboard({ user, logout }) {
                                         ? "bg-yellow-100 text-yellow-600"
                                         : "bg-red-100 text-red-600"
                                     }`}>
-                                    {item.status}
+                                    {displayStatus(item.status)}
                                   </span>
                                 </td>
                                 <td className="p-4 text-left text-gray-500">
@@ -488,13 +514,13 @@ export default function AdminDashboard({ user, logout }) {
                                     ? "bg-yellow-100 text-yellow-600"
                                     : "bg-red-100 text-red-600"
                                 }`}>
-                                {item.status}
+                                {displayStatus(item.status)}
                               </span>
                             </div>
 
                             <div className="space-y-2 text-sm">
                               <div className="flex items-center gap-2 text-gray-600">
-                                <span className="font-medium min-w-[70px]">Karyawan:</span>
+                                <span className="font-medium min-w-[70px]">{tr("Karyawan", "Employee")}:</span>
                                 <span>{item.karyawan}</span>
                               </div>
                               <div className="flex items-center gap-2 text-gray-600">
@@ -502,7 +528,7 @@ export default function AdminDashboard({ user, logout }) {
                                 <span className="truncate">{item.alamat}</span>
                               </div>
                               <div className="flex items-center gap-2 text-gray-600">
-                                <span className="font-medium min-w-[70px]">Tanggal:</span>
+                                <span className="font-medium min-w-[70px]">{tr("Tanggal", "Date")}:</span>
                                 <span>{new Date(item.start_date).toLocaleDateString("id-ID")}</span>
                               </div>
                             </div>
@@ -515,7 +541,7 @@ export default function AdminDashboard({ user, logout }) {
                     {filteredAllProjek.length > 0 && (
                       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4 mt-4 sm:mt-5 md:mt-6">
                         <div className="text-xs sm:text-sm text-gray-600 order-2 sm:order-1">
-                          Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredAllProjek.length)} dari {filteredAllProjek.length} data
+                          {language === "en" ? "Showing" : "Menampilkan"} {startIndex + 1} - {Math.min(startIndex + itemsPerPage, filteredAllProjek.length)} {language === "en" ? "of" : "dari"} {filteredAllProjek.length} {language === "en" ? "records" : "data"}
                         </div>
 
                         <div className="flex gap-2 sm:gap-3 order-1 sm:order-2">
@@ -549,7 +575,7 @@ export default function AdminDashboard({ user, logout }) {
                     {/* Pesan jika tidak ada data */}
                     {filteredAllProjek.length === 0 && (
                       <div className="text-center py-8 text-gray-500">
-                        Tidak ada data yang ditemukan
+                        {language === "en" ? "No data found" : "Tidak ada data yang ditemukan"}
                       </div>
                     )}
                   </div>
@@ -631,7 +657,7 @@ export default function AdminDashboard({ user, logout }) {
 }
 
 /* ================= CARD DIVISI ================= */
-const DivisiCard = ({ title, count, onClick, image, isMobile }) => {
+const DivisiCard = ({ title, count, onClick, image, isMobile, countLabel = "Pekerjaan", openLabel = "Masuk" }) => {
   return (
     <div
       onClick={onClick}
@@ -651,10 +677,10 @@ const DivisiCard = ({ title, count, onClick, image, isMobile }) => {
           {title}
         </h3>
         <p className="text-xs sm:text-sm text-gray-200 mb-3 sm:mb-4">
-          Total <span className="font-semibold">{count}</span> Pekerjaan
+          Total <span className="font-semibold">{count}</span> {countLabel}
         </p>
         <button className="flex items-center gap-2 bg-white/20 backdrop-blur-md hover:bg-white/30 transition px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium">
-          Masuk
+          {openLabel}
           <span className="group-hover:translate-x-1 transition">→</span>
         </button>
       </div>

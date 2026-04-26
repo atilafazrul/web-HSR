@@ -1,8 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Package, ListTodo, FileText, Archive } from "lucide-react";
+import { useI18n } from "../i18n/index.jsx";
 
 const KontraktorPage = () => {
+  const { language } = useI18n();
 
   const navigate = useNavigate();
 
@@ -33,12 +35,12 @@ const KontraktorPage = () => {
         */}
 
         <h2 className="text-3xl font-bold">
-          Divisi Kontraktor
+          {language === "en" ? "Contractor Division" : "Divisi Kontraktor"}
         </h2>
       </div>
 
       <p className="text-gray-500 mb-8">
-        Kelola inventory dan progres pekerjaan kontraktor
+        {language === "en" ? "Manage contractor inventory and work progress" : "Kelola inventory dan progres pekerjaan kontraktor"}
       </p>
 
       {/* CARD */}
@@ -49,7 +51,7 @@ const KontraktorPage = () => {
           <Card
             icon={<Package size={30} className="text-blue-600" />}
             title="Inventory"
-            desc="Kelola stok dan peralatan kontraktor"
+            desc={language === "en" ? "Manage contractor stock and equipment" : "Kelola stok dan peralatan kontraktor"}
             onClick={() => navigate(`${basePath}/kontraktor/inventory`)}
           />
         )}
@@ -57,16 +59,16 @@ const KontraktorPage = () => {
         {/* PROGRES */}
         <Card
           icon={<ListTodo size={30} className="text-green-600" />}
-          title="Progres Pekerjaan"
-          desc="Pantau status dan perkembangan proyek"
+          title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
+          desc={language === "en" ? "Track project status and progress" : "Pantau status dan perkembangan proyek"}
           onClick={() => navigate(`${basePath}/kontraktor/projek`)}
         />
 
         {!isUserRole && (
           <Card
             icon={<Archive size={30} className="text-amber-600" />}
-            title="Archive Pekerjaan"
-            desc="Lihat pekerjaan selesai yang sudah di-archive"
+            title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
+            desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/kontraktor/projek/archive`)}
           />
         )}
@@ -75,8 +77,8 @@ const KontraktorPage = () => {
         {!isUserRole && (
           <Card
             icon={<FileText size={30} className="text-purple-600" />}
-            title="Buat PDF"
-            desc="Buat PDF pekerjaan kontraktor"
+            title={language === "en" ? "Create PDF" : "Buat PDF"}
+            desc={language === "en" ? "Generate contractor work PDF" : "Buat PDF pekerjaan kontraktor"}
             onClick={() => navigate(`${basePath}/kontraktor/buat-pdf`)}
           />
         )}

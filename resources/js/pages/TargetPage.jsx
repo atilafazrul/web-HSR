@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { ChevronDown } from "lucide-react";
+import { useI18n } from "../i18n";
 
 // ================= RECHARTS =================
 import {
@@ -34,14 +34,14 @@ const MONTHLY_DATA = [
   { month: "Feb", target: 48000000, actual: 45000000 },
   { month: "Mar", target: 52000000, actual: 58000000 },
   { month: "Apr", target: 50000000, actual: 47000000 },
-  { month: "Mei", target: 55000000, actual: 62000000 },
+  { month: "May", target: 55000000, actual: 62000000 },
   { month: "Jun", target: 58000000, actual: 55000000 },
   { month: "Jul", target: 60000000, actual: 65000000 },
-  { month: "Ags", target: 57000000, actual: 53000000 },
+  { month: "Aug", target: 57000000, actual: 53000000 },
   { month: "Sep", target: 62000000, actual: 68000000 },
-  { month: "Okt", target: 65000000, actual: 70000000 },
+  { month: "Oct", target: 65000000, actual: 70000000 },
   { month: "Nov", target: 70000000, actual: 75000000 },
-  { month: "Des", target: 75000000, actual: 80000000 }
+  { month: "Dec", target: 75000000, actual: 80000000 }
 ];
 
 // ================= PALET WARNA DONUT =================
@@ -62,6 +62,11 @@ const formatRupiah = (value) => {
     maximumFractionDigits: 0
   }).format(value);
 };
+
+const trText = (id, en) =>
+  (typeof window !== "undefined" && localStorage.getItem("app_language") === "en")
+    ? en
+    : id;
 
 // ================= CUSTOM TOOLTIP =================
 const CustomTooltip = ({ active, payload }) => {
@@ -110,7 +115,7 @@ const DonutTooltip = ({ active, payload }) => {
         {formatRupiah(data.payload.actual)}
       </div>
       <div className="text-xs text-gray-500">
-        {percentage}% dari total
+        {percentage}% {trText("dari total", "of total")}
       </div>
     </div>
   );
@@ -143,14 +148,12 @@ const LineTooltip = ({ active, payload, label }) => {
 
 // ================= MAIN COMPONENT =================
 const TargetPage = () => {
-  const navigate = useNavigate();
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const dropdownRef = useRef(null);
 
-  const [selectedProduct, setSelectedProduct] = useState("Semua Produk");
+  const [selectedProduct, setSelectedProduct] = useState(tr("Semua Produk", "All Products"));
   const [dropdownOpen, setDropdownOpen] = useState(false);
-
-  const user = JSON.parse(localStorage.getItem("user"));
-  const role = user?.role;
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -164,12 +167,7 @@ const TargetPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const basePath =
-    role === "super_admin"
-      ? "/super_admin"
-      : "/admin";
-
-  const products = ["Semua Produk", ...SALES_DATA.map(p => p.name)];
+  const products = [tr("Semua Produk", "All Products"), ...SALES_DATA.map(p => p.name)];
 
   return (
     <div>
@@ -178,9 +176,9 @@ const TargetPage = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-4">
           <div>
-            <h2 className="text-3xl font-bold">Target Penjualan</h2>
+            <h2 className="text-3xl font-bold">{tr("Target Penjualan", "Sales Target")}</h2>
             <p className="text-gray-500">
-              Dashboard monitoring performa penjualan produk
+              {tr("Dashboard monitoring performa penjualan produk", "Dashboard for monitoring product sales performance")}
             </p>
           </div>
         </div>
@@ -223,24 +221,24 @@ const TargetPage = () => {
       {/* SUMMARY CARDS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <SummaryCard
-          title="Total Target"
+          title={tr("Total Target", "Total Target")}
           value={SALES_DATA.reduce((sum, item) => sum + item.target, 0)}
           color="blue"
         />
         <SummaryCard
-          title="Total Actual"
+          title={tr("Total Actual", "Total Actual")}
           value={SALES_DATA.reduce((sum, item) => sum + item.actual, 0)}
           color="green"
         />
         <SummaryCard
-          title="Selisih"
+          title={tr("Selisih", "Difference")}
           value={SALES_DATA.reduce((sum, item) => sum + (item.actual - item.target), 0)}
           color={SALES_DATA.reduce((sum, item) => sum + item.actual, 0) >=
             SALES_DATA.reduce((sum, item) => sum + item.target, 0)
             ? "green" : "red"}
         />
         <SummaryCard
-          title="% Pencapaian"
+          title={tr("% Pencapaian", "% Achievement")}
           value={
             ((SALES_DATA.reduce((sum, item) => sum + item.actual, 0) /
               SALES_DATA.reduce((sum, item) => sum + item.target, 0)) * 100).toFixed(1)
@@ -256,7 +254,7 @@ const TargetPage = () => {
         {/* CHART KIRI - GROUPED BAR */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">
-            Target vs Actual per Produk
+            {tr("Target vs Actual per Produk", "Target vs Actual per Product")}
           </h3>
 
           <ResponsiveContainer width="100%" height={320}>
@@ -302,7 +300,7 @@ const TargetPage = () => {
         {/* CHART KANAN - DONUT */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-6">
-            Kontribusi Penjualan per Produk
+            {tr("Kontribusi Penjualan per Produk", "Sales Contribution per Product")}
           </h3>
 
           <ResponsiveContainer width="100%" height={320}>
@@ -358,7 +356,7 @@ const TargetPage = () => {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-gray-800">
-            Trend Penjualan Bulanan (All Products)
+            {tr("Trend Penjualan Bulanan (All Products)", "Monthly Sales Trend (All Products)")}
           </h3>
         </div>
 
@@ -416,13 +414,13 @@ const TargetPage = () => {
         {/* SUMMARY BULANAN */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
           <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">Rata-rata Target/Bulan</p>
+            <p className="text-xs text-gray-500 mb-1">{tr("Rata-rata Target/Bulan", "Average Target/Month")}</p>
             <p className="text-lg font-bold text-gray-700">
               {formatRupiah(MONTHLY_DATA.reduce((sum, item) => sum + item.target, 0) / 12)}
             </p>
           </div>
           <div className="text-center">
-            <p className="text-xs text-gray-500 mb-1">Rata-rata Actual/Bulan</p>
+            <p className="text-xs text-gray-500 mb-1">{tr("Rata-rata Actual/Bulan", "Average Actual/Month")}</p>
             <p className="text-lg font-bold text-blue-600">
               {formatRupiah(MONTHLY_DATA.reduce((sum, item) => sum + item.actual, 0) / 12)}
             </p>
@@ -433,18 +431,18 @@ const TargetPage = () => {
       {/* TABLE DETAIL */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">
-          Detail Per Produk
+          {tr("Detail Per Produk", "Details per Product")}
         </h3>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Produk</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Target</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Actual</th>
-                <th className="text-right py-3 px-4 font-semibold text-gray-700">Selisih</th>
-                <th className="text-center py-3 px-4 font-semibold text-gray-700">Pencapaian</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">{tr("Produk", "Product")}</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-700">{tr("Target", "Target")}</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-700">{tr("Actual", "Actual")}</th>
+                <th className="text-right py-3 px-4 font-semibold text-gray-700">{tr("Selisih", "Difference")}</th>
+                <th className="text-center py-3 px-4 font-semibold text-gray-700">{tr("Pencapaian", "Achievement")}</th>
               </tr>
             </thead>
             <tbody>

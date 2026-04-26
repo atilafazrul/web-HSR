@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
+import { useI18n } from "../../i18n/index.jsx";
 
 export default function Sidebar({
   user,
@@ -29,6 +30,7 @@ export default function Sidebar({
   navigate,
   role = "admin",
 }) {
+  const { t } = useI18n();
 
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -109,7 +111,7 @@ export default function Sidebar({
         <div className="flex-1 flex flex-col min-h-0">
           {/* MOBILE HEADER - CLOSE BUTTON */}
           <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-700">
-            <span className="font-semibold text-lg">Menu</span>
+            <span className="font-semibold text-lg">{t("menu", "Menu")}</span>
             <button
               onClick={() => setSidebarOpen && setSidebarOpen(false)}
               className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
@@ -152,7 +154,7 @@ export default function Sidebar({
             }}>
               <SidebarItem
                 icon={<LayoutDashboard size={18} />}
-                text="Dashboard"
+                text={t("dashboard", "Dashboard")}
                 active={isActive(`${basePath}/dashboard`)}
                 expanded={expanded}
                 isMobile={isMobile}
@@ -168,7 +170,7 @@ export default function Sidebar({
                 }}>
                   <SidebarItem
                     icon={<Users size={18} />}
-                    text="Karyawan"
+                    text={t("employee", "Karyawan")}
                     active={isActive(`${basePath}/karyawan`)}
                     expanded={expanded}
                     isMobile={isMobile}
@@ -181,7 +183,7 @@ export default function Sidebar({
                 }}>
                   <SidebarItem
                     icon={<FileText size={18} />}
-                    text="Rekap Biaya Kayawan"
+                    text={t("expenseRecap", "Rekap Biaya Karyawan")}
                     active={isActive(`${basePath}/rekap-akun`)}
                     expanded={expanded}
                     isMobile={isMobile}
@@ -198,7 +200,7 @@ export default function Sidebar({
               }}>
                 <SidebarItem
                   icon={<FileText size={18} />}
-                  text="Berita Acara"
+                  text={t("minutesReport", "Berita Acara")}
                   active={isActive(`${basePath}/berita-acara`)}
                   expanded={expanded}
                   isMobile={isMobile}
@@ -216,7 +218,7 @@ export default function Sidebar({
                   <span className={`flex items-center ${!expanded ? 'mx-auto' : ''}`}>
                     <Folder size={18} className="flex-shrink-0" />
                     <span className={`ml-3 truncate ${expanded ? "block" : "hidden"}`}>
-                      Divisi
+                      {t("division", "Divisi")}
                     </span>
                   </span>
 
@@ -276,7 +278,7 @@ export default function Sidebar({
             }}>
               <SidebarItem
                 icon={<User size={18} />}
-                text="Profile"
+                text={t("profile", "Profil")}
                 active={isActive(`${basePath}/profile`)}
                 expanded={expanded}
                 isMobile={isMobile}
@@ -295,7 +297,7 @@ export default function Sidebar({
             className="w-full bg-red-500 hover:bg-red-600 py-2.5 rounded-xl font-medium shadow transition-colors flex items-center justify-center gap-2"
           >
             <LogOut size={18} />
-            {expanded && <span>Logout</span>}
+            {expanded && <span>{t("logout", "Logout")}</span>}
           </button>
         </div>
       </aside>
