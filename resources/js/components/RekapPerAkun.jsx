@@ -3,6 +3,7 @@ import api from "../api/axiosConfig";
 import { DollarSign, Calendar, User, TrendingUp, Download, Search, X, FileText, ChevronRight } from "lucide-react";
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useI18n } from "../i18n";
 
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
@@ -46,6 +47,8 @@ const getPhotoUrlsFromItem = (item) => {
 
 // Menggunakan React.memo untuk mencegah unmount/remount yang tidak perlu
 export default React.memo(function RekapPerAkun({ user }) {
+  const { language } = useI18n();
+  const tr = (id, en) => (language === "en" ? en : id);
   const isSuperAdmin = user?.role === "super_admin";
   console.log("User role:", user?.role, "isSuperAdmin:", isSuperAdmin);
 
@@ -165,11 +168,11 @@ export default React.memo(function RekapPerAkun({ user }) {
       console.error("Error status:", err.response?.status);
 
       if (err.response?.status === 403) {
-        alert("Anda tidak memiliki akses untuk melihat detail biaya. Hanya superadmin yang bisa mengakses.");
+        alert(tr("Anda tidak memiliki akses untuk melihat detail biaya. Hanya superadmin yang bisa mengakses.", "You do not have access to view cost details. Only super admin can access."));
       } else if (err.response?.status === 422) {
-        alert(err.response?.data?.message || "Parameter tidak lengkap");
+        alert(err.response?.data?.message || tr("Parameter tidak lengkap", "Incomplete parameters"));
       } else {
-        alert("Gagal memuat detail biaya. Cek console untuk detail error.");
+        alert(tr("Gagal memuat detail biaya. Cek console untuk detail error.", "Failed to load cost details. Check console for error details."));
       }
     } finally {
       // Clear abort controller reference
@@ -262,7 +265,7 @@ export default React.memo(function RekapPerAkun({ user }) {
 
     // Jika nama akun adalah "Unknown", user sudah dihapus dan data tidak valid
     if (akunName === 'Unknown' || akunName === 'unknown') {
-      alert("Data akun tidak valid. User terkait mungkin sudah dihapus dari sistem.");
+      alert(tr("Data akun tidak valid. User terkait mungkin sudah dihapus dari sistem.", "Invalid account data. Related user may have been deleted."));
       return;
     }
 
@@ -299,7 +302,7 @@ export default React.memo(function RekapPerAkun({ user }) {
 
     // Validasi minimal harus punya nama_akun
     if (!akunName) {
-      alert("Data akun tidak valid");
+      alert(tr("Data akun tidak valid", "Invalid account data"));
       return;
     }
 
@@ -342,7 +345,7 @@ export default React.memo(function RekapPerAkun({ user }) {
     // Jika nama akun adalah "Unknown", user sudah dihapus dan data tidak valid
     // Jangan gunakan created_by sebagai fallback untuk "Unknown" karena akan menampilkan data user yang sudah dihapus
     if (akunName === 'Unknown' || akunName === 'unknown') {
-      alert("Data akun tidak valid. User terkait mungkin sudah dihapus dari sistem.");
+      alert(tr("Data akun tidak valid. User terkait mungkin sudah dihapus dari sistem.", "Invalid account data. Related user may have been deleted."));
       return;
     }
 
@@ -395,7 +398,7 @@ export default React.memo(function RekapPerAkun({ user }) {
 
     // Validasi minimal harus punya nama_akun
     if (!akunName) {
-      alert("Data akun tidak valid");
+      alert(tr("Data akun tidak valid", "Invalid account data"));
       return;
     }
 
@@ -444,7 +447,7 @@ export default React.memo(function RekapPerAkun({ user }) {
     try {
       if (item?.source === "projek") {
         if (item?.project_id == null || item?.item_index == null) {
-          alert("Data item projek tidak lengkap untuk update status lunas.");
+          alert(tr("Data item projek tidak lengkap untuk update status lunas.", "Project item data is incomplete for paid-status update."));
           return;
         }
         await api.patch(`/projek-kerja/${item.project_id}/biaya-item-lunas`, {
@@ -462,7 +465,7 @@ export default React.memo(function RekapPerAkun({ user }) {
         )
       );
     } catch (err) {
-      alert(err?.response?.data?.message || "Gagal update status lunas");
+      alert(err?.response?.data?.message || tr("Gagal update status lunas", "Failed to update paid status"));
     } finally {
       setConfirmStatusItem(null);
     }
@@ -512,7 +515,7 @@ export default React.memo(function RekapPerAkun({ user }) {
     if (dataToExport.length === 0) {
       const message = selectedAkun
         ? "Tidak ada data biaya untuk diekspor"
-        : "Tidak ada data biaya";
+        : tr("Tidak ada data biaya", "No cost data");
       alert(message);
       return;
     }
@@ -705,7 +708,7 @@ export default React.memo(function RekapPerAkun({ user }) {
     <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
       <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
         <User size={18} className="text-blue-600" />
-        Rekapitulasi Per Akun
+        {tr("Rekapitulasi Per Akun", "Recap Per Account")}
       </h3>
 
       {/* Search Bar */}
@@ -715,7 +718,7 @@ export default React.memo(function RekapPerAkun({ user }) {
             type="text"
             value={searchTerm}
             onChange={(e) => handleSearch(e.target.value)}
-            placeholder="Cari nama akun (contoh: aqila)..."
+            placeholder={tr("Cari nama akun (contoh: aqila)...", "Search account name (e.g. aqila)...")}
             className="w-full border border-gray-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
           />
           {searchTerm && (
@@ -737,7 +740,7 @@ export default React.memo(function RekapPerAkun({ user }) {
       {/* Filter Bulan & Tahun */}
       <div className="flex flex-wrap gap-3 mb-6">
         <div className="flex-1 min-w-[150px]">
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Bulan</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">{tr("Bulan", "Month")}</label>
           <select
             value={selectedMonth}
             onChange={(e) => setSelectedMonth(e.target.value)}
@@ -752,7 +755,7 @@ export default React.memo(function RekapPerAkun({ user }) {
         </div>
 
         <div className="flex-1 min-w-[120px]">
-          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Tahun</label>
+          <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">{tr("Tahun", "Year")}</label>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(parseInt(e.target.value))}
@@ -770,7 +773,7 @@ export default React.memo(function RekapPerAkun({ user }) {
           className="bg-green-600 hover:bg-green-700 disabled:bg-green-300 disabled:cursor-not-allowed text-white px-3 sm:px-4 py-2 rounded-lg flex items-center gap-2 transition text-sm sm:text-base"
         >
           <Download size={16} />
-          Export Excel
+          {tr("Export Excel", "Export Excel")}
         </button>
       </div>
 
@@ -779,7 +782,7 @@ export default React.memo(function RekapPerAkun({ user }) {
         <div className="mb-6 bg-blue-50 rounded-xl p-4 border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-500 mb-1">Akun Terpilih</p>
+              <p className="text-xs text-gray-500 mb-1">{tr("Akun Terpilih", "Selected Account")}</p>
               <p className="text-lg font-bold text-blue-700">{selectedAkun.nama_akun || selectedAkun.name}</p>
             </div>
             {isSuperAdmin && (
@@ -788,7 +791,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
               >
                 <FileText size={16} />
-                Lihat Detail
+                {tr("Lihat Detail", "View Details")}
               </button>
             )}
           </div>
@@ -796,15 +799,15 @@ export default React.memo(function RekapPerAkun({ user }) {
       )}
 
       {loading ? (
-        <div className="text-center py-8 text-gray-500">Memuat data...</div>
+        <div className="text-center py-8 text-gray-500">{tr("Memuat data...", "Loading data...")}</div>
       ) : isSearching ? (
         /* Search Results */
         searchLoading ? (
-          <div className="text-center py-8 text-gray-500">Mencari akun...</div>
+          <div className="text-center py-8 text-gray-500">{tr("Mencari akun...", "Searching accounts...")}</div>
         ) : displayData.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Search size={48} className="mx-auto mb-4 text-gray-300" />
-            <p>Tidak ada akun "{searchTerm}" dengan biaya di periode ini</p>
+            <p>{language === "en" ? `No account "${searchTerm}" has costs in this period` : `Tidak ada akun "${searchTerm}" dengan biaya di periode ini`}</p>
           </div>
         ) : (
           <div className="border rounded-xl overflow-hidden">
@@ -812,8 +815,8 @@ export default React.memo(function RekapPerAkun({ user }) {
               <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-gray-100 text-gray-700">
                   <tr className="text-left">
-                    <th className="p-2 sm:p-4 font-semibold">Nama Akun</th>
-                    <th className="p-2 sm:p-4 font-semibold">Aksi</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Nama Akun", "Account Name")}</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Aksi", "Actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -828,7 +831,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1"
                         >
-                          Pilih
+                          {tr("Pilih", "Select")}
                           <ChevronRight size={12} />
                         </button>
                       </td>
@@ -846,7 +849,7 @@ export default React.memo(function RekapPerAkun({ user }) {
             <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100">
               <div className="flex items-center gap-2 mb-1 sm:mb-2">
                 <DollarSign size={14} className="text-blue-600 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-gray-600">Biaya Jalan</p>
+                <p className="text-xs sm:text-sm text-gray-600">{tr("Biaya Jalan", "Travel Cost")}</p>
               </div>
               <p className="text-lg sm:text-xl font-bold text-blue-700">{rupiah(allBiaya.jalan)}</p>
             </div>
@@ -854,7 +857,7 @@ export default React.memo(function RekapPerAkun({ user }) {
             <div className="bg-amber-50 rounded-xl p-3 sm:p-4 border border-amber-100">
               <div className="flex items-center gap-2 mb-1 sm:mb-2">
                 <DollarSign size={14} className="text-amber-600 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-gray-600">Biaya Pengeluaran</p>
+                <p className="text-xs sm:text-sm text-gray-600">{tr("Biaya Pengeluaran", "Expense Cost")}</p>
               </div>
               <p className="text-lg sm:text-xl font-bold text-amber-700">{rupiah(allBiaya.pengeluaran)}</p>
             </div>
@@ -862,7 +865,7 @@ export default React.memo(function RekapPerAkun({ user }) {
             <div className="bg-purple-50 rounded-xl p-3 sm:p-4 border border-purple-100">
               <div className="flex items-center gap-2 mb-1 sm:mb-2">
                 <DollarSign size={14} className="text-purple-600 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-gray-600">Biaya Reimbursment</p>
+                <p className="text-xs sm:text-sm text-gray-600">{tr("Biaya Reimbursment", "Reimbursement Cost")}</p>
               </div>
               <p className="text-lg sm:text-xl font-bold text-purple-700">{rupiah(allBiaya.reimbursment)}</p>
             </div>
@@ -882,12 +885,12 @@ export default React.memo(function RekapPerAkun({ user }) {
               <table className="min-w-full text-xs sm:text-sm">
                 <thead className="bg-gray-100 text-gray-700">
                   <tr className="text-left">
-                    <th className="p-2 sm:p-4 font-semibold">Nama Akun</th>
-                    <th className="p-2 sm:p-4 font-semibold">Biaya Jalan</th>
-                    <th className="p-2 sm:p-4 font-semibold">Biaya Pengeluaran</th>
-                    <th className="p-2 sm:p-4 font-semibold">Biaya Reimbursment</th>
-                    <th className="p-2 sm:p-4 font-semibold">Total</th>
-                    <th className="p-2 sm:p-4 font-semibold">Aksi</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Nama Akun", "Account Name")}</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Biaya Jalan", "Travel Cost")}</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Biaya Pengeluaran", "Expense Cost")}</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Biaya Reimbursment", "Reimbursement Cost")}</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Total", "Total")}</th>
+                    <th className="p-2 sm:p-4 font-semibold">{tr("Aksi", "Actions")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -907,7 +910,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                             }}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition flex items-center gap-1"
                           >
-                            Detail
+                            {tr("Detail", "Detail")}
                             <ChevronRight size={12} />
                           </button>
                         </td>
@@ -925,7 +928,7 @@ export default React.memo(function RekapPerAkun({ user }) {
           </div>
 
           <div className="mt-4 text-center text-xs text-gray-500">
-            <p>Periode: {new Date(selectedYear, selectedMonth - 1).toLocaleDateString("id-ID", { year: "numeric", month: "long" })}</p>
+            <p>{tr("Periode", "Period")}: {new Date(selectedYear, selectedMonth - 1).toLocaleDateString("id-ID", { year: "numeric", month: "long" })}</p>
           </div>
         </>
       )}
@@ -938,10 +941,10 @@ export default React.memo(function RekapPerAkun({ user }) {
             <div className="px-6 py-4 border-b flex justify-between items-center">
               <div>
                 <h3 className="text-xl font-bold text-gray-800">
-                  Detail Biaya: {selectedAkun.nama_akun || selectedAkun.name}
+                  {tr("Detail Biaya", "Cost Details")}: {selectedAkun.nama_akun || selectedAkun.name}
                 </h3>
                 <p className="text-sm text-gray-500 mt-1">
-                  Periode: {new Date(selectedYear, selectedMonth - 1).toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
+                  {tr("Periode", "Period")}: {new Date(selectedYear, selectedMonth - 1).toLocaleDateString("id-ID", { year: "numeric", month: "long" })}
                 </p>
               </div>
               <button
@@ -957,15 +960,15 @@ export default React.memo(function RekapPerAkun({ user }) {
               {detailLoading ? (
                 <div className="text-center py-12 text-gray-500">
                   <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-gray-200 border-t-blue-600 mb-4"></div>
-                  <p>Memuat detail biaya...</p>
+                  <p>{tr("Memuat detail biaya...", "Loading cost details...")}</p>
                 </div>
               ) : detailBiaya.length === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <FileText size={48} className="mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium mb-2">Tidak ada data biaya untuk akun ini pada periode terpilih</p>
+                  <p className="text-lg font-medium mb-2">{tr("Tidak ada data biaya untuk akun ini pada periode terpilih", "No cost data for this account in selected period")}</p>
                   {!isSuperAdmin && (
                     <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg">
-                      <span className="font-semibold">Perhatian:</span> Fitur detail biaya hanya dapat diakses oleh superadmin.
+                      <span className="font-semibold">{tr("Perhatian", "Notice")}:</span> {tr("Fitur detail biaya hanya dapat diakses oleh superadmin.", "Cost detail feature can only be accessed by super admin.")}
                     </p>
                   )}
                   <p className="text-xs text-gray-400 mt-4">
@@ -976,19 +979,19 @@ export default React.memo(function RekapPerAkun({ user }) {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 bg-gray-50 rounded-xl">
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-1">Biaya Jalan</p>
+                      <p className="text-xs text-gray-500 mb-1">{tr("Biaya Jalan", "Travel Cost")}</p>
                       <p className="text-2xl font-bold text-blue-600">
                         {rupiah(detailBiaya.filter(d => d.kategori === 'jalan').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0))}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-1">Biaya Pengeluaran</p>
+                      <p className="text-xs text-gray-500 mb-1">{tr("Biaya Pengeluaran", "Expense Cost")}</p>
                       <p className="text-2xl font-bold text-amber-600">
                         {rupiah(detailBiaya.filter(d => d.kategori === 'pengeluaran').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0))}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 mb-1">Biaya Reimbursment</p>
+                      <p className="text-xs text-gray-500 mb-1">{tr("Biaya Reimbursment", "Reimbursement Cost")}</p>
                       <p className="text-2xl font-bold text-purple-600">
                         {rupiah(detailBiaya.filter(d => d.kategori === 'reimbursment').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0))}
                       </p>
@@ -1012,7 +1015,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                             : "text-gray-600 hover:text-gray-800"
                         }`}
                       >
-                        Biaya Projek
+                        {tr("Biaya Projek", "Project Costs")}
                       </button>
                       <button
                         type="button"
@@ -1023,7 +1026,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                             : "text-gray-600 hover:text-gray-800"
                         }`}
                       >
-                        Biaya Diluar Projek
+                        {tr("Biaya Diluar Projek", "Non-Project Costs")}
                       </button>
                     </div>
                   </div>
@@ -1031,12 +1034,12 @@ export default React.memo(function RekapPerAkun({ user }) {
                   {[
                     {
                       key: "projek",
-                      title: "Biaya Projek",
+                      title: tr("Biaya Projek", "Project Costs"),
                       rows: detailBySource.projek,
                     },
                     {
                       key: "diluar",
-                      title: "Biaya Diluar Projek",
+                      title: tr("Biaya Diluar Projek", "Non-Project Costs"),
                       rows: detailBySource.diluar,
                     },
                   ]
@@ -1045,7 +1048,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                     <div key={sourceBlock.key} className="border rounded-xl p-4 bg-white">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-gray-800">{sourceBlock.title}</h4>
-                        <span className="text-xs text-gray-500">{sourceBlock.rows.length} transaksi</span>
+                        <span className="text-xs text-gray-500">{sourceBlock.rows.length} {tr("transaksi", "transactions")}</span>
                       </div>
 
                       {["belum", "lunas"].map((statusKey) => {
@@ -1055,7 +1058,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                         return (
                           <div key={`${sourceBlock.key}-${statusKey}`} className="mb-4 last:mb-0">
                             <h5 className={`text-sm font-semibold mb-2 ${statusKey === "lunas" ? "text-emerald-700" : "text-amber-700"}`}>
-                              {statusKey === "lunas" ? "Lunas" : "Belum Lunas"}
+                              {statusKey === "lunas" ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid")}
                             </h5>
 
                             {["jalan", "pengeluaran", "reimbursment"].map((kategori) => {
@@ -1063,25 +1066,25 @@ export default React.memo(function RekapPerAkun({ user }) {
                               return (
                                 <div key={`${sourceBlock.key}-${statusKey}-${kategori}`} className="border rounded-lg overflow-hidden mb-3 last:mb-0">
                                   <div className="bg-gray-100 px-3 py-2 font-medium text-xs text-gray-700">
-                                    {kategori === "jalan" ? "Biaya Jalan" : kategori === "pengeluaran" ? "Biaya Pengeluaran" : "Biaya Reimbursment"}
+                                    {kategori === "jalan" ? tr("Biaya Jalan", "Travel Cost") : kategori === "pengeluaran" ? tr("Biaya Pengeluaran", "Expense Cost") : tr("Biaya Reimbursment", "Reimbursement Cost")}
                                   </div>
                                   <div className="overflow-x-auto">
                                     <table className="min-w-full text-xs">
                                       <thead className="bg-white text-gray-600">
                                         <tr className="text-left">
-                                          <th className="p-2 font-semibold">No</th>
-                                          <th className="p-2 font-semibold">Nominal</th>
-                                          <th className="p-2 font-semibold">Keterangan</th>
-                                          <th className="p-2 font-semibold">Foto</th>
-                                          <th className="p-2 font-semibold">Status</th>
-                                          <th className="p-2 font-semibold">Tanggal</th>
+                                          <th className="p-2 font-semibold">{tr("No", "No")}</th>
+                                          <th className="p-2 font-semibold">{tr("Nominal", "Amount")}</th>
+                                          <th className="p-2 font-semibold">{tr("Keterangan", "Description")}</th>
+                                          <th className="p-2 font-semibold">{tr("Foto", "Photo")}</th>
+                                          <th className="p-2 font-semibold">{tr("Status", "Status")}</th>
+                                          <th className="p-2 font-semibold">{tr("Tanggal", "Date")}</th>
                                         </tr>
                                       </thead>
                                       <tbody>
                                         {rows.length === 0 ? (
                                           <tr>
                                             <td colSpan={6} className="p-3 text-gray-400 text-center">
-                                              Tidak ada data
+                                              {tr("Tidak ada data", "No data")}
                                             </td>
                                           </tr>
                                         ) : (
@@ -1105,9 +1108,9 @@ export default React.memo(function RekapPerAkun({ user }) {
                                                           target="_blank"
                                                           rel="noreferrer"
                                                           className="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 text-[11px]"
-                                                          title={`Lihat foto ${photoIdx + 1}`}
+                                                          title={`${tr("Lihat foto", "View photo")} ${photoIdx + 1}`}
                                                         >
-                                                          {photoUrls.length === 1 ? "Lihat" : `Foto ${photoIdx + 1}`}
+                                                          {photoUrls.length === 1 ? tr("Lihat", "View") : `${tr("Foto", "Photo")} ${photoIdx + 1}`}
                                                         </a>
                                                       ))}
                                                     </div>
@@ -1124,13 +1127,13 @@ export default React.memo(function RekapPerAkun({ user }) {
                                                         ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
                                                         : "bg-yellow-100 text-yellow-700 hover:bg-yellow-200"
                                                     }`}
-                                                    title={item.is_lunas ? "Klik untuk ubah ke Belum Lunas" : "Klik untuk ubah ke Lunas"}
+                                                    title={item.is_lunas ? tr("Klik untuk ubah ke Belum Lunas", "Click to change to Unpaid") : tr("Klik untuk ubah ke Lunas", "Click to change to Paid")}
                                                   >
-                                                    {item.is_lunas ? "Lunas" : "Belum Lunas"}
+                                                    {item.is_lunas ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid")}
                                                   </button>
                                                 ) : (
                                                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_lunas ? "bg-emerald-100 text-emerald-700" : "bg-yellow-100 text-yellow-700"}`}>
-                                                    {item.is_lunas ? "Lunas" : "Belum Lunas"}
+                                                    {item.is_lunas ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid")}
                                                   </span>
                                                 )}
                                               </td>
@@ -1156,13 +1159,13 @@ export default React.memo(function RekapPerAkun({ user }) {
             {/* Footer */}
             <div className="px-6 py-4 border-t flex justify-between items-center">
               <p className="text-sm text-gray-500">
-                Total {detailBiaya.length} transaksi
+                {tr("Total", "Total")} {detailBiaya.length} {tr("transaksi", "transactions")}
               </p>
               <button
                 onClick={closeDetailModal}
                 className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition"
               >
-                Tutup
+                {tr("Tutup", "Close")}
               </button>
             </div>
           </div>

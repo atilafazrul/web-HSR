@@ -87,16 +87,18 @@ export default function EditProjekKerjaPage() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const targetDivisi = form?.divisi || project?.divisi;
-      if (!targetDivisi) return;
       setUsersLoading(true);
       try {
         const res = await api.get("/karyawan");
         const users = res.data?.data || res.data || [];
-        const target = String(targetDivisi || "").toLowerCase().trim();
-        const filtered = users.filter(
-          (u) => String(u?.divisi || "").toLowerCase().trim() === target
-        );
+        const adminOnly = users.filter((u) => {
+          const roleName = String(u?.role || "")
+            .toLowerCase()
+            .trim()
+            .replace(/[\s-]+/g, "_");
+          return roleName === "admin";
+        });
+        const allKaryawan = adminOnly.filter((u) => String(u?.name || u?.email || "").trim() !== "");
         const userOnly = users.filter((u) => {
           const roleName = String(u?.role || "")
             .toLowerCase()
@@ -104,7 +106,7 @@ export default function EditProjekKerjaPage() {
             .replace(/[\s-]+/g, "_");
           return roleName === "user";
         });
-        setUsersByDivisi(filtered);
+        setUsersByDivisi(allKaryawan);
         setUserAccountOptions(userOnly);
       } catch (err) {
         console.error("Fetch users by divisi error:", err);
@@ -113,7 +115,7 @@ export default function EditProjekKerjaPage() {
       }
     };
     fetchUsers();
-  }, [project?.divisi, form?.divisi]);
+  }, []);
 
   const canEdit = canEditProjectByDivisi(project?.divisi);
 
@@ -338,7 +340,7 @@ export default function EditProjekKerjaPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              {tr("Karyawan Terlibat", "Involved Employees")} ({form?.divisi || project?.divisi || "-"})
+              {tr("Karyawan Terlibat", "Involved Employees")} ({tr("Semua Divisi", "All Divisions")})
             </label>
             <div className="flex gap-2">
               <select
@@ -347,10 +349,10 @@ export default function EditProjekKerjaPage() {
                 className="border p-3 rounded-xl w-full"
                 disabled={!canEdit || saving || usersLoading}
               >
-                <option value="">{usersLoading ? tr("Memuat karyawan...", "Loading employees...") : `${tr("Pilih karyawan", "Select employee")} ${form?.divisi || project?.divisi || ""}`}</option>
+                <option value="">{usersLoading ? tr("Memuat karyawan...", "Loading employees...") : tr("Pilih karyawan", "Select employee")}</option>
                 {usersByDivisi.map((u) => (
                   <option key={u.id} value={(u?.name || u?.email || `#${u?.id}`).trim()}>
-                    {u?.name || u?.email || `#${u?.id}`}
+                    {`${u?.name || u?.email || `#${u?.id}`}${u?.divisi ? ` (${u.divisi})` : ""}`}
                   </option>
                 ))}
               </select>

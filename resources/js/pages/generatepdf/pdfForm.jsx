@@ -16,6 +16,11 @@ import {
 } from "lucide-react";
 import { useI18n } from "../../i18n";
 
+const tr = (id, en) => {
+  if (typeof window === "undefined") return id;
+  return localStorage.getItem("app_language") === "en" ? en : id;
+};
+
 export default function pdfForm({
   formData,
   checkboxes,
@@ -32,8 +37,7 @@ export default function pdfForm({
   user,
   isEditing,
 }) {
-  const { language } = useI18n();
-  const tr = (id, en) => (language === "en" ? en : id);
+  useI18n();
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       {/* HEADER FORM CARD */}

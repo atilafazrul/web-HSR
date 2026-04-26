@@ -731,7 +731,10 @@ export default function ProjekKerjaPage() {
     const key = `${kategori}_${rowIndex}`;
     setCompressingPhotoKey(key);
     try {
-      const compressed = await Promise.all(files.map((file) => compressImage(file)));
+      // Auto-compress uploads to reduce storage usage.
+      const compressed = await Promise.all(
+        files.map((file) => compressImage(file, 1280, 1280, 0.6))
+      );
       setBiayaEdit((prev) => {
         const next = [...prev[kategori]];
         next[rowIndex] = { ...next[rowIndex], photoFiles: compressed };
@@ -2107,6 +2110,9 @@ export default function ProjekKerjaPage() {
                                       disabled={!bolehEditKeterangan}
                                       className="w-full text-xs border rounded-lg p-1.5 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     />
+                                    <p className="text-[10px] text-gray-500 mt-1">
+                                      {tr("Foto akan otomatis dikompres sebelum disimpan.", "Photos will be automatically compressed before saving.")}
+                                    </p>
                                     {compressingPhotoKey === `${col.key}_${idx}` ? (
                                       <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
                                     ) : null}

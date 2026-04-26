@@ -223,9 +223,9 @@ export default function PembelianPage() {
                             : "bg-yellow-100 text-yellow-700 border-yellow-200"
                         }`}
                       >
-                        <option value="Dipesan">Dipesan</option>
-                        <option value="Dikirim">Dikirim</option>
-                        <option value="Diterima">Diterima</option>
+                        <option value="Dipesan">{tr("Dipesan", "Ordered")}</option>
+                        <option value="Dikirim">{tr("Dikirim", "Shipped")}</option>
+                        <option value="Diterima">{tr("Diterima", "Received")}</option>
                       </select>
                     </td>
                     <td className="p-2 sm:p-4 text-center">
@@ -356,9 +356,9 @@ export default function PembelianPage() {
                     className="border border-gray-300 p-2 sm:p-2.5 rounded-xl w-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
                     required
                   >
-                    <option value="Dipesan">Dipesan</option>
-                    <option value="Dikirim">Dikirim</option>
-                    <option value="Diterima">Diterima</option>
+                    <option value="Dipesan">{tr("Dipesan", "Ordered")}</option>
+                    <option value="Dikirim">{tr("Dikirim", "Shipped")}</option>
+                    <option value="Diterima">{tr("Diterima", "Received")}</option>
                   </select>
                 </div>
               </div>
