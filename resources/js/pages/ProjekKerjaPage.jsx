@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../api/axiosConfig";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
+import { compressImage } from "../utils/imageCompress";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   Download,
@@ -22,6 +23,7 @@ import {
   RotateCcw,
   CheckCircle,
   AlertCircle,
+  X,
 } from "lucide-react";
 
 function BiayaMetaFooter({ meta }) {
@@ -248,7 +250,22 @@ export default function ProjekKerjaPage() {
   // State untuk modal konfirmasi status lunas
   const [showLunasConfirmModal, setShowLunasConfirmModal] = useState(false);
   const [lunasConfirmAction, setLunasConfirmAction] = useState(null);
-  const emptyBiayaRow = () => ({ nominal: "", keterangan: "", is_lunas: false, oleh: user?.name || "", created_at: new Date().toISOString() });
+
+  // State untuk modal konfirmasi hapus baris biaya
+  const [showDeleteBiayaRowModal, setShowDeleteBiayaRowModal] = useState(false);
+  const [deleteBiayaRowAction, setDeleteBiayaRowAction] = useState(null);
+
+  // State untuk kompresi foto biaya
+  const [compressingPhotoKey, setCompressingPhotoKey] = useState(null);
+
+  const emptyBiayaRow = () => ({
+    nominal: "",
+    keterangan: "",
+    is_lunas: false,
+    oleh: user?.name || "",
+    created_at: new Date().toISOString(),
+    photoFiles: [],
+  });
   const [biayaEdit, setBiayaEdit] = useState({
     jalan: [emptyBiayaRow()],
     pengeluaran: [emptyBiayaRow()],
@@ -611,13 +628,17 @@ export default function ProjekKerjaPage() {
 
   const normalizeBiayaRows = (arr) => {
     if (!Array.isArray(arr) || arr.length === 0) return [emptyBiayaRow()];
-    return arr.map((r) => ({
+    const result = arr.map((r) => ({
       nominal: nominalApiToInput(r.nominal),
       keterangan: r.keterangan ?? "",
       is_lunas: Boolean(r.is_lunas),
       oleh: r.oleh ?? "",
       created_at: r.created_at ?? new Date().toISOString(),
+      photoFiles: [],
+      photoPaths: r.photo_paths ?? [],
     }));
+    console.log("normalizeBiayaRows result:", result);
+    return result;
   };
 
   const sumBiayaRows = (rows) =>
@@ -630,14 +651,18 @@ export default function ProjekKerjaPage() {
         (r.keterangan && String(r.keterangan).trim() !== "")
     );
 
-  const biayaToPayload = (rows) =>
-    rows.map((r) => ({
+  const biayaToPayload = (rows) => {
+    const result = rows.map((r) => ({
       nominal: parseRibuanId(r.nominal),
       keterangan: (r.keterangan || "").trim(),
       is_lunas: Boolean(r.is_lunas),
       oleh: (r.oleh || user?.name || "").trim(),
       created_at: r.created_at || new Date().toISOString(),
+      photo_paths: r.photoPaths || [],
     }));
+    console.log("biayaToPayload result:", result);
+    return result;
+  };
 
   const openUangModal = (item) => {
     setCurrentId(item.id);
@@ -658,6 +683,14 @@ export default function ProjekKerjaPage() {
   };
 
   const removeBiayaRow = (key, index) => {
+    setDeleteBiayaRowAction({ key, index });
+    setShowDeleteBiayaRowModal(true);
+  };
+
+  const executeDeleteBiayaRow = () => {
+    if (!deleteBiayaRowAction) return;
+    const { key, index } = deleteBiayaRowAction;
+
     setBiayaEdit((prev) => {
       const next = [...prev[key]];
       if (next.length <= 1) {
@@ -667,6 +700,42 @@ export default function ProjekKerjaPage() {
         next.splice(index, 1);
       }
       return { ...prev, [key]: next };
+    });
+
+    setShowDeleteBiayaRowModal(false);
+    setDeleteBiayaRowAction(null);
+  };
+
+  const handlePhotoSelection = async (kategori, rowIndex, fileList) => {
+    const files = fileList ? Array.from(fileList) : [];
+    if (files.length === 0) return;
+
+    const key = `${kategori}_${rowIndex}`;
+    setCompressingPhotoKey(key);
+    try {
+      const compressed = await Promise.all(files.map((file) => compressImage(file)));
+      setBiayaEdit((prev) => {
+        const next = [...prev[kategori]];
+        next[rowIndex] = { ...next[rowIndex], photoFiles: compressed };
+        return { ...prev, [kategori]: next };
+      });
+    } catch (err) {
+      console.error("Gagal kompres foto:", err);
+      alert("Gagal kompres foto. Silakan coba lagi.");
+    } finally {
+      setCompressingPhotoKey((current) => (current === key ? null : current));
+    }
+  };
+
+  const handleRemovePhoto = (kategori, rowIndex, fileIndex) => {
+    setBiayaEdit((prev) => {
+      const next = [...prev[kategori]];
+      const row = { ...next[rowIndex] };
+      const newPhotoFiles = [...(row.photoFiles || [])];
+      newPhotoFiles.splice(fileIndex, 1);
+      row.photoFiles = newPhotoFiles;
+      next[rowIndex] = row;
+      return { ...prev, [kategori]: next };
     });
   };
 
@@ -685,12 +754,130 @@ export default function ProjekKerjaPage() {
       alert("Anda tidak punya akses untuk mengubah project ini.");
       return;
     }
+
     try {
-      await api.patch(`/projek-kerja/${currentId}/uang`, {
-        biaya_jalan_items: biayaToPayload(biayaEdit.jalan),
-        biaya_pengeluaran_items: biayaToPayload(biayaEdit.pengeluaran),
-        biaya_reimbursment_items: biayaToPayload(biayaEdit.reimbursment),
-      });
+      // Cek apakah ada foto yang perlu diupload
+      const hasPhotos = biayaEdit.pengeluaran.some(r => r.photoFiles?.length > 0) ||
+                          biayaEdit.reimbursment.some(r => r.photoFiles?.length > 0);
+
+      if (hasPhotos) {
+        // Gunakan FormData untuk upload foto
+        const fd = new FormData();
+
+        console.log("Data biaya yang akan dikirim:", {
+          jalan: biayaEdit.jalan,
+          pengeluaran: biayaEdit.pengeluaran,
+          reimbursment: biayaEdit.reimbursment,
+        });
+
+        // Cek detail foto untuk logging
+        const pengeluaranPhotosCount = biayaEdit.pengeluaran.reduce((sum, row) => sum + (row.photoFiles?.length || 0), 0);
+        const reimbursmentPhotosCount = biayaEdit.reimbursment.reduce((sum, row) => sum + (row.photoFiles?.length || 0), 0);
+        console.log(`Total foto yang akan dikirim: pengeluaran=${pengeluaranPhotosCount}, reimbursment=${reimbursmentPhotosCount}`);
+
+        // Tampilkan detail foto yang ada untuk setiap baris
+        biayaEdit.pengeluaran.forEach((row, idx) => {
+          if (row.photoFiles?.length > 0) {
+            console.log(`Foto pengeluaran baris ${idx}:`, row.photoFiles.map(f => f.name));
+          }
+        });
+        biayaEdit.reimbursment.forEach((row, idx) => {
+          if (row.photoFiles?.length > 0) {
+            console.log(`Foto reimbursment baris ${idx}:`, row.photoFiles.map(f => f.name));
+          }
+        });
+
+        // Validasi minimal 1 baris valid per kategori
+        const jalanValid = biayaEdit.jalan.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== ""));
+        const pengeluaranValid = biayaEdit.pengeluaran.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== "") || (r.photoFiles?.length > 0));
+        const reimbursmentValid = biayaEdit.reimbursment.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== "") || (r.photoFiles?.length > 0));
+
+        if (!jalanValid && !pengeluaranValid && !reimbursmentValid) {
+          alert("Minimal ada satu data biaya yang valid (nominal > 0 atau keterangan tidak kosong atau ada foto).");
+          return;
+        }
+
+        // Tambah data biaya sebagai array langsung, bukan JSON string
+        biayaToPayload(biayaEdit.jalan).forEach((item, idx) => {
+          Object.keys(item).forEach(key => {
+            // Skip photo_paths - akan dihandle terpisah
+            if (key === 'photo_paths') return;
+            // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
+            const value = key === 'is_lunas' ? (item[key] ? '1' : '0') : item[key];
+            fd.append(`biaya_jalan_items[${idx}][${key}]`, value);
+          });
+        });
+        biayaToPayload(biayaEdit.pengeluaran).forEach((item, idx) => {
+          Object.keys(item).forEach(key => {
+            // Skip photo_paths - akan dihandle terpisah
+            if (key === 'photo_paths') return;
+            // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
+            const value = key === 'is_lunas' ? (item[key] ? '1' : '0') : item[key];
+            fd.append(`biaya_pengeluaran_items[${idx}][${key}]`, value);
+          });
+          // Kirim photo_paths sebagai array terpisah
+          if (item.photo_paths && Array.isArray(item.photo_paths)) {
+            item.photo_paths.forEach((path, pathIdx) => {
+              fd.append(`biaya_pengeluaran_items[${idx}][photo_paths][${pathIdx}]`, path);
+            });
+          }
+        });
+        biayaToPayload(biayaEdit.reimbursment).forEach((item, idx) => {
+          Object.keys(item).forEach(key => {
+            // Skip photo_paths - akan dihandle terpisah
+            if (key === 'photo_paths') return;
+            // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
+            const value = key === 'is_lunas' ? (item[key] ? '1' : '0') : item[key];
+            fd.append(`biaya_reimbursment_items[${idx}][${key}]`, value);
+          });
+          // Kirim photo_paths sebagai array terpisah
+          if (item.photo_paths && Array.isArray(item.photo_paths)) {
+            item.photo_paths.forEach((path, pathIdx) => {
+              fd.append(`biaya_reimbursment_items[${idx}][photo_paths][${pathIdx}]`, path);
+            });
+          }
+        });
+
+        // Tambah foto untuk setiap baris pengeluaran
+        biayaEdit.pengeluaran.forEach((row, idx) => {
+          if (row.photoFiles?.length > 0) {
+            console.log(`Menambahkan ${row.photoFiles.length} foto ke pengeluaran baris ${idx}`);
+            row.photoFiles.forEach((file, fileIdx) => {
+              console.log(`  - fd.append('pengeluaran_photos[${idx}][${fileIdx}]', ${file.name})`);
+              fd.append(`pengeluaran_photos[${idx}][${fileIdx}]`, file);
+            });
+          }
+        });
+
+        // Tambah foto untuk setiap baris reimbursment
+        biayaEdit.reimbursment.forEach((row, idx) => {
+          if (row.photoFiles?.length > 0) {
+            console.log(`Menambahkan ${row.photoFiles.length} foto ke reimbursment baris ${idx}`);
+            row.photoFiles.forEach((file, fileIdx) => {
+              console.log(`  - fd.append('reimbursment_photos[${idx}][${fileIdx}]', ${file.name})`);
+              fd.append(`reimbursment_photos[${idx}][${fileIdx}]`, file);
+            });
+          }
+        });
+
+        console.log("FormData entries sebelum dikirim:");
+        for (let [key, value] of fd.entries()) {
+          if (value instanceof File) {
+            console.log(`  ${key}: ${value.name} (${(value.size / 1024).toFixed(2)} KB)`);
+          }
+        }
+
+        await api.patch(`/projek-kerja/${currentId}/uang`, fd, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        // Tanpa foto, kirim JSON biasa
+        await api.patch(`/projek-kerja/${currentId}/uang`, {
+          biaya_jalan_items: biayaToPayload(biayaEdit.jalan),
+          biaya_pengeluaran_items: biayaToPayload(biayaEdit.pengeluaran),
+          biaya_reimbursment_items: biayaToPayload(biayaEdit.reimbursment),
+        });
+      }
 
       setEditUang(false);
       setShowUangModal(false);
@@ -1696,6 +1883,23 @@ export default function ProjekKerjaPage() {
                                 {r.keterangan ? (
                                   <span className="block text-gray-600 mt-0.5">{r.keterangan}</span>
                                 ) : null}
+                                {/* Tampilkan foto yang sudah tersimpan */}
+                                {r.photoPaths && r.photoPaths.length > 0 && (
+                                  <div className="mt-2 flex flex-wrap gap-1">
+                                    {r.photoPaths.map((photoPath, photoIdx) => (
+                                      <a
+                                        key={photoIdx}
+                                        href={`/storage/${photoPath}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] hover:bg-blue-200"
+                                        title="Klik untuk lihat foto"
+                                      >
+                                        Foto {photoIdx + 1}
+                                      </a>
+                                    ))}
+                                  </div>
+                                )}
                               </li>
                             ))}
                           </ul>
@@ -1862,6 +2066,61 @@ export default function ProjekKerjaPage() {
                                   className={`border w-full p-2 rounded-lg text-sm ${!bolehEditKeterangan ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
                                   placeholder="Keterangan"
                                 />
+                                {/* Upload Foto - Hanya untuk Pengeluaran & Reimbursment */}
+                                {(col.key === "pengeluaran" || col.key === "reimbursment") && (
+                                  <div className="mt-2">
+                                    <label className="block text-xs text-gray-600 mb-1">Upload Foto</label>
+                                    <input
+                                      type="file"
+                                      multiple
+                                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                                      onChange={(e) => handlePhotoSelection(col.key, idx, e.target.files)}
+                                      disabled={!bolehEditKeterangan}
+                                      className="w-full text-xs border rounded-lg p-1.5 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    />
+                                    {compressingPhotoKey === `${col.key}_${idx}` ? (
+                                      <p className="text-[11px] text-blue-600 mt-1">Sedang kompres foto...</p>
+                                    ) : null}
+                                    {/* Tampilkan foto yang sudah diupload */}
+                                    {row.photoFiles?.length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-2">
+                                        {row.photoFiles.map((file, fileIdx) => (
+                                          <div key={fileIdx} className="relative inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200">
+                                            <span className="text-[10px] text-blue-700 truncate max-w-[100px]">{file.name}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => handleRemovePhoto(col.key, idx, fileIdx)}
+                                              className="text-red-500 hover:text-red-700"
+                                              disabled={!bolehEditKeterangan}
+                                              title="Hapus foto"
+                                            >
+                                              <X size={12} />
+                                            </button>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {/* Tampilkan foto yang sudah tersimpan di database */}
+                                    {row.photoPaths && row.photoPaths.length > 0 && (
+                                      <div className="mt-2 flex flex-wrap gap-1">
+                                        <span className="text-[11px] text-gray-500 w-full">Foto tersimpan:</span>
+                                        {row.photoPaths.map((photoPath, photoIdx) => (
+                                          <a
+                                            key={photoIdx}
+                                            href={`/storage/${photoPath}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-[10px] border border-green-200 hover:bg-green-100"
+                                            title="Klik untuk lihat foto"
+                                          >
+                                            Foto {photoIdx + 1}
+                                            <Eye size={10} />
+                                          </a>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
@@ -1987,6 +2246,60 @@ export default function ProjekKerjaPage() {
                 }`}
               >
                 Ya, Ubah Status
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL KONFIRMASI HAPUS BARIS BIAYA ================= */}
+      {showDeleteBiayaRowModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all animate-in fade-in zoom-in duration-200">
+            {/* Header dengan icon */}
+            <div className="pt-6 pb-2 px-6 flex flex-col items-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-red-100">
+                <Trash2 size={32} className="text-red-600" />
+              </div>
+
+              <h3 className="text-lg font-bold text-gray-800 mb-1">
+                Hapus Baris Biaya
+              </h3>
+              <p className="text-sm text-gray-500 text-center">
+                Apakah Anda yakin ingin menghapus baris biaya ini?
+              </p>
+            </div>
+
+            {/* Info tambahan */}
+            {deleteBiayaRowAction && (
+              <div className="px-6 pb-4">
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <p className="text-xs text-gray-500 mb-1">Kategori:</p>
+                  <p className="font-semibold text-gray-700 capitalize">
+                    {deleteBiayaRowAction.key === 'jalan' ? 'Biaya Jalan' :
+                     deleteBiayaRowAction.key === 'pengeluaran' ? 'Biaya Pengeluaran' :
+                     'Biaya Reimbursment'}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Tombol Action */}
+            <div className="px-6 pb-6 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteBiayaRowModal(false);
+                  setDeleteBiayaRowAction(null);
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm"
+              >
+                Batal
+              </button>
+              <button
+                onClick={executeDeleteBiayaRow}
+                className="flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm bg-red-600 hover:bg-red-700"
+              >
+                Ya, Hapus
               </button>
             </div>
           </div>
