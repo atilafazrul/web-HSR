@@ -62,6 +62,7 @@ import LogistikEditBarangPage from "./LogistikEditBarangPage";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
 import BiayaDashboardPanel from "../components/BiayaDashboardPanel";
+import RekapPerAkun from "../components/RekapPerAkun";
 import { useI18n } from "../i18n/index.jsx";
 
 export default function AdminDashboard({ user, logout }) {
@@ -140,6 +141,7 @@ export default function AdminDashboard({ user, logout }) {
     const path = location.pathname;
 
     if (path.includes("inventory")) return "Inventory";
+    if (path.includes("rekap-akun")) return language === "en" ? "Account Cost Recap" : "Rekap Biaya Akun";
     if (path.includes("target")) return language === "en" ? "Sales Target" : "Target Penjualan";
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Project Photos" : "Foto Projek";
     if (path.includes("dashboard")) return "Dashboard";
@@ -257,6 +259,11 @@ export default function AdminDashboard({ user, logout }) {
         <div className="flex-1 p-4 sm:p-5 md:p-6 lg:p-8 overflow-y-auto w-full max-w-full">
           <Routes>
             <Route path="/" element={<Navigate to="dashboard" replace />} />
+
+            <Route
+              path="rekap-akun"
+              element={<RekapPerAkun user={currentUser} onlyCurrentUser={currentRole === "admin"} />}
+            />
 
             {/* ================= DASHBOARD ================= */}
             <Route

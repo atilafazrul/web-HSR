@@ -46,10 +46,11 @@ const getPhotoUrlsFromItem = (item) => {
 };
 
 // Menggunakan React.memo untuk mencegah unmount/remount yang tidak perlu
-export default React.memo(function RekapPerAkun({ user }) {
+export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false }) {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const isSuperAdmin = user?.role === "super_admin";
+  const canViewDetail = isSuperAdmin || onlyCurrentUser;
   console.log("User role:", user?.role, "isSuperAdmin:", isSuperAdmin);
 
   const abortControllerRef = useRef(null); // Untuk cancel request
@@ -96,7 +97,7 @@ export default React.memo(function RekapPerAkun({ user }) {
       setAllBiaya(res.data?.data?.all || []);
     } catch (err) {
       console.error("Gagal load rekap:", err);
-      alert("Gagal memuat data rekapitulasi");
+      alert(err?.response?.data?.message || "Gagal memuat data rekapitulasi");
     } finally {
       setLoading(false);
     }
@@ -168,7 +169,7 @@ export default React.memo(function RekapPerAkun({ user }) {
       console.error("Error status:", err.response?.status);
 
       if (err.response?.status === 403) {
-        alert(tr("Anda tidak memiliki akses untuk melihat detail biaya. Hanya superadmin yang bisa mengakses.", "You do not have access to view cost details. Only super admin can access."));
+        alert(err.response?.data?.message || tr("Anda tidak memiliki akses untuk melihat detail biaya.", "You do not have access to view cost details."));
       } else if (err.response?.status === 422) {
         alert(err.response?.data?.message || tr("Parameter tidak lengkap", "Incomplete parameters"));
       } else {
@@ -206,6 +207,8 @@ export default React.memo(function RekapPerAkun({ user }) {
   };
 
   const handleSearch = async (value) => {
+    if (onlyCurrentUser) return;
+
     setSearchTerm(value);
     if (!value) {
       resetSearch();
@@ -249,6 +252,8 @@ export default React.memo(function RekapPerAkun({ user }) {
   };
 
   const resetSearch = () => {
+    if (onlyCurrentUser) return;
+
     setSearchTerm("");
     setSearchResults([]);
     setSelectedAkun(null);
@@ -711,31 +716,32 @@ export default React.memo(function RekapPerAkun({ user }) {
         {tr("Rekapitulasi Per Akun", "Recap Per Account")}
       </h3>
 
-      {/* Search Bar */}
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => handleSearch(e.target.value)}
-            placeholder={tr("Cari nama akun (contoh: aqila)...", "Search account name (e.g. aqila)...")}
-            className="w-full border border-gray-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-          />
-          {searchTerm && (
-            <button
-              onClick={resetSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X size={18} />
-            </button>
-          )}
-          {!searchTerm && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
-              <Search size={18} />
-            </div>
-          )}
+      {!onlyCurrentUser && (
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+              placeholder={tr("Cari nama akun (contoh: aqila)...", "Search account name (e.g. aqila)...")}
+              className="w-full border border-gray-300 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl pr-10 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
+            />
+            {searchTerm && (
+              <button
+                onClick={resetSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={18} />
+              </button>
+            )}
+            {!searchTerm && (
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+                <Search size={18} />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Filter Bulan & Tahun */}
       <div className="flex flex-wrap gap-3 mb-6">
@@ -785,7 +791,7 @@ export default React.memo(function RekapPerAkun({ user }) {
               <p className="text-xs text-gray-500 mb-1">{tr("Akun Terpilih", "Selected Account")}</p>
               <p className="text-lg font-bold text-blue-700">{selectedAkun.nama_akun || selectedAkun.name}</p>
             </div>
-            {isSuperAdmin && (
+            {canViewDetail && (
               <button
                 onClick={() => openDetailModal(selectedAkun)}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition"
@@ -901,7 +907,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                       <td className="p-2 sm:p-4 text-amber-600 font-semibold">{rupiah(akun.pengeluaran)}</td>
                       <td className="p-2 sm:p-4 text-purple-600 font-semibold">{rupiah(akun.reimbursment)}</td>
                       <td className="p-2 sm:p-4 text-emerald-600 font-semibold">{rupiah(akun.total)}</td>
-                      {isSuperAdmin && (
+                      {canViewDetail && (
                         <td className="p-2 sm:p-4">
                           <button
                             onClick={() => {
@@ -915,7 +921,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                           </button>
                         </td>
                       )}
-                      {!isSuperAdmin && (
+                      {!canViewDetail && (
                         <td className="p-2 sm:p-4">
                           <span className="text-xs text-gray-400 italic">-</span>
                         </td>
@@ -966,7 +972,7 @@ export default React.memo(function RekapPerAkun({ user }) {
                 <div className="text-center py-12 text-gray-500">
                   <FileText size={48} className="mx-auto mb-4 text-gray-300" />
                   <p className="text-lg font-medium mb-2">{tr("Tidak ada data biaya untuk akun ini pada periode terpilih", "No cost data for this account in selected period")}</p>
-                  {!isSuperAdmin && (
+                  {!canViewDetail && (
                     <p className="text-sm text-orange-600 bg-orange-50 px-4 py-2 rounded-lg">
                       <span className="font-semibold">{tr("Perhatian", "Notice")}:</span> {tr("Fitur detail biaya hanya dapat diakses oleh superadmin.", "Cost detail feature can only be accessed by super admin.")}
                     </p>

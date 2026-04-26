@@ -192,6 +192,22 @@ export default function Sidebar({
               </>
             )}
 
+            {/* ================= REKAP BIAYA AKUN (ADMIN) ================= */}
+            {isAdmin && (
+              <div onClick={() => {
+                navigate(`${basePath}/rekap-akun`);
+                if (isMobile) setSidebarOpen(false);
+              }}>
+                <SidebarItem
+                  icon={<FileText size={18} />}
+                  text={t("expenseRecap", "Rekap Biaya Karyawan")}
+                  active={isActive(`${basePath}/rekap-akun`)}
+                  expanded={expanded}
+                  isMobile={isMobile}
+                />
+              </div>
+            )}
+
             {/* ================= BERITA ACARA (SUPER ADMIN & ADMIN) ================= */}
             {(isSuperAdmin || isAdmin) && (
               <div onClick={() => {

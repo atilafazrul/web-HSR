@@ -272,10 +272,12 @@ class DashboardBiayaController extends Controller
     {
         $user = $request->user();
 
-        if (($user->role ?? null) !== 'super_admin') {
+        $isSuperAdmin = ($user->role ?? null) === 'super_admin';
+
+        if (!in_array(($user->role ?? null), ['super_admin', 'admin', 'user'], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Hanya superadmin yang bisa mengakses rekapitulasi per akun.',
+                'message' => 'Role tidak diizinkan mengakses rekapitulasi per akun.',
             ], 403);
         }
 
@@ -294,6 +296,11 @@ class DashboardBiayaController extends Controller
         $query->whereYear('created_at', $tahun)
               ->whereMonth('created_at', $bulan)
               ->whereNotNull('created_by'); // Hanya ambil data user yang masih ada
+
+        // Non-superadmin hanya boleh melihat akun sendiri.
+        if (!$isSuperAdmin) {
+            $query->where('created_by', $user->id);
+        }
 
         $dashboardBiayaByAkun = $query->with(['creator:id,name'])
             ->get()
@@ -339,6 +346,10 @@ class DashboardBiayaController extends Controller
                     continue;
                 }
 
+                if (!$isSuperAdmin && strtolower($oleh) !== strtolower(trim((string) $user->name))) {
+                    continue;
+                }
+
                 // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
                 if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     // Gunakan lowercase key untuk case-insensitive grouping
@@ -369,6 +380,10 @@ class DashboardBiayaController extends Controller
                     continue;
                 }
 
+                if (!$isSuperAdmin && strtolower($oleh) !== strtolower(trim((string) $user->name))) {
+                    continue;
+                }
+
                 if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $lowerOleh = strtolower($oleh);
                     $existing = $projekBiayaByAkun->get($lowerOleh);
@@ -394,6 +409,10 @@ class DashboardBiayaController extends Controller
                 $oleh = trim($item['oleh'] ?? '');
                 $nominal = (float) ($item['nominal'] ?? 0);
                 if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                    continue;
+                }
+
+                if (!$isSuperAdmin && strtolower($oleh) !== strtolower(trim((string) $user->name))) {
                     continue;
                 }
 
@@ -598,11 +617,12 @@ class DashboardBiayaController extends Controller
     public function rekapDetailAkun(Request $request)
     {
         $user = $request->user();
+        $isSuperAdmin = ($user->role ?? null) === 'super_admin';
 
-        if (($user->role ?? null) !== 'super_admin') {
+        if (!in_array(($user->role ?? null), ['super_admin', 'admin', 'user'], true)) {
             return response()->json([
                 'success' => false,
-                'message' => 'Hanya superadmin yang bisa mengakses rekapitulasi per akun.',
+                'message' => 'Role tidak diizinkan mengakses detail rekapitulasi per akun.',
             ], 403);
         }
 
@@ -626,12 +646,12 @@ class DashboardBiayaController extends Controller
               ->whereMonth('created_at', $bulan)
               ->whereNotNull('created_by'); // Hanya ambil data user yang masih ada
 
-        // Jika nama_akun disediakan (dari projek), cari user id dulu
-        $targetUserId = $createdBy;
-        if ($namaAkun !== '' && !$targetUserId) {
-            $user = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($namaAkun)])->first(['id']);
-            if ($user) {
-                $targetUserId = $user->id;
+        // Non-superadmin wajib hanya ke akun sendiri.
+        $targetUserId = $isSuperAdmin ? $createdBy : $user->id;
+        if ($isSuperAdmin && $namaAkun !== '' && !$targetUserId) {
+            $targetUser = \App\Models\User::whereRaw('LOWER(TRIM(name)) = ?', [strtolower($namaAkun)])->first(['id']);
+            if ($targetUser) {
+                $targetUserId = $targetUser->id;
             }
         }
 
@@ -652,7 +672,7 @@ class DashboardBiayaController extends Controller
         $data = $data->concat($dashboardBiaya);
 
         // Gunakan nama_akun untuk filter project, atau ambil dari dashboard jika ada created_by
-        $filterNamaAkun = $namaAkun;
+        $filterNamaAkun = $isSuperAdmin ? $namaAkun : trim((string) $user->name);
         if (!$filterNamaAkun && $dashboardBiaya->isNotEmpty()) {
             $firstItem = $dashboardBiaya->first();
             if ($firstItem && $firstItem->creator) {
