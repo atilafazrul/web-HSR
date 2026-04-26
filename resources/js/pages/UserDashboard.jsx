@@ -25,7 +25,6 @@ import PurchasingPage from "./PurchasingPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import Profile from "./Profile";
-import BiayaDashboardPanel from "../components/BiayaDashboardPanel";
 
 const DIVISI_TO_PATH = {
   IT: "it",
@@ -60,8 +59,6 @@ export default function UserDashboard({ user, logout }) {
   const currentDivisi = user?.divisi || "Service";
   const divisiPath = DIVISI_TO_PATH[currentDivisi] || "service";
   const CurrentDivisiPage = DIVISI_PAGE[divisiPath] || ServicePage;
-  const normalizedRole = String(user?.role || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
-  const canInputBiaya = normalizedRole === "admin";
 
   const pageTitle = useMemo(() => {
     if (location.pathname.includes("/profile")) return "Profile";
@@ -315,7 +312,6 @@ export default function UserDashboard({ user, logout }) {
                     )}
                   </div>
 
-                  <BiayaDashboardPanel user={user} showInput={canInputBiaya} />
                 </div>
               }
             />
