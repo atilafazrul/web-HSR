@@ -5,9 +5,40 @@ namespace App\Http\Controllers;
 use App\Models\DashboardBiaya;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class DashboardBiayaController extends Controller
 {
+    /**
+     * @param  array<int, mixed>  $paths
+     * @return array<int, string>
+     */
+    protected function toPublicPhotoUrls(array $paths): array
+    {
+        return collect($paths)
+            ->map(fn ($p) => trim((string) $p))
+            ->filter()
+            ->map(fn ($p) => asset('storage/' . ltrim($p, '/')))
+            ->values()
+            ->all();
+    }
+
+    protected function isProjectItemInPeriod(array $item, $projectCreatedAt, int $bulan, int $tahun): bool
+    {
+        $rawDate = $item['created_at'] ?? $projectCreatedAt;
+        if (empty($rawDate)) {
+            return false;
+        }
+
+        try {
+            $dt = Carbon::parse($rawDate);
+        } catch (\Throwable $e) {
+            return false;
+        }
+
+        return ((int) $dt->month === $bulan) && ((int) $dt->year === $tahun);
+    }
+
     /** Kategori yang boleh melampirkan foto */
     protected function kategoriAllowsPhotos(?string $kategori): bool
     {
@@ -248,8 +279,8 @@ class DashboardBiayaController extends Controller
             ], 403);
         }
 
-        $bulan = $request->input('bulan');
-        $tahun = $request->input('tahun');
+        $bulan = (int) $request->input('bulan');
+        $tahun = (int) $request->input('tahun');
 
         if (!$bulan || !$tahun) {
             return response()->json([
@@ -284,9 +315,12 @@ class DashboardBiayaController extends Controller
             })->filter(); // Hapus nilai null
 
         // Ambil biaya dari projek_kerjas
-        $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
-            ->whereMonth('created_at', $bulan)
-            ->get(['biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items']);
+        $projekKerjas = \App\Models\ProjekKerja::get([
+            'created_at',
+            'biaya_jalan_items',
+            'biaya_pengeluaran_items',
+            'biaya_reimbursment_items',
+        ]);
 
         // Ambil semua user yang masih aktif untuk validasi
         $activeUserNames = \App\Models\User::pluck('name')
@@ -301,6 +335,9 @@ class DashboardBiayaController extends Controller
             foreach ($jalanItems as $item) {
                 $oleh = trim($item['oleh'] ?? '');
                 $nominal = (float) ($item['nominal'] ?? 0);
+                if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                    continue;
+                }
 
                 // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
                 if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
@@ -328,6 +365,9 @@ class DashboardBiayaController extends Controller
             foreach ($pengeluaranItems as $item) {
                 $oleh = trim($item['oleh'] ?? '');
                 $nominal = (float) ($item['nominal'] ?? 0);
+                if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                    continue;
+                }
 
                 if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $lowerOleh = strtolower($oleh);
@@ -353,6 +393,9 @@ class DashboardBiayaController extends Controller
             foreach ($reimbursmentItems as $item) {
                 $oleh = trim($item['oleh'] ?? '');
                 $nominal = (float) ($item['nominal'] ?? 0);
+                if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                    continue;
+                }
 
                 if ($nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
                     $lowerOleh = strtolower($oleh);
@@ -456,8 +499,8 @@ class DashboardBiayaController extends Controller
         }
 
         $nama = $request->input('nama');
-        $bulan = $request->input('bulan');
-        $tahun = $request->input('tahun');
+        $bulan = (int) $request->input('bulan');
+        $tahun = (int) $request->input('tahun');
 
         if (!$nama) {
             return response()->json([
@@ -495,9 +538,12 @@ class DashboardBiayaController extends Controller
             $users = $users->concat($usersFromDashboard);
 
             // Cari user dari projek_kerjas yang memiliki biaya di periode ini
-            $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
-                ->whereMonth('created_at', $bulan)
-                ->get(['biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items']);
+            $projekKerjas = \App\Models\ProjekKerja::get([
+                'created_at',
+                'biaya_jalan_items',
+                'biaya_pengeluaran_items',
+                'biaya_reimbursment_items',
+            ]);
 
             $olehNames = collect();
             foreach ($projekKerjas as $projek) {
@@ -508,6 +554,9 @@ class DashboardBiayaController extends Controller
                 );
                 foreach ($items as $item) {
                     $oleh = trim($item['oleh'] ?? '');
+                    if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                        continue;
+                    }
                     // Skip jika user sudah dihapus atau tidak cocok dengan pencarian
                     if ($oleh !== '' && stripos($oleh, $nama) !== false && $activeUserNames->has(strtolower($oleh))) {
                         $olehNames->push([
@@ -557,8 +606,8 @@ class DashboardBiayaController extends Controller
             ], 403);
         }
 
-        $bulan = $request->input('bulan');
-        $tahun = $request->input('tahun');
+        $bulan = (int) $request->input('bulan');
+        $tahun = (int) $request->input('tahun');
         $createdBy = $request->input('created_by');
         $namaAkun = trim((string) $request->input('nama_akun', ''));
 
@@ -617,9 +666,14 @@ class DashboardBiayaController extends Controller
             ->flip(); // Untuk O(1) lookup
 
         // Ambil biaya dari projek_kerjas
-        $projekKerjas = \App\Models\ProjekKerja::whereYear('created_at', $tahun)
-            ->whereMonth('created_at', $bulan)
-            ->get(['id', 'biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items', 'created_at', 'updated_at']);
+        $projekKerjas = \App\Models\ProjekKerja::get([
+            'id',
+            'biaya_jalan_items',
+            'biaya_pengeluaran_items',
+            'biaya_reimbursment_items',
+            'created_at',
+            'updated_at',
+        ]);
 
         foreach ($projekKerjas as $projek) {
             // Proses biaya jalan
@@ -627,6 +681,9 @@ class DashboardBiayaController extends Controller
             foreach ($jalanItems as $idx => $item) {
                 $oleh = trim((string) ($item['oleh'] ?? ''));
                 $nominal = (float) ($item['nominal'] ?? 0);
+                if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                    continue;
+                }
 
                 // Filter oleh nama jika nama_akun disediakan (case-insensitive exact match)
                 $shouldInclude = false;
@@ -636,6 +693,7 @@ class DashboardBiayaController extends Controller
 
                 // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
                 if ($shouldInclude && $nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
+                    $photoUrls = $this->toPublicPhotoUrls((array) ($item['photo_paths'] ?? []));
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_jalan_' . uniqid(),
                         'project_id' => $projek->id,
@@ -649,6 +707,7 @@ class DashboardBiayaController extends Controller
                         'updated_at' => $projek->updated_at,
                         'creator' => (object) ['id' => 0, 'name' => $oleh],
                         'updater' => null,
+                        'photo_urls' => $photoUrls,
                         'source' => 'projek',
                     ]);
                 }
@@ -659,6 +718,9 @@ class DashboardBiayaController extends Controller
             foreach ($pengeluaranItems as $idx => $item) {
                 $oleh = trim((string) ($item['oleh'] ?? ''));
                 $nominal = (float) ($item['nominal'] ?? 0);
+                if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                    continue;
+                }
 
                 $shouldInclude = false;
                 if ($filterNamaAkun !== '' && strtolower($oleh) === strtolower(trim((string) $filterNamaAkun))) {
@@ -667,6 +729,7 @@ class DashboardBiayaController extends Controller
 
                 // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
                 if ($shouldInclude && $nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
+                    $photoUrls = $this->toPublicPhotoUrls((array) ($item['photo_paths'] ?? []));
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_pengeluaran_' . uniqid(),
                         'project_id' => $projek->id,
@@ -680,6 +743,7 @@ class DashboardBiayaController extends Controller
                         'updated_at' => $projek->updated_at,
                         'creator' => (object) ['id' => 0, 'name' => $oleh],
                         'updater' => null,
+                        'photo_urls' => $photoUrls,
                         'source' => 'projek',
                     ]);
                 }
@@ -690,6 +754,9 @@ class DashboardBiayaController extends Controller
             foreach ($reimbursmentItems as $idx => $item) {
                 $oleh = trim((string) ($item['oleh'] ?? ''));
                 $nominal = (float) ($item['nominal'] ?? 0);
+                if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                    continue;
+                }
 
                 $shouldInclude = false;
                 if ($filterNamaAkun !== '' && strtolower($oleh) === strtolower(trim((string) $filterNamaAkun))) {
@@ -698,6 +765,7 @@ class DashboardBiayaController extends Controller
 
                 // Skip jika user sudah dihapus (nama tidak ada di activeUserNames)
                 if ($shouldInclude && $nominal > 0 && $oleh !== '' && $activeUserNames->has(strtolower($oleh))) {
+                    $photoUrls = $this->toPublicPhotoUrls((array) ($item['photo_paths'] ?? []));
                     $data->push((object) [
                         'id' => 'projek_' . $projek->id . '_reimbursment_' . uniqid(),
                         'project_id' => $projek->id,
@@ -711,6 +779,7 @@ class DashboardBiayaController extends Controller
                         'updated_at' => $projek->updated_at,
                         'creator' => (object) ['id' => 0, 'name' => $oleh],
                         'updater' => null,
+                        'photo_urls' => $photoUrls,
                         'source' => 'projek',
                     ]);
                 }

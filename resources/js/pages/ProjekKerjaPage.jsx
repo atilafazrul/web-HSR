@@ -763,6 +763,9 @@ export default function ProjekKerjaPage() {
       if (hasPhotos) {
         // Gunakan FormData untuk upload foto
         const fd = new FormData();
+        // Multipart untuk PATCH sering tidak terbaca di PHP.
+        // Kirim sebagai POST + method spoofing agar Laravel tetap memproses sebagai PATCH.
+        fd.append("_method", "PATCH");
 
         console.log("Data biaya yang akan dikirim:", {
           jalan: biayaEdit.jalan,
@@ -867,9 +870,7 @@ export default function ProjekKerjaPage() {
           }
         }
 
-        await api.patch(`/projek-kerja/${currentId}/uang`, fd, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        await api.post(`/projek-kerja/${currentId}/uang`, fd);
       } else {
         // Tanpa foto, kirim JSON biasa
         await api.patch(`/projek-kerja/${currentId}/uang`, {

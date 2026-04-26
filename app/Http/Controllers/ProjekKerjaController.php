@@ -852,57 +852,44 @@ class ProjekKerjaController extends Controller
                 'reimbursment' => [],
             ];
 
-            // Simpan foto pengeluaran - cara yang lebih baik
-            foreach ($request->allFiles() as $key => $files) {
-                if (strpos($key, 'pengeluaran_photos[') === 0) {
-                    // Parse: pengeluaran_photos[0][0] atau pengeluaran_photos[0][1]
-                    preg_match('/pengeluaran_photos\[(\d+)\]\[(\d+)\]/', $key, $matches);
-                    if (isset($matches[1]) && isset($matches[2])) {
-                        $rowIndex = (int) $matches[1];
-                        $file = $files;
-                        if ($file && $file->isValid()) {
-                            $path = $file->store('biaya-fotos', 'public');
-                            if (!isset($storedPhotos['pengeluaran'][$rowIndex])) {
-                                $storedPhotos['pengeluaran'][$rowIndex] = [];
-                            }
-                            $storedPhotos['pengeluaran'][$rowIndex][] = $path;
-                            \Log::info("Simpan foto pengeluaran row {$rowIndex}: {$path}");
+            // Simpan foto pengeluaran dari struktur nested array: pengeluaran_photos[rowIndex][fileIndex]
+            foreach (($request->file('pengeluaran_photos') ?? []) as $rowIndex => $files) {
+                foreach ((array) $files as $file) {
+                    if ($file && $file->isValid()) {
+                        $path = $file->store('biaya-fotos', 'public');
+                        if (!isset($storedPhotos['pengeluaran'][$rowIndex])) {
+                            $storedPhotos['pengeluaran'][$rowIndex] = [];
                         }
+                        $storedPhotos['pengeluaran'][$rowIndex][] = $path;
+                        \Log::info("Simpan foto pengeluaran row {$rowIndex}: {$path}");
                     }
                 }
             }
 
-            // Simpan foto reimbursment - cara yang lebih baik
-            foreach ($request->allFiles() as $key => $files) {
-                if (strpos($key, 'reimbursment_photos[') === 0) {
-                    // Parse: reimbursment_photos[0][0] atau reimbursment_photos[0][1]
-                    preg_match('/reimbursment_photos\[(\d+)\]\[(\d+)\]/', $key, $matches);
-                    if (isset($matches[1]) && isset($matches[2])) {
-                        $rowIndex = (int) $matches[1];
-                        $file = $files;
-                        if ($file && $file->isValid()) {
-                            $path = $file->store('biaya-fotos', 'public');
-                            if (!isset($storedPhotos['reimbursment'][$rowIndex])) {
-                                $storedPhotos['reimbursment'][$rowIndex] = [];
-                            }
-                            $storedPhotos['reimbursment'][$rowIndex][] = $path;
-                            \Log::info("Simpan foto reimbursment row {$rowIndex}: {$path}");
+            // Simpan foto reimbursment dari struktur nested array: reimbursment_photos[rowIndex][fileIndex]
+            foreach (($request->file('reimbursment_photos') ?? []) as $rowIndex => $files) {
+                foreach ((array) $files as $file) {
+                    if ($file && $file->isValid()) {
+                        $path = $file->store('biaya-fotos', 'public');
+                        if (!isset($storedPhotos['reimbursment'][$rowIndex])) {
+                            $storedPhotos['reimbursment'][$rowIndex] = [];
                         }
+                        $storedPhotos['reimbursment'][$rowIndex][] = $path;
+                        \Log::info("Simpan foto reimbursment row {$rowIndex}: {$path}");
                     }
                 }
             }
 
             \Log::info('Stored photos after processing:', $storedPhotos);
 
-            $normalizeItems = function (?array $incoming, array $existing = [], ?string $kategori = null, ?array $storedPhotos = []) use ($isSuperAdmin, $userName) {
+            $normalizeItems = function (?array $incoming, array $existing = [], ?array $storedPhotosByIndex = []) use ($isSuperAdmin, $userName) {
                 $incoming = $incoming ?? [];
                 \Log::info('normalizeItems called', [
-                    'kategori' => $kategori,
                     'incoming_count' => is_array($incoming) ? count($incoming) : 0,
-                    'stored_photos_count' => isset($storedPhotos[$kategori]) ? count($storedPhotos[$kategori], 0) : 0,
+                    'stored_photos_count' => is_array($storedPhotosByIndex) ? count($storedPhotosByIndex) : 0,
                 ]);
                 \Log::info('normalizeItems incoming data:', $incoming);
-                \Log::info('normalizeItems stored photos:', $storedPhotos);
+                \Log::info('normalizeItems stored photos by index:', $storedPhotosByIndex);
                 $existing = $existing ?? [];
 
                 if ($isSuperAdmin) {
@@ -949,15 +936,14 @@ class ProjekKerjaController extends Controller
                             }
                             // Log photo_paths dari input
                             \Log::info("Processing item idx {$idx}", [
-                                'kategori' => $kategori,
                                 'photo_paths_from_input' => $row['photo_paths'] ?? null,
-                                'stored_photos_for_idx' => $storedPhotos[$kategori][$idx] ?? null,
+                                'stored_photos_for_idx' => $storedPhotosByIndex[$idx] ?? null,
                             ]);
                             // Tambahkan foto jika ada (hanya untuk pengeluaran dan reimbursment)
                             $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths']) ? $row['photo_paths'] : [];
-                            if ($kategori !== null && isset($storedPhotos[$kategori][$idx])) {
+                            if (isset($storedPhotosByIndex[$idx])) {
                                 // Gabungkan foto lama dengan foto baru
-                                $item['photo_paths'] = array_values(array_unique(array_merge($existingPhotos, $storedPhotos[$kategori][$idx])));
+                                $item['photo_paths'] = array_values(array_unique(array_merge($existingPhotos, $storedPhotosByIndex[$idx])));
                             } elseif (!empty($existingPhotos)) {
                                 // Hanya gunakan foto lama
                                 $item['photo_paths'] = $existingPhotos;
@@ -972,7 +958,7 @@ class ProjekKerjaController extends Controller
                 // Non–super admin: baris is_lunas tidak boleh diubah nominal / dihapus; keterangan masih boleh diubah.
                 $lunasQueue = array_values(array_filter($existing, fn ($r) => is_array($r) && ! empty($r['is_lunas'])));
                 $result = [];
-                foreach ($incoming as $row) {
+                foreach ($incoming as $idx => $row) {
                     if (! is_array($row)) {
                         continue;
                     }
@@ -1038,9 +1024,9 @@ class ProjekKerjaController extends Controller
                             $item['photo_paths'] = $existingPhotos;
                         }
                         // Gabungkan dengan foto baru jika ada
-                        if ($kategori !== null && isset($storedPhotos[$kategori][$idx])) {
+                        if (isset($storedPhotosByIndex[$idx])) {
                             $currentPhotos = $item['photo_paths'] ?? [];
-                            $item['photo_paths'] = array_values(array_unique(array_merge($currentPhotos, $storedPhotos[$kategori][$idx])));
+                            $item['photo_paths'] = array_values(array_unique(array_merge($currentPhotos, $storedPhotosByIndex[$idx])));
                         }
                         $result[] = $item;
                     }
@@ -1057,7 +1043,6 @@ class ProjekKerjaController extends Controller
                 $updateData['biaya_jalan_items'] = $normalizeItems(
                     $validated['biaya_jalan_items'],
                     $projek->biaya_jalan_items ?? [],
-                    null, // jalan tidak ada foto
                     [] // tidak ada foto
                 );
                 $meta['jalan'] = [
@@ -1070,7 +1055,6 @@ class ProjekKerjaController extends Controller
                 $updateData['biaya_pengeluaran_items'] = $normalizeItems(
                     $validated['biaya_pengeluaran_items'],
                     $projek->biaya_pengeluaran_items ?? [],
-                    'pengeluaran',
                     $storedPhotos['pengeluaran'] ?? []
                 );
                 $meta['pengeluaran'] = [
@@ -1083,7 +1067,6 @@ class ProjekKerjaController extends Controller
                 $updateData['biaya_reimbursment_items'] = $normalizeItems(
                     $validated['biaya_reimbursment_items'],
                     $projek->biaya_reimbursment_items ?? [],
-                    'reimbursment',
                     $storedPhotos['reimbursment'] ?? []
                 );
                 $meta['reimbursment'] = [
