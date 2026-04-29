@@ -192,8 +192,10 @@ export default function FotoProjekPage() {
     }
   };
 
-  const handleUploadPhoto = async (file) => {
-    if (!file) return;
+  const handleUploadPhoto = async (files) => {
+    const fileArray = Array.isArray(files) ? files : [files].filter(Boolean);
+    if (fileArray.length === 0) return;
+
     const folderName = getActivePhotoFolderName();
     if (!folderName) {
       alert(tr("Buat atau pilih folder foto terlebih dahulu sebelum upload.", "Create or select photo folder before upload."));
@@ -202,17 +204,20 @@ export default function FotoProjekPage() {
 
     setUploadBusy(true);
     try {
-      const ready = await compressImage(file);
-      const formData = new FormData();
-      formData.append("photo", ready);
-      formData.append("folder_name", folderName);
+      const uploadPromises = fileArray.map(async (file) => {
+        const ready = await compressImage(file);
+        const formData = new FormData();
+        formData.append("photo", ready);
+        formData.append("folder_name", folderName);
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-photo`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+        return axios.post(
+          `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-photo`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      });
 
+      await Promise.all(uploadPromises);
       await fetchPhotos();
       await fetchFolders();
     } catch (err) {
@@ -222,8 +227,10 @@ export default function FotoProjekPage() {
     }
   };
 
-  const handleUploadFile = async (file) => {
-    if (!file) return;
+  const handleUploadFile = async (files) => {
+    const fileArray = Array.isArray(files) ? files : [files].filter(Boolean);
+    if (fileArray.length === 0) return;
+
     const folderName = getActiveFileFolderName();
     if (!folderName) {
       alert(tr("Buat atau pilih folder dokumen terlebih dahulu sebelum upload.", "Create or select document folder before upload."));
@@ -232,17 +239,19 @@ export default function FotoProjekPage() {
 
     setUploadBusy(true);
     try {
-      const formData = new FormData();
-      // File dokumen dikirim asli (tanpa kompres image).
-      formData.append("file", file);
-      formData.append("folder_name", folderName);
+      const uploadPromises = fileArray.map(async (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder_name", folderName);
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-file`,
-        formData,
-        { headers: { "Content-Type": "multipart/form-data" } }
-      );
+        return axios.post(
+          `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-file`,
+          formData,
+          { headers: { "Content-Type": "multipart/form-data" } }
+        );
+      });
 
+      await Promise.all(uploadPromises);
       await fetchFiles();
       await fetchFolders();
     } catch (err) {
@@ -455,12 +464,13 @@ export default function FotoProjekPage() {
                 <p className="text-sm text-slate-400">{tr("Klik untuk memilih file", "Click to choose file")}</p>
                 <input
                   type="file"
+                  multiple
                   hidden
                   disabled={uploadBusy}
                   onChange={async (e) => {
-                    const f = e.target.files?.[0];
+                    const files = Array.from(e.target.files || []);
                     e.target.value = "";
-                    if (f) await handleUploadFile(f);
+                    if (files.length > 0) await handleUploadFile(files);
                   }}
                 />
               </label>
@@ -504,12 +514,13 @@ export default function FotoProjekPage() {
                   <input
                     type="file"
                     accept="image/*"
+                    multiple
                     hidden
                     disabled={uploadBusy}
                     onChange={async (e) => {
-                      const f = e.target.files?.[0];
+                      const files = Array.from(e.target.files || []);
                       e.target.value = "";
-                      if (f) await handleUploadPhoto(f);
+                      if (files.length > 0) await handleUploadPhoto(files);
                     }}
                   />
                 </label>
