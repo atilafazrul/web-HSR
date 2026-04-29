@@ -10,7 +10,7 @@ use App\Models\ProjekKerja;
 use App\Models\ProjekKerjaPhoto;
 
 class DatabaseSeeder extends Seeder
-{p
+{
     public function run(): void
     {
         /*
