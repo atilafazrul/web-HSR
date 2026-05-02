@@ -662,12 +662,18 @@ export default function ProjekKerjaPage() {
   const sumBiayaRows = (rows) =>
     rows.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
 
-  const displayBiayaRows = (rows) =>
-    rows.filter(
-      (r) =>
-        parseRibuanId(r.nominal) > 0 ||
-        (r.keterangan && String(r.keterangan).trim() !== "")
-    );
+  /** Baris biaya yang tampil di modal, dengan index asli & filter lunas (untuk layout dashboard) */
+  const filterDisplayedBiayaByLunas = (rows, wantLunas) =>
+    rows
+      .map((r, idx) => ({ ...r, __idx: idx }))
+      .filter(
+        (r) =>
+          Boolean(r.is_lunas) === wantLunas &&
+          (parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== ""))
+      );
+
+  const sumNominalRows = (rowsWithIdx) =>
+    rowsWithIdx.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
 
   const biayaToPayload = (rows) => {
     const result = rows.map((r) => ({
@@ -1840,7 +1846,7 @@ export default function ProjekKerjaPage() {
       {/* ================= MODAL BIAYA ================= */}
       {showUangModal && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-5xl p-6 relative my-8 max-h-[92vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl p-6 relative my-8 max-h-[92vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
               <DollarSign className="text-amber-600" />
               {tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs")}
@@ -1860,100 +1866,138 @@ export default function ProjekKerjaPage() {
 
             {!editUang ? (
               <>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 text-sm">
-                  {[
+                {(() => {
+                  const rowItem = dataList.find((i) => i.id === currentId);
+                  const kategoriCols = [
                     { key: "jalan", label: tr("Biaya Jalan", "Travel Cost"), rows: biayaEdit.jalan },
                     { key: "pengeluaran", label: tr("Biaya Pengeluaran", "Expense Cost"), rows: biayaEdit.pengeluaran },
                     { key: "reimbursment", label: tr("Biaya Reimbursment", "Reimbursement Cost"), rows: biayaEdit.reimbursment },
-                  ].map((col) => {
-                    const shown = displayBiayaRows(
-                      col.rows.map((r, idx) => ({ ...r, __idx: idx }))
-                    );
-                    const rowItem = dataList.find((i) => i.id === currentId);
-                    const meta = rowItem?.biaya_edit_meta?.[col.key];
-                    return (
-                      <div key={col.key} className="border rounded-xl p-3 bg-gray-50/80">
-                        <p className="font-semibold text-gray-800 mb-2">{col.label}</p>
-                        {shown.length === 0 ? (
-                          <p className="text-xs text-gray-400">{tr("Belum ada entri", "No entries yet")}</p>
+                  ];
+                  const renderEntryCard = (colKey, r) => (
+                    <div
+                      key={`${colKey}-${r.__idx}`}
+                      className="text-xs border border-gray-200 rounded-lg p-2 bg-white shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-semibold text-gray-900">{formatRupiah(parseRibuanId(r.nominal))}</span>
+                        {role === "super_admin" ? (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleItemLunas(colKey, r.__idx)}
+                            className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-medium ${r.is_lunas ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200" : "bg-yellow-100 text-amber-900 border-amber-300 hover:bg-amber-200"}`}
+                            title={
+                              r.is_lunas
+                                ? tr("Klik untuk batalkan lunas item", "Click to mark item as unpaid")
+                                : tr("Klik untuk lunaskan item", "Click to mark item as paid")
+                            }
+                          >
+                            {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
+                          </button>
                         ) : (
-                          <ul className="space-y-1 text-gray-700 max-h-40 overflow-y-auto">
-                            {shown.map((r, i) => (
-                              <li key={i} className="text-xs border-b border-gray-200/80 pb-1">
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium">{formatRupiah(parseRibuanId(r.nominal))}</span>
-                                  {role === "super_admin" ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleToggleItemLunas(col.key, r.__idx)}
-                                      className={`px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300 hover:bg-emerald-200" : "bg-yellow-100 text-yellow-700 border-yellow-300 hover:bg-yellow-200"}`}
-                                      title={r.is_lunas ? tr("Klik untuk batalkan lunas item", "Click to mark item as unpaid") : tr("Klik untuk lunaskan item", "Click to mark item as paid")}
-                                    >
-                                      {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
-                                    </button>
-                                  ) : (
-                                    <span className={`px-1.5 py-0.5 rounded border text-[10px] ${r.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}>
-                                      {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
-                                    </span>
-                                  )}
-                                </div>
-                                {r.oleh && (
-                                  <span className="block text-gray-500 mt-0.5 text-[10px]">
-                                    {tr("Oleh", "By")}: {r.oleh}
-                                    {r.created_at && (
-                                      (() => {
-                                        const d = new Date(r.created_at);
-                                        if (!Number.isNaN(d.getTime())) {
-                                          const dateStr = d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
-                                          return `, ${dateStr}`;
-                                        }
-                                        return "";
-                                      })()
-                                    )}
-                                  </span>
-                                )}
-                                {r.keterangan ? (
-                                  <span className="block text-gray-600 mt-0.5">{r.keterangan}</span>
-                                ) : null}
-                                {/* Tampilkan foto yang sudah tersimpan */}
-                                {r.photoPaths && r.photoPaths.length > 0 && (
-                                  <div className="mt-2 flex flex-wrap gap-1">
-                                    {r.photoPaths.map((photoPath, photoIdx) => (
-                                      <a
-                                        key={photoIdx}
-                                        href={`/storage/${photoPath}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-[10px] hover:bg-blue-200"
-                                        title={tr("Klik untuk lihat foto", "Click to view photo")}
-                                      >
-                                        {tr("Foto", "Photo")} {photoIdx + 1}
-                                      </a>
-                                    ))}
-                                  </div>
-                                )}
-                              </li>
-                            ))}
-                          </ul>
+                          <span
+                            className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-medium ${r.is_lunas ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-yellow-100 text-amber-900 border-amber-300"}`}
+                          >
+                            {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
+                          </span>
                         )}
-                        <p className="mt-2 pt-2 border-t text-amber-800 font-semibold">
-                          {tr("Subtotal", "Subtotal")}: {formatRupiah(sumBiayaRows(col.rows))}
-                        </p>
-                        <BiayaMetaFooter meta={meta} />
                       </div>
-                    );
-                  })}
-                </div>
-                <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <p className="text-lg font-bold text-amber-900">
-                    {tr("Total keseluruhan", "Grand total")}:{" "}
-                    {formatRupiah(
-                      sumBiayaRows(biayaEdit.jalan) +
-                      sumBiayaRows(biayaEdit.pengeluaran) +
-                      sumBiayaRows(biayaEdit.reimbursment)
-                    )}
-                  </p>
-                </div>
+                      {r.oleh ? (
+                        <p className="mt-1 text-[11px] text-gray-500">
+                          <span className="font-medium text-gray-600">{r.oleh}</span>
+                          {r.created_at &&
+                            (() => {
+                              const d = new Date(r.created_at);
+                              if (!Number.isNaN(d.getTime())) {
+                                return ` · ${d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}`;
+                              }
+                              return "";
+                            })()}
+                        </p>
+                      ) : null}
+                      {r.keterangan ? <p className="mt-1 text-gray-600 whitespace-pre-wrap break-words">{r.keterangan}</p> : null}
+                      {r.photoPaths && r.photoPaths.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {r.photoPaths.map((photoPath, photoIdx) => (
+                            <a
+                              key={photoIdx}
+                              href={`/storage/${photoPath}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-0.5 px-2 py-1 bg-slate-100 text-slate-700 rounded text-[10px] border border-slate-300 hover:bg-slate-200"
+                              title={tr("Klik untuk lihat foto", "Click to view photo")}
+                            >
+                              <Eye size={12} className="shrink-0" />
+                              {r.photoPaths.length > 1 ? (
+                                <span className="font-medium tabular-nums">{photoIdx + 1}</span>
+                              ) : null}
+                            </a>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  );
+                  const renderKategoriColumn = (wantLunas) => (
+                    <div className="space-y-3">
+                      {kategoriCols.map((col) => {
+                        const shown = filterDisplayedBiayaByLunas(col.rows, wantLunas);
+                        const meta = rowItem?.biaya_edit_meta?.[col.key];
+                        return (
+                          <div key={col.key} className="border rounded-xl p-3 bg-white/70">
+                            <p className="text-sm font-semibold text-gray-800 mb-2">{col.label}</p>
+                            <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5">
+                              {shown.length === 0 ? (
+                                <p className="text-xs text-gray-400">{tr("Belum ada data", "No data yet")}</p>
+                              ) : (
+                                shown.map((r) => renderEntryCard(col.key, r))
+                              )}
+                            </div>
+                            <p className={`mt-2 pt-2 border-t text-xs font-semibold ${wantLunas ? "text-emerald-800" : "text-amber-900"}`}>
+                              {tr("Subtotal", "Subtotal")}: {formatRupiah(sumNominalRows(shown))}
+                            </p>
+                            <BiayaMetaFooter meta={meta} />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                  const totalBelum =
+                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.jalan, false)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.pengeluaran, false)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.reimbursment, false));
+                  const totalLunas =
+                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.jalan, true)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.pengeluaran, true)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.reimbursment, true));
+                  const grandTotal = totalBelum + totalLunas;
+                  return (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="border rounded-xl p-4 bg-amber-50/40">
+                          <h4 className="text-sm font-bold text-amber-900 mb-3">{tr("Belum Lunas", "Unpaid")}</h4>
+                          {renderKategoriColumn(false)}
+                        </div>
+                        <div className="border rounded-xl p-4 bg-emerald-50/40">
+                          <h4 className="text-sm font-bold text-emerald-900 mb-3">{tr("Sudah Lunas", "Paid")}</h4>
+                          {renderKategoriColumn(true)}
+                        </div>
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200">
+                          <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wide">{tr("Total belum lunas", "Total unpaid")}</p>
+                          <p className="text-base font-bold text-amber-950 tabular-nums">{formatRupiah(totalBelum)}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200">
+                          <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">{tr("Total sudah lunas", "Total paid")}</p>
+                          <p className="text-base font-bold text-emerald-950 tabular-nums">{formatRupiah(totalLunas)}</p>
+                        </div>
+                        <div className="p-3 rounded-xl bg-amber-50/30 border border-amber-200/80 sm:col-span-1">
+                          <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">{tr("Total keseluruhan", "Grand total")}</p>
+                          <p className="text-lg font-bold text-gray-900 tabular-nums">{formatRupiah(grandTotal)}</p>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
                 <div className="flex flex-wrap justify-end gap-3 mt-6">
                   {role === "super_admin" && (() => {
                     const item = dataList.find(i => i.id === currentId);
