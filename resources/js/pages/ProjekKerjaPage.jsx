@@ -4,6 +4,7 @@ import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "..
 import { compressImage } from "../utils/imageCompress";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useI18n } from "../i18n/index.jsx";
+import { DashboardSurface, DashboardSectionHeading } from "../components/dashboard/DashboardPrimitives.jsx";
 import {
   Download,
   Eye,
@@ -44,6 +45,10 @@ function BiayaMetaFooter({ meta }) {
     </p>
   );
 }
+
+const projekField =
+  "w-full rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/15";
+const projekFieldDisabled = "w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600";
 
 export default function ProjekKerjaPage() {
   const { language } = useI18n();
@@ -286,16 +291,18 @@ export default function ProjekKerjaPage() {
         setSalesUsersLoading(true);
         const res = await api.get("/karyawan");
         const users = res.data?.data || res.data || [];
-        const sales = users.filter(
-          (u) => String(u?.divisi || "").toLowerCase() === "sales"
-        );
-        const userAccounts = users.filter((u) => {
-          const roleName = String(u?.role || "")
+        const normalizeRoleName = (role) =>
+          String(role || "")
             .toLowerCase()
             .trim()
             .replace(/[\s-]+/g, "_");
-          return roleName === "user";
+        // Karyawan Sales = staff divisi Sales, bukan akun monitoring (role user).
+        const sales = users.filter((u) => {
+          if (String(u?.divisi || "").toLowerCase() !== "sales") return false;
+          if (normalizeRoleName(u?.role) === "user") return false;
+          return true;
         });
+        const userAccounts = users.filter((u) => normalizeRoleName(u?.role) === "user");
         setSalesUsers(sales);
         setInviteUsers(userAccounts);
       } catch (err) {
@@ -527,9 +534,12 @@ export default function ProjekKerjaPage() {
       case "Dibuat": return "bg-gray-100 text-gray-700 border-gray-400";
       case "Persiapan": return "bg-blue-100 text-blue-700 border-blue-400";
       case "Proses Pekerjaan": return "bg-yellow-100 text-yellow-700 border-yellow-400";
+      case "Proses": return "bg-amber-100 text-amber-900 border-amber-400";
       case "Editing": return "bg-purple-100 text-purple-700 border-purple-400";
       case "Invoicing": return "bg-indigo-100 text-indigo-700 border-indigo-400";
       case "Selesai": return "bg-green-100 text-green-700 border-green-400";
+      case "Terlambat": return "bg-rose-100 text-rose-800 border-rose-400";
+      case "Barang sudah siap": return "bg-teal-100 text-teal-900 border-teal-400";
       default: return "bg-gray-100 text-gray-700 border-gray-400";
     }
   };
@@ -544,6 +554,7 @@ export default function ProjekKerjaPage() {
       Selesai: "Completed",
       Terlambat: "Delayed",
       Proses: "In Progress",
+      "Barang sudah siap": "Items Ready",
     };
     if (language !== "en") return status;
     return map[status] || status;
@@ -1188,19 +1199,22 @@ export default function ProjekKerjaPage() {
   };
 
   return (
-    <div className="space-y-12 p-4 lg:p-6 w-full max-w-full overflow-x-hidden">
+    <div className="w-full max-w-full space-y-6 overflow-x-hidden p-4 sm:space-y-8 sm:p-6 lg:p-8">
 
       {/* ================= FORM ================= */}
       {!isArchiveContext && canManageProject && (role === "super_admin" || divisiUser === "Sales") && (
-        <div className="bg-white rounded-3xl shadow-xl border p-4 sm:p-8 min-w-0 overflow-x-hidden">
-          <div className="mb-8">
-            <h2 className="text-3xl font-bold flex items-center gap-3">
-              <Briefcase className="text-blue-600" />
-              {tr("Tambah Projek Kerja", "Add Work Project")}
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              {tr("Tambahkan data projek kerja baru ke dalam sistem", "Add new work project data into the system")}
-            </p>
+        <DashboardSurface className="min-w-0 overflow-x-hidden p-4 sm:p-6 lg:p-8">
+          <div className="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500/15 to-indigo-500/10 ring-1 ring-blue-500/20">
+                <Briefcase size={22} className="text-blue-700" />
+              </div>
+              <DashboardSectionHeading
+                className="!mb-0"
+                title={tr("Tambah Projek Kerja", "Add Work Project")}
+                subtitle={tr("Tambahkan data projek kerja baru ke dalam sistem", "Add new work project data into the system")}
+              />
+            </div>
           </div>
 
           <form
@@ -1209,10 +1223,10 @@ export default function ProjekKerjaPage() {
             encType="multipart/form-data"
           >
             {loading && (
-              <div className="absolute inset-0 z-20 bg-white/75 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
-                <div className="flex flex-col items-center gap-2 text-blue-700">
-                  <span className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm font-medium">Menyimpan...</p>
+              <div className="absolute inset-0 z-20 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-2 text-indigo-700">
+                  <span className="h-9 w-9 animate-spin rounded-full border-[3px] border-indigo-200 border-t-indigo-600" />
+                  <p className="text-sm font-medium">{tr("Menyimpan...", "Saving...")}</p>
                 </div>
               </div>
             )}
@@ -1221,14 +1235,14 @@ export default function ProjekKerjaPage() {
                 <input
                   disabled
                   value={tr("Pilih karyawan Sales dulu", "Select Sales employee first")}
-                  className="border p-3 rounded-xl bg-gray-100"
+                  className={projekFieldDisabled}
                 />
               ) : (
                 <select
                   name="divisi"
                   value={form.divisi}
                   onChange={handleChange}
-                  className="border p-3 rounded-xl focus:ring-2 focus:ring-blue-400"
+                  className={projekField}
                   required
                 >
                   <option value="">{tr("Pilih Divisi", "Select Division")}</option>
@@ -1241,7 +1255,7 @@ export default function ProjekKerjaPage() {
                 </select>
               )
             ) : (
-              <input value={divisiUser} disabled className="border p-3 rounded-xl bg-gray-100" />
+              <input value={divisiUser} disabled className={projekFieldDisabled} />
             )}
 
             <div className="relative">
@@ -1252,7 +1266,7 @@ export default function ProjekKerjaPage() {
                 onChange={handleChange}
                 placeholder="Jenis Pekerjaan"
                 placeholder={tr("Jenis Pekerjaan", "Work Type")}
-                className="border pl-10 p-3 rounded-xl w-full"
+                className={`${projekField} pl-10`}
                 required
               />
             </div>
@@ -1265,7 +1279,7 @@ export default function ProjekKerjaPage() {
                 <select
                   value={karyawanInput}
                   onChange={handleKaryawanChange}
-                  className="border p-3 rounded-xl w-full"
+                  className={projekField}
                   disabled={salesUsersLoading}
                 >
                   <option value="">
@@ -1282,7 +1296,7 @@ export default function ProjekKerjaPage() {
                 <button
                   type="button"
                   onClick={addSalesKaryawan}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl disabled:opacity-50"
+                  className="rounded-xl bg-indigo-600 px-4 font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
                   disabled={salesUsersLoading || !karyawanInput}
                 >
                   {tr("Tambah", "Add")}
@@ -1318,7 +1332,7 @@ export default function ProjekKerjaPage() {
                 <select
                   value={inviteUserInput}
                   onChange={(e) => setInviteUserInput(e.target.value)}
-                  className="border p-3 rounded-xl w-full"
+                  className={projekField}
                   disabled={salesUsersLoading}
                 >
                   <option value="">
@@ -1335,7 +1349,7 @@ export default function ProjekKerjaPage() {
                 <button
                   type="button"
                   onClick={addInviteUser}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 rounded-xl disabled:opacity-50"
+                  className="rounded-xl bg-indigo-600 px-4 font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
                   disabled={salesUsersLoading || !inviteUserInput}
                 >
                   Invite
@@ -1371,7 +1385,7 @@ export default function ProjekKerjaPage() {
                 onChange={handleChange}
                 placeholder="Lokasi"
                 placeholder={tr("Lokasi", "Location")}
-                className="border pl-10 p-3 rounded-xl w-full"
+                className={`${projekField} pl-10`}
               />
             </div>
 
@@ -1385,7 +1399,7 @@ export default function ProjekKerjaPage() {
                 name="start_date"
                 value={form.start_date}
                 onChange={handleChange}
-                className="projek-kerja-date-input w-full min-w-0 max-w-full shrink rounded-xl border pl-10 pr-3 text-base leading-none outline-none focus:ring-2 focus:ring-blue-400/40"
+                className={`projek-kerja-date-input ${projekField} min-w-0 max-w-full shrink pl-10 pr-3 text-base leading-none`}
                 required
               />
             </div>
@@ -1394,7 +1408,7 @@ export default function ProjekKerjaPage() {
               name="status"
               value={form.status}
               onChange={handleChange}
-              className="border p-3 rounded-xl"
+              className={projekField}
             >
               <option value="Dibuat">{tr("Dibuat", "Created")}</option>
               <option value="Persiapan">{tr("Persiapan", "Preparation")}</option>
@@ -1409,7 +1423,7 @@ export default function ProjekKerjaPage() {
               value={form.file_folder_name}
               onChange={handleChange}
               placeholder={tr("Folder Dokumen awal (opsional)", "Initial Document Folder (optional)")}
-              className="border p-3 rounded-xl"
+              className={projekField}
             />
 
             <input
@@ -1417,7 +1431,7 @@ export default function ProjekKerjaPage() {
               value={form.photo_folder_name}
               onChange={handleChange}
               placeholder={tr("Folder Foto awal (opsional)", "Initial Photo Folder (optional)")}
-              className="border p-3 rounded-xl"
+              className={projekField}
             />
 
             <textarea
@@ -1425,7 +1439,7 @@ export default function ProjekKerjaPage() {
               value={form.problem_description}
               onChange={handleChange}
               placeholder={tr("Deskripsi", "Description")}
-              className="border p-3 rounded-xl md:col-span-2"
+              className={`${projekField} min-h-[100px] resize-y md:col-span-2`}
             />
 
             {/* Barang Dibeli */}
@@ -1439,7 +1453,7 @@ export default function ProjekKerjaPage() {
                 value={form.barang_dibeli}
                 onChange={handleChange}
                 placeholder={tr("Contoh: 2 pcs kabel HDMI, 1 unit monitor, dll.", "Example: 2 HDMI cables, 1 monitor unit, etc.")}
-                className="border p-3 rounded-xl w-full"
+                className={`${projekField} min-h-[88px] resize-y`}
                 rows={3}
               />
             </div>
@@ -1452,24 +1466,27 @@ export default function ProjekKerjaPage() {
                 selectedSalesUsers.length === 0 ||
                 ((role === "super_admin" || divisiUser === "Sales") && !form.divisi)
               }
-              className="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 text-white py-3 rounded-xl md:col-span-2 font-semibold shadow-lg transition disabled:opacity-60"
+              className="rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 py-3 font-semibold text-white shadow-md shadow-indigo-900/15 transition hover:from-indigo-700 hover:to-blue-700 disabled:opacity-60 md:col-span-2"
             >
               {loading ? tr("Menyimpan...", "Saving...") : tr("Simpan Projek", "Save Project")}
             </button>
           </form>
-        </div>
+        </DashboardSurface>
       )}
 
       {/* ================= TABLE ================= */}
-      <div className="bg-white rounded-2xl shadow-md p-4 lg:p-8 border" style={{ maxWidth: '100%' }}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              <Activity className="text-blue-600" />
-              {tr("Data Projek Kerja", "Project Data")}
-            </h2>
+      <DashboardSurface className="max-w-full p-4 sm:p-6 lg:p-8">
+        <div className="mb-6 flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500/15 to-indigo-500/10 ring-1 ring-sky-500/20 sm:h-11 sm:w-11">
+              <Activity size={22} className="text-sky-700" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+                {tr("Data Projek Kerja", "Project Data")}
+              </h2>
             {role === "super_admin" && isSelesaiContext ? (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="mt-1 text-xs text-slate-500">
                 Hanya proyek status <span className="font-medium text-gray-700">Selesai</span>
                 {currentDivisi ? (
                   <>
@@ -1482,21 +1499,22 @@ export default function ProjekKerjaPage() {
               </p>
             ) : null}
             {isArchiveContext ? (
-              <p className="text-xs text-gray-500 mt-1">
-                Menampilkan proyek yang sudah di-<span className="font-medium text-gray-700">archive</span>.
+              <p className="mt-1 text-xs text-slate-500">
+                Menampilkan proyek yang sudah di-<span className="font-medium text-slate-700">archive</span>.
               </p>
             ) : null}
+            </div>
           </div>
-          <div className="relative mt-2 sm:mt-0 w-full sm:w-64 shrink-0">
+          <div className="relative w-full shrink-0 sm:mt-0 sm:w-72">
             <input
               type="text"
               placeholder={tr("Cari divisi, tugas, karyawan, lokasi, status...", "Search division, task, employee, location, status...")}
               value={searchTerm}
               onChange={handleSearchChange}
-              className="border rounded-lg pl-10 pr-4 py-2 w-full focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-indigo-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/15"
             />
             <svg
-              className="absolute left-3 top-2.5 text-gray-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400"
               width="18"
               height="18"
               viewBox="0 0 24 24"
@@ -1510,9 +1528,9 @@ export default function ProjekKerjaPage() {
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto">
-          <table className="text-sm" style={{ minWidth: '1280px', width: '100%', tableLayout: 'fixed' }}>
-            <thead className="bg-gray-100 text-gray-700">
+        <div className="w-full overflow-x-auto rounded-xl border border-slate-200/80">
+          <table className="text-sm" style={{ minWidth: "1280px", width: "100%", tableLayout: "fixed" }}>
+            <thead className="border-b border-slate-200 bg-slate-50/95 text-slate-600">
               <tr className="text-left">
                 <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '90px' }}>
                   <Building size={16} className="inline mr-1 text-gray-400" /> {tr("Divisi", "Division")}
@@ -1545,10 +1563,10 @@ export default function ProjekKerjaPage() {
             </thead>
             <tbody>
               {currentItems.map((item) => (
-                <tr key={item.id} className="border-b hover:bg-gray-50 transition">
+                <tr key={item.id} className="border-b border-slate-100 transition hover:bg-slate-50/70">
                   <td className="p-2.5">
                     <select
-                      className="border rounded-lg px-2 py-1 text-xs bg-white w-full"
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
                       value={divisiKey(item.divisi)}
                       title="Divisi yang pernah terlibat (klik untuk lihat)"
                       onChange={(e) => {
@@ -1576,7 +1594,7 @@ export default function ProjekKerjaPage() {
                       }
                       return (
                         <select
-                          className="border rounded-lg px-2 py-1 text-xs bg-white w-full"
+                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
                           value={currentName}
                           onChange={(e) => {
                             e.target.value = currentName;
@@ -1597,6 +1615,7 @@ export default function ProjekKerjaPage() {
                   <td className="p-2.5">
                     {item.problem_description ? (
                       <button
+                        type="button"
                         onClick={() => {
                           setDescText(item.problem_description);
                           setNewDesc(item.problem_description);
@@ -1604,16 +1623,17 @@ export default function ProjekKerjaPage() {
                           setEditDesc(false);
                           setShowDesc(true);
                         }}
-                        className="px-2 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
+                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                        title={tr("Lihat deskripsi", "View description")}
                       >
-                        <Eye size={14} />
-                        <span className="hidden sm:inline">{tr("Lihat", "View")}</span>
+                        <Eye size={14} aria-hidden />
                       </button>
                     ) : "-"}
                   </td>
                   <td className="p-2.5">
                     {item.barang_dibeli ? (
                       <button
+                        type="button"
                         onClick={() => {
                           setBarangText(item.barang_dibeli);
                           setNewBarang(item.barang_dibeli);
@@ -1621,10 +1641,10 @@ export default function ProjekKerjaPage() {
                           setEditBarang(false);
                           setShowBarangModal(true);
                         }}
-                        className="px-2 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100"
+                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                        title={tr("Lihat barang dibeli", "View purchased items")}
                       >
-                        <Eye size={14} />
-                        <span className="hidden sm:inline">{tr("Lihat", "View")}</span>
+                        <Eye size={14} aria-hidden />
                       </button>
                     ) : "-"}
                   </td>
@@ -1692,40 +1712,43 @@ export default function ProjekKerjaPage() {
             </tbody>
           </table>
           {filteredData.length === 0 && (
-            <p className="text-center text-gray-500 py-8">{tr("Tidak ada data yang cocok", "No matching data")}</p>
+            <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 py-10 text-center text-sm text-slate-500">
+              {tr("Tidak ada data yang cocok", "No matching data")}
+            </p>
           )}
         </div>
 
         {/* ================= PAGINATION ================= */}
         {filteredData.length > 0 && (
-          <div className="flex items-center justify-between mt-6">
-            <div className="text-sm text-gray-700">
-              {tr("Menampilkan", "Showing")} {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} {tr("dari", "of")} {totalItems} {tr("data", "records")}
+          <div className="mt-6 flex flex-col gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-slate-600">
+              {tr("Menampilkan", "Showing")} {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, totalItems)} {tr("dari", "of")} {totalItems}{" "}
+              {tr("data", "records")}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={handlePrevPage}
                 disabled={currentPage === 1}
-                className={`px-4 py-2 rounded-lg border ${currentPage === 1 ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${currentPage === 1 ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400" : "border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50"}`}
               >
                 ← Prev
               </button>
               <button
                 onClick={handleNextPage}
                 disabled={currentPage === totalPages}
-                className={`px-4 py-2 rounded-lg border ${currentPage === totalPages ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+                className={`rounded-xl border px-4 py-2 text-sm font-medium transition ${currentPage === totalPages ? "cursor-not-allowed border-slate-100 bg-slate-50 text-slate-400" : "border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50"}`}
               >
                 Next →
               </button>
             </div>
           </div>
         )}
-      </div>
+      </DashboardSurface>
 
       {/* ================= MODAL DESKRIPSI ================= */}
       {showDesc && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl ring-1 ring-slate-900/5">
             <h3 className="text-xl font-bold mb-4">Deskripsi Pekerjaan</h3>
             {!editDesc ? (
               <>
@@ -1744,7 +1767,7 @@ export default function ProjekKerjaPage() {
               </>
             ) : (
               <>
-                <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className="border w-full p-3 rounded-xl h-32" />
+                <textarea value={newDesc} onChange={(e) => setNewDesc(e.target.value)} className={`${projekField} h-32`} />
                 <div className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={handleUpdateDesc}
@@ -1763,8 +1786,8 @@ export default function ProjekKerjaPage() {
 
       {/* ================= MODAL BARANG DIBELI ================= */}
       {showBarangModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl ring-1 ring-slate-900/5">
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
               <ShoppingCart className="text-blue-600" />
               Barang yang Dibeli
@@ -1796,7 +1819,7 @@ export default function ProjekKerjaPage() {
                 <textarea
                   value={newBarang}
                   onChange={(e) => setNewBarang(e.target.value)}
-                  className="border w-full p-3 rounded-xl h-32"
+                  className={`${projekField} h-32`}
                   placeholder="Masukkan barang yang dibeli..."
                 />
                 <div className="flex justify-end gap-3 mt-6">
@@ -1822,13 +1845,13 @@ export default function ProjekKerjaPage() {
 
       {/* ================= MODAL TIMELINE STATUS ================= */}
       {showTimelineModal && selectedItem && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 relative">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <Clock className="text-blue-600" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl ring-1 ring-slate-900/5">
+            <h3 className="mb-4 flex items-center gap-2 text-xl font-bold text-slate-900">
+              <Clock className="text-indigo-600" />
               Timeline Status
             </h3>
-            <div className="bg-gray-50 rounded-xl p-4 mb-6">
+            <div className="mb-6 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
               {renderStatusHistoryTimeline(selectedItem)}
             </div>
             <div className="text-xs text-gray-500 text-center mb-4">
@@ -1845,15 +1868,19 @@ export default function ProjekKerjaPage() {
 
       {/* ================= MODAL BIAYA ================= */}
       {showUangModal && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-6xl p-6 relative my-8 max-h-[92vh] overflow-y-auto">
-            <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-              <DollarSign className="text-amber-600" />
-              {tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs")}
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              {tr("Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.", "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.")}
-            </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm">
+          <div className="relative my-8 max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl ring-1 ring-slate-900/5">
+            <div className="mb-4 border-b border-slate-100 pb-4">
+              <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight text-slate-900">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 ring-1 ring-amber-500/25">
+                  <DollarSign className="text-amber-700" size={22} />
+                </span>
+                {tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs")}
+              </h3>
+              <p className="mt-2 max-w-3xl text-sm text-slate-500">
+                {tr("Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.", "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.")}
+              </p>
+            </div>
             {(() => {
               const item = dataList.find(i => i.id === currentId);
               if (!item?.is_lunas) return null;
@@ -1942,11 +1969,13 @@ export default function ProjekKerjaPage() {
                         const shown = filterDisplayedBiayaByLunas(col.rows, wantLunas);
                         const meta = rowItem?.biaya_edit_meta?.[col.key];
                         return (
-                          <div key={col.key} className="border rounded-xl p-3 bg-white/70">
-                            <p className="text-sm font-semibold text-gray-800 mb-2">{col.label}</p>
+                          <div key={col.key} className="rounded-xl border border-slate-200/90 bg-white/90 p-3 shadow-sm ring-1 ring-slate-900/[0.02]">
+                            <p className="mb-2 border-b border-slate-100 pb-2 text-sm font-bold text-slate-800">{col.label}</p>
                             <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5">
                               {shown.length === 0 ? (
-                                <p className="text-xs text-gray-400">{tr("Belum ada data", "No data yet")}</p>
+                                <p className="rounded-lg border border-dashed border-slate-200 py-3 text-center text-xs text-slate-400">
+                                  {tr("Belum ada data", "No data yet")}
+                                </p>
                               ) : (
                                 shown.map((r) => renderEntryCard(col.key, r))
                               )}
@@ -1971,13 +2000,19 @@ export default function ProjekKerjaPage() {
                   const grandTotal = totalBelum + totalLunas;
                   return (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                        <div className="border rounded-xl p-4 bg-amber-50/40">
-                          <h4 className="text-sm font-bold text-amber-900 mb-3">{tr("Belum Lunas", "Unpaid")}</h4>
+                      <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2 md:gap-5">
+                        <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-900/[0.04] sm:p-5">
+                          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-900">
+                            <span className="h-2 w-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+                            {tr("Belum Lunas", "Unpaid")}
+                          </h4>
                           {renderKategoriColumn(false)}
                         </div>
-                        <div className="border rounded-xl p-4 bg-emerald-50/40">
-                          <h4 className="text-sm font-bold text-emerald-900 mb-3">{tr("Sudah Lunas", "Paid")}</h4>
+                        <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50/50 to-white p-4 shadow-sm ring-1 ring-emerald-900/[0.04] sm:p-5">
+                          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-900">
+                            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/40" />
+                            {tr("Sudah Lunas", "Paid")}
+                          </h4>
                           {renderKategoriColumn(true)}
                         </div>
                       </div>

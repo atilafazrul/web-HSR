@@ -27,7 +27,9 @@ export default function Header({
   const rolePath =
     user?.role === "super_admin"
       ? "/super_admin/profile"
-      : "/admin/profile";
+      : user?.role === "user"
+        ? "/user/profile"
+        : "/admin/profile";
 
   const toggleSidebar = () => {
     if (setSidebarExpanded) {

@@ -22,7 +22,8 @@ import {
   Calendar,
   FileText,
   Activity,
-  Settings
+  Settings,
+  Package,
 } from "lucide-react";
 
 import axios from "../api/axiosConfig";
@@ -35,6 +36,14 @@ import Profile from "./Profile.jsx";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
 import BiayaDashboardPanel from "../components/BiayaDashboardPanel";
+import {
+  dashboardShellBgClass,
+  DashboardWelcome,
+  DashboardSurface,
+  DashboardSectionHeading,
+  DashboardSummaryCard,
+  projekActivityStatusPillClass,
+} from "../components/dashboard/DashboardPrimitives.jsx";
 import { useI18n } from "../i18n/index.jsx";
 
 import ITPage from "./ITPage";
@@ -124,7 +133,7 @@ export default function SuperAdminDashboard({ user, logout }) {
   }, [language, location.pathname]);
 
   return (
-    <div className="flex min-h-screen bg-[#f4f6fb] w-full overflow-x-hidden">
+    <div className={dashboardShellBgClass}>
       <Sidebar
         user={user}
         sidebarOpen={sidebarOpen}
@@ -363,7 +372,7 @@ const Dashboard = ({ user, windowWidth }) => {
       const label = String(item?.status || "Tanpa Status").trim() || "Tanpa Status";
       counter.set(label, (counter.get(label) || 0) + 1);
     });
-    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Selesai", "Terlambat"];
+    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Barang sudah siap", "Selesai", "Terlambat"];
     return Array.from(counter.entries())
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => {
@@ -399,19 +408,27 @@ const Dashboard = ({ user, windowWidth }) => {
 
   if (loading) {
     return (
-      <div className="bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow text-center">
-        Loading data...
+      <div className="space-y-4 p-4 sm:p-6">
+        <div className="h-28 animate-pulse rounded-2xl bg-slate-200/80" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((k) => (
+            <div key={k} className="h-36 animate-pulse rounded-2xl bg-slate-200/70" />
+          ))}
+        </div>
+        <div className="h-40 animate-pulse rounded-2xl bg-slate-200/60" />
       </div>
     );
   }
 
   return (
-    <>
-      {/* DIVISI CARD */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-5 md:mb-6 lg:mb-8 xl:mb-12">
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 md:mb-5 lg:mb-6">
-          {language === "en" ? "Divisions" : "Divisi"}
-        </h3>
+    <div className="space-y-6 sm:space-y-8">
+      <DashboardWelcome
+        greeting={language === "en" ? "Welcome" : "Selamat Datang"}
+        name={user?.name}
+      />
+
+      <DashboardSurface className="p-4 sm:p-5 md:p-6 lg:p-8">
+        <DashboardSectionHeading title={language === "en" ? "Divisions" : "Divisi"} />
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
           <DivisiCard
             title={language === "en" ? "IT Division" : "Divisi IT"}
@@ -467,64 +484,60 @@ const Dashboard = ({ user, windowWidth }) => {
             language={language}
           />
         </div>
-      </div>
+      </DashboardSurface>
 
-      {/* SUMMARY */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-4 sm:mb-5 md:mb-6 lg:mb-8 xl:mb-12">
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800 mb-1">Summary Status</h3>
-        <p className="text-xs sm:text-sm text-slate-500 mb-3 sm:mb-4 md:mb-5 lg:mb-6">
-          {tr("Ringkasan pekerjaan berdasarkan semua status yang aktif.", "Work summary based on all active statuses.")}
-        </p>
+      <DashboardSurface className="p-4 sm:p-5 md:p-6 lg:p-8">
+        <DashboardSectionHeading
+          title={language === "en" ? "Status summary" : "Ringkasan status"}
+          subtitle={tr("Ringkasan pekerjaan berdasarkan semua status yang aktif.", "Work summary based on all active statuses.")}
+        />
 
-        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
-          <SummaryCard title={tr("Total Tugas", "Total Tasks")} value={total} icon={<ListTodo size={isMobile ? 16 : 20} />} color="blue" isMobile={isMobile} />
+        <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5">
+          <DashboardSummaryCard title={tr("Total Tugas", "Total Tasks")} value={total} icon={<ListTodo size={isMobile ? 16 : 20} />} color="blue" isMobile={isMobile} />
           {statusSummary.map((status) => (
-            <SummaryCard
+            <DashboardSummaryCard
               key={status.label}
               title={displayStatus(status.label)}
               value={status.count}
               icon={
                 status.label === "Selesai" ? <CheckCircle size={isMobile ? 16 : 20} />
-                  : (status.label.includes("Proses") || status.label === "Proses") ? <Clock size={isMobile ? 16 : 20} />
-                    : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
-                      : <Activity size={isMobile ? 16 : 20} />
+                  : status.label === "Barang sudah siap" ? <Package size={isMobile ? 16 : 20} />
+                    : (status.label.includes("Proses") || status.label === "Proses") ? <Clock size={isMobile ? 16 : 20} />
+                      : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
+                        : <Activity size={isMobile ? 16 : 20} />
               }
               color={
                 status.label === "Selesai" ? "green"
-                  : (status.label.includes("Proses") || status.label === "Proses") ? "yellow"
-                    : status.label === "Terlambat" ? "red"
-                      : "blue"
+                  : status.label === "Barang sudah siap" ? "blue"
+                    : (status.label.includes("Proses") || status.label === "Proses") ? "yellow"
+                      : status.label === "Terlambat" ? "red"
+                        : "blue"
               }
               isMobile={isMobile}
             />
           ))}
         </div>
-      </div>
+      </DashboardSurface>
 
-      {/* ================= BIAYA DILUAR PROJEK ================= */}
       <BiayaDashboardPanel user={user} showInput={true} />
 
-      {/* AKTIVITAS PEKERJAAN */}
-      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8">
-        <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-3 sm:mb-4 md:mb-5 lg:mb-6">
-          Aktivitas Pekerjaan
-        </h3>
+      <DashboardSurface className="p-4 sm:p-5 md:p-6 lg:p-8">
+        <DashboardSectionHeading title={language === "en" ? "Work activity" : "Aktivitas pekerjaan"} />
 
-        {/* SEARCH + FILTER */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 md:gap-4 mb-3 sm:mb-4 md:mb-5 lg:mb-6">
           <input
             type="text"
             placeholder="Cari..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none w-full sm:w-56 md:w-64 text-sm"
+            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 py-2 text-sm outline-none transition focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 sm:w-56 md:w-64 sm:px-4"
           />
 
-          <div className="flex flex-col xs:flex-row sm:flex-row gap-2 w-full sm:w-auto">
+          <div className="flex w-full flex-col gap-2 xs:flex-row sm:w-auto sm:flex-row">
             <select
               value={filterDivisi}
               onChange={(e) => setFilterDivisi(e.target.value)}
-              className="border border-gray-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl w-full sm:w-36 md:w-40 text-sm"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/20 sm:w-36 md:w-40 sm:px-4"
             >
               <option value="">Semua Divisi</option>
               <option value="IT">IT</option>
@@ -538,10 +551,11 @@ const Dashboard = ({ user, windowWidth }) => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="border border-gray-200 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl w-full sm:w-36 md:w-40 text-sm"
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/20 sm:w-36 md:w-40 sm:px-4"
             >
               <option value="">Semua Status</option>
               <option value="Proses">Proses</option>
+              <option value="Barang sudah siap">{tr("Barang sudah siap", "Items Ready")}</option>
               <option value="Selesai">Selesai</option>
               <option value="Terlambat">Terlambat</option>
             </select>
@@ -616,26 +630,22 @@ const Dashboard = ({ user, windowWidth }) => {
                     </td>
                     <td className="p-3 lg:p-4 text-left">
                       <button
+                        type="button"
                         onClick={() => {
                           setSelectedId(item.id);
                           setDescText(item.problem_description || "");
                           setEditDesc(false);
                           setShowDesc(true);
                         }}
-                        className="px-2 lg:px-3 py-1 rounded-lg text-xs border flex items-center gap-1 hover:bg-gray-100 transition"
+                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                        title={language === "en" ? "View description" : "Lihat deskripsi"}
                       >
-                        <Eye size={14} />
-                        <span>Lihat</span>
+                        <Eye size={14} aria-hidden />
                       </button>
                     </td>
-                    <td className="p-3 lg:p-4 text-left">
-                      <span className={`px-2 lg:px-3 py-1 rounded-full text-xs font-semibold ${item.status === "Selesai"
-                        ? "bg-green-100 text-green-600"
-                        : item.status === "Proses"
-                          ? "bg-yellow-100 text-yellow-600"
-                          : "bg-red-100 text-red-600"
-                        }`}>
-                        {item.status}
+                    <td className="p-3 lg:p-4 text-left whitespace-nowrap">
+                      <span className={projekActivityStatusPillClass(item.status)}>
+                        {displayStatus(item.status)}
                       </span>
                     </td>
                     <td className="p-3 lg:p-4">
@@ -682,18 +692,13 @@ const Dashboard = ({ user, windowWidth }) => {
           <div className="space-y-3 sm:space-y-4">
             {paginatedProjek.map(item => (
               <div key={item.id} className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4 shadow-sm">
-                <div className="flex justify-between items-start mb-2 sm:mb-3">
-                  <div>
+                <div className="flex justify-between items-start gap-2 mb-2 sm:mb-3">
+                  <div className="min-w-0 flex-1">
                     <span className="text-xs font-semibold text-gray-500 uppercase">{item.divisi}</span>
                     <h4 className="font-medium text-sm sm:text-base mt-1">{item.jenis_pekerjaan}</h4>
                   </div>
-                  <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${item.status === "Selesai"
-                    ? "bg-green-100 text-green-600"
-                    : item.status === "Proses"
-                      ? "bg-yellow-100 text-yellow-600"
-                      : "bg-red-100 text-red-600"
-                    }`}>
-                    {item.status}
+                  <span className={projekActivityStatusPillClass(item.status)}>
+                    {displayStatus(item.status)}
                   </span>
                 </div>
 
@@ -809,9 +814,8 @@ const Dashboard = ({ user, windowWidth }) => {
             </button>
           </div>
         </div>
-      </div>
+      </DashboardSurface>
 
-      {/* ================= MODAL DESKRIPSI ================= */}
       <DeskripsiModal
         showDesc={showDesc}
         setShowDesc={setShowDesc}
@@ -822,7 +826,7 @@ const Dashboard = ({ user, windowWidth }) => {
         handleUpdateDesc={handleUpdateDesc}
         isMobile={isMobile}
       />
-    </>
+    </div>
   );
 };
 
@@ -833,7 +837,7 @@ const DivisiCard = ({ title, count, image, onClick, isMobile, language = "id" })
   return (
     <div
       onClick={onClick}
-      className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-lg cursor-pointer group transition hover:-translate-y-1 sm:hover:-translate-y-2 hover:shadow-2xl"
+      className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg ring-1 ring-slate-900/10 transition hover:-translate-y-1 hover:shadow-2xl sm:rounded-3xl sm:hover:-translate-y-2"
     >
       <img
         src={defaultImage}
@@ -852,42 +856,6 @@ const DivisiCard = ({ title, count, image, onClick, isMobile, language = "id" })
           {language === "en" ? "Open" : "Masuk"} →
         </button>
       </div>
-    </div>
-  );
-};
-
-/* ================= SUMMARY CARD ================= */
-const SummaryCard = ({ title, value, icon, color, isMobile }) => {
-  const map = {
-    blue: {
-      badge: "bg-blue-100 text-blue-700 ring-blue-200",
-      dot: "bg-blue-500",
-    },
-    green: {
-      badge: "bg-green-100 text-green-700 ring-green-200",
-      dot: "bg-green-500",
-    },
-    yellow: {
-      badge: "bg-yellow-100 text-yellow-700 ring-yellow-200",
-      dot: "bg-yellow-500",
-    },
-    red: {
-      badge: "bg-red-100 text-red-700 ring-red-200",
-      dot: "bg-red-500",
-    },
-  };
-  const theme = map[color] || map.blue;
-
-  return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/80 border border-slate-200/70 p-3 sm:p-4 md:p-5 lg:p-6 rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all flex justify-between items-center">
-      <div className="min-w-0">
-        <p className="text-slate-500 text-[11px] sm:text-xs md:text-sm tracking-wide">{title}</p>
-        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900">{value}</h2>
-      </div>
-      <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 flex items-center justify-center rounded-lg md:rounded-xl ring-1 ring-inset ${theme.badge}`}>
-        {icon}
-      </div>
-      <span className={`absolute top-0 left-0 h-1 w-full ${theme.dot}`} />
     </div>
   );
 };

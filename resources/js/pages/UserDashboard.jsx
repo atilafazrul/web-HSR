@@ -12,10 +12,19 @@ import {
   User,
   Calendar,
   Activity,
+  Package,
 } from "lucide-react";
 import api from "../api/axiosConfig";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
+import {
+  dashboardShellBgClass,
+  DashboardWelcome,
+  DashboardSurface,
+  DashboardSectionHeading,
+  DashboardSummaryCard,
+  projekActivityStatusPillClass,
+} from "../components/dashboard/DashboardPrimitives.jsx";
 import ITPage from "./ITPage";
 import ServicePage from "./ServicePage";
 import SalesPage from "./SalesPage";
@@ -108,7 +117,7 @@ export default function UserDashboard({ user, logout }) {
       const label = String(item?.status || "Tanpa Status").trim() || "Tanpa Status";
       counter.set(label, (counter.get(label) || 0) + 1);
     });
-    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Selesai", "Terlambat"];
+    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Barang sudah siap", "Selesai", "Terlambat"];
     return Array.from(counter.entries())
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => {
@@ -132,12 +141,13 @@ export default function UserDashboard({ user, logout }) {
       Terlambat: "Delayed",
       Proses: "In Progress",
       "Tanpa Status": "No Status",
+      "Barang sudah siap": "Items Ready",
     };
     return language === "en" ? (map[status] || status) : status;
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f4f6fb] w-full overflow-x-hidden">
+    <div className={dashboardShellBgClass}>
       <Sidebar
         user={user}
         sidebarOpen={sidebarOpen}
@@ -165,14 +175,15 @@ export default function UserDashboard({ user, logout }) {
             <Route
               path="dashboard"
               element={
-                <div className="space-y-6">
-                  <h2 className="text-xl sm:text-2xl md:text-3xl font-bold">
-                    {language === "en" ? "Welcome" : "Selamat Datang"}, {user?.name}
-                  </h2>
+                <div className="space-y-6 sm:space-y-8">
+                  <DashboardWelcome
+                    greeting={language === "en" ? "Welcome" : "Selamat Datang"}
+                    name={user?.name}
+                  />
 
                   <div
                     onClick={() => navigate(`/user/${divisiPath}`)}
-                    className="relative rounded-2xl sm:rounded-3xl overflow-hidden shadow-xl cursor-pointer group transition duration-300 hover:-translate-y-1 sm:hover:-translate-y-2 hover:shadow-2xl"
+                    className="relative cursor-pointer overflow-hidden rounded-2xl shadow-lg ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:rounded-3xl sm:hover:-translate-y-1"
                   >
                     <img
                       src="/images/IT meet.jpg"
@@ -197,43 +208,45 @@ export default function UserDashboard({ user, logout }) {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8">
-                    <div className="mb-3 sm:mb-4">
-                      <h3 className="text-base sm:text-lg md:text-xl font-semibold text-slate-800">Summary Status</h3>
-                      <p className="text-xs sm:text-sm text-slate-500">
-                        {language === "en"
+                  <DashboardSurface className="p-4 sm:p-5 md:p-6 lg:p-8">
+                    <DashboardSectionHeading
+                      title={language === "en" ? "Status summary" : "Ringkasan status"}
+                      subtitle={
+                        language === "en"
                           ? "Work summary based on all active statuses."
-                          : "Ringkasan pekerjaan berdasarkan semua status yang aktif."}
-                      </p>
-                    </div>
-                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-4">
-                    <SummaryCard title={tr("Total Tugas", "Total Tasks")} value={total} icon={<ListTodo size={18} />} color="blue" />
+                          : "Ringkasan pekerjaan berdasarkan semua status yang aktif."
+                      }
+                    />
+                    <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3 sm:gap-4">
+                    <DashboardSummaryCard title={tr("Total Tugas", "Total Tasks")} value={total} icon={<ListTodo size={18} />} color="blue" />
                     {statusSummary.map((status) => (
-                      <SummaryCard
+                      <DashboardSummaryCard
                         key={status.label}
                         title={displayStatus(status.label)}
                         value={status.count}
                         icon={
                           status.label === "Selesai" ? <CheckCircle size={18} />
-                            : status.label.includes("Proses") ? <Clock size={18} />
-                              : status.label === "Terlambat" ? <AlertTriangle size={18} />
-                                : <Activity size={18} />
+                            : status.label === "Barang sudah siap" ? <Package size={18} />
+                              : status.label.includes("Proses") ? <Clock size={18} />
+                                : status.label === "Terlambat" ? <AlertTriangle size={18} />
+                                  : <Activity size={18} />
                         }
                         color={
                           status.label === "Selesai" ? "green"
-                            : status.label.includes("Proses") ? "yellow"
-                              : status.label === "Terlambat" ? "red"
-                                : "blue"
+                            : status.label === "Barang sudah siap" ? "blue"
+                              : status.label.includes("Proses") ? "yellow"
+                                : status.label === "Terlambat" ? "red"
+                                  : "blue"
                         }
                       />
                     ))}
                     </div>
-                  </div>
+                  </DashboardSurface>
 
-                  <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8">
-                    <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 sm:mb-5 md:mb-6">
-                      {language === "en" ? "Your Division Work Activities" : "Aktivitas Pekerjaan Divisi Anda"}
-                    </h3>
+                  <DashboardSurface className="p-4 sm:p-5 md:p-6 lg:p-8">
+                    <DashboardSectionHeading
+                      title={language === "en" ? "Your division activity" : "Aktivitas pekerjaan divisi Anda"}
+                    />
 
                     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-4 sm:mb-6">
                       <div className="relative flex-1">
@@ -259,6 +272,7 @@ export default function UserDashboard({ user, logout }) {
                       >
                         <option value="">{language === "en" ? "All Statuses" : "Semua Status"}</option>
                         <option value="Proses">{tr("Proses", "In Progress")}</option>
+                        <option value="Barang sudah siap">{tr("Barang sudah siap", "Items Ready")}</option>
                         <option value="Selesai">{tr("Selesai", "Completed")}</option>
                         <option value="Terlambat">{tr("Terlambat", "Delayed")}</option>
                       </select>
@@ -284,14 +298,8 @@ export default function UserDashboard({ user, logout }) {
                               <td className="p-4 text-left">{item.karyawan}</td>
                               <td className="p-4 text-left">{item.alamat}</td>
                               <td className="p-4 text-left">{new Date(item.start_date).toLocaleDateString("id-ID")}</td>
-                              <td className="p-4 text-left">
-                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                  item.status === "Selesai"
-                                    ? "bg-green-100 text-green-600"
-                                    : item.status === "Proses"
-                                      ? "bg-yellow-100 text-yellow-600"
-                                      : "bg-red-100 text-red-600"
-                                }`}>
+                              <td className="p-4 text-left whitespace-nowrap">
+                                <span className={projekActivityStatusPillClass(item.status)}>
                                   {displayStatus(item.status)}
                                 </span>
                               </td>
@@ -332,11 +340,11 @@ export default function UserDashboard({ user, logout }) {
                     )}
 
                     {filteredData.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 py-10 text-center text-sm text-slate-500">
                         {language === "en" ? "No data found" : "Tidak ada data yang ditemukan"}
                       </div>
                     )}
-                  </div>
+                  </DashboardSurface>
 
                 </div>
               }
@@ -355,36 +363,3 @@ export default function UserDashboard({ user, logout }) {
   );
 }
 
-const SummaryCard = ({ title, value, icon, color }) => {
-  const map = {
-    blue: {
-      badge: "bg-blue-100 text-blue-700 ring-blue-200",
-      dot: "bg-blue-500",
-    },
-    green: {
-      badge: "bg-green-100 text-green-700 ring-green-200",
-      dot: "bg-green-500",
-    },
-    yellow: {
-      badge: "bg-yellow-100 text-yellow-700 ring-yellow-200",
-      dot: "bg-yellow-500",
-    },
-    red: {
-      badge: "bg-red-100 text-red-700 ring-red-200",
-      dot: "bg-red-500",
-    },
-  };
-  const theme = map[color] || map.blue;
-  return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-white to-slate-50/80 border border-slate-200/70 p-3 sm:p-4 md:p-5 lg:p-6 rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all flex justify-between items-center">
-      <div className="min-w-0">
-        <p className="text-slate-500 text-[11px] sm:text-xs tracking-wide">{title}</p>
-        <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl font-bold text-slate-900">{value}</h2>
-      </div>
-      <div className={`w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 lg:w-12 lg:h-12 xl:w-14 xl:h-14 flex items-center justify-center rounded-lg md:rounded-xl ring-1 ring-inset ${theme.badge}`}>
-        {icon}
-      </div>
-      <span className={`absolute top-0 left-0 h-1 w-full ${theme.dot}`} />
-    </div>
-  );
-};

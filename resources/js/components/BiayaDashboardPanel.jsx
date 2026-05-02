@@ -4,6 +4,7 @@ import { DollarSign, Eye, Pencil, Trash2, Clock, CheckCircle, AlertCircle, X } f
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
 import { useI18n } from "../i18n/index.jsx";
+import { DashboardSurface } from "./dashboard/DashboardPrimitives.jsx";
 
 const kategoriConfig = [
   { key: "jalan", label: "Biaya Jalan" },
@@ -276,11 +277,19 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const canEditRow = () => true;
 
   const renderKategoriCard = (k, rows) => (
-    <div key={k.key} className="border rounded-xl p-3">
-      <p className="text-sm font-semibold mb-2">{tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}</p>
-      <div className="space-y-2 max-h-56 overflow-y-auto">
+    <div
+      key={k.key}
+      className="rounded-xl border border-slate-200/90 bg-white/90 p-3 shadow-sm ring-1 ring-slate-900/[0.02]"
+    >
+      <p className="mb-2 border-b border-slate-100 pb-2 text-sm font-bold tracking-tight text-slate-800">
+        {tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}
+      </p>
+      <div className="max-h-56 space-y-2 overflow-y-auto pr-0.5">
         {(rows || []).map((row) => (
-          <div key={row.id} className="text-xs border rounded-lg p-2">
+          <div
+            key={row.id}
+            className="rounded-lg border border-slate-200/80 bg-slate-50/40 p-2.5 text-xs shadow-sm transition hover:border-slate-300/90 hover:bg-white"
+          >
             {editingId === row.id ? (
               <div className="space-y-2">
                 <input
@@ -297,27 +306,27 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                   placeholder={tr("Biaya", "Amount")}
                   disabled={row.is_lunas}
                   readOnly={row.is_lunas}
-                  className={`w-full border rounded-lg p-2 text-sm ${row.is_lunas ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""}`}
+                  className={`w-full rounded-lg border border-slate-200 p-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/15 ${row.is_lunas ? "cursor-not-allowed bg-slate-100 text-slate-500" : "bg-white"}`}
                 />
                 <textarea
                   value={editForm.keterangan}
                   onChange={(e) => setEditForm((f) => ({ ...f, keterangan: e.target.value }))}
                   placeholder={tr("Keterangan", "Description")}
-                  className="w-full border rounded-lg p-2 text-sm resize-y min-h-[60px]"
+                  className="min-h-[60px] w-full resize-y rounded-lg border border-slate-200 bg-white p-2 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/15"
                   rows="2"
                 />
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={saveEdit}
-                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg py-1.5 text-xs"
+                    className="flex-1 rounded-lg bg-emerald-600 py-1.5 text-xs font-medium text-white shadow-sm transition hover:bg-emerald-700"
                   >
                     {tr("Simpan", "Save")}
                   </button>
                   <button
                     type="button"
                     onClick={cancelEdit}
-                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg py-1.5 text-xs"
+                    className="flex-1 rounded-lg bg-slate-100 py-1.5 text-xs font-medium text-slate-800 transition hover:bg-slate-200"
                   >
                     {tr("Batal", "Cancel")}
                   </button>
@@ -325,31 +334,31 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
               </div>
             ) : (
               <>
-                <div className="flex justify-between items-start">
-                  <p className="font-semibold">{rupiah(row.nominal)}</p>
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-bold tabular-nums text-slate-900">{rupiah(row.nominal)}</p>
                   {row.lunas_at && (
-                    <div className="flex items-center gap-1 text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
+                    <div className="flex shrink-0 items-center gap-1 rounded-md bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-200/60">
                       <Clock size={10} />
                       <span>{tr("Diperbarui", "Updated")}: {formatDateTime(row.lunas_at)}</span>
                     </div>
                   )}
                 </div>
-                {row.keterangan ? <p className="text-gray-600 whitespace-pre-wrap break-words">{row.keterangan}</p> : null}
-                <p className="mt-1 text-[11px] text-gray-500">
-                  <span className="font-medium">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
+                {row.keterangan ? <p className="mt-1 whitespace-pre-wrap break-words text-slate-600">{row.keterangan}</p> : null}
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  <span className="font-semibold text-slate-600">{row.creator_name || row.updater_name || "-"}</span>, {formatDateTime(row.created_at)}
                 </p>
-                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
                   {isSuperAdmin ? (
                     <button
                       type="button"
                       onClick={() => toggleLunas(row)}
-                      className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                      className={`rounded-md border px-2 py-1 text-[10px] font-semibold transition ${row.is_lunas ? "border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100" : "border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100"}`}
                     >
                       {row.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
                     </button>
                   ) : (
                     <span
-                      className={`px-2 py-1 rounded border ${row.is_lunas ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-yellow-100 text-yellow-700 border-yellow-300"}`}
+                      className={`rounded-md border px-2 py-1 text-[10px] font-semibold ${row.is_lunas ? "border-emerald-300 bg-emerald-50 text-emerald-800" : "border-amber-300 bg-amber-50 text-amber-900"}`}
                     >
                       {row.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
                     </span>
@@ -361,7 +370,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                       target="_blank"
                       rel="noopener noreferrer"
                       title={`${tr("Lihat lampiran", "View attachment")} ${idx + 1}`}
-                      className="inline-flex items-center justify-center px-2 py-1 rounded border bg-slate-100 text-slate-700 border-slate-300 hover:bg-slate-200"
+                      className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm transition hover:bg-slate-50"
                     >
                       <Eye size={12} aria-hidden />
                       {(row.photo_urls || []).length > 1 ? (
@@ -374,7 +383,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                       type="button"
                       onClick={() => startEdit(row)}
                       title={tr("Edit", "Edit")}
-                      className="inline-flex items-center justify-center px-2 py-1 rounded border bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
+                      className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm transition hover:bg-slate-50"
                     >
                       <Pencil size={12} aria-hidden />
                     </button>
@@ -384,7 +393,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                       type="button"
                       onClick={() => removeRow(row.id)}
                       title={tr("Hapus", "Delete")}
-                      className="px-2 py-1 rounded border bg-red-100 text-red-600 border-red-300"
+                      className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-rose-700 transition hover:bg-rose-100"
                     >
                       <Trash2 size={12} />
                     </button>
@@ -395,7 +404,9 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
           </div>
         ))}
         {(rows || []).length === 0 ? (
-          <p className="text-xs text-gray-400">{tr("Belum ada data", "No data yet")}</p>
+          <p className="rounded-lg border border-dashed border-slate-200 bg-slate-50/80 py-4 text-center text-xs text-slate-400">
+            {tr("Belum ada data", "No data yet")}
+          </p>
         ) : null}
       </div>
     </div>
@@ -403,17 +414,33 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
 
   return (
     <>
-      <div className="bg-white rounded-2xl sm:rounded-3xl shadow-md p-4 sm:p-5 md:p-6 lg:p-8 mb-6 sm:mb-8 md:mb-10">
-      <h3 className="text-base sm:text-lg md:text-xl font-semibold mb-4 flex items-center gap-2">
-        <DollarSign size={18} className="text-emerald-600" />
-        {tr("Biaya Diluar Projek", "Non-Project Costs")}
-      </h3>
+      <DashboardSurface className="mb-6 p-4 sm:mb-8 sm:p-5 md:mb-10 md:p-6 lg:p-8">
+      <div className="mb-6 flex flex-col gap-3 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-indigo-500/10 ring-1 ring-emerald-500/20">
+            <DollarSign size={22} className="text-emerald-700" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+              {tr("Biaya Diluar Projek", "Non-Project Costs")}
+            </h3>
+            <p className="mt-0.5 max-w-xl text-xs text-slate-500 sm:text-sm">
+              {tr("Catat biaya per kategori; kelola status lunas di bawah.", "Record costs per category; manage paid status below.")}
+            </p>
+          </div>
+        </div>
+      </div>
 
       {showInput && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-5">
+        <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
           {kategoriConfig.map((k) => (
-            <div key={k.key} className="rounded-xl border p-3 bg-gray-50">
-              <p className="text-sm font-semibold mb-2">{tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}</p>
+            <div
+              key={k.key}
+              className="rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 p-4 shadow-sm ring-1 ring-slate-900/[0.02]"
+            >
+              <p className="mb-3 text-sm font-bold text-slate-800">
+                {tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}
+              </p>
               <input
                 type="text"
                 inputMode="numeric"
@@ -429,7 +456,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                   }))
                 }
                 placeholder={tr("Biaya", "Amount")}
-                className="w-full border rounded-lg p-2 text-sm mb-2"
+                className="mb-2 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
               />
               <textarea
                 value={form[k.key].keterangan}
@@ -440,19 +467,19 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                   }))
                 }
                 placeholder={tr("Keterangan", "Description")}
-                className="w-full border rounded-lg p-2 text-sm mb-2 resize-y min-h-[60px]"
+                className="mb-2 min-h-[60px] w-full resize-y rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
                 rows="2"
               />
               {kategoriWithPhotos(k.key) ? (
                 <div className="mb-2">
-                  <label className="block text-xs text-gray-600 mb-1">{tr("Upload foto", "Upload photos")}</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">{tr("Upload foto", "Upload photos")}</label>
                   <input
                     ref={k.key === "pengeluaran" ? pengeluaranPhotoInputRef : reimbPhotoInputRef}
                     type="file"
                     multiple
                     accept="image/jpeg,image/jpg,image/png,image/webp"
                     onChange={(e) => handlePhotoSelection(k.key, e.target.files)}
-                    className="w-full text-xs border rounded-lg p-1.5 bg-white"
+                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-indigo-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-indigo-700"
                   />
                   {isCompressingKategori(k.key) ? (
                     <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
@@ -468,7 +495,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                 type="button"
                 onClick={() => submitKategori(k.key)}
                 disabled={isCompressingKategori(k.key)}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed text-white rounded-lg py-2 text-sm"
+                className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-900/10 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
               >
                 {isCompressingKategori(k.key)
                   ? tr("Mengompres foto...", "Compressing photos...")
@@ -479,30 +506,41 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
         </div>
       )}
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
-        <Summary title={tr("Biaya Jalan", "Travel Cost")} value={summary.jalan} />
-        <Summary title={tr("Pengeluaran", "Expenses")} value={summary.pengeluaran} />
-        <Summary title={tr("Reimbursment", "Reimbursement")} value={summary.reimbursment} />
-        <Summary title={tr("Total", "Total")} value={summary.total} highlight />
+      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+        <Summary title={tr("Biaya Jalan", "Travel Cost")} value={summary.jalan} tone="sky" />
+        <Summary title={tr("Pengeluaran", "Expenses")} value={summary.pengeluaran} tone="violet" />
+        <Summary title={tr("Reimbursment", "Reimbursement")} value={summary.reimbursment} tone="teal" />
+        <Summary title={tr("Total", "Total")} value={summary.total} highlight tone="amber" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded-xl p-4 bg-amber-50/40">
-          <h4 className="text-sm font-bold text-amber-800 mb-3">{tr("Belum Lunas", "Unpaid")}</h4>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+        <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-900/[0.04] sm:p-5">
+          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-900">
+            <span className="h-2 w-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+            {tr("Belum Lunas", "Unpaid")}
+          </h4>
           <div className="grid grid-cols-1 gap-3">
             {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.belum[k.key]))}
           </div>
         </div>
-        <div className="border rounded-xl p-4 bg-emerald-50/40">
-          <h4 className="text-sm font-bold text-emerald-800 mb-3">{tr("Sudah Lunas", "Paid")}</h4>
+        <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50/50 to-white p-4 shadow-sm ring-1 ring-emerald-900/[0.04] sm:p-5">
+          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-900">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/40" />
+            {tr("Sudah Lunas", "Paid")}
+          </h4>
           <div className="grid grid-cols-1 gap-3">
             {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.lunas[k.key]))}
           </div>
         </div>
       </div>
 
-      {loading ? <p className="text-xs text-gray-400 mt-3">{tr("Memuat...", "Loading...")}</p> : null}
-    </div>
+      {loading ? (
+        <p className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+          {tr("Memuat...", "Loading...")}
+        </p>
+      ) : null}
+    </DashboardSurface>
 
     {/* Modal Konfirmasi Status */}
     {showConfirmModal && confirmAction && (
@@ -583,11 +621,29 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   );
 }
 
-function Summary({ title, value, highlight = false }) {
+function Summary({ title, value, highlight = false, tone = "slate" }) {
+  const tones = {
+    slate: "from-slate-50 to-white border-slate-200/90",
+    sky: "from-sky-50/80 to-white border-sky-200/70",
+    violet: "from-violet-50/70 to-white border-violet-200/70",
+    teal: "from-teal-50/70 to-white border-teal-200/70",
+    amber: "from-amber-50 to-amber-100/30 border-amber-200/80",
+  };
+  const bar = {
+    slate: "from-slate-400 to-slate-600",
+    sky: "from-sky-500 to-indigo-500",
+    violet: "from-violet-500 to-purple-600",
+    teal: "from-teal-500 to-emerald-600",
+    amber: "from-amber-500 to-orange-500",
+  };
+  const t = highlight ? "amber" : tone;
   return (
-    <div className={`rounded-xl p-3 border ${highlight ? "bg-amber-50 border-amber-200" : "bg-gray-50 border-gray-200"}`}>
-      <p className="text-xs text-gray-600">{title}</p>
-      <p className="font-bold text-sm">{rupiah(value)}</p>
+    <div
+      className={`relative overflow-hidden rounded-xl border bg-gradient-to-br p-3 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-3.5 ${tones[t] || tones.slate}`}
+    >
+      <div className={`absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r opacity-90 ${bar[t] || bar.slate}`} />
+      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{title}</p>
+      <p className="mt-1 text-sm font-bold tabular-nums text-slate-900 sm:text-base">{rupiah(value)}</p>
     </div>
   );
 }

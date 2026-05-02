@@ -3,6 +3,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { Edit3, ArrowLeft } from "lucide-react";
 import { useI18n } from "../i18n";
+import { DashboardSurface, DashboardSectionHeading } from "../components/dashboard/DashboardPrimitives.jsx";
+
+const projekField =
+  "w-full rounded-xl border border-slate-200 bg-white p-3 text-sm shadow-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/15";
+const projekFieldReadonly =
+  "w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600";
 
 export default function EditProjekKerjaPage() {
   const { language } = useI18n();
@@ -167,7 +173,12 @@ export default function EditProjekKerjaPage() {
   };
 
   if (loading) {
-    return <div className="p-6 text-gray-500">{tr("Memuat...", "Loading...")}</div>;
+    return (
+      <div className="max-w-4xl space-y-3 p-4 sm:p-6">
+        <div className="h-10 w-48 animate-pulse rounded-xl bg-slate-200/80" />
+        <div className="h-64 animate-pulse rounded-2xl bg-slate-200/70" />
+      </div>
+    );
   }
 
   const addKaryawanTerlibat = () => {
@@ -246,21 +257,22 @@ export default function EditProjekKerjaPage() {
   };
 
   return (
-    <div className="p-4 sm:p-6 space-y-4 max-w-4xl">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Edit3 className="text-purple-600" />
-            {tr("Edit Projek Kerja", "Edit Project")}
-          </h2>
-          <p className="text-sm text-gray-500">
-            {tr("Edit data projek dan oper ke divisi lain.", "Edit project data and transfer it to another division.")}
-          </p>
+    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
+      <div className="flex flex-col gap-4 border-b border-slate-100 pb-6 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500/15 to-indigo-500/10 ring-1 ring-violet-500/20">
+            <Edit3 size={22} className="text-violet-700" />
+          </div>
+          <DashboardSectionHeading
+            className="!mb-0"
+            title={tr("Edit Projek Kerja", "Edit Project")}
+            subtitle={tr("Edit data projek dan oper ke divisi lain.", "Edit project data and transfer it to another division.")}
+          />
         </div>
         <button
           type="button"
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 px-4 py-2 rounded-lg"
+          className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
         >
           <ArrowLeft size={16} />
           {tr("Kembali", "Back")}
@@ -268,12 +280,12 @@ export default function EditProjekKerjaPage() {
       </div>
 
       {!canEdit ? (
-        <div className="text-sm text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded-xl">
+        <div className="rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-800">
           {tr("Anda tidak punya akses untuk mengubah project ini.", "You do not have access to edit this project.")}
         </div>
       ) : null}
 
-      <div className="bg-white border rounded-2xl p-4 sm:p-6 shadow-sm">
+      <DashboardSurface className="p-4 sm:p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
@@ -282,7 +294,7 @@ export default function EditProjekKerjaPage() {
             <select
               value={form.divisi}
               onChange={(e) => setForm((p) => ({ ...p, divisi: e.target.value }))}
-              className="border p-3 rounded-xl w-full"
+              className={projekField}
               disabled={!canEdit || saving}
               required
             >
@@ -303,7 +315,7 @@ export default function EditProjekKerjaPage() {
             <select
               value={form.status}
               onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}
-              className="border p-3 rounded-xl w-full"
+              className={projekField}
               disabled={!canEdit || saving}
             >
               <option value="Dibuat">{tr("Dibuat", "Created")}</option>
@@ -322,7 +334,7 @@ export default function EditProjekKerjaPage() {
             <input
               value={form.jenis_pekerjaan}
               onChange={(e) => setForm((p) => ({ ...p, jenis_pekerjaan: e.target.value }))}
-              className="border p-3 rounded-xl w-full"
+              className={projekField}
               disabled={!canEdit || saving}
             />
           </div>
@@ -333,7 +345,7 @@ export default function EditProjekKerjaPage() {
             </label>
             <input
               value={form.karyawan}
-              className="border p-3 rounded-xl w-full bg-gray-100"
+              className={projekFieldReadonly}
               disabled
             />
           </div>
@@ -346,7 +358,7 @@ export default function EditProjekKerjaPage() {
               <select
                 value={karyawanInput}
                 onChange={(e) => setKaryawanInput(e.target.value)}
-                className="border p-3 rounded-xl w-full"
+                className={projekField}
                 disabled={!canEdit || saving || usersLoading}
               >
                 <option value="">{usersLoading ? tr("Memuat karyawan...", "Loading employees...") : tr("Pilih karyawan", "Select employee")}</option>
@@ -359,7 +371,7 @@ export default function EditProjekKerjaPage() {
               <button
                 type="button"
                 onClick={addKaryawanTerlibat}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3 rounded-xl disabled:opacity-50"
+                className="rounded-xl bg-indigo-600 px-4 font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
                 disabled={!canEdit || saving || usersLoading || !karyawanInput}
               >
                 {tr("Tambah", "Add")}
@@ -393,7 +405,7 @@ export default function EditProjekKerjaPage() {
               <select
                 value={inviteUserInput}
                 onChange={(e) => setInviteUserInput(e.target.value)}
-                className="border p-3 rounded-xl w-full"
+                className={projekField}
                 disabled={!canEdit || saving || usersLoading}
               >
                 <option value="">{usersLoading ? tr("Memuat akun user...", "Loading user accounts...") : tr("Pilih akun user", "Select user account")}</option>
@@ -406,7 +418,7 @@ export default function EditProjekKerjaPage() {
               <button
                 type="button"
                 onClick={addInviteUser}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 rounded-xl disabled:opacity-50"
+                className="rounded-xl bg-indigo-600 px-4 font-medium text-white shadow-sm transition hover:bg-indigo-700 disabled:opacity-50"
                 disabled={!canEdit || saving || usersLoading || !inviteUserInput}
               >
                 Invite
@@ -445,7 +457,7 @@ export default function EditProjekKerjaPage() {
               type="date"
               value={form.start_date}
               onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))}
-              className="projek-kerja-date-input w-full min-w-0 max-w-full shrink rounded-xl border pl-3 pr-3 text-base leading-none outline-none focus:ring-2 focus:ring-blue-400/40"
+              className={`projek-kerja-date-input ${projekField} min-w-0 max-w-full shrink pl-3 pr-3 text-base leading-none`}
               disabled={!canEdit || saving}
             />
           </div>
@@ -457,7 +469,7 @@ export default function EditProjekKerjaPage() {
             <input
               value={form.alamat}
               onChange={(e) => setForm((p) => ({ ...p, alamat: e.target.value }))}
-              className="border p-3 rounded-xl w-full"
+              className={projekField}
               disabled={!canEdit || saving}
             />
           </div>
@@ -469,7 +481,7 @@ export default function EditProjekKerjaPage() {
             <textarea
               value={form.problem_description}
               onChange={(e) => setForm((p) => ({ ...p, problem_description: e.target.value }))}
-              className="border p-3 rounded-xl w-full h-28"
+              className={`${projekField} h-28 resize-y`}
               disabled={!canEdit || saving}
             />
           </div>
@@ -481,17 +493,17 @@ export default function EditProjekKerjaPage() {
             <textarea
               value={form.barang_dibeli}
               onChange={(e) => setForm((p) => ({ ...p, barang_dibeli: e.target.value }))}
-              className="border p-3 rounded-xl w-full h-24"
+              className={`${projekField} h-24 resize-y`}
               disabled={!canEdit || saving}
             />
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="mt-6 flex justify-end gap-3 border-t border-slate-100 pt-6">
           <button
             type="button"
             onClick={() => navigate(-1)}
-            className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50"
             disabled={saving}
           >
             {tr("Batal", "Cancel")}
@@ -499,13 +511,13 @@ export default function EditProjekKerjaPage() {
           <button
             type="button"
             onClick={handleSave}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-900/15 transition hover:from-indigo-700 hover:to-violet-700 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={!canEdit || saving || !form.divisi}
           >
             {saving ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
           </button>
         </div>
-      </div>
+      </DashboardSurface>
     </div>
   );
 }
