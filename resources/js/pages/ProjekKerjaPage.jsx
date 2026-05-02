@@ -713,7 +713,7 @@ export default function ProjekKerjaPage() {
   const addBiayaRow = (key) => {
     setBiayaEdit((prev) => ({
       ...prev,
-      [key]: [...prev[key], emptyBiayaRow()],
+      [key]: [emptyBiayaRow(), ...prev[key]],
     }));
   };
 
