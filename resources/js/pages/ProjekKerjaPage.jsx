@@ -1877,6 +1877,14 @@ export default function ProjekKerjaPage() {
                 </span>
                 {tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs")}
               </h3>
+              {(() => {
+                const currentProject = dataList.find((i) => i.id === currentId);
+                return currentProject?.jenis_pekerjaan ? (
+                  <p className="mt-2 text-base font-semibold text-gray-800">
+                    <span className="text-gray-600">{tr("Projek", "Project")}:</span> {currentProject.jenis_pekerjaan}
+                  </p>
+                ) : null;
+              })()}
               <p className="mt-2 max-w-3xl text-sm text-slate-500">
                 {tr("Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.", "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.")}
               </p>

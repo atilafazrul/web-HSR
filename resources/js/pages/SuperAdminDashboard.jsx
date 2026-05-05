@@ -432,7 +432,7 @@ const Dashboard = ({ user, windowWidth }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
           <DivisiCard
             title={language === "en" ? "IT Division" : "Divisi IT"}
-            image="/images/IT meet.jpg"
+            image="/images/IT Card.png"
             count={projek.filter(p => p.divisi === "IT").length}
             onClick={() => navigate(`${basePath}/it`)}
             isMobile={isMobile}
@@ -441,7 +441,7 @@ const Dashboard = ({ user, windowWidth }) => {
 
           <DivisiCard
             title={language === "en" ? "Service Division" : "Divisi Service"}
-            image="/images/Service Card.jpg"
+            image="/images/Card Service.png"
             count={projek.filter(p => p.divisi === "Service").length}
             onClick={() => navigate(`${basePath}/service`)}
             isMobile={isMobile}
@@ -450,7 +450,7 @@ const Dashboard = ({ user, windowWidth }) => {
 
           <DivisiCard
             title={language === "en" ? "Sales Division" : "Divisi Sales"}
-            image="/images/Sales Card.jpg"
+            image="/images/Card Sales.png"
             count={projek.filter(p => p.divisi === "Sales").length}
             onClick={() => navigate(`${basePath}/sales`)}
             isMobile={isMobile}
@@ -459,7 +459,7 @@ const Dashboard = ({ user, windowWidth }) => {
 
           <DivisiCard
             title={language === "en" ? "Contractor Division" : "Divisi Kontraktor"}
-            image="/images/Kontraktor Card.jpg"
+            image="/images/Kontraktor Card.png"
             count={projek.filter(p => p.divisi === "Kontraktor").length}
             onClick={() => navigate(`${basePath}/kontraktor`)}
             isMobile={isMobile}
@@ -468,7 +468,7 @@ const Dashboard = ({ user, windowWidth }) => {
 
           <DivisiCard
             title={language === "en" ? "Logistics Division" : "Divisi Logistik"}
-            image="/images/IT meet.jpg"
+            image="/images/logistik card.png"
             count={projek.filter(p => p.divisi === "Logistik").length}
             onClick={() => navigate(`${basePath}/logistik`)}
             isMobile={isMobile}
@@ -477,7 +477,7 @@ const Dashboard = ({ user, windowWidth }) => {
 
           <DivisiCard
             title={language === "en" ? "Purchasing Division" : "Divisi Purchasing"}
-            image="/images/IT meet.jpg"
+            image="/images/Purchasing Card.png"
             count={projek.filter(p => p.divisi === "Purchasing").length}
             onClick={() => navigate(`${basePath}/purchasing`)}
             isMobile={isMobile}

@@ -230,14 +230,14 @@ export default function AdminDashboard({ user, logout }) {
   // Fungsi untuk mendapatkan gambar berdasarkan divisi
   const getDivisiImage = (divisi) => {
     const imageMap = {
-      "IT": "/images/IT meet.jpg",
-      "Service": "/images/Service Card.jpg",
-      "Sales": "/images/Sales Card.jpg",
-      "Kontraktor": "/images/Kontraktor Card.jpg",
-      "Logistik": "/images/IT meet.jpg", // default image
-      "Purchasing": "/images/IT meet.jpg", // default image
+      "IT": "/images/IT Card.png",
+      "Service": "/images/Card Service.png",
+      "Sales": "/images/Card Sales.png",
+      "Kontraktor": "/images/Kontraktor Card.png",
+      "Logistik": "/images/logistik card.png",
+      "Purchasing": "/images/Purchasing Card.png",
     };
-    return imageMap[divisi] || "/images/IT meet.jpg";
+    return imageMap[divisi] || "/images/IT Card.png";
   };
 
   return (
