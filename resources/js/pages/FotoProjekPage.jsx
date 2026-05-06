@@ -195,6 +195,10 @@ export default function FotoProjekPage() {
   const handleUploadPhoto = async (files) => {
     const fileArray = Array.isArray(files) ? files : [files].filter(Boolean);
     if (fileArray.length === 0) return;
+    if (fileArray.length > 3) {
+      alert(tr("Maksimal 3 foto per sekali upload.", "Maximum 3 photos per upload."));
+      return;
+    }
 
     const folderName = getActivePhotoFolderName();
     if (!folderName) {
@@ -230,6 +234,10 @@ export default function FotoProjekPage() {
   const handleUploadFile = async (files) => {
     const fileArray = Array.isArray(files) ? files : [files].filter(Boolean);
     if (fileArray.length === 0) return;
+    if (fileArray.length > 3) {
+      alert(tr("Maksimal 3 file per sekali upload.", "Maximum 3 files per upload."));
+      return;
+    }
 
     const folderName = getActiveFileFolderName();
     if (!folderName) {
@@ -470,6 +478,10 @@ export default function FotoProjekPage() {
                   onChange={async (e) => {
                     const files = Array.from(e.target.files || []);
                     e.target.value = "";
+                    if (files.length > 3) {
+                      alert(tr("Maksimal 3 file per sekali upload.", "Maximum 3 files per upload."));
+                      return;
+                    }
                     if (files.length > 0) await handleUploadFile(files);
                   }}
                 />
@@ -520,6 +532,10 @@ export default function FotoProjekPage() {
                     onChange={async (e) => {
                       const files = Array.from(e.target.files || []);
                       e.target.value = "";
+                      if (files.length > 3) {
+                        alert(tr("Maksimal 3 foto per sekali upload.", "Maximum 3 photos per upload."));
+                        return;
+                      }
                       if (files.length > 0) await handleUploadPhoto(files);
                     }}
                   />

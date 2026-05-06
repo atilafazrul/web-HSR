@@ -290,9 +290,9 @@ class ProjekKerjaController extends Controller
             'start_date' => 'required|date',
             'problem_description' => 'nullable|string',
             'barang_dibeli' => 'nullable|string',
-            'file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
+            'file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,csv,txt|max:30720',
             'photos' => 'nullable|array',
-            'photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:10240',
+            'photos.*' => 'image|mimes:jpeg,png,jpg,gif|max:30720',
             'divisi_flow' => 'nullable|array',
             'pic_karyawan' => 'nullable|string',
             'karyawan_terlibat' => 'nullable|array',
@@ -1309,7 +1309,7 @@ class ProjekKerjaController extends Controller
         }
 
         $validated = $request->validate([
-            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:10240',
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:30720',
             'folder_name' => 'nullable|string|max:100',
         ]);
 
@@ -1481,7 +1481,7 @@ class ProjekKerjaController extends Controller
         }
 
         $validated = $request->validate([
-            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx|max:10240',
+            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,csv,txt|max:30720',
             'folder_name' => 'nullable|string|max:100',
         ]);
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import api from "../api/axiosConfig";
 import tokenManager from "../utils/tokenManager";
 import { useI18n } from "../i18n/index.jsx";
+import { compressImage } from "../utils/imageCompress";
 import {
   User,
   Mail,
@@ -159,7 +160,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     );
   };
 
-  const handleDocFilePick = (key, file) => {
+  const handleDocFilePick = async (key, file) => {
     if (!file) {
       setFiles(prev => ({ ...prev, [key]: null }));
       return;
@@ -171,32 +172,50 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       return;
     }
 
-    if (file.size > DOC_MAX_BYTES) {
+    // Compress image docs (JPG/PNG) before upload to reduce failures.
+    // PDF is left as-is.
+    let readyFile = file;
+    try {
+      readyFile = await compressImage(file);
+    } catch {
+      readyFile = file;
+    }
+
+    if (readyFile.size > DOC_MAX_BYTES) {
       setError(tr("Ukuran dokumen maksimal 2MB", "Maximum document size is 2MB"));
       setTimeout(() => setError(null), 3000);
       return;
     }
 
-    setFiles(prev => ({ ...prev, [key]: file }));
+    setFiles(prev => ({ ...prev, [key]: readyFile }));
   };
 
-  const handleMultipleFiles = (files, setFiles, setPreview) => {
+  const handleMultipleFiles = async (files, setFiles, setPreview) => {
     const fileArray = Array.from(files);
     const validFiles = [];
     let firstError = null;
 
-    fileArray.forEach((file) => {
-      if (!file) return;
+    for (const file of fileArray) {
+      if (!file) continue;
       if (!isAllowedDocFile(file)) {
         if (!firstError) firstError = tr("Format dokumen harus JPG, PNG, atau PDF", "Document format must be JPG, PNG, or PDF");
-        return;
+        continue;
       }
-      if (file.size > DOC_MAX_BYTES) {
+
+      let readyFile = file;
+      try {
+        readyFile = await compressImage(file);
+      } catch {
+        readyFile = file;
+      }
+
+      if (readyFile.size > DOC_MAX_BYTES) {
         if (!firstError) firstError = tr("Ukuran dokumen maksimal 2MB", "Maximum document size is 2MB");
-        return;
+        continue;
       }
-      validFiles.push(file);
-    });
+
+      validFiles.push(readyFile);
+    }
 
     if (firstError) {
       setError(firstError);

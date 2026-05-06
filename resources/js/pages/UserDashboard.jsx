@@ -72,6 +72,18 @@ export default function UserDashboard({ user, logout }) {
   const divisiPath = DIVISI_TO_PATH[currentDivisi] || "service";
   const CurrentDivisiPage = DIVISI_PAGE[divisiPath] || ServicePage;
 
+  const getDivisiImage = (divisi) => {
+    const imageMap = {
+      IT: "/images/IT Card.png",
+      Service: "/images/Card Service.png",
+      Sales: "/images/Card Sales.png",
+      Kontraktor: "/images/Kontraktor Card.png",
+      Logistik: "/images/logistik card.png",
+      Purchasing: "/images/Purchasing Card.png",
+    };
+    return imageMap[divisi] || "/images/IT Card.png";
+  };
+
   const pageTitle = useMemo(() => {
     if (location.pathname.includes("/profile")) return language === "en" ? "Profile" : "Profil";
     if (location.pathname.includes("/projek-kerja/foto/")) return language === "en" ? "Project Photos" : "Foto Projek";
@@ -183,28 +195,28 @@ export default function UserDashboard({ user, logout }) {
 
                   <div
                     onClick={() => navigate(`/user/${divisiPath}`)}
-                    className="relative cursor-pointer overflow-hidden rounded-2xl shadow-lg ring-1 ring-slate-900/5 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl sm:rounded-3xl sm:hover:-translate-y-1"
+                    className="group relative cursor-pointer overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-900/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl sm:hover:-translate-y-2"
                   >
-                    <img
-                      src="/images/IT meet.jpg"
-                      alt={`Divisi ${currentDivisi}`}
-                      className="h-40 sm:h-44 md:h-48 lg:h-56 w-full object-cover group-hover:scale-110 transition duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-                    <div className="absolute top-3 sm:top-4 left-3 sm:left-4 bg-white/20 backdrop-blur-md px-2 sm:px-3 py-1 rounded-full text-xs text-white font-medium">
-                      Dashboard
-                    </div>
-                    <div className="absolute bottom-0 p-4 sm:p-5 md:p-6 text-white w-full">
-                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold tracking-wide mb-1">
-                        Divisi {currentDivisi}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-200 mb-3 sm:mb-4">
-                        Total <span className="font-semibold">{total}</span> Pekerjaan
-                      </p>
-                      <button className="flex items-center gap-2 bg-white/20 backdrop-blur-md hover:bg-white/30 transition px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-medium">
-                        {language === "en" ? "Open" : "Masuk"}
-                        <span className="group-hover:translate-x-1 transition">→</span>
-                      </button>
+                    <div className="relative h-72 sm:h-80 md:h-96 w-full">
+                      <img
+                        src={getDivisiImage(currentDivisi)}
+                        alt={`Divisi ${currentDivisi}`}
+                        className="absolute inset-0 h-full w-full object-cover object-[center_45%] group-hover:scale-110 transition duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+
+                      <div className="absolute bottom-0 p-6 sm:p-8 text-white w-full">
+                        <h3 className="text-3xl sm:text-4xl font-extrabold tracking-wide mb-1">
+                          Divisi {currentDivisi}
+                        </h3>
+                        <p className="text-sm sm:text-base text-gray-200 mb-4">
+                          Total <span className="font-semibold">{total}</span> {tr("Pekerjaan", "Tasks")}
+                        </p>
+                        <button className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-6 py-3 text-sm font-medium transition hover:bg-white/30">
+                          {language === "en" ? "Open" : "Masuk"}
+                          <span className="group-hover:translate-x-1 transition">→</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
 
