@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../api/axiosConfig";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
@@ -279,6 +279,7 @@ export default function ProjekKerjaPage() {
     pengeluaran: [emptyBiayaRow()],
     reimbursment: [emptyBiayaRow()],
   });
+  const hasHandledOpenBiayaFromQueryRef = useRef(false);
 
   useEffect(() => {
     fetchData();
@@ -709,6 +710,21 @@ export default function ProjekKerjaPage() {
     setEditUang(false);
     setShowUangModal(true);
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const openBiayaId = Number(params.get("open_biaya") || 0);
+    if (!openBiayaId || hasHandledOpenBiayaFromQueryRef.current) return;
+
+    const matched = dataList.find((item) => Number(item?.id) === openBiayaId);
+    if (!matched) return;
+
+    hasHandledOpenBiayaFromQueryRef.current = true;
+    openUangModal(matched);
+    params.delete("open_biaya");
+    const nextQuery = params.toString();
+    navigate(`${location.pathname}${nextQuery ? `?${nextQuery}` : ""}`, { replace: true });
+  }, [location.search, location.pathname, dataList, navigate]);
 
   const addBiayaRow = (key) => {
     setBiayaEdit((prev) => ({
@@ -1584,7 +1600,16 @@ export default function ProjekKerjaPage() {
                       )}
                     </select>
                   </td>
-                  <td className="p-2.5 font-medium truncate">{item.jenis_pekerjaan}</td>
+                  <td className="p-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleViewPhoto(item.id)}
+                      className="w-full truncate text-left font-medium text-slate-800 transition hover:text-indigo-600 hover:underline"
+                      title={tr("Buka halaman dokumen projek", "Open project document page")}
+                    >
+                      {item.jenis_pekerjaan}
+                    </button>
+                  </td>
                   <td className="p-2.5">
                     {(() => {
                       const karyawanList = karyawanProjectList(item);
@@ -1875,16 +1900,14 @@ export default function ProjekKerjaPage() {
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 ring-1 ring-amber-500/25">
                   <DollarSign className="text-amber-700" size={22} />
                 </span>
-                {tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs")}
+                {(() => {
+                  const currentProject = dataList.find((i) => i.id === currentId);
+                  const baseTitle = tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs");
+                  return currentProject?.jenis_pekerjaan
+                    ? `${baseTitle} - ${currentProject.jenis_pekerjaan}`
+                    : baseTitle;
+                })()}
               </h3>
-              {(() => {
-                const currentProject = dataList.find((i) => i.id === currentId);
-                return currentProject?.jenis_pekerjaan ? (
-                  <p className="mt-2 text-base font-semibold text-gray-800">
-                    <span className="text-gray-600">{tr("Projek", "Project")}:</span> {currentProject.jenis_pekerjaan}
-                  </p>
-                ) : null;
-              })()}
               <p className="mt-2 max-w-3xl text-sm text-slate-500">
                 {tr("Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.", "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.")}
               </p>

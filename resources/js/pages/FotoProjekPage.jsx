@@ -28,6 +28,7 @@ export default function FotoProjekPage() {
   const [selectedPhotoFolder, setSelectedPhotoFolder] = useState("");
   const [newFileFolderName, setNewFileFolderName] = useState("");
   const [newPhotoFolderName, setNewPhotoFolderName] = useState("");
+  const [projectTaskName, setProjectTaskName] = useState("");
 
   const fetchPhotos = async () => {
     try {
@@ -73,13 +74,32 @@ export default function FotoProjekPage() {
     }
   };
 
+  const fetchProjectDetail = async () => {
+    try {
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/projek-kerja/${id}`);
+      if (res.data?.success) {
+        const taskName = String(res.data?.data?.jenis_pekerjaan || "").trim();
+        setProjectTaskName(taskName);
+      }
+    } catch (err) {
+      console.error("Gagal load detail projek:", err);
+    }
+  };
+
   useEffect(() => {
     Promise.all([
       fetchPhotos(),
       fetchFiles(),
       fetchFolders(),
+      fetchProjectDetail(),
     ]).finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    const baseTitle = tr("Dokumentasi Projek", "Project Documentation");
+    const fullTitle = projectTaskName ? `${baseTitle} - ${projectTaskName}` : baseTitle;
+    document.title = `WEB HSR - ${fullTitle}`;
+  }, [projectTaskName, language]);
 
   const getFolderFromUrl = (url, mediaRoot) => {
     const marker = `/storage/${mediaRoot}/${id}/`;
@@ -322,7 +342,9 @@ export default function FotoProjekPage() {
       <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div>
           <h1 className="text-2xl font-semibold text-slate-900 sm:text-3xl">
-            {tr("Dokumentasi Projek", "Project Documentation")}
+            {projectTaskName
+              ? `${tr("Dokumentasi Projek", "Project Documentation")} - ${projectTaskName}`
+              : tr("Dokumentasi Projek", "Project Documentation")}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             {tr("Kelola dokumen dan foto dokumentasi projek", "Manage project documentation files and photos")}

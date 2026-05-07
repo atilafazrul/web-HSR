@@ -42,7 +42,7 @@ class DashboardBiayaController extends Controller
     /** Kategori yang boleh melampirkan foto */
     protected function kategoriAllowsPhotos(?string $kategori): bool
     {
-        return in_array($kategori, ['pengeluaran', 'reimbursment'], true);
+        return in_array($kategori, ['jalan', 'pengeluaran', 'reimbursment'], true);
     }
 
     protected function scopedQuery(Request $request)

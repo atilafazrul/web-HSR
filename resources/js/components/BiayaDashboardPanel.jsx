@@ -52,10 +52,11 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const [compressingKey, setCompressingKey] = useState(null);
 
   const [form, setForm] = useState({
-    jalan: { nominal: "", keterangan: "" },
+    jalan: { nominal: "", keterangan: "", photoFiles: [] },
     pengeluaran: { nominal: "", keterangan: "", photoFiles: [] },
     reimbursment: { nominal: "", keterangan: "", photoFiles: [] },
   });
+  const jalanPhotoInputRef = useRef(null);
   const pengeluaranPhotoInputRef = useRef(null);
   const reimbPhotoInputRef = useRef(null);
   const editPhotoInputRef = useRef(null);
@@ -64,7 +65,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
 
-  const kategoriWithPhotos = (key) => key === "pengeluaran" || key === "reimbursment";
+  const kategoriWithPhotos = (key) => key === "jalan" || key === "pengeluaran" || key === "reimbursment";
   const isCompressingKategori = (key) => compressingKey === key;
 
   const handlePhotoSelection = async (kategori, fileList) => {
@@ -159,6 +160,9 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
         fd.append("keterangan", row.keterangan || "");
         (row.photoFiles || []).forEach((file) => fd.append("photos[]", file));
         await api.post("/dashboard-biaya", fd);
+        if (kategori === "jalan" && jalanPhotoInputRef.current) {
+          jalanPhotoInputRef.current.value = "";
+        }
         if (kategori === "pengeluaran" && pengeluaranPhotoInputRef.current) {
           pengeluaranPhotoInputRef.current.value = "";
         }
@@ -474,7 +478,13 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                 <div className="mb-2">
                   <label className="mb-1 block text-xs font-medium text-slate-600">{tr("Upload foto", "Upload photos")}</label>
                   <input
-                    ref={k.key === "pengeluaran" ? pengeluaranPhotoInputRef : reimbPhotoInputRef}
+                    ref={
+                      k.key === "jalan"
+                        ? jalanPhotoInputRef
+                        : k.key === "pengeluaran"
+                          ? pengeluaranPhotoInputRef
+                          : reimbPhotoInputRef
+                    }
                     type="file"
                     multiple
                     accept="image/jpeg,image/jpg,image/png,image/webp"

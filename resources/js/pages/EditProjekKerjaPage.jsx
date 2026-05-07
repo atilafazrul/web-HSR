@@ -124,6 +124,13 @@ export default function EditProjekKerjaPage() {
   }, []);
 
   const canEdit = canEditProjectByDivisi(project?.divisi);
+  const activeProjectName = String(form.jenis_pekerjaan || project?.jenis_pekerjaan || "").trim();
+
+  useEffect(() => {
+    const baseTitle = tr("Edit Projek Kerja", "Edit Project");
+    const fullTitle = activeProjectName ? `${baseTitle} - ${activeProjectName}` : baseTitle;
+    document.title = `WEB HSR - ${fullTitle}`;
+  }, [activeProjectName, language]);
 
   const handleSave = async () => {
     if (!canEdit) {
@@ -265,7 +272,11 @@ export default function EditProjekKerjaPage() {
           </div>
           <DashboardSectionHeading
             className="!mb-0"
-            title={tr("Edit Projek Kerja", "Edit Project")}
+            title={
+              activeProjectName
+                ? `${tr("Edit Projek Kerja", "Edit Project")} - ${activeProjectName}`
+                : tr("Edit Projek Kerja", "Edit Project")
+            }
             subtitle={tr("Edit data projek dan oper ke divisi lain.", "Edit project data and transfer it to another division.")}
           />
         </div>
