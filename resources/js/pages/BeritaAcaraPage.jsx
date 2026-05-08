@@ -36,7 +36,7 @@ export default function BeritaAcaraPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* BAM */}
         <Card
-          icon={<Wrench size={30} className="text-purple-600" />}
+          icon={<Wrench size={24} className="text-indigo-600" />}
           title="BAM"
           subtitle={tr("Berita Acara Maintenance", "Maintenance Minutes Report")}
           onClick={() => navigate(`${basePath}/berita-acara/bam`)}
@@ -44,7 +44,7 @@ export default function BeritaAcaraPage() {
 
         {/* BAUF */}
         <Card
-          icon={<ClipboardCheck size={30} className="text-blue-600" />}
+          icon={<ClipboardCheck size={24} className="text-indigo-600" />}
           title="BAUF"
           subtitle={tr("Berita Acara Uji Fungsi", "Function Test Minutes Report")}
           onClick={() => navigate(`${basePath}/berita-acara/bauf`)}
@@ -52,7 +52,7 @@ export default function BeritaAcaraPage() {
 
         {/* BAST */}
         <Card
-          icon={<FileText size={30} className="text-green-600" />}
+          icon={<FileText size={24} className="text-indigo-600" />}
           title="BAST"
           subtitle={tr("Berita Acara Serah Terima", "Handover Minutes Report")}
           onClick={() => navigate(`${basePath}/berita-acara/bast`)}
@@ -60,7 +60,7 @@ export default function BeritaAcaraPage() {
 
         {/* SPPD */}
         <Card
-          icon={<FileSignature size={30} className="text-orange-600" />}
+          icon={<FileSignature size={24} className="text-indigo-600" />}
           title="SPPD"
           subtitle={tr("Surat Perintah Perjalanan Dinas", "Official Travel Order")}
           onClick={() => navigate(`${basePath}/berita-acara/sppd`)}
@@ -74,21 +74,21 @@ export default function BeritaAcaraPage() {
 const Card = ({ icon, title, subtitle, desc, onClick }) => (
   <div
     onClick={onClick}
-    className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition cursor-pointer"
+    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
   >
-    <div className="mb-4">
+    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
       {icon}
     </div>
 
-    <h3 className="text-xl font-semibold mb-1">
+    <h3 className="mb-1 text-xl font-semibold text-slate-800">
       {title}
     </h3>
 
-    <p className="text-sm text-gray-500 mb-3">
+    <p className="mb-3 text-sm text-slate-500">
       {subtitle}
     </p>
 
-    <p className="text-gray-500 text-sm">
+    <p className="text-sm text-slate-500">
       {desc}
     </p>
   </div>

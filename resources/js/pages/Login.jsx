@@ -61,16 +61,16 @@ export default function Login({ login, isLoading }) {
 
   /* ================= UI ================= */
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 overflow-hidden relative">
+    <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/40 lg:flex-row">
 
       {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden opacity-40">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-300 rounded-full blur-3xl opacity-30"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 rounded-full blur-3xl opacity-30"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-200 rounded-full blur-3xl opacity-20"></div>
+        <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-indigo-300 blur-3xl opacity-20"></div>
+        <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-slate-300 blur-3xl opacity-30"></div>
+        <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-indigo-200 blur-3xl opacity-10"></div>
         {/* Grid Pattern */}
         <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(59, 130, 246, 0.15) 1px, transparent 0)`,
+          backgroundImage: `radial-gradient(circle at 1px 1px, rgba(71, 85, 105, 0.12) 1px, transparent 0)`,
           backgroundSize: '40px 40px'
         }}></div>
       </div>
@@ -85,63 +85,63 @@ export default function Login({ login, isLoading }) {
               alt="HSR Logo"
               className="h-20 object-contain"
             />
-            <p className="text-gray-500 text-lg">Enterprise Management System</p>
+            <p className="text-lg text-slate-500">Enterprise Management System</p>
           </div>
 
           {/* Hero Text */}
-          <h2 className="text-4xl font-bold text-gray-800 mb-4 leading-tight">
+          <h2 className="mb-4 text-4xl font-bold leading-tight text-slate-800">
             Streamline Your Business Operations
           </h2>
-          <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+          <p className="mb-8 text-lg leading-relaxed text-slate-600">
             Comprehensive management solution for all your business divisions. Manage projects, track expenses, and optimize workflows in one powerful platform.
           </p>
 
           {/* Feature Cards */}
           <div className="space-y-4">
-            <div className="flex items-center gap-4 bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Shield size={24} className="text-blue-600" />
+            <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white/70 p-4 shadow-sm backdrop-blur-sm">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100">
+                <Shield size={24} className="text-indigo-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">Secure Access</h3>
-                <p className="text-sm text-gray-500">Enterprise-grade security with role-based access</p>
+                <h3 className="font-semibold text-slate-800">Secure Access</h3>
+                <p className="text-sm text-slate-500">Enterprise-grade security with role-based access</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
-              <div className="w-12 h-12 bg-indigo-100 rounded-xl flex items-center justify-center">
+            <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white/70 p-4 shadow-sm backdrop-blur-sm">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100">
                 <Zap size={24} className="text-indigo-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">Lightning Fast</h3>
-                <p className="text-sm text-gray-500">Optimized performance for seamless experience</p>
+                <h3 className="font-semibold text-slate-800">Lightning Fast</h3>
+                <p className="text-sm text-slate-500">Optimized performance for seamless experience</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 bg-white/60 backdrop-blur-sm rounded-xl p-4 shadow-sm border border-white/50">
-              <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                <TrendingUp size={24} className="text-purple-600" />
+            <div className="flex items-center gap-4 rounded-xl border border-slate-200 bg-white/70 p-4 shadow-sm backdrop-blur-sm">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100">
+                <TrendingUp size={24} className="text-indigo-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-800">Data Analytics</h3>
-                <p className="text-sm text-gray-500">Real-time insights and reporting tools</p>
+                <h3 className="font-semibold text-slate-800">Data Analytics</h3>
+                <p className="text-sm text-slate-500">Real-time insights and reporting tools</p>
               </div>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-8 mt-8 pt-8 border-t border-gray-200">
+          <div className="mt-8 flex items-center gap-8 border-t border-slate-200 pt-8">
             <div>
-              <div className="text-2xl font-bold text-blue-600">6+</div>
-              <div className="text-sm text-gray-500">Divisions</div>
+              <div className="text-2xl font-bold text-indigo-600">6+</div>
+              <div className="text-sm text-slate-500">Divisions</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-indigo-600">24/7</div>
-              <div className="text-sm text-gray-500">Support</div>
+              <div className="text-sm text-slate-500">Support</div>
             </div>
             <div>
-              <div className="text-2xl font-bold text-purple-600">100%</div>
-              <div className="text-sm text-gray-500">Uptime</div>
+              <div className="text-2xl font-bold text-indigo-600">100%</div>
+              <div className="text-sm text-slate-500">Uptime</div>
             </div>
           </div>
         </div>
@@ -161,41 +161,41 @@ export default function Login({ login, isLoading }) {
           </div>
 
           {/* Login Card */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 lg:p-10 border border-white/50">
+          <div className="rounded-3xl border border-slate-200/80 bg-white/90 p-8 shadow-xl shadow-slate-900/10 backdrop-blur-xl lg:p-10">
 
             {/* Header */}
             <div className="text-center mb-8">
               <div className="flex justify-end mb-4">
-                <label className="flex items-center gap-2 text-sm text-gray-600">
+                <label className="flex items-center gap-2 text-sm text-slate-600">
                   <span>{t("language", "Language")}</span>
                   <select
                     value={language}
                     onChange={(e) => setLanguage(e.target.value)}
-                    className="border border-gray-200 rounded-lg px-2 py-1 bg-white text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                    className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-slate-700 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/30"
                   >
                     <option value="id">Indonesia</option>
                     <option value="en">English</option>
                   </select>
                 </label>
               </div>
-              <h2 className="text-2xl lg:text-3xl font-bold text-gray-800 mb-2">
+              <h2 className="mb-2 text-2xl font-bold text-slate-800 lg:text-3xl">
                 {t("welcomeBack", "Welcome Back")}
               </h2>
-              <p className="text-gray-500">
+              <p className="text-slate-500">
                 {t("signInSubtitle", "Sign in to access your dashboard")}
               </p>
             </div>
 
             {/* Division Banner */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 mb-6 border border-blue-100">
+            <div className="mb-6 rounded-2xl border border-indigo-100 bg-gradient-to-r from-slate-50 to-indigo-50 p-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                <div className="flex items-center gap-2 text-sm font-medium text-slate-600">
                   <Users size={16} />
                   <span>{t("activeDivision", "Active Division:")}</span>
                 </div>
                 <div className="flex items-center justify-center min-w-[100px]">
                   <span
-                    className={`text-blue-700 font-bold tracking-widest text-sm transition-all duration-500 ${animate
+                    className={`text-indigo-700 font-bold tracking-widest text-sm transition-all duration-500 ${animate
                         ? "opacity-100"
                         : "opacity-0"
                       }`}
@@ -211,16 +211,16 @@ export default function Login({ login, isLoading }) {
 
               {/* Email Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   {t("emailAddress", "Email Address")}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail size={20} className="text-gray-400" />
+                    <Mail size={20} className="text-slate-400" />
                   </div>
                   <input
                     type="email"
-                    className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50/50 focus:bg-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-3 pl-12 pr-4 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-500/30"
                     value={email}
                     onChange={e => setEmail(e.target.value)}
                     required
@@ -231,16 +231,16 @@ export default function Login({ login, isLoading }) {
 
               {/* Password Field */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-slate-700">
                   {t("password", "Password")}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock size={20} className="text-gray-400" />
+                    <Lock size={20} className="text-slate-400" />
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none bg-gray-50/50 focus:bg-white"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-3 pl-12 pr-12 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-500/30"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
                     required
@@ -249,7 +249,7 @@ export default function Login({ login, isLoading }) {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center pr-4 text-slate-400 transition-colors hover:text-slate-600"
                   >
                     {showPassword ? (
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -266,19 +266,11 @@ export default function Login({ login, isLoading }) {
                 </div>
               </div>
 
-              {/* Remember Me */}
-              <div className="flex items-center text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                  <span className="text-gray-600">{t("rememberMe", "Remember me")}</span>
-                </label>
-              </div>
-
               {/* Submit Button */}
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-200 hover:shadow-xl hover:shadow-blue-300 transform hover:-translate-y-0.5"
+                className="w-full rounded-xl bg-indigo-600 py-3.5 font-semibold text-white shadow-md shadow-indigo-900/20 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
@@ -296,14 +288,14 @@ export default function Login({ login, isLoading }) {
             </form>
 
             {/* Footer */}
-            <div className="mt-8 text-center text-sm text-gray-500">
+            <div className="mt-8 text-center text-sm text-slate-500">
               <p>{t("needHelp", "Need help? Contact your system administrator")}</p>
             </div>
 
           </div>
 
           {/* Security Badge */}
-          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-gray-400">
+          <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
             <Shield size={14} />
             <span>{t("securedBadge", "Secured with enterprise-grade encryption")}</span>
           </div>

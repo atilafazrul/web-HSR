@@ -532,16 +532,16 @@ export default function ProjekKerjaPage() {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "Dibuat": return "bg-gray-100 text-gray-700 border-gray-400";
-      case "Persiapan": return "bg-blue-100 text-blue-700 border-blue-400";
-      case "Proses Pekerjaan": return "bg-yellow-100 text-yellow-700 border-yellow-400";
-      case "Proses": return "bg-amber-100 text-amber-900 border-amber-400";
-      case "Editing": return "bg-purple-100 text-purple-700 border-purple-400";
-      case "Invoicing": return "bg-indigo-100 text-indigo-700 border-indigo-400";
-      case "Selesai": return "bg-green-100 text-green-700 border-green-400";
-      case "Terlambat": return "bg-rose-100 text-rose-800 border-rose-400";
-      case "Barang sudah siap": return "bg-teal-100 text-teal-900 border-teal-400";
-      default: return "bg-gray-100 text-gray-700 border-gray-400";
+      case "Dibuat": return "bg-slate-100 text-slate-700 border-slate-300";
+      case "Persiapan": return "bg-sky-100 text-sky-700 border-sky-300";
+      case "Proses Pekerjaan": return "bg-indigo-100 text-indigo-700 border-indigo-300";
+      case "Proses": return "bg-amber-100 text-amber-800 border-amber-300";
+      case "Editing": return "bg-violet-100 text-violet-700 border-violet-300";
+      case "Invoicing": return "bg-cyan-100 text-cyan-700 border-cyan-300";
+      case "Selesai": return "bg-emerald-100 text-emerald-700 border-emerald-300";
+      case "Terlambat": return "bg-rose-100 text-rose-700 border-rose-300";
+      case "Barang sudah siap": return "bg-teal-100 text-teal-700 border-teal-300";
+      default: return "bg-slate-100 text-slate-700 border-slate-300";
     }
   };
 
@@ -560,6 +560,9 @@ export default function ProjekKerjaPage() {
     if (language !== "en") return status;
     return map[status] || status;
   };
+
+  const actionBtnBase =
+    "inline-flex items-center justify-center rounded-xl p-1.5 text-white shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px] hover:shadow-md active:translate-y-0 active:shadow-sm";
 
   const handleStatusChange = async (id, status) => {
     try {
@@ -1676,7 +1679,7 @@ export default function ProjekKerjaPage() {
                   <td className="p-2.5">
                     <button
                       onClick={() => openTimelineModal(item)}
-                      className={`px-2 py-1 rounded-full text-xs border cursor-pointer hover:opacity-80 transition ${getStatusColor(item.status)} whitespace-nowrap inline-block max-w-full truncate`}
+                      className={`px-2.5 py-1 rounded-full text-xs border cursor-pointer transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm ${getStatusColor(item.status)} whitespace-nowrap inline-block max-w-full truncate`}
                       title="Klik untuk lihat timeline"
                     >
                       {displayStatus(item.status)}
@@ -1684,11 +1687,11 @@ export default function ProjekKerjaPage() {
                   </td>
                   <td className="p-2.5">
                     <div className="flex justify-center gap-1">
-                      <button onClick={() => handleViewPhoto(item.id)} className="bg-gray-500 hover:bg-gray-600 text-white p-1.5 rounded-lg" title={tr("Lihat Foto", "View Photos")}>
+                      <button onClick={() => handleViewPhoto(item.id)} className={`${actionBtnBase} bg-slate-500 hover:bg-slate-600`} title={tr("Lihat Foto", "View Photos")}>
                         <FileText size={14} />
                       </button>
                       {!isUserRole && item.file_url && (
-                        <a href={item.file_url} target="_blank" rel="noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 rounded-lg" title={tr("Download File", "Download File")}>
+                        <a href={item.file_url} target="_blank" rel="noreferrer" className={`${actionBtnBase} bg-sky-600 hover:bg-sky-700`} title={tr("Download File", "Download File")}>
                           <Download size={14} />
                         </a>
                       )}
@@ -1697,7 +1700,7 @@ export default function ProjekKerjaPage() {
                           {!isArchiveContext && canEditProjectAction(item) ? (
                             <button
                               onClick={() => goToEditProjectPage(item)}
-                              className="bg-purple-600 hover:bg-purple-700 text-white p-1.5 rounded-lg"
+                              className={`${actionBtnBase} bg-violet-600 hover:bg-violet-700`}
                               title="Edit project & oper divisi"
                             >
                               <Edit3 size={14} />
@@ -1705,7 +1708,7 @@ export default function ProjekKerjaPage() {
                           ) : null}
                           <button
                             onClick={() => openUangModal(item)}
-                            className={`text-white p-1.5 rounded-lg ${item.is_lunas ? "bg-green-600 hover:bg-green-700" : "bg-yellow-500 hover:bg-yellow-600"}`}
+                            className={`${actionBtnBase} ${item.is_lunas ? "bg-emerald-600 hover:bg-emerald-700" : "bg-amber-500 hover:bg-amber-600"}`}
                             title={item.is_lunas ? "Biaya (Lunas)" : "Biaya (Belum Lunas)"}
                           >
                             <DollarSign size={14} />
@@ -1713,7 +1716,7 @@ export default function ProjekKerjaPage() {
                           {isArchiveContext ? (
                             <button
                               onClick={() => handleUnarchiveProject(item)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white p-1.5 rounded-lg"
+                              className={`${actionBtnBase} bg-emerald-600 hover:bg-emerald-700`}
                               title={tr("Batalkan Archive", "Cancel Archive")}
                             >
                               <RotateCcw size={14} />
@@ -1724,7 +1727,7 @@ export default function ProjekKerjaPage() {
                       {!isUserRole && !isArchiveContext && canEditProjectAction(item) && (
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white p-1.5 rounded-lg"
+                          className={`${actionBtnBase} bg-rose-600 hover:bg-rose-700`}
                           title={tr("Hapus", "Delete")}
                         >
                           <Trash2 size={14} />
@@ -2032,33 +2035,33 @@ export default function ProjekKerjaPage() {
                   return (
                     <>
                       <div className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2 md:gap-5">
-                        <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-900/[0.04] sm:p-5">
-                          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-900">
-                            <span className="h-2 w-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+                        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50/70 to-white p-4 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-5">
+                          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+                            <span className="h-2 w-2 rounded-full bg-slate-400 shadow-sm shadow-slate-400/40" />
                             {tr("Belum Lunas", "Unpaid")}
                           </h4>
                           {renderKategoriColumn(false)}
                         </div>
-                        <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50/50 to-white p-4 shadow-sm ring-1 ring-emerald-900/[0.04] sm:p-5">
-                          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-900">
-                            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/40" />
+                        <div className="rounded-2xl border border-indigo-200/70 bg-gradient-to-b from-indigo-50/40 to-white p-4 shadow-sm ring-1 ring-indigo-900/[0.03] sm:p-5">
+                          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700">
+                            <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/35" />
                             {tr("Sudah Lunas", "Paid")}
                           </h4>
                           {renderKategoriColumn(true)}
                         </div>
                       </div>
                       <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="p-3 rounded-xl bg-amber-50/80 border border-amber-200">
-                          <p className="text-[11px] font-bold text-amber-800 uppercase tracking-wide">{tr("Total belum lunas", "Total unpaid")}</p>
-                          <p className="text-base font-bold text-amber-950 tabular-nums">{formatRupiah(totalBelum)}</p>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">{tr("Total belum lunas", "Total unpaid")}</p>
+                          <p className="text-base font-bold tabular-nums text-slate-900">{formatRupiah(totalBelum)}</p>
                         </div>
-                        <div className="p-3 rounded-xl bg-emerald-50/80 border border-emerald-200">
-                          <p className="text-[11px] font-bold text-emerald-800 uppercase tracking-wide">{tr("Total sudah lunas", "Total paid")}</p>
-                          <p className="text-base font-bold text-emerald-950 tabular-nums">{formatRupiah(totalLunas)}</p>
+                        <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/60 p-3">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">{tr("Total sudah lunas", "Total paid")}</p>
+                          <p className="text-base font-bold tabular-nums text-indigo-900">{formatRupiah(totalLunas)}</p>
                         </div>
-                        <div className="p-3 rounded-xl bg-amber-50/30 border border-amber-200/80 sm:col-span-1">
-                          <p className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">{tr("Total keseluruhan", "Grand total")}</p>
-                          <p className="text-lg font-bold text-gray-900 tabular-nums">{formatRupiah(grandTotal)}</p>
+                        <div className="rounded-xl border border-slate-200 bg-white p-3 sm:col-span-1">
+                          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">{tr("Total keseluruhan", "Grand total")}</p>
+                          <p className="text-lg font-bold tabular-nums text-slate-900">{formatRupiah(grandTotal)}</p>
                         </div>
                       </div>
                     </>
@@ -2071,7 +2074,7 @@ export default function ProjekKerjaPage() {
                       <button
                         type="button"
                         onClick={() => item && handleSetLunas(item, !item.is_lunas)}
-                        className={`px-4 py-2 rounded-lg text-white ${item?.is_lunas ? "bg-slate-600 hover:bg-slate-700" : "bg-green-600 hover:bg-green-700"}`}
+                        className={`px-4 py-2 rounded-lg text-white ${item?.is_lunas ? "bg-slate-600 hover:bg-slate-700" : "bg-indigo-600 hover:bg-indigo-700"}`}
                       >
                         {item?.is_lunas ? tr("Batalkan Lunas", "Mark Unpaid") : tr("Tandai Lunas", "Mark Paid")}
                       </button>
@@ -2080,7 +2083,7 @@ export default function ProjekKerjaPage() {
                   <button
                     type="button"
                     onClick={handleExportBiaya}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                    className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2"
                   >
                     <Download size={18} />
                     {tr("Unduh Excel (CSV)", "Download Excel (CSV)")}
@@ -2093,7 +2096,7 @@ export default function ProjekKerjaPage() {
                     })()}
                     className={`px-4 py-2 rounded-lg text-white ${(() => {
                       const locked = !canEditCurrentBiayaProject;
-                      return locked ? "bg-gray-300 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700";
+                      return locked ? "bg-gray-300 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700";
                     })()}`}
                   >
                     {tr("Edit", "Edit")}

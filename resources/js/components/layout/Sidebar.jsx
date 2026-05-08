@@ -105,16 +105,16 @@ export default function Sidebar({
         transform transition-all duration-300 ease-in-out
         ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         overflow-y-auto overflow-x-hidden`}
-        style={{ backgroundColor: "#172238" }}
+        style={{ backgroundColor: "#0f172a" }}
       >
 
         <div className="flex-1 flex flex-col min-h-0">
           {/* MOBILE HEADER - CLOSE BUTTON */}
-          <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-700">
+          <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-800">
             <span className="font-semibold text-lg">{t("menu", "Menu")}</span>
             <button
               onClick={() => setSidebarOpen && setSidebarOpen(false)}
-              className="p-2 rounded-lg hover:bg-slate-800 transition-colors"
+              className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
             >
               <X size={20} />
             </button>
@@ -228,7 +228,7 @@ export default function Sidebar({
             {isSuperAdmin && (
               <div>
                 <div
-                  className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-800 cursor-pointer transition-colors"
+                  className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-700 cursor-pointer transition-colors"
                   onClick={() => setOpenDivisi(!openDivisi)}
                 >
                   <span className={`flex items-center ${!expanded ? 'mx-auto' : ''}`}>
@@ -304,13 +304,13 @@ export default function Sidebar({
         </div>
 
         {/* ================= LOGOUT ================= */}
-        <div className="px-3 py-4 border-t border-slate-700">
+        <div className="px-3 py-4 border-t border-slate-800">
           <button
             onClick={() => {
               logout();
               if (isMobile) setSidebarOpen(false);
             }}
-            className="w-full bg-red-500 hover:bg-red-600 py-2.5 rounded-xl font-medium shadow transition-colors flex items-center justify-center gap-2"
+            className="w-full bg-slate-700 hover:bg-slate-600 py-2.5 rounded-xl font-medium shadow transition-colors flex items-center justify-center gap-2"
           >
             <LogOut size={18} />
             {expanded && <span>{t("logout", "Logout")}</span>}
@@ -336,7 +336,7 @@ const SidebarItem = ({
   return (
     <div
       className={`flex items-center py-2.5 rounded-lg cursor-pointer transition-all
-        ${active ? "bg-blue-500 hover:bg-blue-600" : "hover:bg-slate-800"}
+        ${active ? "bg-indigo-600 hover:bg-indigo-700 text-white" : "hover:bg-slate-700 text-slate-100"}
         ${indented && showText ? "pl-8 pr-3" : "px-3"}
         ${!showText ? "justify-center" : ""}
         group`}
@@ -353,7 +353,7 @@ const SidebarItem = ({
 
       {/* Tooltip untuk collapsed state di desktop */}
       {!showText && !isMobile && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-slate-800 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
+        <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all whitespace-nowrap z-50">
           {text}
         </div>
       )}

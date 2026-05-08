@@ -451,7 +451,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
           {/* Cover & Profile Header */}
           <div className="relative">
-            <div className="h-32 bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"></div>
+            <div className="h-32 bg-gradient-to-r from-slate-700 via-indigo-600 to-indigo-700"></div>
             <div className="relative md:absolute md:-bottom-16 left-0 right-0 px-4 sm:px-6 md:px-8 mt-4 md:mt-0">
               <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
                 <div className="relative">
@@ -459,7 +459,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     {photoUrl ? (
                       <img src={photoUrl} alt={profileData.name} className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-white shadow-xl bg-white" />
                     ) : (
-                      <div className="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-xl">
+                      <div className="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-xl">
                         {initial}
                       </div>
                     )}
@@ -469,9 +469,9 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                       className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md hover:shadow-lg transition"
                     >
                       {uploadingPhoto ? (
-                        <div className="w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                        <div className="w-3.5 h-3.5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Camera size={14} className="text-purple-600" />
+                        <Camera size={14} className="text-indigo-600" />
                       )}
                     </button>
                     {photoUrl && !uploadingPhoto && (
@@ -487,12 +487,12 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                 <div className="flex-1 text-center md:text-left w-full min-w-0">
                   <h2 className="text-2xl font-bold text-gray-900">{profileData.name || user?.name}</h2>
                   <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-medium">
                       <Briefcase size={12} />
                       {user?.role?.replace("_", " ") || "Employee"}
                     </span>
                     {user?.divisi && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-medium">
                         <Building2 size={12} />
                         {user.divisi}
                       </span>
@@ -507,17 +507,17 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                   {!isEditing ? (
                     <button
                       onClick={handleEdit}
-                      className="w-full md:w-auto px-5 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition flex items-center justify-center gap-2 shadow-md text-sm font-medium"
+                      className="w-full md:w-auto px-5 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition flex items-center justify-center gap-2 shadow-sm text-sm font-medium"
                     >
                       <Edit2 size={16} />
                       {tr("Edit Profile", "Edit Profile")}
                     </button>
                   ) : (
                     <div className="grid grid-cols-2 md:flex gap-2">
-                      <button onClick={handleCancel} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2">
+                      <button onClick={handleCancel} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition text-sm font-medium flex items-center justify-center gap-2">
                         <X size={16} /> {tr("Batal", "Cancel")}
                       </button>
-                      <button onClick={handleSave} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                      <button onClick={handleSave} disabled={loading} className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition text-sm font-medium flex items-center justify-center gap-2 shadow-sm">
                         <Save size={16} /> {loading ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
                       </button>
                     </div>
@@ -528,7 +528,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
           </div>
 
           {/* Tab Navigation */}
-          <div className="mt-24 md:mt-20 px-4 md:px-8 border-b border-gray-200">
+          <div className="mt-24 md:mt-20 px-4 md:px-8 border-b border-slate-200">
             <div className="flex gap-6 overflow-x-auto">
               {tabs.map(tab => (
                 <button
@@ -536,14 +536,14 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 py-3 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${
                     activeTab === tab.id
-                      ? "border-purple-600 text-purple-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                      ? "border-indigo-600 text-indigo-600"
+                      : "border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300"
                   }`}
                 >
                   {tab.icon}
                   {tab.label}
                   {tab.badge > 0 && (
-                    <span className="ml-1 px-1.5 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs">
+                    <span className="ml-1 px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs">
                       {tab.badge}
                     </span>
                   )}
@@ -599,7 +599,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                 {isEditing ? (
                   <>
                     {/* Dokumen Identitas - KTP, KK, Akte Kelahiran */}
-                    <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
+                    <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-indigo-600" />}>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         <UploadCard 
                           label="KTP" 
@@ -624,7 +624,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     </DocumentSection>
 
                     {/* Ijazah */}
-                    <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-purple-600" />}>
+                    <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-indigo-600" />}>
                       <MultiUploadCard
                         type="ijazah"
                         files={ijazahFiles}
@@ -638,7 +638,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     </DocumentSection>
 
                     {/* Sertifikat */}
-                    <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
+                    <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-indigo-600" />}>
                       <MultiUploadCard
                         type="sertifikat"
                         files={sertifikatFiles}
@@ -651,7 +651,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                       />
                     </DocumentSection>
 
-                    <p className="text-xs text-gray-400 text-center flex items-center justify-center gap-1 pt-2 border-t border-gray-100">
+                    <p className="text-xs text-slate-400 text-center flex items-center justify-center gap-1 pt-2 border-t border-slate-100">
                       <Shield size={10} /> {tr("File akan dienkripsi untuk keamanan data", "Files will be encrypted for data security")}
                     </p>
                   </>
@@ -659,7 +659,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                   <>
                     {/* View Mode - Dokumen Identitas */}
                     {(profileData.ktp || profileData.kk || profileData.akte) && (
-                      <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
+                      <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-indigo-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {profileData.ktp && <DocCard label="KTP" filename={getFileName(profileData.ktp)} onPreview={() => previewFile('ktp')} />}
                           {profileData.kk && <DocCard label={tr("Kartu Keluarga (KK)", "Family Card (KK)")} filename={getFileName(profileData.kk)} onPreview={() => previewFile('kk')} />}
@@ -670,7 +670,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
 
                     {/* View Mode - Ijazah */}
                     {profileData.ijazah?.length > 0 && (
-                      <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-purple-600" />}>
+                      <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-indigo-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {profileData.ijazah.map((f, i) => (
                             <DocCard 
@@ -686,7 +686,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
 
                     {/* View Mode - Sertifikat */}
                     {profileData.sertifikat?.length > 0 && (
-                      <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
+                      <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-indigo-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {profileData.sertifikat.map((f, i) => (
                             <DocCard 
@@ -754,8 +754,8 @@ const InfoField = ({ icon, label, value, display, editing, onChange, type = "tex
 
 // New Component for Document Sections
 const DocumentSection = ({ title, icon, children }) => (
-  <div className="bg-gray-50/50 rounded-xl p-5 border border-gray-100">
-    <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <h3 className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
       {icon}
       {title}
     </h3>
@@ -783,9 +783,9 @@ const UploadCard = ({ label, file, onFileChange, existingFile, required = false 
           const dropped = e.dataTransfer.files[0];
           if (dropped) onFileChange(dropped);
         }}
-        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${
-          isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
-        } ${file ? 'bg-purple-50 border-purple-500' : 'bg-gray-50'}`}
+        className={`cursor-pointer rounded-xl border-2 border-dashed p-4 text-center transition ${
+          isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-indigo-400'
+        } ${file ? 'border-indigo-400 bg-indigo-50/60' : 'bg-slate-50/80'}`}
       >
         <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileChange(e.target.files[0])} className="hidden" id={inputId} />
         <label htmlFor={inputId} className="cursor-pointer block">
@@ -799,7 +799,7 @@ const UploadCard = ({ label, file, onFileChange, existingFile, required = false 
         </label>
       </div>
       {existingFile && !file && (
-        <div className="mt-2 flex items-center gap-1 text-xs text-green-600 bg-green-50 p-1.5 rounded-lg">
+      <div className="mt-2 flex items-center gap-1 rounded-lg bg-emerald-50 p-1.5 text-xs text-emerald-700">
           <CheckCircle size={12} />
           <span className="truncate flex-1">{tr("File tersimpan", "Saved file")}: {existingFile.split('/').pop()}</span>
         </div>
@@ -830,8 +830,8 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
           const dropped = Array.from(e.dataTransfer.files);
           if (dropped.length) onFileSelect(dropped);
         }}
-        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${
-          isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
+        className={`cursor-pointer rounded-xl border-2 border-dashed p-4 text-center transition ${
+          isDragging ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-indigo-400'
         }`}
       >
         <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileSelect(Array.from(e.target.files))} className="hidden" id={inputId} multiple />
@@ -846,13 +846,13 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
       <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
         {/* Existing Files */}
         {existingFiles?.map((file, idx) => (
-          <div key={`existing-${idx}`} className="flex items-center justify-between p-2 bg-gray-100 rounded-lg text-xs">
+          <div key={`existing-${idx}`} className="flex items-center justify-between rounded-lg bg-slate-100 p-2 text-xs">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <FileText size={12} className="text-purple-500 flex-shrink-0" />
+              <FileText size={12} className="text-indigo-500 flex-shrink-0" />
               <span className="truncate flex-1">{file.split('/').pop()}</span>
             </div>
             <div className="flex gap-1">
-              <button onClick={() => window.open(buildPreviewUrl(type, idx), "_blank")} className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition" title={tr("Lihat", "View")}>
+              <button onClick={() => window.open(buildPreviewUrl(type, idx), "_blank")} className="rounded p-1 text-emerald-600 transition hover:bg-emerald-50 hover:text-emerald-700" title={tr("Lihat", "View")}>
                 <Eye size={12} />
               </button>
               <button onClick={() => onDeleteFile(type, idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Hapus", "Delete")}>
@@ -863,9 +863,9 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
         ))}
         {/* New Files to Upload */}
         {files.map((file, idx) => (
-          <div key={`new-${idx}`} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg text-xs">
+          <div key={`new-${idx}`} className="flex items-center justify-between rounded-lg bg-indigo-50 p-2 text-xs">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <FileText size={12} className="text-purple-500 flex-shrink-0" />
+              <FileText size={12} className="text-indigo-500 flex-shrink-0" />
               <span className="truncate flex-1">{file.name}</span>
             </div>
             <button onClick={() => onRemoveFile(idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Batal", "Cancel")}>
@@ -879,10 +879,10 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
 };
 
 const DocCard = ({ label, filename, onPreview }) => (
-  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-sm transition group">
+  <div className="group flex items-center justify-between rounded-xl border border-slate-200 bg-white p-3 transition hover:border-indigo-200 hover:shadow-sm">
     <div className="flex items-center gap-3 flex-1 min-w-0">
-      <div className="p-2 bg-purple-50 rounded-lg">
-        <FileText size={16} className="text-purple-500" />
+      <div className="rounded-lg bg-indigo-50 p-2">
+        <FileText size={16} className="text-indigo-500" />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-xs text-gray-400">{label}</p>

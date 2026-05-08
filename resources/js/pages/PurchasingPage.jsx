@@ -32,14 +32,14 @@ const PurchasingPage = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card
-          icon={<ListTodo size={30} className="text-green-600" />}
+          icon={<ListTodo size={24} className="text-indigo-600" />}
           title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
           desc={language === "en" ? "Track purchasing status and progress" : "Pantau status dan perkembangan purchasing"}
           onClick={() => navigate(`${basePath}/purchasing/projek`)}
         />
         {!isUserRole && (
           <Card
-            icon={<Archive size={30} className="text-amber-600" />}
+            icon={<Archive size={24} className="text-indigo-600" />}
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/purchasing/projek/archive`)}
@@ -47,7 +47,7 @@ const PurchasingPage = () => {
         )}
         {!isUserRole && (
           <Card
-            icon={<ShoppingCart size={30} className="text-blue-600" />}
+            icon={<ShoppingCart size={24} className="text-indigo-600" />}
             title={language === "en" ? "Purchases" : "Pembelian"}
             desc={language === "en" ? "Manage item purchases" : "Kelola pembelian barang"}
             onClick={() => navigate(`${basePath}/purchasing/pembelian`)}
@@ -59,10 +59,10 @@ const PurchasingPage = () => {
 };
 
 const Card = ({ icon, title, desc, onClick }) => (
-  <div onClick={onClick} className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition cursor-pointer">
-    <div className="mb-4">{icon}</div>
-    <h3 className="text-xl font-semibold mb-2">{title}</h3>
-    <p className="text-gray-500 text-sm">{desc}</p>
+  <div onClick={onClick} className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">{icon}</div>
+    <h3 className="mb-2 text-xl font-semibold text-slate-800">{title}</h3>
+    <p className="text-sm text-slate-500">{desc}</p>
   </div>
 );
 

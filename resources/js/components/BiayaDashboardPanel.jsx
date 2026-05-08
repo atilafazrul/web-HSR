@@ -524,18 +524,18 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-        <div className="rounded-2xl border border-amber-200/70 bg-gradient-to-b from-amber-50/60 to-white p-4 shadow-sm ring-1 ring-amber-900/[0.04] sm:p-5">
-          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-900">
-            <span className="h-2 w-2 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50" />
+        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50/70 to-white p-4 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-5">
+          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+            <span className="h-2 w-2 rounded-full bg-slate-400 shadow-sm shadow-slate-400/40" />
             {tr("Belum Lunas", "Unpaid")}
           </h4>
           <div className="grid grid-cols-1 gap-3">
             {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.belum[k.key]))}
           </div>
         </div>
-        <div className="rounded-2xl border border-emerald-200/70 bg-gradient-to-b from-emerald-50/50 to-white p-4 shadow-sm ring-1 ring-emerald-900/[0.04] sm:p-5">
-          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-900">
-            <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/40" />
+        <div className="rounded-2xl border border-indigo-200/70 bg-gradient-to-b from-indigo-50/40 to-white p-4 shadow-sm ring-1 ring-indigo-900/[0.03] sm:p-5">
+          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700">
+            <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/35" />
             {tr("Sudah Lunas", "Paid")}
           </h4>
           <div className="grid grid-cols-1 gap-3">
@@ -634,17 +634,17 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
 function Summary({ title, value, highlight = false, tone = "slate" }) {
   const tones = {
     slate: "from-slate-50 to-white border-slate-200/90",
-    sky: "from-sky-50/80 to-white border-sky-200/70",
-    violet: "from-violet-50/70 to-white border-violet-200/70",
-    teal: "from-teal-50/70 to-white border-teal-200/70",
-    amber: "from-amber-50 to-amber-100/30 border-amber-200/80",
+    sky: "from-indigo-50/70 to-white border-indigo-200/60",
+    violet: "from-slate-50/90 to-white border-slate-200/90",
+    teal: "from-slate-50/90 to-white border-slate-200/90",
+    amber: "from-indigo-50/50 to-white border-indigo-200/60",
   };
   const bar = {
     slate: "from-slate-400 to-slate-600",
-    sky: "from-sky-500 to-indigo-500",
-    violet: "from-violet-500 to-purple-600",
-    teal: "from-teal-500 to-emerald-600",
-    amber: "from-amber-500 to-orange-500",
+    sky: "from-indigo-500 to-indigo-600",
+    violet: "from-slate-400 to-slate-500",
+    teal: "from-slate-400 to-slate-500",
+    amber: "from-indigo-500 to-indigo-600",
   };
   const t = highlight ? "amber" : tone;
   return (

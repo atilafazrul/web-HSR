@@ -412,7 +412,7 @@ export default function FotoProjekPage() {
               <button
                 type="button"
                 onClick={() => handleCreateFolder("photo")}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
               >
                 {tr("Buat Folder Foto", "Create Photo Folder")}
               </button>

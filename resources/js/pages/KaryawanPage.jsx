@@ -254,9 +254,9 @@ export default function KaryawanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/20">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
           <p className="text-gray-500">{trText("Memuat data karyawan...", "Loading employee data...")}</p>
         </div>
       </div>
@@ -264,7 +264,7 @@ export default function KaryawanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/20">
       <div className="p-4 sm:p-6 lg:p-8">
         {/* Error Alert */}
         {error && (
@@ -280,7 +280,7 @@ export default function KaryawanPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+            <h1 className="text-3xl font-bold text-slate-900">
               {trText("Kelola Karyawan", "Manage Employees")}
             </h1>
             <p className="text-gray-500 text-sm mt-1">
@@ -292,7 +292,7 @@ export default function KaryawanPage() {
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2.5 border border-gray-200 rounded-xl text-sm bg-white shadow-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition"
+              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white shadow-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
             >
               <option value="all">{trText("Semua Role", "All Roles")}</option>
               <option value="admin">Admin</option>
@@ -306,13 +306,13 @@ export default function KaryawanPage() {
                 placeholder={trText("Cari karyawan...", "Search employees...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm w-full sm:w-[280px] bg-white shadow-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition"
+                className="pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm w-full sm:w-[280px] bg-white shadow-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
               />
             </div>
 
             <button
               onClick={() => setCreateData({ name: "", email: "", password: "", divisi: "", role: "user" })}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-purple-700 text-white rounded-xl shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium"
+              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all duration-200 font-medium"
             >
               <UserPlus size={18} />
               <span>{trText("Tambah Karyawan", "Add Employee")}</span>
@@ -429,17 +429,17 @@ export default function KaryawanPage() {
 // ================= STAT CARD COMPONENT =================
 const StatCard = ({ title, value, icon, color }) => {
   const colors = {
-    purple: "bg-purple-50 text-purple-600",
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600"
+    purple: "bg-indigo-50 text-indigo-600",
+    blue: "bg-slate-100 text-slate-600",
+    green: "bg-emerald-50 text-emerald-600"
   };
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition">
+    <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 hover:shadow-md transition">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-500 text-sm">{title}</p>
-          <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
+          <p className="text-slate-500 text-sm">{title}</p>
+          <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
         </div>
         <div className={`p-3 rounded-full ${colors[color]}`}>
           {icon}
@@ -456,8 +456,8 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group">
-      <div className="relative h-24 bg-gradient-to-r from-purple-500 to-purple-700">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden group">
+      <div className="relative h-24 bg-gradient-to-r from-indigo-500 to-indigo-700">
         <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
           {employee.profile_photo ? (
             <img
@@ -466,7 +466,7 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
               alt={employee.name}
             />
           ) : (
-            <div className="w-24 h-24 rounded-full border-4 border-white bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
+            <div className="w-24 h-24 rounded-full border-4 border-white bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
               {getInitials(employee.name)}
             </div>
           )}
@@ -475,7 +475,7 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
 
       <div className="pt-14 pb-5 px-4 text-center">
         <h4 className="font-bold text-gray-800 text-lg truncate">{employee.name}</h4>
-        <p className="text-purple-600 text-sm font-medium mt-1">{employee.divisi || "-"}</p>
+        <p className="text-indigo-600 text-sm font-medium mt-1">{employee.divisi || "-"}</p>
         <p className="text-xs text-gray-500 uppercase mt-0.5">{employee.role || "-"}</p>
         <p className="text-gray-400 text-xs mt-1 truncate">{employee.email}</p>
 
@@ -491,9 +491,9 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
 
 const ActionButton = ({ icon, onClick, color, tooltip }) => {
   const colors = {
-    blue: "bg-blue-50 hover:bg-blue-100 text-blue-600",
+    blue: "bg-slate-100 hover:bg-slate-200 text-slate-600",
     emerald: "bg-emerald-50 hover:bg-emerald-100 text-emerald-600",
-    purple: "bg-purple-50 hover:bg-purple-100 text-purple-600",
+    purple: "bg-indigo-50 hover:bg-indigo-100 text-indigo-600",
     red: "bg-red-50 hover:bg-red-100 text-red-600"
   };
 
@@ -725,7 +725,7 @@ const EditEmployeeForm = ({
   return (
     <div className="space-y-4">
       {/* Photo Upload */}
-      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-xl">
+      <div className="bg-gradient-to-r from-slate-50 to-indigo-50/50 p-4 rounded-xl border border-slate-200/70">
         <div className="flex items-center gap-4">
           <img
             src={
@@ -733,9 +733,9 @@ const EditEmployeeForm = ({
                 ? URL.createObjectURL(filePhoto)
                 : editData.profile_photo
                   ? `/storage/${editData.profile_photo}`
-                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(editData.name || "User")}&background=8B5CF6&color=fff&size=128`
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(editData.name || "User")}&background=4F46E5&color=fff&size=128`
             }
-            className="w-16 h-16 rounded-full border-2 border-purple-300 object-cover shadow-md"
+            className="w-16 h-16 rounded-full border-2 border-indigo-300 object-cover shadow-md"
             alt="Profile"
           />
           <div>
@@ -780,7 +780,7 @@ const EditEmployeeForm = ({
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder={trText("Masukkan password baru", "Enter new password")}
-              className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 outline-none"
+              className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/30 outline-none focus:border-indigo-300"
             />
           </div>
         </div>
@@ -807,9 +807,9 @@ const EditEmployeeForm = ({
       </AccordionSection>
 
       {/* Note about documents */}
-      <div className="bg-blue-50 rounded-xl p-3 flex items-center gap-2">
-        <FileText size={14} className="text-blue-500" />
-        <p className="text-xs text-blue-700">
+      <div className="bg-slate-50 rounded-xl p-3 flex items-center gap-2 border border-slate-200/80">
+        <FileText size={14} className="text-slate-500" />
+        <p className="text-xs text-slate-700">
           {trText("Untuk melihat dokumen (KTP, KK, Ijazah, dll), silakan buka halaman Detail Karyawan.", "To view documents (ID card, family card, diploma, etc.), please open the Employee Detail page.")}
         </p>
       </div>
@@ -819,7 +819,7 @@ const EditEmployeeForm = ({
         <button
           onClick={() => handleUpdate(newPassword)}
           disabled={saving}
-          className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-purple-600 hover:to-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+          className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
         >
           <Save size={18} />
           {saving ? trText("Menyimpan...", "Saving...") : trText("Simpan Perubahan", "Save Changes")}
@@ -838,16 +838,16 @@ const EditEmployeeForm = ({
 // ================= ACCORDION SECTION COMPONENT =================
 const AccordionSection = ({ title, icon, children, expanded, onToggle, badge }) => {
   return (
-    <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
+    <div className="border border-slate-200 rounded-xl overflow-hidden bg-white">
       <button
         onClick={onToggle}
         className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
       >
         <div className="flex items-center gap-3">
-          <span className="text-purple-600">{icon}</span>
+          <span className="text-indigo-600">{icon}</span>
           <h4 className="font-semibold text-gray-800">{title}</h4>
           {badge !== undefined && badge > 0 && (
-            <span className="px-2 py-0.5 bg-purple-100 text-purple-600 text-xs rounded-full">
+            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-600 text-xs rounded-full">
               {badge}
             </span>
           )}
@@ -855,7 +855,7 @@ const AccordionSection = ({ title, icon, children, expanded, onToggle, badge }) 
         {expanded ? <ChevronUp size={18} className="text-gray-400" /> : <ChevronDown size={18} className="text-gray-400" />}
       </button>
       {expanded && (
-        <div className="p-4 border-t border-gray-100 bg-gray-50/50">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
           {children}
         </div>
       )}
@@ -911,7 +911,7 @@ const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, o
         <button
           onClick={handleCreate}
           disabled={saving}
-          className="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 text-white px-4 py-3 rounded-xl hover:from-purple-600 hover:to-purple-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
+          className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50 flex items-center justify-center gap-2 font-medium"
         >
           <UserPlus size={18} />
           {saving ? trText("Menyimpan...", "Saving...") : trText("Tambah Karyawan", "Add Employee")}
@@ -946,7 +946,7 @@ const FormField = ({ label, value, onChange, type = "text", options, required, p
         <select
           value={value || ""}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition bg-white"
+          className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition bg-white"
         >
           <option value="">{trText("Pilih", "Select")} {label}</option>
           {options.map((opt, idx) => (
@@ -970,7 +970,7 @@ const FormField = ({ label, value, onChange, type = "text", options, required, p
           onChange={(e) => onChange(e.target.value)}
           rows={2}
           placeholder={placeholder}
-          className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition"
+          className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
         />
       </div>
     );
@@ -986,7 +986,7 @@ const FormField = ({ label, value, onChange, type = "text", options, required, p
         value={value || ""}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full p-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-purple-400 focus:border-purple-400 outline-none transition"
+        className="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
       />
     </div>
   );
@@ -996,7 +996,7 @@ const FileUploadSimple = ({ label, file, onFileChange, icon }) => {
   return (
     <div>
       <label className="cursor-pointer">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition text-sm">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-lg border border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/60 transition text-sm">
           {icon}
           <span className="text-gray-600 truncate max-w-[120px]">{file ? file.name : label}</span>
         </div>
@@ -1013,9 +1013,9 @@ const FileUploadSimple = ({ label, file, onFileChange, icon }) => {
 
 // ================= DOCUMENT CARD - TOMBOL VIEW HANYA MUNCUL SAAT HOVER =================
 const DocumentCard = ({ label, filename, icon, onPreview }) => (
-  <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-between group hover:bg-gray-100 transition-all duration-200 border border-gray-100 hover:border-gray-200 relative">
+  <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-between group hover:bg-slate-100 transition-all duration-200 border border-slate-100 hover:border-slate-200 relative">
     <div className="flex items-center gap-3 flex-1 min-w-0">
-      <div className="p-2 bg-purple-100 rounded-lg text-purple-600 group-hover:bg-purple-200 transition-colors">
+      <div className="p-2 bg-indigo-100 rounded-lg text-indigo-600 group-hover:bg-indigo-200 transition-colors">
         {icon}
       </div>
       <div className="flex-1 min-w-0">
@@ -1027,7 +1027,7 @@ const DocumentCard = ({ label, filename, icon, onPreview }) => (
     {/* Tombol View - Hanya muncul saat hover */}
     <button
       onClick={onPreview}
-      className="p-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-all duration-200 transform hover:scale-105 opacity-0 group-hover:opacity-100"
+      className="p-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 opacity-0 group-hover:opacity-100"
       title={trText("Lihat Dokumen", "View Document")}
     >
       <EyeIcon size={12} />
@@ -1046,7 +1046,7 @@ const Modal = ({ children, onClose, title, size = "default" }) => {
       <div className={`bg-white rounded-2xl w-full ${sizeClasses[size]} relative shadow-2xl max-h-[90vh] flex flex-col`}>
         <div className="p-4 border-b sticky top-0 bg-white rounded-t-2xl z-10">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-purple-800 bg-clip-text text-transparent">
+            <h3 className="text-lg font-bold text-slate-800">
               {title}
             </h3>
             <button

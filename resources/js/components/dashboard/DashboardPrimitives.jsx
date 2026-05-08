@@ -2,7 +2,7 @@ import React from "react";
 
 /** Latar belakang halaman dashboard (seragam di admin / super admin / user) */
 export const dashboardShellBgClass =
-  "flex min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-100 via-[#f0f4fc] to-indigo-50/40";
+  "flex min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/20";
 
 /** Kartu konten utama: putih, border halus, bayangan ringan */
 export function DashboardSurface({ children, className = "" }) {
@@ -27,9 +27,9 @@ export function DashboardWelcome({ greeting, name, tag }) {
       ) : null}
       <h1 className={`text-xl font-bold tracking-tight text-slate-900 sm:text-2xl md:text-3xl ${showTag ? "mt-1" : "mt-0"}`}>
         {greeting}
-        {name ? <span className="text-indigo-700">, {name}</span> : null}
+        {name ? <span className="text-indigo-600">, {name}</span> : null}
       </h1>
-      <div className="mt-3 h-1 w-16 rounded-full bg-gradient-to-r from-indigo-500 to-emerald-500" />
+      <div className="mt-3 h-1 w-16 rounded-full bg-indigo-500" />
     </header>
   );
 }
@@ -46,23 +46,23 @@ export function DashboardSectionHeading({ title, subtitle, className = "" }) {
 
 const COLOR_MAP = {
   blue: {
-    badge: "bg-sky-50 text-sky-700 ring-sky-200/80",
-    dot: "from-sky-500 to-indigo-500",
-    glow: "bg-sky-400/10",
+    badge: "bg-indigo-50 text-indigo-700 ring-indigo-200/80",
+    dot: "from-indigo-500 to-indigo-600",
+    glow: "bg-indigo-400/10",
   },
   green: {
-    badge: "bg-emerald-50 text-emerald-800 ring-emerald-200/80",
-    dot: "from-emerald-500 to-teal-500",
+    badge: "bg-emerald-50 text-emerald-700 ring-emerald-200/80",
+    dot: "from-emerald-500 to-emerald-600",
     glow: "bg-emerald-400/10",
   },
   yellow: {
-    badge: "bg-amber-50 text-amber-900 ring-amber-200/80",
-    dot: "from-amber-400 to-orange-500",
+    badge: "bg-amber-50 text-amber-800 ring-amber-200/80",
+    dot: "from-amber-500 to-amber-600",
     glow: "bg-amber-400/10",
   },
   red: {
-    badge: "bg-rose-50 text-rose-800 ring-rose-200/80",
-    dot: "from-rose-500 to-red-600",
+    badge: "bg-rose-50 text-rose-700 ring-rose-200/80",
+    dot: "from-rose-500 to-rose-600",
     glow: "bg-rose-400/10",
   },
 };
@@ -108,17 +108,17 @@ export function projekActivityStatusPillClass(status) {
       return `${base} bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200/70`;
     case "Proses":
     case "Proses Pekerjaan":
-      return `${base} bg-amber-100 text-amber-900 ring-1 ring-amber-200/70`;
+      return `${base} bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200/70`;
     case "Terlambat":
       return `${base} bg-rose-100 text-rose-800 ring-1 ring-rose-200/70`;
     case "Persiapan":
-      return `${base} bg-sky-100 text-sky-900 ring-1 ring-sky-200/70`;
+      return `${base} bg-slate-100 text-slate-700 ring-1 ring-slate-200/70`;
     case "Dibuat":
       return `${base} bg-slate-100 text-slate-800 ring-1 ring-slate-200/60`;
     case "Editing":
-      return `${base} bg-violet-100 text-violet-900 ring-1 ring-violet-200/70`;
+      return `${base} bg-slate-100 text-slate-700 ring-1 ring-slate-200/70`;
     case "Invoicing":
-      return `${base} bg-indigo-100 text-indigo-900 ring-1 ring-indigo-200/70`;
+      return `${base} bg-indigo-100 text-indigo-800 ring-1 ring-indigo-200/70`;
     case "Barang sudah siap":
       return `${base} bg-teal-100 text-teal-900 ring-1 ring-teal-200/80`;
     default:

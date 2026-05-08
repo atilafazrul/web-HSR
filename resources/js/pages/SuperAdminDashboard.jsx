@@ -656,7 +656,7 @@ const Dashboard = ({ user, windowWidth }) => {
                             href={item.file_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="bg-blue-600 hover:bg-blue-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm transition"
+                            className="bg-sky-600 hover:bg-sky-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px]"
                             title="Download"
                           >
                             <Download size={16} />
@@ -665,7 +665,7 @@ const Dashboard = ({ user, windowWidth }) => {
                         {/* FOTO PROJEK - HANYA ICON, TANPA TEKS */}
                         <button
                           onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)}
-                          className="bg-green-600 hover:bg-green-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm transition"
+                          className="bg-slate-500 hover:bg-slate-600 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px]"
                           title="Foto Projek"
                         >
                           <FileText size={16} />
@@ -673,7 +673,7 @@ const Dashboard = ({ user, windowWidth }) => {
                         {/* DELETE - HANYA ICON, TANPA TEKS */}
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="bg-red-600 hover:bg-red-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm transition"
+                          className="bg-rose-600 hover:bg-rose-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px]"
                           title="Hapus"
                         >
                           <Trash2 size={16} />
@@ -727,7 +727,7 @@ const Dashboard = ({ user, windowWidth }) => {
                       setEditDesc(false);
                       setShowDesc(true);
                     }}
-                    className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 p-2 rounded-lg transition flex items-center justify-center"
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-lg transition flex items-center justify-center"
                     title="Lihat Deskripsi"
                   >
                     <Eye size={18} />
@@ -739,7 +739,7 @@ const Dashboard = ({ user, windowWidth }) => {
                       href={item.file_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition flex items-center justify-center"
+                      className="flex-1 bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg transition flex items-center justify-center"
                       title="Download"
                     >
                       <Download size={18} />
@@ -749,7 +749,7 @@ const Dashboard = ({ user, windowWidth }) => {
                   {/* FOTO PROJEK - SELALU ADA */}
                   <button
                     onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white p-2 rounded-lg transition flex items-center justify-center"
+                    className="flex-1 bg-slate-500 hover:bg-slate-600 text-white p-2 rounded-lg transition flex items-center justify-center"
                     title="Foto Projek"
                   >
                     <FileText size={18} />
@@ -758,7 +758,7 @@ const Dashboard = ({ user, windowWidth }) => {
                   {/* HAPUS - SELALU ADA */}
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition flex items-center justify-center"
+                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white p-2 rounded-lg transition flex items-center justify-center"
                     title="Hapus"
                   >
                     <Trash2 size={18} />

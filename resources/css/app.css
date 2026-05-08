@@ -1,5 +1,15 @@
 @import "tailwindcss";
 
+:root {
+    --bg-app: #f8fafc;
+    --bg-surface: #ffffff;
+    --border-soft: #e2e8f0;
+    --text-main: #0f172a;
+    --text-muted: #475569;
+    --brand-primary: #4f46e5;
+    --brand-primary-hover: #4338ca;
+}
+
 /* ================= RESET ================= */
 
 html,
@@ -13,7 +23,8 @@ body,
 
 body {
     overflow-x: hidden;
-    background-color: #f8fafc; /* soft background */
+    background-color: var(--bg-app);
+    color: var(--text-main);
 }
 
 /* ================= HIDE SIDEBAR SCROLLBAR ================= */
@@ -40,12 +51,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #c4b5fd;
+    background: #94a3b8;
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #a78bfa;
+    background: #64748b;
 }
 
 /* ================= ANIMATIONS ================= */
@@ -99,6 +110,106 @@ body {
 
 .btn-smooth:hover {
     transform: scale(1.03);
+}
+
+/* ================= GLOBAL UI TONE ================= */
+
+button {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+input,
+textarea,
+select {
+    border-color: var(--border-soft);
+}
+
+input::placeholder,
+textarea::placeholder {
+    color: #94a3b8;
+}
+
+/* ================= ELEGANT GLOBAL COLOR OVERRIDES =================
+   Menyatukan tone warna agar tidak terlalu ramai.
+*/
+
+@layer utilities {
+    /* PRIMARY ACTIONS: biru/ungu -> indigo */
+    .bg-blue-500,
+    .bg-blue-600,
+    .bg-purple-600,
+    .bg-violet-600,
+    .bg-indigo-600 {
+        background-color: var(--brand-primary) !important;
+    }
+
+    .bg-blue-700,
+    .bg-purple-700,
+    .bg-violet-700,
+    .bg-indigo-700 {
+        background-color: var(--brand-primary-hover) !important;
+    }
+
+    .hover\:bg-blue-600:hover,
+    .hover\:bg-blue-700:hover,
+    .hover\:bg-purple-700:hover,
+    .hover\:bg-violet-700:hover,
+    .hover\:bg-indigo-700:hover {
+        background-color: var(--brand-primary-hover) !important;
+    }
+
+    /* SOFT BACKGROUNDS */
+    .bg-blue-50,
+    .bg-purple-50,
+    .bg-violet-50 {
+        background-color: #eef2ff !important;
+    }
+
+    .bg-sky-50 {
+        background-color: #f1f5f9 !important;
+    }
+
+    /* TEXT ACCENTS */
+    .text-blue-600,
+    .text-blue-700,
+    .text-indigo-600,
+    .text-indigo-700,
+    .text-purple-600,
+    .text-purple-700,
+    .text-violet-600,
+    .text-violet-700 {
+        color: var(--brand-primary) !important;
+    }
+
+    /* BORDER ACCENTS */
+    .border-blue-200,
+    .border-blue-300,
+    .border-indigo-200,
+    .border-indigo-300,
+    .border-purple-200,
+    .border-purple-300,
+    .border-violet-200,
+    .border-violet-300 {
+        border-color: #c7d2fe !important;
+    }
+
+    /* WARNING / DANGER lebih kalem */
+    .bg-yellow-500,
+    .bg-amber-500 {
+        background-color: #d97706 !important;
+    }
+    .hover\:bg-yellow-600:hover,
+    .hover\:bg-amber-600:hover {
+        background-color: #b45309 !important;
+    }
+    .bg-red-500,
+    .bg-red-600 {
+        background-color: #dc2626 !important;
+    }
+    .hover\:bg-red-600:hover,
+    .hover\:bg-red-700:hover {
+        background-color: #b91c1c !important;
+    }
 }
 
 /* ================= MODAL BACKDROP ================= */

@@ -48,7 +48,7 @@ const SalesPage = () => {
         {/* TARGET */}
         {!isUserRole && (
           <Card
-            icon={<BarChart3 size={30} className="text-blue-600" />}
+            icon={<BarChart3 size={24} className="text-indigo-600" />}
             title={language === "en" ? "Target" : "Target"}
             desc={language === "en" ? "Manage sales targets and performance" : "Kelola target dan performa penjualan"}
             onClick={() => navigate(`${basePath}/sales/target`)}
@@ -57,7 +57,7 @@ const SalesPage = () => {
 
         {/* PROGRES */}
         <Card
-          icon={<ListTodo size={30} className="text-green-600" />}
+          icon={<ListTodo size={24} className="text-indigo-600" />}
           title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
           desc={language === "en" ? "Track sales status and progress" : "Pantau status dan perkembangan penjualan"}
           onClick={() => navigate(`${basePath}/sales/projek`)}
@@ -65,7 +65,7 @@ const SalesPage = () => {
 
         {!isUserRole && (
           <Card
-            icon={<Archive size={30} className="text-amber-600" />}
+            icon={<Archive size={24} className="text-indigo-600" />}
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/sales/projek/archive`)}
@@ -75,7 +75,7 @@ const SalesPage = () => {
         {/* BUAT PDF */}
         {!isUserRole && (
           <Card
-            icon={<FileText size={30} className="text-purple-600" />}
+            icon={<FileText size={24} className="text-indigo-600" />}
             title={language === "en" ? "Create PDF" : "Buat PDF"}
             desc={language === "en" ? "Generate sales work PDF" : "Buat PDF pekerjaan sales"}
             onClick={() => navigate(`${basePath}/sales/buat-pdf`)}
@@ -93,16 +93,16 @@ const SalesPage = () => {
 const Card = ({ icon, title, desc, onClick }) => (
   <div
     onClick={onClick}
-    className="bg-white p-6 rounded-2xl shadow hover:shadow-lg transition cursor-pointer"
+    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
   >
 
-    <div className="mb-4">{icon}</div>
+    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">{icon}</div>
 
-    <h3 className="text-xl font-semibold mb-2">
+    <h3 className="mb-2 text-xl font-semibold text-slate-800">
       {title}
     </h3>
 
-    <p className="text-gray-500 text-sm">
+    <p className="text-sm text-slate-500">
       {desc}
     </p>
 
