@@ -1283,7 +1283,6 @@ export default function ProjekKerjaPage() {
                 name="jenis_pekerjaan"
                 value={form.jenis_pekerjaan}
                 onChange={handleChange}
-                placeholder="Jenis Pekerjaan"
                 placeholder={tr("Jenis Pekerjaan", "Work Type")}
                 className={`${projekField} pl-10`}
                 required
@@ -1402,7 +1401,6 @@ export default function ProjekKerjaPage() {
                 name="alamat"
                 value={form.alamat}
                 onChange={handleChange}
-                placeholder="Lokasi"
                 placeholder={tr("Lokasi", "Location")}
                 className={`${projekField} pl-10`}
               />
