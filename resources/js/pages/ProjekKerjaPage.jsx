@@ -1,4 +1,22 @@
 import React, { useState, useEffect, useRef } from "react";
+
+/** Simpan / pulihkan nomor halaman daftar setelah kembali dari halaman edit (route berbeda → unmount). */
+function projekKerjaPaginationStorageKey(pathname) {
+  return `projekKerja_returnPage:${pathname}`;
+}
+
+function readRestoredProjekKerjaPage(pathname) {
+  if (typeof window === "undefined") return 1;
+  try {
+    const raw = sessionStorage.getItem(projekKerjaPaginationStorageKey(pathname));
+    if (raw == null) return 1;
+    sessionStorage.removeItem(projekKerjaPaginationStorageKey(pathname));
+    const p = parseInt(raw, 10);
+    return !Number.isNaN(p) && p >= 1 ? p : 1;
+  } catch {
+    return 1;
+  }
+}
 import api from "../api/axiosConfig";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
@@ -97,12 +115,18 @@ export default function ProjekKerjaPage() {
     return active !== current && projectRelatedToDivisi(item, currentDivisi);
   };
   const canOpenBiayaAction = (item) => {
+    // Akun monitoring (role user): tidak akses biaya — hanya dokumen/foto.
     if (isUserRole) return false;
     if (role === "super_admin") return true;
     const sameAdminDivisi =
       role === "admin" &&
       divisiKey(item?.divisi) === divisiKey(divisiUser);
-    return sameAdminDivisi || isTransferredProjectInCurrentDivisiContext(item);
+    return (
+      sameAdminDivisi ||
+      isTransferredProjectInCurrentDivisiContext(item) ||
+      isInviteeOnProject(item) ||
+      isStaffTerlibatOnProject(item)
+    );
   };
   const canEditProjectAction = (item) => {
     if (isUserRole) return false;
@@ -118,11 +142,18 @@ export default function ProjekKerjaPage() {
     return false;
   };
   const canEditBiayaAction = (item) => {
-    if (isUserRole) return false;
+    const inProgress =
+      !Boolean(item?.is_archived) && String(item?.status || "").toLowerCase().trim() !== "selesai";
+
     if (role === "super_admin") return true;
+    if (isUserRole) return false;
+
+    // Admin yang di-invite (lintas divisi): boleh isi biaya jika project masih berjalan.
+    if (isInviteeOnProject(item) && inProgress) return true;
+
     if (role === "admin") {
+      if (isStaffTerlibatOnProject(item) && inProgress) return true;
       const sameOrInvolvedDivisi = projectRelatedToDivisi(item, divisiUser);
-      const inProgress = !Boolean(item?.is_archived) && String(item?.status || "").toLowerCase().trim() !== "selesai";
       return sameOrInvolvedDivisi && inProgress;
     }
     return false;
@@ -168,6 +199,47 @@ export default function ProjekKerjaPage() {
         .map((v) => String(v || "").trim())
         .filter(Boolean)
     );
+
+  /** invited_user_ids: nama, email, atau id numerik (string/int) */
+  const isInviteeOnProject = (item) => {
+    if (!item || !user) return false;
+    const raw = Array.isArray(item.invited_user_ids) ? item.invited_user_ids : [];
+    const nameLc = String(user.name || "").trim().toLowerCase();
+    const emailLc = String(user.email || "").trim().toLowerCase();
+    const uid = user.id != null ? Number(user.id) : NaN;
+    return raw.some((v) => {
+      const s = String(v ?? "").trim();
+      if (!s) return false;
+      const sl = s.toLowerCase();
+      if (nameLc && sl === nameLc) return true;
+      if (emailLc && sl === emailLc) return true;
+      if (Number.isFinite(uid) && /^\d+$/.test(s) && Number(s) === uid) return true;
+      return false;
+    });
+  };
+
+  /** Karyawan terdaftar di project (terlibat / PIC / kolom karyawan) — selaras API index */
+  const isStaffTerlibatOnProject = (item) => {
+    if (!item || !user || isUserRole) return false;
+    const nameLc = String(user.name || "").trim().toLowerCase();
+    const uidStr = user.id != null ? String(user.id) : "";
+    if (!nameLc && !uidStr) return false;
+    const terlibat = Array.isArray(item.karyawan_terlibat) ? item.karyawan_terlibat : [];
+    for (const x of terlibat) {
+      const s = String(x ?? "").trim();
+      if (!s) continue;
+      if (nameLc && s.toLowerCase() === nameLc) return true;
+      if (uidStr && s === uidStr) return true;
+    }
+    const pic = String(item.pic_karyawan || "").trim().toLowerCase();
+    if (nameLc && pic === nameLc) return true;
+    const parts = String(item.karyawan || "")
+      .split(",")
+      .map((p) => p.trim().toLowerCase())
+      .filter(Boolean);
+    if (nameLc && parts.includes(nameLc)) return true;
+    return false;
+  };
 
   const getCurrentDivisi = () => {
     const pathSegments = location.pathname.split('/');
@@ -220,6 +292,8 @@ export default function ProjekKerjaPage() {
   const [loading, setLoading] = useState(false);
   const [salesUsers, setSalesUsers] = useState([]);
   const [inviteUsers, setInviteUsers] = useState([]);
+  /** Lookup id → user untuk resolve token numerik di invited_user_ids (hindari "9 (Invite)" duplikat) */
+  const [userByIdMap, setUserByIdMap] = useState(() => new Map());
   const [salesUsersLoading, setSalesUsersLoading] = useState(false);
   const [selectedSalesUsers, setSelectedSalesUsers] = useState([]);
   const [selectedInviteUsers, setSelectedInviteUsers] = useState([]);
@@ -229,9 +303,12 @@ export default function ProjekKerjaPage() {
   const [inviteUserInput, setInviteUserInput] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // State untuk pagination
-  const [currentPage, setCurrentPage] = useState(1);
+  // State untuk pagination (pulihkan halaman setelah simpan/batal edit)
+  const [currentPage, setCurrentPage] = useState(() =>
+    readRestoredProjekKerjaPage(typeof window !== "undefined" ? window.location.pathname : "")
+  );
   const itemsPerPage = 5; // jumlah item per halaman
+  const projekListDepsKeyRef = useRef(null);
 
   // Modal deskripsi
   const [showDesc, setShowDesc] = useState(false);
@@ -283,7 +360,12 @@ export default function ProjekKerjaPage() {
 
   useEffect(() => {
     fetchData();
-    setCurrentPage(1);
+    const key = `${currentDivisi}|${divisiUser}|${isArchiveContext}`;
+    // Jangan reset ke halaman 1 pada mount pertama / kembali dari edit; hanya saat konteks daftar berubah.
+    if (projekListDepsKeyRef.current !== null && projekListDepsKeyRef.current !== key) {
+      setCurrentPage(1);
+    }
+    projekListDepsKeyRef.current = key;
   }, [currentDivisi, divisiUser, isArchiveContext]);
 
   useEffect(() => {
@@ -303,9 +385,15 @@ export default function ProjekKerjaPage() {
           if (normalizeRoleName(u?.role) === "user") return false;
           return true;
         });
-        const userAccounts = users.filter((u) => normalizeRoleName(u?.role) === "user");
+        const inviteable = users.filter((u) => normalizeRoleName(u?.role) === "user");
+        const byId = new Map();
+        (users || []).forEach((u) => {
+          const id = Number(u?.id);
+          if (!Number.isNaN(id)) byId.set(id, u);
+        });
+        setUserByIdMap(byId);
         setSalesUsers(sales);
-        setInviteUsers(userAccounts);
+        setInviteUsers(inviteable);
       } catch (err) {
         console.error("Fetch sales users error:", err);
       } finally {
@@ -320,6 +408,33 @@ export default function ProjekKerjaPage() {
     (u?.name || u?.email || `#${u?.id || ""}`).trim();
   const inviteDisplayName = (u) =>
     (u?.name || u?.email || `#${u?.id || ""}`).trim();
+
+  /** Satu baris per orang: gabung token ID + nama yang sama; tandai Invite jika salah satu token invite */
+  const buildKaryawanDropdownRows = (item) => {
+    const inv = invitedUserSet(item);
+    const tokens = karyawanProjectList(item);
+    const resolvePersonLabel = (token) => {
+      const s = String(token ?? "").trim();
+      if (!s) return "";
+      if (/^\d+$/.test(s)) {
+        const u = userByIdMap.get(Number(s));
+        if (u) return String(u.name || u.email || "").trim() || s;
+      }
+      return s;
+    };
+    const groups = new Map();
+    for (const t of tokens) {
+      const display = resolvePersonLabel(t);
+      if (!display) continue;
+      const k = display.toLowerCase();
+      if (!groups.has(k)) groups.set(k, { display, tokens: [] });
+      groups.get(k).tokens.push(t);
+    }
+    return Array.from(groups.values()).map((g) => ({
+      display: g.display,
+      isInvite: g.tokens.some((t) => inv.has(String(t).trim())),
+    }));
+  };
 
   const fetchData = async () => {
     try {
@@ -647,6 +762,14 @@ export default function ProjekKerjaPage() {
   };
 
   const goToEditProjectPage = (item) => {
+    try {
+      sessionStorage.setItem(
+        projekKerjaPaginationStorageKey(location.pathname),
+        String(currentPage)
+      );
+    } catch (_) {
+      /* ignore */
+    }
     navigate(`${basePath}/projek-kerja/edit/${item.id}`);
   };
 
@@ -715,6 +838,7 @@ export default function ProjekKerjaPage() {
   };
 
   useEffect(() => {
+    if (isUserRole) return;
     const params = new URLSearchParams(location.search);
     const openBiayaId = Number(params.get("open_biaya") || 0);
     if (!openBiayaId || hasHandledOpenBiayaFromQueryRef.current) return;
@@ -727,7 +851,7 @@ export default function ProjekKerjaPage() {
     params.delete("open_biaya");
     const nextQuery = params.toString();
     navigate(`${location.pathname}${nextQuery ? `?${nextQuery}` : ""}`, { replace: true });
-  }, [location.search, location.pathname, dataList, navigate]);
+  }, [location.search, location.pathname, dataList, navigate, isUserRole]);
 
   const addBiayaRow = (key) => {
     setBiayaEdit((prev) => ({
@@ -1195,6 +1319,13 @@ export default function ProjekKerjaPage() {
   // Pagination logic
   const totalItems = filteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
+
+  useEffect(() => {
+    if (totalItems === 0) return;
+    const tp = Math.max(1, Math.ceil(totalItems / itemsPerPage) || 1);
+    setCurrentPage((cp) => (cp > tp ? tp : cp));
+  }, [totalItems, itemsPerPage]);
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
@@ -1203,6 +1334,20 @@ export default function ProjekKerjaPage() {
   const canEditCurrentProject = canEditProjectByDivisi(currentProject?.divisi);
   const canEditCurrentBiayaProject = canEditBiayaAction(currentProject);
   const canEditTimelineProject = canEditProjectByDivisi(selectedItem?.divisi);
+
+  const restrictedInvitedBiayaView =
+    showUangModal &&
+    Boolean(
+      currentProject && isInviteeOnProject(currentProject) && !canEditCurrentBiayaProject
+    );
+
+  const rowsForProjekBiayaModal = (rows) => {
+    if (!restrictedInvitedBiayaView) return rows;
+    const me = String(user?.name || "").trim().toLowerCase();
+    return (Array.isArray(rows) ? rows : []).filter(
+      (r) => String(r?.oleh || "").trim().toLowerCase() === me,
+    );
+  };
 
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -1344,7 +1489,7 @@ export default function ProjekKerjaPage() {
 
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1">
-                {tr("Invite User (Monitoring)", "Invite User (Monitoring)")}
+                {tr("Invite User (akun monitoring saja)", "Invite user (monitoring accounts only)")}
               </label>
               <div className="flex gap-2">
                 <select
@@ -1613,10 +1758,16 @@ export default function ProjekKerjaPage() {
                   </td>
                   <td className="p-2.5">
                     {(() => {
-                      const karyawanList = karyawanProjectList(item);
+                      const rows = buildKaryawanDropdownRows(item);
                       const currentName = getCurrentKaryawanName(item);
-                      if (karyawanList.length <= 1) {
-                        return <span className="truncate block">{currentName || "-"}</span>;
+                      if (rows.length <= 1) {
+                        const row = rows[0];
+                        const label = row
+                          ? row.isInvite
+                            ? `${row.display} (Invite)`
+                            : row.display
+                          : currentName || "-";
+                        return <span className="truncate block">{label}</span>;
                       }
                       return (
                         <select
@@ -1627,9 +1778,9 @@ export default function ProjekKerjaPage() {
                           }}
                           title="Karyawan yang terlibat di project"
                         >
-                          {karyawanList.map((nama, idx) => (
-                            <option key={`${nama}-${idx}`} value={nama}>
-                              {invitedUserSet(item).has(String(nama || "").trim()) ? `${nama} (Tamu)` : nama}
+                          {rows.map((row, idx) => (
+                            <option key={`${row.display}-${idx}`} value={row.display}>
+                              {row.isInvite ? `${row.display} (Invite)` : row.display}
                             </option>
                           ))}
                         </select>
@@ -1693,9 +1844,9 @@ export default function ProjekKerjaPage() {
                           <Download size={14} />
                         </a>
                       )}
-                      {!isUserRole && canOpenBiayaAction(item) && (
+                      {canOpenBiayaAction(item) && (
                         <>
-                          {!isArchiveContext && canEditProjectAction(item) ? (
+                          {!isUserRole && !isArchiveContext && canEditProjectAction(item) ? (
                             <button
                               onClick={() => goToEditProjectPage(item)}
                               className={`${actionBtnBase} bg-violet-600 hover:bg-violet-700`}
@@ -1910,7 +2061,15 @@ export default function ProjekKerjaPage() {
                 })()}
               </h3>
               <p className="mt-2 max-w-3xl text-sm text-slate-500">
-                {tr("Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.", "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.")}
+                {restrictedInvitedBiayaView
+                  ? tr(
+                      "Menampilkan biaya atas nama Anda (Biaya Jalan, Pengeluaran, dan Reimbursment) pada project ini.",
+                      "Showing costs under your name (travel, expense, and reimbursement) for this project.",
+                    )
+                  : tr(
+                      "Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.",
+                      "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.",
+                    )}
               </p>
             </div>
             {(() => {
@@ -1918,7 +2077,12 @@ export default function ProjekKerjaPage() {
               if (!item?.is_lunas) return null;
               return (
                 <div className="mb-4 text-xs text-amber-800 bg-amber-100 border border-amber-300 px-3 py-2 rounded-lg">
-                  {tr("Status pembayaran", "Payment status")}: <span className="font-semibold">{tr("Lunas", "Paid")}</span>. {role === "super_admin" ? tr("Superadmin tetap bisa edit.", "Super admin can still edit.") : tr("Admin tidak bisa edit.", "Admin cannot edit.")}
+                  {tr("Status pembayaran", "Payment status")}: <span className="font-semibold">{tr("Lunas", "Paid")}</span>.{" "}
+                  {restrictedInvitedBiayaView
+                    ? tr("Tampilan pembacaan untuk akun Anda.", "Read-only view for your account.")
+                    : role === "super_admin"
+                      ? tr("Superadmin tetap bisa edit.", "Super admin can still edit.")
+                      : tr("Admin tidak bisa edit.", "Admin cannot edit.")}
                 </div>
               );
             })()}
@@ -1927,10 +2091,21 @@ export default function ProjekKerjaPage() {
               <>
                 {(() => {
                   const rowItem = dataList.find((i) => i.id === currentId);
+                  const jalanRows = rowsForProjekBiayaModal(biayaEdit.jalan);
+                  const pengeluaranRows = rowsForProjekBiayaModal(biayaEdit.pengeluaran);
+                  const reimbRows = rowsForProjekBiayaModal(biayaEdit.reimbursment);
                   const kategoriCols = [
-                    { key: "jalan", label: tr("Biaya Jalan", "Travel Cost"), rows: biayaEdit.jalan },
-                    { key: "pengeluaran", label: tr("Biaya Pengeluaran", "Expense Cost"), rows: biayaEdit.pengeluaran },
-                    { key: "reimbursment", label: tr("Biaya Reimbursment", "Reimbursement Cost"), rows: biayaEdit.reimbursment },
+                    { key: "jalan", label: tr("Biaya Jalan", "Travel Cost"), rows: jalanRows },
+                    {
+                      key: "pengeluaran",
+                      label: tr("Biaya Pengeluaran", "Expense Cost"),
+                      rows: pengeluaranRows,
+                    },
+                    {
+                      key: "reimbursment",
+                      label: tr("Biaya Reimbursment", "Reimbursement Cost"),
+                      rows: reimbRows,
+                    },
                   ];
                   const renderEntryCard = (colKey, r) => (
                     <div
@@ -2022,13 +2197,13 @@ export default function ProjekKerjaPage() {
                     </div>
                   );
                   const totalBelum =
-                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.jalan, false)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.pengeluaran, false)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.reimbursment, false));
+                    sumNominalRows(filterDisplayedBiayaByLunas(jalanRows, false)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(pengeluaranRows, false)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(reimbRows, false));
                   const totalLunas =
-                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.jalan, true)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.pengeluaran, true)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(biayaEdit.reimbursment, true));
+                    sumNominalRows(filterDisplayedBiayaByLunas(jalanRows, true)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(pengeluaranRows, true)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(reimbRows, true));
                   const grandTotal = totalBelum + totalLunas;
                   return (
                     <>
@@ -2078,14 +2253,16 @@ export default function ProjekKerjaPage() {
                       </button>
                     );
                   })()}
-                  <button
-                    type="button"
-                    onClick={handleExportBiaya}
-                    className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                  >
-                    <Download size={18} />
-                    {tr("Unduh Excel (CSV)", "Download Excel (CSV)")}
-                  </button>
+                  {!restrictedInvitedBiayaView ? (
+                    <button
+                      type="button"
+                      onClick={handleExportBiaya}
+                      className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                    >
+                      <Download size={18} />
+                      {tr("Unduh Excel (CSV)", "Download Excel (CSV)")}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setEditUang(true)}

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class ProjekKerjaController extends Controller
 {
@@ -60,12 +61,109 @@ class ProjekKerjaController extends Controller
             $raw = [];
         }
 
-        return collect($raw)
+        $tokens = collect($raw)
             ->map(fn ($name) => trim((string) $name))
+            ->filter(fn ($name) => $name !== '')
+            ->unique()
+            ->values();
+
+        return $tokens
+            ->flatMap(function (string $entry) {
+                // Token numerik: tambahkan nama kanonik akun monitoring agar JSON tetap cocok dengan query & unduhan.
+                if (ctype_digit($entry)) {
+                    $uid = (int) $entry;
+                    $u = User::query()->find($uid);
+                    if ($u && $this->normalizedRole($u) === 'user') {
+                        $parts = collect();
+                        $nm = trim((string) ($u->name ?? ''));
+                        if ($nm !== '') {
+                            $parts->push($nm);
+                        }
+                        $parts->push((string) $uid);
+
+                        return $parts->filter(fn ($v) => trim((string) $v) !== '')->unique()->values()->all();
+                    }
+
+                    return [(string) $entry];
+                }
+
+                $needle = Str::lower($entry);
+
+                // Hanya akun monitoring (role user) untuk kolom invite — bukan karyawan/admin lain.
+                $inviteAccount = User::query()
+                    ->where(function ($q) use ($needle) {
+                        $q->whereRaw('LOWER(TRIM(COALESCE(name, \'\'))) = ?', [$needle])
+                            ->orWhereRaw('LOWER(TRIM(COALESCE(email, \'\'))) = ?', [$needle]);
+                    })
+                    ->whereRaw(
+                        "REPLACE(REPLACE(LOWER(COALESCE(TRIM(role), '')), ' ', '_'), '-', '_') = ?",
+                        ['user']
+                    )
+                    ->orderByDesc('id')
+                    ->first(['id', 'name']);
+
+                if ($inviteAccount) {
+                    $parts = collect();
+                    $nm = trim((string) ($inviteAccount->name ?? ''));
+                    if ($nm !== '') {
+                        $parts->push($nm);
+                    }
+                    $parts->push((string) $inviteAccount->id);
+
+                    return $parts->filter(fn ($v) => trim((string) $v) !== '')->unique()->values()->all();
+                }
+
+                return [$entry];
+            })
+            ->map(fn ($v) => trim((string) $v))
             ->filter(fn ($name) => $name !== '')
             ->unique()
             ->values()
             ->all();
+    }
+
+    /** Normalisasi nama/token ke `users.name` resmi agar filter JSON & login konsisten (huruf besar/kecil). */
+    protected function resolveCanonicalWorkerDisplayName(string $token): string
+    {
+        $t = trim($token);
+        if ($t === '') {
+            return '';
+        }
+        if (ctype_digit($t)) {
+            $u = User::query()->find((int) $t);
+
+            return $u ? trim((string) ($u->name ?? '')) : $t;
+        }
+        $lower = Str::lower($t);
+        $u = User::query()
+            ->whereRaw('LOWER(TRIM(COALESCE(name, \'\'))) = ?', [$lower])
+            ->orWhereRaw('LOWER(TRIM(COALESCE(email, \'\'))) = ?', [$lower])
+            ->orderByDesc('id')
+            ->first();
+
+        return $u ? trim((string) ($u->name ?? '')) : $t;
+    }
+
+    /**
+     * @param  array<int, mixed>  $names
+     * @return array<int, string>
+     */
+    protected function canonicalizeKaryawanTerlibatList(array $names): array
+    {
+        $out = [];
+        foreach ($names as $n) {
+            $c = $this->resolveCanonicalWorkerDisplayName((string) $n);
+            if ($c !== '') {
+                $out[] = $c;
+            }
+        }
+
+        return $this->dedupeKaryawanTerlibatNames($out);
+    }
+
+    protected function isMysqlDriver(): bool
+    {
+        return DB::connection()->getDriverName() === 'mysql';
     }
 
     protected function sanitizeFolderName(?string $name): ?string
@@ -91,6 +189,168 @@ class ProjekKerjaController extends Controller
         }
 
         return $path;
+    }
+
+    protected function normalizedRole(?User $user): string
+    {
+        if (!$user) {
+            return '';
+        }
+
+        return strtolower(str_replace([' ', '-'], '_', trim((string) ($user->role ?? ''))));
+    }
+
+    /** Akun monitoring (role user): hanya dokumen/foto, tanpa data biaya. */
+    protected function isMonitoringOnlyUser(?User $user): bool
+    {
+        return $this->normalizedRole($user) === 'user';
+    }
+
+    /**
+     * Sembunyikan field biaya dari serialisasi JSON untuk akun monitoring.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection<int, ProjekKerja>|ProjekKerja  $projekOrCollection
+     */
+    protected function hideProjekBiayaForMonitoringUser(?User $authUser, $projekOrCollection): void
+    {
+        if (!$authUser || !$this->isMonitoringOnlyUser($authUser)) {
+            return;
+        }
+
+        $hidden = [
+            'biaya_jalan_items',
+            'biaya_pengeluaran_items',
+            'biaya_reimbursment_items',
+            'biaya_edit_meta',
+            'is_lunas',
+            'lunas_at',
+        ];
+
+        if ($projekOrCollection instanceof ProjekKerja) {
+            $projekOrCollection->makeHidden($hidden);
+
+            return;
+        }
+
+        foreach ($projekOrCollection as $p) {
+            if ($p instanceof ProjekKerja) {
+                $p->makeHidden($hidden);
+            }
+        }
+    }
+
+    /**
+     * Proyek di mana invited_user_ids memuat id / nama / email akun.
+     */
+    protected function applyInviteeJsonConstraint(\Illuminate\Contracts\Database\Query\Builder $query, User $authUser): void
+    {
+        $userId = (int) $authUser->id;
+        $userName = trim((string) ($authUser->name ?? ''));
+        $userEmail = trim((string) ($authUser->email ?? ''));
+
+        $query->where(function ($q) use ($userId, $userName, $userEmail) {
+            $q->whereJsonContains('invited_user_ids', $userId)
+                ->orWhereJsonContains('invited_user_ids', (string) $userId);
+
+            if ($userName !== '') {
+                $q->orWhereJsonContains('invited_user_ids', $userName);
+            }
+            if ($userEmail !== '') {
+                $q->orWhereJsonContains('invited_user_ids', $userEmail);
+            }
+
+            // Data lama / variasi kapital: cocokkan token JSON dengan nama/email (MySQL 8+).
+            if ($this->isMysqlDriver()) {
+                if ($userName !== '') {
+                    $q->orWhereRaw(
+                        'EXISTS (
+                            SELECT 1 FROM JSON_TABLE(
+                                COALESCE(invited_user_ids, JSON_ARRAY()),
+                                "$[*]" COLUMNS (tok VARCHAR(512) PATH "$")
+                            ) jt
+                            WHERE LOWER(TRIM(jt.tok)) = ?
+                        )',
+                        [Str::lower($userName)]
+                    );
+                }
+                if ($userEmail !== '') {
+                    $q->orWhereRaw(
+                        'EXISTS (
+                            SELECT 1 FROM JSON_TABLE(
+                                COALESCE(invited_user_ids, JSON_ARRAY()),
+                                "$[*]" COLUMNS (tok VARCHAR(512) PATH "$")
+                            ) jt
+                            WHERE LOWER(TRIM(jt.tok)) = ?
+                        )',
+                        [Str::lower($userEmail)]
+                    );
+                }
+            }
+        });
+    }
+
+    /**
+     * Proyek di mana nama akun login termasuk di karyawan_terlibat / pic_karyawan / daftar karyawan (string).
+     */
+    protected function applyKaryawanTerlibatConstraint(\Illuminate\Contracts\Database\Query\Builder $query, User $authUser): void
+    {
+        $name = trim((string) ($authUser->name ?? ''));
+        if ($name === '') {
+            return;
+        }
+
+        $lower = Str::lower($name);
+        $userId = (int) $authUser->id;
+
+        $query->where(function ($q) use ($name, $lower, $userId) {
+            $q->whereJsonContains('karyawan_terlibat', $name)
+                ->orWhereJsonContains('karyawan_terlibat', (string) $userId);
+
+            $q->orWhereRaw('LOWER(TRIM(COALESCE(pic_karyawan, ""))) = ?', [$lower]);
+
+            // Daftar nama di kolom karyawan dipisah koma (format dari implode backend).
+            $q->orWhereRaw(
+                'LOWER(CONCAT(",", REPLACE(IFNULL(karyawan, ""), ", ", ","), ",")) LIKE ?',
+                ['%,' . $lower . ',%']
+            );
+
+            if ($this->isMysqlDriver()) {
+                $q->orWhereRaw(
+                    'EXISTS (
+                        SELECT 1 FROM JSON_TABLE(
+                            COALESCE(karyawan_terlibat, JSON_ARRAY()),
+                            "$[*]" COLUMNS (jt_member VARCHAR(512) PATH "$")
+                        ) jt
+                        WHERE LOWER(TRIM(jt.jt_member)) = ?
+                    )',
+                    [$lower]
+                );
+            }
+        });
+    }
+
+    /**
+     * @param  array<int, string>  $names
+     * @return array<int, string>
+     */
+    protected function dedupeKaryawanTerlibatNames(array $names): array
+    {
+        $seen = [];
+        $out = [];
+        foreach ($names as $n) {
+            $t = trim((string) $n);
+            if ($t === '') {
+                continue;
+            }
+            $key = Str::lower($t);
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+            $out[] = $t;
+        }
+
+        return $out;
     }
 
     protected function resolveDefaultPicFromDivisi(?string $targetDivisi): ?string
@@ -181,39 +441,36 @@ class ProjekKerjaController extends Controller
         $archiveFlag = filter_var($request->query('archive', false), FILTER_VALIDATE_BOOLEAN);
         $query->where('is_archived', $archiveFlag);
 
-        // User biasa hanya boleh monitor proyek yang benar-benar di-invite.
-        // invited_user_ids disimpan sebagai nama user (string).
-        // Tetap dukung data lama berbasis ID untuk kompatibilitas.
+        // Tamu (role user): hanya proyek yang di-invite.
+        // Karyawan lain (admin/divisi): proyek sesuai divisi ATAU yang di-invite (lintas divisi).
+        // Super admin: tanpa filter tambahan (hanya arsip).
         if ($authUser && $normalizedRole === 'user') {
-            $userId = (int) $authUser->id;
-            $userName = trim((string) ($authUser->name ?? ''));
-            $query->where(function ($q) use ($userId, $userName) {
-                $q->whereJsonContains('invited_user_ids', $userId);
-                if ($userName !== '') {
-                    $q->orWhereJsonContains('invited_user_ids', $userName);
-                }
+            $this->applyInviteeJsonConstraint($query, $authUser);
+        } elseif ($authUser && $normalizedRole !== 'super_admin') {
+            $query->where(function ($mix) use ($request, $authUser) {
+                $mix->where(function ($divQ) use ($request) {
+                    if (! $request->filled('divisi')) {
+                        $divQ->whereRaw('0 = 1');
+
+                        return;
+                    }
+                    $divisiFilter = strtolower($request->divisi);
+                    $divQ->whereRaw('LOWER(divisi) = ?', [$divisiFilter])
+                        ->orWhere('divisi_flow', 'like', '%' . $divisiFilter . '%');
+                });
+
+                $mix->orWhere(function ($invQ) use ($authUser) {
+                    $this->applyInviteeJsonConstraint($invQ, $authUser);
+                });
+
+                $mix->orWhere(function ($terQ) use ($authUser) {
+                    $this->applyKaryawanTerlibatConstraint($terQ, $authUser);
+                });
             });
         }
 
-        // Filter by divisi if provided
-        // Untuk data aktif: hanya divisi saat ini.
-        // Untuk archive: boleh tampil juga yang pernah lewat divisi ini (divisi_flow).
-        if ($normalizedRole !== 'user' && $request->has('divisi') && $request->divisi) {
-            $divisiFilter = strtolower($request->divisi);
-            if ($archiveFlag) {
-                $query->where(function($q) use ($divisiFilter) {
-                    $q->whereRaw('LOWER(divisi) = ?', [$divisiFilter])
-                      ->orWhere('divisi_flow', 'like', '%' . $divisiFilter . '%');
-                });
-            } else {
-                $query->where(function($q) use ($divisiFilter) {
-                    $q->whereRaw('LOWER(divisi) = ?', [$divisiFilter])
-                      ->orWhere('divisi_flow', 'like', '%' . $divisiFilter . '%');
-                });
-            }
-        }
-
         $projek = $query->orderBy('id', 'desc')->get();
+        $this->hideProjekBiayaForMonitoringUser($authUser, $projek);
 
         return response()->json([
             'success' => true,
@@ -345,25 +602,20 @@ class ProjekKerjaController extends Controller
                 $karyawanArray = array_values($karyawanArray);
             }
 
-            // pic_karyawan dipilih berdasar divisi aktif (fallback: kandidat terakhir)
-            $picKaryawan = $this->resolvePicByDivisi(
-                $validated['divisi'] ?? null,
-                $karyawanArray
-            );
+            // karyawan_terlibat: dari array eksplisit atau parse nama dari string koma
+            $karyawanTerlibat = $validated['karyawan_terlibat'] ?? $karyawanArray;
+            $karyawanTerlibat = $this->canonicalizeKaryawanTerlibatList($karyawanTerlibat);
 
-            // karyawan_terlibat berisi semua karyawan yang dipilih
-            $karyawanTerlibat = $karyawanArray;
-
-            // Jika karyawan_terlibat dikirim, pakai sebagai sumber kandidat.
-            $karyawanTerlibat = $validated['karyawan_terlibat'] ?? $karyawanTerlibat;
             $picKaryawan = $this->resolvePicByDivisi(
                 $validated['divisi'] ?? null,
                 $karyawanTerlibat,
-                $validated['pic_karyawan'] ?? $picKaryawan
+                $validated['pic_karyawan'] ?? null
             );
             if ($picKaryawan && !in_array($picKaryawan, $karyawanTerlibat, true)) {
                 $karyawanTerlibat[] = $picKaryawan;
             }
+            $karyawanTerlibat = $this->canonicalizeKaryawanTerlibatList($karyawanTerlibat);
+
             $invitedUserIds = $this->normalizeInvitedUsers($request, $validated);
 
             $data = [
@@ -371,7 +623,7 @@ class ProjekKerjaController extends Controller
                 'divisi' => $validated['divisi'],
                 'created_by_divisi' => $createdByDivisi,
                 'jenis_pekerjaan' => $validated['jenis_pekerjaan'],
-                'karyawan' => $karyawanString,
+                'karyawan' => implode(', ', $karyawanTerlibat),
                 'alamat' => $validated['alamat'],
                 'status' => $validated['status'],
                 'start_date' => $validated['start_date'],
@@ -462,6 +714,8 @@ class ProjekKerjaController extends Controller
                 'message' => 'Projek kerja tidak ditemukan'
             ], 404);
         }
+
+        $this->hideProjekBiayaForMonitoringUser(auth()->user(), $projek);
 
         return response()->json([
             'success' => true,
@@ -569,8 +823,13 @@ class ProjekKerjaController extends Controller
             if (isset($validated['barang_dibeli'])) {
                 $data['barang_dibeli'] = $validated['barang_dibeli'];
             }
-            if (array_key_exists('invited_user_ids', $validated)) {
-                $invitedUserIds = $this->normalizeInvitedUsers($request, $validated);
+            // Sinkron invite dari payload: jangan pakai Request::has() (false untuk []) dan gabung dari body + validated.
+            $payload = $request->all();
+            if (array_key_exists('invited_user_ids', $payload)) {
+                $validatedForInvite = array_merge($validated, [
+                    'invited_user_ids' => $payload['invited_user_ids'],
+                ]);
+                $invitedUserIds = $this->normalizeInvitedUsers($request, $validatedForInvite);
                 $data['invited_user_ids'] = !empty($invitedUserIds) ? $invitedUserIds : null;
             }
 
@@ -603,6 +862,8 @@ class ProjekKerjaController extends Controller
                     $karyawanTerlibat[] = $picKaryawan;
                 }
 
+                $karyawanTerlibat = $this->canonicalizeKaryawanTerlibatList($karyawanTerlibat);
+
                 $data['pic_karyawan'] = $picKaryawan;
                 $data['karyawan_terlibat'] = $karyawanTerlibat;
                 $data['karyawan'] = implode(', ', $karyawanTerlibat);
@@ -618,6 +879,8 @@ class ProjekKerjaController extends Controller
                 if ($resolvedPic && !in_array($resolvedPic, $karyawanTerlibat, true)) {
                     $karyawanTerlibat[] = $resolvedPic;
                 }
+                $karyawanTerlibat = $this->canonicalizeKaryawanTerlibatList($karyawanTerlibat);
+
                 $data['pic_karyawan'] = $resolvedPic;
                 $data['karyawan_terlibat'] = $karyawanTerlibat;
                 $data['karyawan'] = implode(', ', $karyawanTerlibat);
@@ -638,10 +901,13 @@ class ProjekKerjaController extends Controller
 
             DB::commit();
 
+            $fresh = $projek->fresh(['photos', 'files']);
+            $this->hideProjekBiayaForMonitoringUser(auth()->user(), $fresh);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Projek kerja berhasil diupdate',
-                'data' => $projek->load(['photos', 'files'])
+                'data' => $fresh,
             ]);
 
         } catch (\Exception $e) {
@@ -789,6 +1055,13 @@ class ProjekKerjaController extends Controller
      */
     public function updateUang(Request $request, $id)
     {
+        if ($this->isMonitoringOnlyUser(auth()->user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun monitoring tidak dapat mengubah data biaya project.',
+            ], 403);
+        }
+
         $projek = ProjekKerja::find($id);
 
         if (!$projek) {
@@ -1212,6 +1485,13 @@ class ProjekKerjaController extends Controller
      */
     public function exportBiayaCsv($id)
     {
+        if ($this->isMonitoringOnlyUser(auth()->user())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun monitoring tidak dapat mengunduh data biaya.',
+            ], 403);
+        }
+
         $projek = ProjekKerja::find($id);
 
         if (!$projek) {

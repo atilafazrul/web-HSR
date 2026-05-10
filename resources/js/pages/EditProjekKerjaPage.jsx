@@ -10,6 +10,20 @@ const projekField =
 const projekFieldReadonly =
   "w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600";
 
+/** Hilangkan duplikat nama (case-insensitive), urutan pertama menang */
+const dedupeNameList = (arr) => {
+  const seen = new Set();
+  const out = [];
+  for (const x of Array.isArray(arr) ? arr : []) {
+    const t = String(x || "").trim();
+    const k = t.toLowerCase();
+    if (!t || seen.has(k)) continue;
+    seen.add(k);
+    out.push(t);
+  }
+  return out;
+};
+
 export default function EditProjekKerjaPage() {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -37,6 +51,7 @@ export default function EditProjekKerjaPage() {
   const [project, setProject] = useState(null);
   const [usersByDivisi, setUsersByDivisi] = useState([]);
   const [userAccountOptions, setUserAccountOptions] = useState([]);
+  const [userByIdMap, setUserByIdMap] = useState(() => new Map());
   const [usersLoading, setUsersLoading] = useState(false);
   const [karyawanInput, setKaryawanInput] = useState("");
   const [inviteUserInput, setInviteUserInput] = useState("");
@@ -67,9 +82,11 @@ export default function EditProjekKerjaPage() {
           jenis_pekerjaan: data?.jenis_pekerjaan || "",
           karyawan: data?.karyawan || "",
           pic_karyawan: data?.pic_karyawan || "",
-          karyawan_terlibat: Array.isArray(data?.karyawan_terlibat) && data.karyawan_terlibat.length > 0
-            ? data.karyawan_terlibat
-            : [data?.karyawan, data?.pic_karyawan].filter(Boolean),
+          karyawan_terlibat: dedupeNameList(
+            Array.isArray(data?.karyawan_terlibat) && data.karyawan_terlibat.length > 0
+              ? data.karyawan_terlibat
+              : [data?.karyawan, data?.pic_karyawan].filter(Boolean)
+          ),
           invited_user_ids: Array.isArray(data?.invited_user_ids)
             ? data.invited_user_ids.map((v) => String(v || "").trim()).filter((v) => v !== "")
             : [],
@@ -105,13 +122,18 @@ export default function EditProjekKerjaPage() {
           return roleName === "admin";
         });
         const allKaryawan = adminOnly.filter((u) => String(u?.name || u?.email || "").trim() !== "");
-        const userOnly = users.filter((u) => {
-          const roleName = String(u?.role || "")
+        const normalizeRole = (r) =>
+          String(r || "")
             .toLowerCase()
             .trim()
             .replace(/[\s-]+/g, "_");
-          return roleName === "user";
+        const userOnly = users.filter((u) => normalizeRole(u?.role) === "user");
+        const byId = new Map();
+        (users || []).forEach((u) => {
+          const id = Number(u?.id);
+          if (!Number.isNaN(id)) byId.set(id, u);
         });
+        setUserByIdMap(byId);
         setUsersByDivisi(allKaryawan);
         setUserAccountOptions(userOnly);
       } catch (err) {
@@ -144,19 +166,20 @@ export default function EditProjekKerjaPage() {
     setSaving(true);
     try {
       const finalInvitedNames = getFinalInvitedNamesForSave();
+      const karyawanTerlibatDeduped = dedupeNameList(form.karyawan_terlibat || []);
       // Buat karyawan string dari karyawan_terlibat array (dipisahkan koma)
-      const karyawanString = Array.isArray(form.karyawan_terlibat) && form.karyawan_terlibat.length > 0
-        ? form.karyawan_terlibat.join(", ")
-        : form.karyawan || "";
+      const karyawanString =
+        karyawanTerlibatDeduped.length > 0 ? karyawanTerlibatDeduped.join(", ") : form.karyawan || "";
 
       await api.put(`/projek-kerja/${id}`, {
         divisi: form.divisi,
         jenis_pekerjaan: form.jenis_pekerjaan,
         karyawan: karyawanString,
-        pic_karyawan: Array.isArray(form.karyawan_terlibat) && form.karyawan_terlibat.length > 0
-          ? form.karyawan_terlibat[form.karyawan_terlibat.length - 1]
-          : form.karyawan || "",
-        karyawan_terlibat: form.karyawan_terlibat || [],
+        pic_karyawan:
+          karyawanTerlibatDeduped.length > 0
+            ? karyawanTerlibatDeduped[karyawanTerlibatDeduped.length - 1]
+            : form.karyawan || "",
+        karyawan_terlibat: karyawanTerlibatDeduped,
         invited_user_ids: finalInvitedNames,
         alamat: form.alamat,
         status: form.status,
@@ -178,6 +201,39 @@ export default function EditProjekKerjaPage() {
       setSaving(false);
     }
   };
+
+  /** Hooks harus dipanggil sebelum early return loading (Rules of Hooks). */
+  const resolveInviteStoredToken = (token) => {
+    const s = String(token ?? "").trim();
+    if (!s) return "";
+    if (/^\d+$/.test(s)) {
+      const u = userByIdMap.get(Number(s));
+      if (u) return String(u.name || u.email || "").trim() || s;
+    }
+    return s;
+  };
+
+  const inviteChipGroups = useMemo(() => {
+    const raw = form.invited_user_ids || [];
+    const resolveTok = (token) => {
+      const s = String(token ?? "").trim();
+      if (!s) return "";
+      if (/^\d+$/.test(s)) {
+        const u = userByIdMap.get(Number(s));
+        if (u) return String(u.name || u.email || "").trim() || s;
+      }
+      return s;
+    };
+    const groups = new Map();
+    for (const tok of raw) {
+      const disp = resolveTok(tok);
+      if (!disp) continue;
+      const k = disp.toLowerCase();
+      if (!groups.has(k)) groups.set(k, { display: disp, rawTokens: [] });
+      groups.get(k).rawTokens.push(tok);
+    }
+    return Array.from(groups.values());
+  }, [form.invited_user_ids, userByIdMap]);
 
   if (loading) {
     return (
@@ -226,7 +282,12 @@ export default function EditProjekKerjaPage() {
     setForm((prev) => {
       const nextNames = Array.isArray(prev.invited_user_ids) ? [...prev.invited_user_ids] : [];
       const selectedName = inviteDisplayName(match);
-      if (nextNames.some((name) => String(name).toLowerCase() === selectedName.toLowerCase())) {
+      const selLc = selectedName.toLowerCase();
+      const already = nextNames.some((name) => {
+        const resolved = resolveInviteStoredToken(name).toLowerCase();
+        return resolved === selLc || String(name).toLowerCase() === selLc;
+      });
+      if (already) {
         setInviteUserError(tr("Akun user ini sudah di-invite", "This user account is already invited"));
         return prev;
       }
@@ -236,12 +297,10 @@ export default function EditProjekKerjaPage() {
     setInviteUserInput("");
   };
 
-  const removeInviteUser = (name) => {
+  const removeInviteGroup = (group) => {
     setForm((prev) => ({
       ...prev,
-      invited_user_ids: (prev.invited_user_ids || []).filter(
-        (item) => String(item).toLowerCase() !== String(name).toLowerCase()
-      ),
+      invited_user_ids: (prev.invited_user_ids || []).filter((x) => !group.rawTokens.includes(x)),
     }));
   };
 
@@ -410,7 +469,7 @@ export default function EditProjekKerjaPage() {
 
           <div>
             <label className="block text-xs font-semibold text-gray-600 mb-1">
-              {tr("Invite User (Monitoring)", "Invite User (Monitoring)")}
+              {tr("Invite User (akun monitoring saja)", "Invite user (monitoring accounts only)")}
             </label>
             <div className="flex gap-2">
               <select
@@ -439,24 +498,22 @@ export default function EditProjekKerjaPage() {
               <p className="text-[11px] text-red-600 mt-1">{inviteUserError}</p>
             ) : null}
             <div className="mt-2 flex flex-wrap gap-2">
-              {(form.invited_user_ids || []).map((name) => {
-                return (
-                  <span
-                    key={name}
-                    className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs border border-indigo-200"
+              {inviteChipGroups.map((group, idx) => (
+                <span
+                  key={`${group.display}-${idx}`}
+                  className="inline-flex items-center gap-2 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-700 text-xs border border-indigo-200"
+                >
+                  {group.display}
+                  <button
+                    type="button"
+                    onClick={() => removeInviteGroup(group)}
+                    className="text-red-600 hover:text-red-700"
+                    disabled={!canEdit || saving}
                   >
-                    {name}
-                    <button
-                      type="button"
-                      onClick={() => removeInviteUser(name)}
-                      className="text-red-600 hover:text-red-700"
-                      disabled={!canEdit || saving}
-                    >
-                      ×
-                    </button>
-                  </span>
-                );
-              })}
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
