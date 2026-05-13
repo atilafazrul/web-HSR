@@ -23,6 +23,7 @@ use App\Http\Controllers\BAUFController;
 use App\Http\Controllers\BAMController;
 use App\Http\Controllers\DashboardBiayaController;
 use App\Http\Controllers\SPPDController;
+use App\Http\Controllers\CutiController;
 
 
 /*
@@ -606,5 +607,29 @@ Route::middleware(['auth:sanctum'])->group(function () {
         SPPDController::class,
         'destroy'
     ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | PENGAJUAN CUTI
+    |--------------------------------------------------------------------------
+    | - GET    /cuti              -> list (super_admin: semua, lainnya: milik sendiri)
+    | - GET    /cuti/summary      -> ringkasan jumlah pending/approved/rejected
+    | - GET    /cuti/{id}         -> detail
+    | - POST   /cuti              -> ajukan cuti baru (multipart utk lampiran)
+    | - POST   /cuti/{id}         -> update (pakai _method=PUT utk multipart)
+    | - PUT    /cuti/{id}         -> update tanpa file
+    | - POST   /cuti/{id}/approve -> super admin approve
+    | - POST   /cuti/{id}/reject  -> super admin reject (alasan_penolakan)
+    | - DELETE /cuti/{id}         -> hapus
+    */
+    Route::get('/cuti',               [CutiController::class, 'index']);
+    Route::get('/cuti/summary',       [CutiController::class, 'summary']);
+    Route::post('/cuti',              [CutiController::class, 'store']);
+    Route::post('/cuti/{id}/approve', [CutiController::class, 'approve']);
+    Route::post('/cuti/{id}/reject',  [CutiController::class, 'reject']);
+    Route::get('/cuti/{id}',          [CutiController::class, 'show']);
+    Route::put('/cuti/{id}',          [CutiController::class, 'update']);
+    Route::post('/cuti/{id}/update',  [CutiController::class, 'update']); // utk multipart (file)
+    Route::delete('/cuti/{id}',       [CutiController::class, 'destroy']);
 
 });

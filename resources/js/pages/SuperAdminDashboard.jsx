@@ -61,6 +61,7 @@ import EditBarangPage from "./EditBarangPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import KaryawanPage from "./KaryawanPage";
 import TargetPage from "./TargetPage";
+import CutiApprovalPage from "./CutiApprovalPage";
 
 /* BERITA ACARA */
 import BeritaAcaraPage from "./BeritaAcaraPage";
@@ -124,6 +125,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     if (path.includes("profile")) return language === "en" ? "Profile" : "Profil";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("karyawan")) return "Profil Karyawan";
+    if (path.includes("cuti-approval")) return language === "en" ? "Leave Approval" : "Approval Cuti";
 
     return language === "en" ? "Super Admin" : "Super Admin";
   };
@@ -164,6 +166,9 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="dashboard" element={<Dashboard user={user} windowWidth={windowWidth} />} />
             <Route path="karyawan" element={<KaryawanPage />} />
             <Route path="rekap-akun" element={<RekapPerAkun user={user} />} />
+
+            {/* APPROVAL CUTI */}
+            <Route path="cuti-approval" element={<CutiApprovalPage />} />
 
             {/* BERITA ACARA */}
             <Route path="berita-acara" element={<BeritaAcaraPage />} />

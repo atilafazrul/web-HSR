@@ -15,6 +15,8 @@ import {
   Truck,
   ShoppingCart,
   FileText,
+  CalendarCheck,
+  ClipboardCheck,
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -218,6 +220,38 @@ export default function Sidebar({
                   icon={<FileText size={18} />}
                   text={t("minutesReport", "Berita Acara")}
                   active={isActive(`${basePath}/berita-acara`)}
+                  expanded={expanded}
+                  isMobile={isMobile}
+                />
+              </div>
+            )}
+
+            {/* ================= APPROVAL CUTI (SUPER ADMIN) ================= */}
+            {isSuperAdmin && (
+              <div onClick={() => {
+                navigate(`${basePath}/cuti-approval`);
+                if (isMobile) setSidebarOpen(false);
+              }}>
+                <SidebarItem
+                  icon={<ClipboardCheck size={18} />}
+                  text={t("leaveApproval", "Approval Cuti")}
+                  active={isActive(`${basePath}/cuti-approval`)}
+                  expanded={expanded}
+                  isMobile={isMobile}
+                />
+              </div>
+            )}
+
+            {/* ================= PENGAJUAN CUTI (ADMIN ONLY) ================= */}
+            {isAdmin && (
+              <div onClick={() => {
+                navigate(`${basePath}/cuti`);
+                if (isMobile) setSidebarOpen(false);
+              }}>
+                <SidebarItem
+                  icon={<CalendarCheck size={18} />}
+                  text={t("leaveRequest", "Pengajuan Cuti")}
+                  active={isActive(`${basePath}/cuti`)}
                   expanded={expanded}
                   isMobile={isMobile}
                 />

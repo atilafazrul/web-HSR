@@ -39,6 +39,7 @@ import Profile from "./Profile";
 import FormPekerjaanPage from "./FormPekerjaanPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import TargetPage from "./TargetPage";
+import CutiPage from "./CutiPage";
 
 /* BERITA ACARA */
 import BeritaAcaraPage from "./BeritaAcaraPage";
@@ -150,6 +151,7 @@ export default function AdminDashboard({ user, logout }) {
     const path = location.pathname;
 
     if (path.includes("inventory")) return "Inventory";
+    if (path.includes("cuti")) return language === "en" ? "Leave Request" : "Pengajuan Cuti";
     if (path.includes("rekap-akun")) return language === "en" ? "Account Cost Recap" : "Rekap Biaya Akun";
     if (path.includes("target")) return language === "en" ? "Sales Target" : "Target Penjualan";
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Project Photos" : "Foto Projek";
@@ -638,6 +640,9 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="logistik/inventory" element={<LogistikInventoryPage />} />
             <Route path="logistik/inventory/tambah" element={<LogistikFormBarangPage />} />
             <Route path="logistik/inventory/edit/:id" element={<LogistikEditBarangPage />} />
+
+            {/* ================= PENGAJUAN CUTI ================= */}
+            <Route path="cuti" element={<CutiPage />} />
 
             {/* ================= BERITA ACARA ================= */}
             <Route path="berita-acara" element={<BeritaAcaraPage />} />
