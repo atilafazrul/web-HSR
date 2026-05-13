@@ -40,6 +40,7 @@ import FormPekerjaanPage from "./FormPekerjaanPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import TargetPage from "./TargetPage";
 import CutiPage from "./CutiPage";
+import RfiFormPage from "./RfiFormPage";
 
 /* BERITA ACARA */
 import BeritaAcaraPage from "./BeritaAcaraPage";
@@ -619,6 +620,7 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="service/form-pekerjaan" element={<FormPekerjaanPage />} />
             <Route path="sales" element={<SalesPage user={user} />} />
             <Route path="kontraktor" element={<KontraktorPage user={user} />} />
+            <Route path="kontraktor/rfi" element={<RfiFormPage />} />
 
             {/* ================= PROJEK ================= */}
             <Route path="it/projek" element={<ProjekKerjaPage />} />

@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ListTodo, FileText, Archive } from "lucide-react";
+import { Package, ListTodo, FileText, Archive, FilePlus2 } from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
 
 const KontraktorPage = () => {
@@ -80,6 +80,16 @@ const KontraktorPage = () => {
             title={language === "en" ? "Create PDF" : "Buat PDF"}
             desc={language === "en" ? "Generate contractor work PDF" : "Buat PDF pekerjaan kontraktor"}
             onClick={() => navigate(`${basePath}/kontraktor/buat-pdf`)}
+          />
+        )}
+
+        {/* FORM RFI */}
+        {!isUserRole && (
+          <Card
+            icon={<FilePlus2 size={24} className="text-indigo-600" />}
+            title={language === "en" ? "Form RFI" : "Form RFI"}
+            desc={language === "en" ? "Fill the RFI template and download" : "Isi template RFI dan unduh Excel"}
+            onClick={() => navigate(`${basePath}/kontraktor/rfi`)}
           />
         )}
 

@@ -62,6 +62,7 @@ import GeneratePDFPage from "./GeneratePDFPage";
 import KaryawanPage from "./KaryawanPage";
 import TargetPage from "./TargetPage";
 import CutiApprovalPage from "./CutiApprovalPage";
+import RfiFormPage from "./RfiFormPage";
 
 /* BERITA ACARA */
 import BeritaAcaraPage from "./BeritaAcaraPage";
@@ -213,6 +214,7 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="rfi" element={<RfiFormPage />} />
             </Route>
 
             <Route path="logistik">

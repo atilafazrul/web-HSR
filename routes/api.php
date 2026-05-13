@@ -24,6 +24,7 @@ use App\Http\Controllers\BAMController;
 use App\Http\Controllers\DashboardBiayaController;
 use App\Http\Controllers\SPPDController;
 use App\Http\Controllers\CutiController;
+use App\Http\Controllers\RfiController;
 
 
 /*
@@ -635,5 +636,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/cuti/{id}',          [CutiController::class, 'update']);
     Route::post('/cuti/{id}/update',  [CutiController::class, 'update']); // utk multipart (file)
     Route::delete('/cuti/{id}',       [CutiController::class, 'destroy']);
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | RFI — Request For Information (Kontraktor)
+    |--------------------------------------------------------------------------
+    | POST /kontraktor/rfi/generate -> isi template & download xlsx
+    */
+    Route::post('/kontraktor/rfi/generate', [RfiController::class, 'generate']);
 
 });
