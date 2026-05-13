@@ -335,6 +335,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ProjekKerjaController::class,
         'setLunas'
     ]);
+    Route::patch('/projek-kerja/{id}/nominal-po', [
+        ProjekKerjaController::class,
+        'updateNominalPo'
+    ]);
     Route::patch('/projek-kerja/{id}/biaya-item-lunas', [
         ProjekKerjaController::class,
         'updateBiayaItemLunas'

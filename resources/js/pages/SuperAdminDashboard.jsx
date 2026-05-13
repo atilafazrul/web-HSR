@@ -377,17 +377,24 @@ const Dashboard = ({ user, windowWidth }) => {
       const label = String(item?.status || "Tanpa Status").trim() || "Tanpa Status";
       counter.set(label, (counter.get(label) || 0) + 1);
     });
-    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Barang sudah siap", "Selesai", "Terlambat"];
-    return Array.from(counter.entries())
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => {
-        const ai = preferredOrder.indexOf(a.label);
-        const bi = preferredOrder.indexOf(b.label);
-        if (ai === -1 && bi === -1) return a.label.localeCompare(b.label);
-        if (ai === -1) return 1;
-        if (bi === -1) return -1;
-        return ai - bi;
-      });
+
+    // Status yang WAJIB selalu tampil di Ringkasan, meskipun count = 0.
+    const alwaysShow = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Selesai"];
+    // Status tambahan yang hanya tampil bila ada datanya.
+    const extraOnIfExist = ["Barang sudah siap", "Terlambat"];
+
+    const result = alwaysShow.map((label) => ({
+      label,
+      count: counter.get(label) || 0,
+    }));
+
+    extraOnIfExist.forEach((label) => {
+      if ((counter.get(label) || 0) > 0) {
+        result.push({ label, count: counter.get(label) });
+      }
+    });
+
+    return result;
   }, [projek]);
 
   const displayStatus = (status) => {

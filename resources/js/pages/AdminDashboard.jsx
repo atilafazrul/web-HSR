@@ -197,17 +197,24 @@ export default function AdminDashboard({ user, logout }) {
       const label = String(item?.status || "Tanpa Status").trim() || "Tanpa Status";
       counter.set(label, (counter.get(label) || 0) + 1);
     });
-    const preferredOrder = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Barang sudah siap", "Selesai", "Terlambat"];
-    return Array.from(counter.entries())
-      .map(([label, count]) => ({ label, count }))
-      .sort((a, b) => {
-        const ai = preferredOrder.indexOf(a.label);
-        const bi = preferredOrder.indexOf(b.label);
-        if (ai === -1 && bi === -1) return a.label.localeCompare(b.label);
-        if (ai === -1) return 1;
-        if (bi === -1) return -1;
-        return ai - bi;
-      });
+
+    // Status yang WAJIB selalu tampil di Ringkasan, meskipun count = 0.
+    const alwaysShow = ["Dibuat", "Persiapan", "Proses Pekerjaan", "Editing", "Invoicing", "Selesai"];
+    // Status tambahan yang hanya tampil bila ada datanya.
+    const extraOnIfExist = ["Barang sudah siap", "Terlambat"];
+
+    const result = alwaysShow.map((label) => ({
+      label,
+      count: counter.get(label) || 0,
+    }));
+
+    extraOnIfExist.forEach((label) => {
+      if ((counter.get(label) || 0) > 0) {
+        result.push({ label, count: counter.get(label) });
+      }
+    });
+
+    return result;
   }, [filteredDashboardData]);
 
   // Filter untuk tabel aktivitas semua divisi
@@ -311,40 +318,40 @@ export default function AdminDashboard({ user, logout }) {
                       title={language === "en" ? "Status summary" : "Ringkasan status"}
                       subtitle={
                         language === "en"
-                          ? "Work progress summary based on latest status."
-                          : "Ringkasan progres pekerjaan berdasarkan status terbaru."
+                          ? "Work summary based on all active statuses."
+                          : "Ringkasan pekerjaan berdasarkan semua status yang aktif."
                       }
                     />
                     <div className="grid [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))] gap-3 sm:gap-4 md:gap-5">
-                    <DashboardSummaryCard
-                      title={language === "en" ? "Total Tasks" : "Total Tugas"}
-                      value={filteredDashboardData.length}
-                      icon={<ListTodo size={isMobile ? 16 : 20} />}
-                      color="blue"
-                      isMobile={isMobile}
-                    />
-                    {statusSummary.map((status) => (
                       <DashboardSummaryCard
-                        key={status.label}
-                        title={displayStatus(status.label)}
-                        value={status.count}
-                        icon={
-                          status.label === "Selesai" ? <CheckCircle size={isMobile ? 16 : 20} />
-                            : status.label === "Barang sudah siap" ? <Package size={isMobile ? 16 : 20} />
-                              : (status.label.includes("Proses") || status.label === "Proses") ? <Clock size={isMobile ? 16 : 20} />
-                                : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
-                                  : <Activity size={isMobile ? 16 : 20} />
-                        }
-                        color={
-                          status.label === "Selesai" ? "green"
-                            : status.label === "Barang sudah siap" ? "blue"
-                              : (status.label.includes("Proses") || status.label === "Proses") ? "yellow"
-                                : status.label === "Terlambat" ? "red"
-                                  : "blue"
-                        }
+                        title={language === "en" ? "Total Tasks" : "Total Tugas"}
+                        value={filteredDashboardData.length}
+                        icon={<ListTodo size={isMobile ? 16 : 20} />}
+                        color="blue"
                         isMobile={isMobile}
                       />
-                    ))}
+                      {statusSummary.map((status) => (
+                        <DashboardSummaryCard
+                          key={status.label}
+                          title={displayStatus(status.label)}
+                          value={status.count}
+                          icon={
+                            status.label === "Selesai" ? <CheckCircle size={isMobile ? 16 : 20} />
+                              : status.label === "Barang sudah siap" ? <Package size={isMobile ? 16 : 20} />
+                                : (status.label.includes("Proses") || status.label === "Proses") ? <Clock size={isMobile ? 16 : 20} />
+                                  : status.label === "Terlambat" ? <AlertTriangle size={isMobile ? 16 : 20} />
+                                    : <Activity size={isMobile ? 16 : 20} />
+                          }
+                          color={
+                            status.label === "Selesai" ? "green"
+                              : status.label === "Barang sudah siap" ? "blue"
+                                : (status.label.includes("Proses") || status.label === "Proses") ? "yellow"
+                                  : status.label === "Terlambat" ? "red"
+                                    : "blue"
+                          }
+                          isMobile={isMobile}
+                        />
+                      ))}
                     </div>
                   </DashboardSurface>
 

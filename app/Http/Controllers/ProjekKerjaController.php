@@ -1423,6 +1423,53 @@ class ProjekKerjaController extends Controller
         }
     }
 
+
+    /* =====================================================================
+     | UPDATE NOMINAL PO PROJEK
+     | -------------------------------------------------------------------
+     | Endpoint khusus utk mengubah nominal PO. Profit dihitung otomatis
+     | di accessor `profit` (nominal_po - total_biaya).
+     | =====================================================================
+     */
+    public function updateNominalPo(Request $request, $id)
+    {
+        $projek = ProjekKerja::find($id);
+
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'nominal_po' => 'required|numeric|min:0',
+        ]);
+
+        try {
+            $projek->update([
+                'nominal_po' => $validated['nominal_po'],
+            ]);
+            $projek->refresh();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nominal PO berhasil diperbarui',
+                'data' => [
+                    'id'          => $projek->id,
+                    'nominal_po'  => (float) $projek->nominal_po,
+                    'total_biaya' => (float) $projek->total_biaya,
+                    'profit'      => (float) $projek->profit,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal update nominal PO: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
     /**
      * Update status lunas untuk item biaya tertentu di dalam project.
      * Hanya field is_lunas yang diubah, field lain (oleh, nominal, keterangan, created_at) tetap sama.
