@@ -1071,6 +1071,13 @@ class ProjekKerjaController extends Controller
             ], 404);
         }
 
+        if ($projek->is_lunas) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Proyek lunas. Batalkan status lunas terlebih dahulu untuk mengubah biaya.',
+            ], 403);
+        }
+
         $validated = $request->validate([
             'biaya_jalan_items' => 'nullable|array',
             'biaya_jalan_items.*.nominal' => 'nullable|numeric|min:0',
@@ -1404,10 +1411,29 @@ class ProjekKerjaController extends Controller
         try {
             $isLunas = filter_var($request->input('is_lunas', true), FILTER_VALIDATE_BOOLEAN);
 
-            $projek->update([
-                'is_lunas' => $isLunas,
-                'lunas_at' => $isLunas ? now() : null,
-            ]);
+            $projek->is_lunas = $isLunas;
+            $projek->lunas_at = $isLunas ? now() : null;
+
+            // Selaraskan kolom BELUM/SUDAH LUNAS di UI: jika project lunas, semua baris biaya ikut lunas.
+            // Saat lunas dibatalkan, biaya tetap bisa punya is_lunas per baris seperti sebelumnya.
+            if ($isLunas) {
+                foreach (['biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items'] as $field) {
+                    $items = $projek->{$field} ?? [];
+                    if (! is_array($items) || $items === []) {
+                        continue;
+                    }
+                    $projek->{$field} = array_values(array_map(function ($row) {
+                        if (! is_array($row)) {
+                            return $row;
+                        }
+                        $row['is_lunas'] = true;
+
+                        return $row;
+                    }, $items));
+                }
+            }
+
+            $projek->save();
 
             return response()->json([
                 'success' => true,

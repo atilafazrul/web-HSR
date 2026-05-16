@@ -25,6 +25,8 @@ use App\Http\Controllers\DashboardBiayaController;
 use App\Http\Controllers\SPPDController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\RfiController;
+use App\Http\Controllers\WorkChecklistController;
+use App\Http\Controllers\DailyReportController;
 
 
 /*
@@ -645,5 +647,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
     | POST /kontraktor/rfi/generate -> isi template & download xlsx
     */
     Route::post('/kontraktor/rfi/generate', [RfiController::class, 'generate']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Work Checklist (Planning / Realisasi) & Daily Report
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/work-checklist/structure', [WorkChecklistController::class, 'structure']);
+    Route::get('/work-checklist/drafts', [WorkChecklistController::class, 'indexDrafts']);
+    Route::post('/work-checklist/drafts', [WorkChecklistController::class, 'storeDraft']);
+    Route::get('/work-checklist/drafts/{draft}', [WorkChecklistController::class, 'showDraft']);
+    Route::put('/work-checklist/drafts/{draft}', [WorkChecklistController::class, 'updateDraft']);
+    Route::delete('/work-checklist/drafts/{draft}', [WorkChecklistController::class, 'destroyDraft']);
+    Route::post('/work-checklist/generate', [WorkChecklistController::class, 'generate']);
+    Route::get('/daily-report/drafts', [DailyReportController::class, 'indexDrafts']);
+    Route::post('/daily-report/drafts', [DailyReportController::class, 'storeDraft']);
+    Route::get('/daily-report/drafts/{draft}', [DailyReportController::class, 'showDraft']);
+    Route::put('/daily-report/drafts/{draft}', [DailyReportController::class, 'updateDraft']);
+    Route::delete('/daily-report/drafts/{draft}', [DailyReportController::class, 'destroyDraft']);
+    Route::post('/daily-report/generate', [DailyReportController::class, 'generate']);
 
 });

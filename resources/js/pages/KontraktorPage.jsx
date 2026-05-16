@@ -1,6 +1,14 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Package, ListTodo, FileText, Archive, FilePlus2 } from "lucide-react";
+import {
+  Package,
+  ListTodo,
+  FileText,
+  Archive,
+  FilePlus2,
+  ClipboardList,
+  CalendarDays,
+} from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
 
 const KontraktorPage = () => {
@@ -90,6 +98,45 @@ const KontraktorPage = () => {
             title={language === "en" ? "Form RFI" : "Form RFI"}
             desc={language === "en" ? "Fill the RFI template and download" : "Isi template RFI dan unduh Excel"}
             onClick={() => navigate(`${basePath}/kontraktor/rfi`)}
+          />
+        )}
+
+        {!isUserRole && (
+          <Card
+            icon={<ClipboardList size={24} className="text-indigo-600" />}
+            title={language === "en" ? "Work Checklist Planning" : "Form Work Checklist Planning"}
+            desc={
+              language === "en"
+                ? "Fill planning checklist and export Excel/PDF"
+                : "Isi checklist planning dan unduh Excel/PDF"
+            }
+            onClick={() => navigate(`${basePath}/kontraktor/work-checklist/planning`)}
+          />
+        )}
+
+        {!isUserRole && (
+          <Card
+            icon={<ClipboardList size={24} className="text-indigo-600" />}
+            title={language === "en" ? "Work Checklist Realisasi" : "Form Work Checklist Realisasi"}
+            desc={
+              language === "en"
+                ? "Fill realization checklist and export Excel/PDF"
+                : "Isi checklist realisasi dan unduh Excel/PDF"
+            }
+            onClick={() => navigate(`${basePath}/kontraktor/work-checklist/realisasi`)}
+          />
+        )}
+
+        {!isUserRole && (
+          <Card
+            icon={<CalendarDays size={24} className="text-indigo-600" />}
+            title={language === "en" ? "Daily Report" : "Daily Report"}
+            desc={
+              language === "en"
+                ? "Fill daily site report and export Excel/PDF"
+                : "Isi laporan harian proyek dan unduh Excel/PDF"
+            }
+            onClick={() => navigate(`${basePath}/kontraktor/daily-report`)}
           />
         )}
 

@@ -63,6 +63,8 @@ import KaryawanPage from "./KaryawanPage";
 import TargetPage from "./TargetPage";
 import CutiApprovalPage from "./CutiApprovalPage";
 import RfiFormPage from "./RfiFormPage";
+import WorkChecklistFormPage from "./WorkChecklistFormPage";
+import DailyReportFormPage from "./DailyReportFormPage";
 
 /* BERITA ACARA */
 import BeritaAcaraPage from "./BeritaAcaraPage";
@@ -215,6 +217,8 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
               <Route path="rfi" element={<RfiFormPage />} />
+              <Route path="work-checklist/:type" element={<WorkChecklistFormPage />} />
+              <Route path="daily-report" element={<DailyReportFormPage />} />
             </Route>
 
             <Route path="logistik">

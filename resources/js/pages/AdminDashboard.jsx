@@ -41,6 +41,8 @@ import GeneratePDFPage from "./GeneratePDFPage";
 import TargetPage from "./TargetPage";
 import CutiPage from "./CutiPage";
 import RfiFormPage from "./RfiFormPage";
+import WorkChecklistFormPage from "./WorkChecklistFormPage";
+import DailyReportFormPage from "./DailyReportFormPage";
 
 /* BERITA ACARA */
 import BeritaAcaraPage from "./BeritaAcaraPage";
@@ -621,6 +623,8 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="sales" element={<SalesPage user={user} />} />
             <Route path="kontraktor" element={<KontraktorPage user={user} />} />
             <Route path="kontraktor/rfi" element={<RfiFormPage />} />
+            <Route path="kontraktor/work-checklist/:type" element={<WorkChecklistFormPage />} />
+            <Route path="kontraktor/daily-report" element={<DailyReportFormPage />} />
 
             {/* ================= PROJEK ================= */}
             <Route path="it/projek" element={<ProjekKerjaPage />} />

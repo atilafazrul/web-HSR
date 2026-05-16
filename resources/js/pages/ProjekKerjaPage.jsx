@@ -145,6 +145,12 @@ export default function ProjekKerjaPage() {
     const inProgress =
       !Boolean(item?.is_archived) && String(item?.status || "").toLowerCase().trim() !== "selesai";
 
+    if (!item) return false;
+
+    // Proyek sudah ditandai lunas: kunci edit biaya untuk semua role (termasuk super admin).
+    // Untuk mengubah biaya, super admin harus "Batalkan Lunas" dulu.
+    if (Boolean(item.is_lunas)) return false;
+
     if (role === "super_admin") return true;
     if (isUserRole) return false;
 
@@ -801,14 +807,16 @@ export default function ProjekKerjaPage() {
     rows.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
 
   /** Baris biaya yang tampil di modal, dengan index asli & filter lunas (untuk layout dashboard) */
-  const filterDisplayedBiayaByLunas = (rows, wantLunas) =>
+  const filterDisplayedBiayaByLunas = (rows, wantLunas, projectMarkedLunas = false) =>
     rows
       .map((r, idx) => ({ ...r, __idx: idx }))
-      .filter(
-        (r) =>
-          Boolean(r.is_lunas) === wantLunas &&
+      .filter((r) => {
+        const effectivePaid = Boolean(projectMarkedLunas) || Boolean(r.is_lunas);
+        return (
+          effectivePaid === wantLunas &&
           (parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== ""))
-      );
+        );
+      });
 
   const sumNominalRows = (rowsWithIdx) =>
     rowsWithIdx.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
@@ -1121,10 +1129,32 @@ export default function ProjekKerjaPage() {
 
     try {
       await api.patch(`/projek-kerja/${item.id}/lunas`, { is_lunas: newStatus });
-      fetchData();
+
+      // Optimistic local update agar tombol Edit langsung hilang/muncul
+      setDataList((prev) =>
+        (Array.isArray(prev) ? prev : []).map((p) => {
+          if (p?.id !== item.id) return p;
+          const syncRows = (rows) =>
+            Array.isArray(rows)
+              ? rows.map((r) => (r && typeof r === "object" ? { ...r, is_lunas: newStatus ? true : Boolean(r.is_lunas) } : r))
+              : rows;
+          return {
+            ...p,
+            is_lunas: newStatus,
+            lunas_at: newStatus ? new Date().toISOString() : null,
+            biaya_jalan_items: newStatus ? syncRows(p.biaya_jalan_items) : p.biaya_jalan_items,
+            biaya_pengeluaran_items: newStatus ? syncRows(p.biaya_pengeluaran_items) : p.biaya_pengeluaran_items,
+            biaya_reimbursment_items: newStatus ? syncRows(p.biaya_reimbursment_items) : p.biaya_reimbursment_items,
+          };
+        })
+      );
+
       if (currentId === item.id) {
         setEditUang(false);
       }
+
+      // Sinkronisasi dengan server di belakang layar
+      await fetchData();
     } catch (err) {
       const msg = err.response?.data?.message || "Gagal update status lunas";
       alert(msg);
@@ -2081,7 +2111,10 @@ export default function ProjekKerjaPage() {
                   {restrictedInvitedBiayaView
                     ? tr("Tampilan pembacaan untuk akun Anda.", "Read-only view for your account.")
                     : role === "super_admin"
-                      ? tr("Superadmin tetap bisa edit.", "Super admin can still edit.")
+                      ? tr(
+                          "Biaya terkunci. Klik «Batalkan Lunas» di bawah untuk mengubah.",
+                          "Costs are locked. Click «Mark Unpaid» below to make changes.",
+                        )
                       : tr("Admin tidak bisa edit.", "Admin cannot edit.")}
                 </div>
               );
@@ -2091,6 +2124,7 @@ export default function ProjekKerjaPage() {
               <>
                 {(() => {
                   const rowItem = dataList.find((i) => i.id === currentId);
+                  const projectMarkedLunas = Boolean(rowItem?.is_lunas);
                   const jalanRows = rowsForProjekBiayaModal(biayaEdit.jalan);
                   const pengeluaranRows = rowsForProjekBiayaModal(biayaEdit.pengeluaran);
                   const reimbRows = rowsForProjekBiayaModal(biayaEdit.reimbursment);
@@ -2107,34 +2141,37 @@ export default function ProjekKerjaPage() {
                       rows: reimbRows,
                     },
                   ];
-                  const renderEntryCard = (colKey, r) => (
-                    <div
-                      key={`${colKey}-${r.__idx}`}
-                      className="text-xs border border-gray-200 rounded-lg p-2 bg-white shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <span className="font-semibold text-gray-900">{formatRupiah(parseRibuanId(r.nominal))}</span>
-                        {role === "super_admin" ? (
-                          <button
-                            type="button"
-                            onClick={() => handleToggleItemLunas(colKey, r.__idx)}
-                            className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-medium ${r.is_lunas ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200" : "bg-yellow-100 text-amber-900 border-amber-300 hover:bg-amber-200"}`}
-                            title={
-                              r.is_lunas
-                                ? tr("Klik untuk batalkan lunas item", "Click to mark item as unpaid")
-                                : tr("Klik untuk lunaskan item", "Click to mark item as paid")
-                            }
-                          >
-                            {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
-                          </button>
-                        ) : (
-                          <span
-                            className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-medium ${r.is_lunas ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-yellow-100 text-amber-900 border-amber-300"}`}
-                          >
-                            {r.is_lunas ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
-                          </span>
-                        )}
-                      </div>
+                  const renderEntryCard = (colKey, r) => {
+                    const rowPaidDisplay =
+                      Boolean(projectMarkedLunas) || Boolean(r.is_lunas);
+                    return (
+                      <div
+                        key={`${colKey}-${r.__idx}`}
+                        className="text-xs border border-gray-200 rounded-lg p-2 bg-white shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="font-semibold text-gray-900">{formatRupiah(parseRibuanId(r.nominal))}</span>
+                          {role === "super_admin" ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleItemLunas(colKey, r.__idx)}
+                              className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-medium ${rowPaidDisplay ? "bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200" : "bg-yellow-100 text-amber-900 border-amber-300 hover:bg-amber-200"}`}
+                              title={
+                                rowPaidDisplay
+                                  ? tr("Klik untuk batalkan lunas item", "Click to mark item as unpaid")
+                                  : tr("Klik untuk lunaskan item", "Click to mark item as paid")
+                              }
+                            >
+                              {rowPaidDisplay ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
+                            </button>
+                          ) : (
+                            <span
+                              className={`shrink-0 px-2 py-0.5 rounded border text-[10px] font-medium ${rowPaidDisplay ? "bg-emerald-100 text-emerald-800 border-emerald-300" : "bg-yellow-100 text-amber-900 border-amber-300"}`}
+                            >
+                              {rowPaidDisplay ? tr("Lunas", "Paid") : tr("Belum", "Unpaid")}
+                            </span>
+                          )}
+                        </div>
                       {r.oleh ? (
                         <p className="mt-1 text-[11px] text-gray-500">
                           <span className="font-medium text-gray-600">{r.oleh}</span>
@@ -2169,11 +2206,12 @@ export default function ProjekKerjaPage() {
                         </div>
                       ) : null}
                     </div>
-                  );
+                    );
+                  };
                   const renderKategoriColumn = (wantLunas) => (
                     <div className="space-y-3">
                       {kategoriCols.map((col) => {
-                        const shown = filterDisplayedBiayaByLunas(col.rows, wantLunas);
+                        const shown = filterDisplayedBiayaByLunas(col.rows, wantLunas, projectMarkedLunas);
                         const meta = rowItem?.biaya_edit_meta?.[col.key];
                         return (
                           <div key={col.key} className="rounded-xl border border-slate-200/90 bg-white/90 p-3 shadow-sm ring-1 ring-slate-900/[0.02]">
@@ -2197,13 +2235,13 @@ export default function ProjekKerjaPage() {
                     </div>
                   );
                   const totalBelum =
-                    sumNominalRows(filterDisplayedBiayaByLunas(jalanRows, false)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(pengeluaranRows, false)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(reimbRows, false));
+                    sumNominalRows(filterDisplayedBiayaByLunas(jalanRows, false, projectMarkedLunas)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(pengeluaranRows, false, projectMarkedLunas)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(reimbRows, false, projectMarkedLunas));
                   const totalLunas =
-                    sumNominalRows(filterDisplayedBiayaByLunas(jalanRows, true)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(pengeluaranRows, true)) +
-                    sumNominalRows(filterDisplayedBiayaByLunas(reimbRows, true));
+                    sumNominalRows(filterDisplayedBiayaByLunas(jalanRows, true, projectMarkedLunas)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(pengeluaranRows, true, projectMarkedLunas)) +
+                    sumNominalRows(filterDisplayedBiayaByLunas(reimbRows, true, projectMarkedLunas));
                   const grandTotal = totalBelum + totalLunas;
                   return (
                     <>
@@ -2263,19 +2301,15 @@ export default function ProjekKerjaPage() {
                       {tr("Unduh Excel (CSV)", "Download Excel (CSV)")}
                     </button>
                   ) : null}
-                  <button
-                    type="button"
-                    onClick={() => setEditUang(true)}
-                    disabled={(() => {
-                      return !canEditCurrentBiayaProject;
-                    })()}
-                    className={`px-4 py-2 rounded-lg text-white ${(() => {
-                      const locked = !canEditCurrentBiayaProject;
-                      return locked ? "bg-gray-300 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700";
-                    })()}`}
-                  >
-                    {tr("Edit", "Edit")}
-                  </button>
+                  {canEditCurrentBiayaProject && !Boolean(currentProject?.is_lunas) ? (
+                    <button
+                      type="button"
+                      onClick={() => setEditUang(true)}
+                      className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
+                    >
+                      {tr("Edit", "Edit")}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setShowUangModal(false)}
