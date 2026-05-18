@@ -28,9 +28,6 @@ const CHECK_TYPES = {
 const inputCls =
   "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
 
-const inputSm =
-  "w-full rounded-md border border-slate-200 bg-white px-2 py-1.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500";
-
 const surfacePad = "p-5 sm:p-6";
 
 const checkCls =
@@ -116,6 +113,9 @@ export default function WorkChecklistFormPage() {
     catatan: "",
     dibuat_oleh: user?.name || "",
     disetujui_oleh: "",
+    nomor_urut: "I",
+    tanggal_mulai: "",
+    tanggal_selesai: "",
   });
 
   useEffect(() => {
@@ -195,8 +195,9 @@ export default function WorkChecklistFormPage() {
           const defaultItems = (res.data?.items || []).map(buildDefaultItemState);
           structureItemsRef.current = defaultItems;
           if (!searchParams.get("draft")) {
-            setItemStates(defaultItems);
+            setItemStates(defaultItems.map((it) => ({ ...it })));
           }
+          setCustomItems([]);
         }
 
         await fetchDrafts();
@@ -224,6 +225,8 @@ export default function WorkChecklistFormPage() {
     () => itemStates.filter((i) => !i.is_section),
     [itemStates]
   );
+
+  const checklistCount = layoutMode === "weekly" ? dailyEntries.length : workItems.length;
 
   const usedCheckRows = useMemo(
     () => new Set(dailyEntries.map((e) => String(e.check_row)).filter(Boolean)),
@@ -337,30 +340,6 @@ export default function WorkChecklistFormPage() {
     );
   };
 
-  const addCustomItem = () => {
-    setCustomItems((p) => [
-      ...p,
-      {
-        id: Date.now(),
-        nama_kegiatan: "",
-        tanggal: "",
-        sesuai: false,
-        tidak_sesuai: false,
-        paraf: "",
-      },
-    ]);
-  };
-
-  const updateCustom = (id, patch) => {
-    setCustomItems((p) =>
-      p.map((x) => (x.id === id ? { ...x, ...patch } : x))
-    );
-  };
-
-  const removeCustom = (id) => {
-    setCustomItems((p) => p.filter((x) => x.id !== id));
-  };
-
   const buildPayload = () => {
     const items =
       layoutMode === "weekly"
@@ -396,15 +375,19 @@ export default function WorkChecklistFormPage() {
               tidak_sesuai: !!it.tidak_sesuai,
             }));
 
-    const custom_items = customItems
-      .filter((c) => c.nama_kegiatan?.trim())
-      .map((c) => ({
-        nama_kegiatan: c.nama_kegiatan,
-        tanggal: c.tanggal || null,
-        sesuai: !!c.sesuai,
-        tidak_sesuai: !!c.tidak_sesuai,
-        paraf: c.paraf || "",
-      }));
+    const custom_items =
+      type === "planning"
+        ? []
+        : customItems
+            .filter((c) => c.nama_kegiatan?.trim())
+            .map((c) => ({
+              nama_kegiatan: c.nama_kegiatan,
+              tanggal: c.tanggal || null,
+              sesuai: !!c.sesuai,
+              tidak_sesuai: !!c.tidak_sesuai,
+              paraf: c.paraf || "",
+              is_section: !!c.is_section,
+            }));
 
     return { type, ...header, items, custom_items };
   };
@@ -464,17 +447,14 @@ export default function WorkChecklistFormPage() {
       catatan: "",
       dibuat_oleh: user?.name || "",
       disetujui_oleh: "",
+      nomor_urut: "I",
+      tanggal_mulai: "",
+      tanggal_selesai: "",
     });
     if (layoutMode === "weekly") {
       setDailyEntries([]);
     } else {
-      setItemStates(
-        structureItemsRef.current.map((it) => ({
-          ...it,
-          sesuai: false,
-          tidak_sesuai: false,
-        }))
-      );
+      setItemStates(structureItemsRef.current.map((it) => ({ ...it })));
     }
     setCustomItems([]);
   };
@@ -665,10 +645,38 @@ export default function WorkChecklistFormPage() {
             <SectionTitle>{tr("Informasi Umum", "General Information")}</SectionTitle>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Field
+                label={tr("Nomor Urut", "Number")}
+                hint={tr("(Mis: I, II, III)", "(e.g. I, II, III)")}
+                value={header.nomor_urut}
+                onChange={(v) => updateHeader("nomor_urut", v)}
+              />
+              <Field
                 label={tr("Minggu Ke", "Week No.")}
                 value={header.minggu_ke}
                 onChange={(v) => updateHeader("minggu_ke", v)}
               />
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                  {tr("Tanggal Mulai", "Start Date")}
+                </span>
+                <input
+                  type="date"
+                  className={`${inputCls} mt-1.5`}
+                  value={header.tanggal_mulai}
+                  onChange={(e) => updateHeader("tanggal_mulai", e.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="text-xs font-medium text-slate-600 uppercase tracking-wide">
+                  {tr("Tanggal Selesai", "End Date")}
+                </span>
+                <input
+                  type="date"
+                  className={`${inputCls} mt-1.5`}
+                  value={header.tanggal_selesai}
+                  onChange={(e) => updateHeader("tanggal_selesai", e.target.value)}
+                />
+              </label>
               <Field
                 label={tr("Site", "Site")}
                 value={header.site}
@@ -725,11 +733,18 @@ export default function WorkChecklistFormPage() {
                     ? tr("Checklist Harian", "Daily Checklist")
                     : tr("Daftar Pekerjaan", "Work Items")}
                   <span className="ml-2 text-sm font-normal text-slate-500">
-                    ({layoutMode === "weekly" ? dailyEntries.length : workItems.length})
+                    ({checklistCount})
                   </span>
                 </SectionTitle>
-                {layoutMode === "weekly" && (
+                {layoutMode === "weekly" ? (
                   <AddBtn onClick={addDailyEntry} label={tr("Tambah Hari", "Add Day")} />
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    {tr(
+                      "Checklist mengikuti template Excel; centang saja sesuai/tidak sesuai.",
+                      "Checklist follows the Excel template; just tick OK/NOK."
+                    )}
+                  </p>
                 )}
               </div>
               {layoutMode === "weekly" ? (
@@ -885,161 +900,64 @@ export default function WorkChecklistFormPage() {
                   )}
                 </div>
               ) : (
-                <div className="max-h-[min(65vh,560px)] overflow-y-auto overflow-x-auto">
-                  <table className="w-full text-sm border-collapse min-w-[640px]">
-                    <thead className="sticky top-0 z-10 bg-slate-100 shadow-sm">
-                      <tr className="text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                        <th className="px-3 py-2.5 min-w-[200px]">
-                          {tr("Nama Kegiatan", "Activity")}
-                        </th>
-                        <th className="px-3 py-2.5 w-20 text-center">{tr("Sesuai", "OK")}</th>
-                        <th className="px-3 py-2.5 w-24 text-center">
-                          {tr("Tidak", "NOK")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {itemStates.map((item) => {
-                        if (item.is_section) {
-                          return (
-                            <tr key={`section-${item.row}`} className="bg-indigo-50/90">
-                              <td
-                                colSpan={3}
-                                className="px-3 py-2 text-xs font-bold text-indigo-900 uppercase tracking-wide"
-                              >
-                                {item.label}
+                <div className="overflow-x-auto">
+                  {itemStates.length === 0 ? (
+                    <p className="px-4 py-8 text-sm text-slate-500 text-center">
+                      {tr("Struktur checklist belum tersedia.", "Checklist structure not available.")}
+                    </p>
+                  ) : (
+                    <table className="w-full text-sm border-collapse min-w-[760px]">
+                      <thead className="sticky top-0 z-10 bg-slate-100 shadow-sm">
+                        <tr className="text-left text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                          <th className="px-3 py-2.5 w-24">{tr("No", "No.")}</th>
+                          <th className="px-3 py-2.5">{tr("Nama Kegiatan", "Activity")}</th>
+                          <th className="px-3 py-2.5 w-24 text-center">{tr("Sesuai", "OK")}</th>
+                          <th className="px-3 py-2.5 w-28 text-center">{tr("Tidak", "NOK")}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {itemStates.map((it) =>
+                          it.is_section ? (
+                            <tr key={it.row} className="bg-slate-200/70">
+                              <td className="px-3 py-2 font-semibold text-slate-700" colSpan={4}>
+                                {it.label || tr("Section", "Section")}
                               </td>
                             </tr>
-                          );
-                        }
-
-                        return (
-                          <tr key={item.row} className="bg-white hover:bg-slate-50/60">
-                            <td className="px-3 py-2 text-slate-800 align-top leading-snug">
-                              {item.label}
-                            </td>
-                            <td className="px-3 py-2 text-center align-middle">
-                              <input
-                                type="checkbox"
-                                checked={item.sesuai}
-                                onChange={() => setCheck(item.row, "sesuai")}
-                                className={checkCls}
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-center align-middle">
-                              <input
-                                type="checkbox"
-                                checked={item.tidak_sesuai}
-                                onChange={() => setCheck(item.row, "tidak_sesuai")}
-                                className={checkCls}
-                              />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                          ) : (
+                            <tr key={it.row} className="bg-white hover:bg-slate-50/70">
+                              <td className="px-3 py-2 align-top">
+                                <div className="text-xs text-slate-400 leading-tight">{it.col_c}</div>
+                                <div className="text-sm font-semibold text-slate-700 leading-tight">
+                                  {it.col_d}
+                                </div>
+                              </td>
+                              <td className="px-3 py-2 text-slate-800">{it.label}</td>
+                              <td className="px-3 py-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={!!it.sesuai}
+                                  onChange={() => setCheck(it.row, "sesuai")}
+                                  className={checkCls}
+                                />
+                              </td>
+                              <td className="px-3 py-2 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={!!it.tidak_sesuai}
+                                  onChange={() => setCheck(it.row, "tidak_sesuai")}
+                                  className={checkCls}
+                                />
+                              </td>
+                            </tr>
+                          )
+                        )}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               )}
             </div>
           </DashboardSurface>
-          {/* Pekerjaan tambahan (realisasi) */}
-          {type === "realisasi" && (
-            <DashboardSurface className={surfacePad}>
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-                  <SectionTitle>
-                    {tr("Pekerjaan Tambahan", "Additional Work Items")}
-                  </SectionTitle>
-                  <AddBtn onClick={addCustomItem} label={tr("Tambah", "Add")} />
-                </div>
-                {customItems.length === 0 ? (
-                  <p className="px-4 py-6 text-sm text-slate-500 text-center">
-                    {tr(
-                      "Klik Tambah untuk pekerjaan di luar template.",
-                      "Click Add for items not in the template."
-                    )}
-                  </p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm border-collapse min-w-[520px]">
-                      <thead>
-                        <tr className="bg-slate-50 text-xs font-semibold text-slate-600 uppercase">
-                          <th className="px-3 py-2.5 text-left">
-                            {tr("Nama Kegiatan", "Activity")}
-                          </th>
-                          <th className="px-3 py-2.5 w-20 text-center">{tr("Sesuai", "OK")}</th>
-                          <th className="px-3 py-2.5 w-24 text-center">{tr("Tidak", "NOK")}</th>
-                          <th className="px-3 py-2.5 w-24">{tr("Paraf", "Initial")}</th>
-                          <th className="px-3 py-2.5 w-10" />
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {customItems.map((c) => (
-                          <tr key={c.id}>
-                            <td className="px-2 py-1.5">
-                              <input
-                                className={inputSm}
-                                placeholder={tr("Nama kegiatan", "Activity name")}
-                                value={c.nama_kegiatan}
-                                onChange={(e) =>
-                                  updateCustom(c.id, { nama_kegiatan: e.target.value })
-                                }
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <input
-                                type="checkbox"
-                                checked={c.sesuai}
-                                onChange={() =>
-                                  updateCustom(c.id, {
-                                    sesuai: !c.sesuai,
-                                    tidak_sesuai: false,
-                                  })
-                                }
-                                className={checkCls}
-                              />
-                            </td>
-                            <td className="px-3 py-2 text-center">
-                              <input
-                                type="checkbox"
-                                checked={c.tidak_sesuai}
-                                onChange={() =>
-                                  updateCustom(c.id, {
-                                    tidak_sesuai: !c.tidak_sesuai,
-                                    sesuai: false,
-                                  })
-                                }
-                                className={checkCls}
-                              />
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <input
-                                className={inputSm}
-                                value={c.paraf}
-                                onChange={(e) =>
-                                  updateCustom(c.id, { paraf: e.target.value })
-                                }
-                              />
-                            </td>
-                            <td className="px-2 py-1.5 text-center">
-                              <button
-                                type="button"
-                                onClick={() => removeCustom(c.id)}
-                                className="p-1 text-rose-500 hover:bg-rose-50 rounded"
-                              >
-                                <Trash2 size={15} />
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </DashboardSurface>
-          )}
         </form>
       )}
 

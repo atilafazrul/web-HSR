@@ -12,6 +12,7 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 use PhpOffice\PhpSpreadsheet\RichText\RichText;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Worksheet\PageSetup;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -70,10 +71,56 @@ class WorkChecklistController extends Controller
         return array_values(array_unique(array_filter($rows)));
     }
 
+    /**
+     * Baris checklist yang merupakan section header (sesuai struktur JSON).
+     * Section header tidak punya kotak centang.
+     *
+     * @return int[]
+     */
+    protected function collectSectionRows(string $type): array
+    {
+        $path = $this->structurePath($type);
+        if (!file_exists($path)) {
+            return [];
+        }
+        $data = json_decode(file_get_contents($path), true);
+        $rows = [];
+        foreach ($data['items'] ?? [] as $item) {
+            if (!empty($item['is_section'])) {
+                $rows[] = (int) $item['row'];
+            }
+        }
+
+        return $rows;
+    }
+
     protected function clearChecklistRowCells(Worksheet $sheet, int $row): void
     {
         foreach (['C', 'D', 'E', 'H', 'M', 'N', 'O'] as $col) {
-            $sheet->setCellValue("{$col}{$row}", '');
+            $coord = "{$col}{$row}";
+            $sheet->setCellValue($coord, '');
+            // Bersihkan juga fill abu-abu dan format bold dari template
+            // supaya baris kosong benar-benar bersih (tidak ada section divider sisa).
+            $style = $sheet->getStyle($coord);
+            $style->getFill()->setFillType(Fill::FILL_NONE);
+            $style->getFont()->setBold(false);
+        }
+    }
+
+    /**
+     * Bersihkan hanya kolom centang (M & N) dan kembalikan ke simbol kotak kosong '□'.
+     * Dipakai untuk baris-baris template Planning yang labelnya berasal dari Excel.
+     */
+    protected function clearChecklistCheckCells(Worksheet $sheet, int $row): void
+    {
+        foreach (['M', 'N'] as $col) {
+            $coord = "{$col}{$row}";
+            $sheet->setCellValue($coord, '□');
+            $style = $sheet->getStyle($coord);
+            $style->getFont()->setSize(self::FONT_CHECKMARK);
+            $style->getAlignment()
+                ->setHorizontal(Alignment::HORIZONTAL_CENTER)
+                ->setVertical(Alignment::VERTICAL_CENTER);
         }
     }
 
@@ -128,7 +175,9 @@ class WorkChecklistController extends Controller
     protected function applyCheckmark(Worksheet $sheet, string $col, int $row): void
     {
         $coord = "{$col}{$row}";
-        $sheet->setCellValue($coord, '✓');
+        // ☑ = kotak dengan centang, agar tampilan sama rapinya dengan template
+        // yang sudah punya simbol □ (kotak kosong) di setiap baris.
+        $sheet->setCellValue($coord, '☑');
         $style = $sheet->getStyle($coord);
         $style->getFont()->setSize(self::FONT_CHECKMARK)->setBold(true);
         $style->getAlignment()
@@ -175,6 +224,78 @@ class WorkChecklistController extends Controller
         $this->setLabeledInputCell($sheet, 'C23', 'SUB KONTRAKTOR : ', $validated['sub_kontraktor'] ?? '');
 
         $this->applyCatatan($sheet, $validated);
+    }
+
+    /**
+     * Untuk Planning, isi blok NO + MINGGU KE + TANGGAL (kolom C, D, E di baris 38-40).
+     * Kolom E (TANGGAL) menempati 3 baris: tanggal mulai, "s.d", tanggal selesai.
+     */
+    protected function applyPlanningBodyHeader(Worksheet $sheet, array $validated): void
+    {
+        $nomorUrut = trim((string) ($validated['nomor_urut'] ?? ''));
+        $minggu = trim((string) ($validated['minggu_ke'] ?? ''));
+        $tglMulai = trim((string) ($validated['tanggal_mulai'] ?? ''));
+        $tglSelesai = trim((string) ($validated['tanggal_selesai'] ?? ''));
+
+        if ($nomorUrut !== '') {
+            $this->setTextCell(
+                $sheet,
+                'C38',
+                $nomorUrut,
+                self::FONT_BODY,
+                true,
+                false,
+                Alignment::HORIZONTAL_CENTER
+            );
+        }
+
+        if ($minggu !== '') {
+            $this->setTextCell(
+                $sheet,
+                'D38',
+                $minggu,
+                self::FONT_BODY,
+                true,
+                false,
+                Alignment::HORIZONTAL_CENTER
+            );
+        }
+
+        if ($tglMulai !== '') {
+            try {
+                $sheet->setCellValue('E38', ExcelDate::PHPToExcel(Carbon::parse($tglMulai)));
+                $style = $sheet->getStyle('E38');
+                $style->getFont()->setSize(self::FONT_BODY)->setBold(true);
+                $style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $style->getNumberFormat()->setFormatCode('dddd, dd mmmm yyyy');
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
+
+        if ($tglMulai !== '' && $tglSelesai !== '') {
+            $this->setTextCell(
+                $sheet,
+                'E39',
+                's.d',
+                self::FONT_BODY,
+                false,
+                false,
+                Alignment::HORIZONTAL_CENTER
+            );
+        }
+
+        if ($tglSelesai !== '') {
+            try {
+                $sheet->setCellValue('E40', ExcelDate::PHPToExcel(Carbon::parse($tglSelesai)));
+                $style = $sheet->getStyle('E40');
+                $style->getFont()->setSize(self::FONT_BODY)->setBold(true);
+                $style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                $style->getNumberFormat()->setFormatCode('dddd, dd mmmm yyyy');
+            } catch (\Throwable $e) {
+                // ignore
+            }
+        }
     }
 
     protected function applyCatatan(Worksheet $sheet, array $validated): void
@@ -466,6 +587,9 @@ class WorkChecklistController extends Controller
             'catatan' => 'nullable|string|max:5000',
             'dibuat_oleh' => 'nullable|string|max:255',
             'disetujui_oleh' => 'nullable|string|max:255',
+            'nomor_urut' => 'nullable|string|max:20',
+            'tanggal_mulai' => 'nullable|date',
+            'tanggal_selesai' => 'nullable|date',
             'items' => 'nullable|array',
             'items.*.row' => 'required|integer|min:1',
             'items.*.sesuai' => 'nullable|boolean',
@@ -482,6 +606,7 @@ class WorkChecklistController extends Controller
             'custom_items.*.tidak_sesuai' => 'nullable|boolean',
             'custom_items.*.paraf' => 'nullable|string|max:120',
             'custom_items.*.tanggal' => 'nullable|date',
+            'custom_items.*.is_section' => 'nullable|boolean',
         ]);
 
         $type = $validated['type'];
@@ -524,20 +649,40 @@ class WorkChecklistController extends Controller
         $this->clearFooterSection($sheet, $type);
 
         $footerCfg = $this->footerConfig($type);
+        $sectionRows = $this->collectSectionRows($type);
 
-        foreach ($this->collectClearableRows($type) as $clearRow) {
-            $this->clearChecklistRowCells($sheet, $clearRow);
-        }
+        if ($type === 'planning') {
+            foreach ($this->collectClearableRows($type) as $clearRow) {
+                // Jaga struktur template: kosongkan hanya kolom centang + paraf + tanggal,
+                // jangan hapus label/garis dari Excel.
+                if (in_array($clearRow, $sectionRows, true)) {
+                    $sheet->setCellValue("M{$clearRow}", '');
+                    $sheet->setCellValue("N{$clearRow}", '');
+                } else {
+                    $this->clearChecklistCheckCells($sheet, $clearRow);
+                }
+                $sheet->setCellValue("O{$clearRow}", '');
+                $sheet->setCellValue("E{$clearRow}", '');
+            }
+        } else {
+            foreach ($this->collectClearableRows($type) as $clearRow) {
+                $this->clearChecklistRowCells($sheet, $clearRow);
+            }
 
-        $this->clearExtraBodyRows($sheet, $type);
+            $this->clearExtraBodyRows($sheet, $type);
 
-        $customStart = $type === 'planning' ? 147 : 95;
-        $customEnd = $footerCfg['label_row'] - 1;
-        for ($clearRow = $customStart; $clearRow <= $customEnd; $clearRow++) {
-            $this->clearChecklistRowCells($sheet, $clearRow);
+            $customStart = 95;
+            $customEnd = $footerCfg['label_row'] - 1;
+            for ($clearRow = $customStart; $clearRow <= $customEnd; $clearRow++) {
+                $this->clearChecklistRowCells($sheet, $clearRow);
+            }
         }
 
         $this->applyHeaderSection($sheet, $validated);
+
+        if ($type === 'planning') {
+            $this->applyPlanningBodyHeader($sheet, $validated);
+        }
 
         foreach ($validated['items'] ?? [] as $item) {
             $row = (int) $item['row'];
@@ -598,38 +743,102 @@ class WorkChecklistController extends Controller
             }
         }
 
-        $nextRow = $type === 'planning' ? 147 : 95;
-        foreach ($validated['custom_items'] ?? [] as $custom) {
-            $this->setTextCell($sheet, "H{$nextRow}", $custom['nama_kegiatan'], self::FONT_BODY, false, true);
+        if ($type !== 'planning') {
+            $nextRow = 95;
+            foreach ($validated['custom_items'] ?? [] as $custom) {
+                $isSection = !empty($custom['is_section']);
 
-            if (!empty($custom['tanggal'])) {
-                try {
-                    $coord = "E{$nextRow}";
-                    $sheet->setCellValue(
-                        $coord,
-                        ExcelDate::PHPToExcel(Carbon::parse($custom['tanggal']))
-                    );
-                    $sheet->getStyle($coord)->getFont()->setSize(self::FONT_BODY);
-                    $sheet->getStyle($coord)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                } catch (\Throwable $e) {
-                    // ignore
+                if ($isSection) {
+                    // Baris section header: label tebal, latar abu-abu, tanpa centang/paraf/tanggal
+                    $coord = "H{$nextRow}";
+                    $sheet->setCellValue($coord, $custom['nama_kegiatan']);
+                    $style = $sheet->getStyle($coord);
+                    $style->getFont()->setSize(self::FONT_BODY)->setBold(true);
+                    $style->getAlignment()
+                        ->setHorizontal(Alignment::HORIZONTAL_LEFT)
+                        ->setVertical(Alignment::VERTICAL_CENTER)
+                        ->setWrapText(true);
+                    $style->getFill()
+                        ->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()->setRGB('D9D9D9');
+
+                    // Kosongkan kotak centang di kolom M/N untuk baris section
+                    $sheet->setCellValue("M{$nextRow}", '');
+                    $sheet->setCellValue("N{$nextRow}", '');
+
+                    $nextRow++;
+                    continue;
+                }
+
+                $this->setTextCell($sheet, "H{$nextRow}", $custom['nama_kegiatan'], self::FONT_BODY, false, true);
+
+                if (!empty($custom['tanggal'])) {
+                    try {
+                        $coord = "E{$nextRow}";
+                        $sheet->setCellValue(
+                            $coord,
+                            ExcelDate::PHPToExcel(Carbon::parse($custom['tanggal']))
+                        );
+                        $sheet->getStyle($coord)->getFont()->setSize(self::FONT_BODY);
+                        $sheet->getStyle($coord)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    } catch (\Throwable $e) {
+                        // ignore
+                    }
+                }
+
+                if (!empty($custom['sesuai'])) {
+                    $this->applyCheckmark($sheet, 'M', $nextRow);
+                }
+
+                if (!empty($custom['tidak_sesuai'])) {
+                    $this->applyCheckmark($sheet, 'N', $nextRow);
+                }
+
+                if (!empty($custom['paraf'])) {
+                    $this->setTextCell($sheet, "O{$nextRow}", $custom['paraf'], self::FONT_BODY);
+                }
+
+                $nextRow++;
+            }
+
+            // Bersihkan border + fill di baris kosong setelah entri user
+            // agar area di bawah data tampak seperti kertas putih (tidak ada garis-garis).
+            $clearStart = $nextRow;
+            $clearEnd = $footerCfg['label_row'] - 1;
+            for ($r = $clearStart; $r <= $clearEnd; $r++) {
+                foreach (['C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'] as $col) {
+                    $style = $sheet->getStyle("{$col}{$r}");
+                    $borders = $style->getBorders();
+                    $borders->getTop()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_NONE);
+                    $borders->getBottom()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_NONE);
+                    $borders->getLeft()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_NONE);
+                    $borders->getRight()->setBorderStyle(\PhpOffice\PhpSpreadsheet\Style\Border::BORDER_NONE);
+                    $style->getFill()->setFillType(Fill::FILL_NONE);
                 }
             }
-
-            if (!empty($custom['sesuai'])) {
-                $this->applyCheckmark($sheet, 'M', $nextRow);
-            }
-
-            if (!empty($custom['tidak_sesuai'])) {
-                $this->applyCheckmark($sheet, 'N', $nextRow);
-            }
-
-            if (!empty($custom['paraf'])) {
-                $this->setTextCell($sheet, "O{$nextRow}", $custom['paraf'], self::FONT_BODY);
-            }
-
-            $nextRow++;
         }
+
+        // Reset indikator page break manual & set print area menyesuaikan area data + footer
+        // supaya tidak muncul garis putus-putus di Excel saat view normal.
+        $sheet->setBreak('A1', Worksheet::BREAK_NONE);
+        $sheet->getRowBreaks(); // touch for safety
+        $rowBreaks = $sheet->getRowBreaks();
+        foreach (array_keys($rowBreaks) as $breakCell) {
+            $sheet->setBreak($breakCell, Worksheet::BREAK_NONE);
+        }
+        $colBreaks = $sheet->getColumnBreaks();
+        foreach (array_keys($colBreaks) as $breakCell) {
+            $sheet->setBreak($breakCell, Worksheet::BREAK_NONE);
+        }
+
+        // Pastikan seluruh konten masuk dalam 1 page width agar tidak muncul indikator
+        // pemotongan halaman otomatis di view normal Excel.
+        $pageSetup = $sheet->getPageSetup();
+        $pageSetup->setFitToPage(true);
+        $pageSetup->setFitToWidth(1);
+        $pageSetup->setFitToHeight(0);
+        // Kembalikan view ke Normal agar tidak menonjolkan garis break.
+        $sheet->getSheetView()->setView(\PhpOffice\PhpSpreadsheet\Worksheet\SheetView::SHEETVIEW_NORMAL);
 
         $this->applyFooterSection($sheet, $validated, $type);
 
