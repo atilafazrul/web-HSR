@@ -14,7 +14,7 @@ export default function Login({ login, isLoading }) {
   const [animate, setAnimate] = useState(true);
 
 
-  /* ================= ANIMATION ================= */
+  /* ================= ANIMATION coba-coba ================= */
   useEffect(() => {
 
     const interval = setInterval(() => {
