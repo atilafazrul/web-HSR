@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+﻿import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Wallet,
   Receipt,
@@ -13,10 +13,12 @@ import {
   Calendar,
   Filter,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Building2,
   Pencil,
 } from "lucide-react";
-import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
+import { PieChart, Pie, Cell } from "recharts";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n/index.jsx";
 import { DashboardSurface } from "../components/dashboard/DashboardPrimitives.jsx";
@@ -52,6 +54,9 @@ const formatRupiahCompact = (value) => {
   return formatRupiah(n);
 };
 
+const PROJECTS_PER_VIEW = 5;
+const PROFIT_CHART_SIZE = 180;
+
 const formatTanggal = (d, locale = "id-ID") => {
   if (!d) return "-";
   try {
@@ -85,6 +90,8 @@ export default function TargetPage() {
   const [poInputs, setPoInputs] = useState({});
   // map projek_id -> "idle" | "saving" | "saved" | "error"
   const [saveState, setSaveState] = useState({});
+  const [projectSlide, setProjectSlide] = useState(0);
+  const projectCarouselRef = useRef(null);
 
   /* ================= FETCH ================= */
   const fetchData = async () => {
@@ -191,6 +198,49 @@ export default function TargetPage() {
     return Array.from(set).sort();
   }, [projek]);
 
+  const projectSlides = useMemo(() => {
+    const chunks = [];
+    for (let i = 0; i < filtered.length; i += PROJECTS_PER_VIEW) {
+      chunks.push(filtered.slice(i, i + PROJECTS_PER_VIEW));
+    }
+    return chunks;
+  }, [filtered]);
+
+  const projectSlideCount = projectSlides.length;
+  const canSlideProjects = projectSlideCount > 1;
+
+  useEffect(() => {
+    setProjectSlide(0);
+    projectCarouselRef.current?.scrollTo({ left: 0, behavior: "auto" });
+  }, [search, filterStatus, filterDivisi, filtered.length]);
+
+  const scrollToProjectSlide = (index) => {
+    const el = projectCarouselRef.current;
+    if (!el) return;
+    const next = Math.max(0, Math.min(index, projectSlideCount - 1));
+    setProjectSlide(next);
+    el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+  };
+
+  const handleProjectCarouselScroll = () => {
+    const el = projectCarouselRef.current;
+    if (!el || el.clientWidth <= 0) return;
+    const idx = Math.round(el.scrollLeft / el.clientWidth);
+    if (idx !== projectSlide) setProjectSlide(idx);
+  };
+
+  const getProjectMetrics = (p) => {
+    const po = parseRibuanId(poInputs[p.id] || "");
+    const biaya = Number(p.total_biaya) || 0;
+    const profit = po - biaya;
+    const margin = po > 0 ? (profit / po) * 100 : 0;
+    const dirty =
+      String(parseRibuanId(poInputs[p.id] || "")) !==
+      String(Math.round(Number(p.nominal_po) || 0));
+    const state = saveState[p.id] || "idle";
+    return { po, biaya, profit, margin, dirty, state };
+  };
+
   /* ================= RENDER ================= */
   return (
     <div className="space-y-6">
@@ -209,7 +259,7 @@ export default function TargetPage() {
         </div>
       </div>
 
-      {/* SUMMARY GRID — 2 angka kiri + chart panel kanan */}
+      {/* SUMMARY GRID - 2 angka kiri + chart panel kanan */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
         {/* KIRI: 2 stack card sederhana */}
         <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
@@ -320,174 +370,120 @@ export default function TargetPage() {
           </div>
         ) : (
           <>
-            {/* DESKTOP TABLE */}
-            <div className="hidden lg:block overflow-x-auto">
-              <table className="w-full text-sm table-fixed">
-                <colgroup>
-                  <col className="w-[26%]" />
-                  <col className="w-[10%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[18%]" />
-                  <col className="w-[12%]" />
-                  <col className="w-[14%]" />
-                  <col className="w-[8%]" />
-                </colgroup>
-                <thead className="bg-slate-50/80 text-[11px] uppercase tracking-wide text-slate-500">
-                  <tr>
-                    <th className="text-left px-5 py-3.5 font-semibold">{tr("Projek", "Project")}</th>
-                    <th className="text-left px-3 py-3.5 font-semibold">{tr("Divisi", "Division")}</th>
-                    <th className="text-left px-3 py-3.5 font-semibold">{tr("Tanggal", "Date")}</th>
-                    <th className="text-right px-5 py-3.5 font-semibold bg-indigo-50/40">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Pencil size={11} className="text-indigo-500" />
-                        <span className="text-indigo-700">{tr("Nominal PO", "PO Amount")}</span>
-                      </div>
-                      <p className="text-[10px] font-normal text-indigo-400 normal-case tracking-normal">
-                        {tr("Ketik di sini ↓", "Type here ↓")}
-                      </p>
-                    </th>
-                    <th className="text-right px-3 py-3.5 font-semibold">{tr("Total Biaya", "Total Cost")}</th>
-                    <th className="text-right px-3 py-3.5 font-semibold">{tr("Profit", "Profit")}</th>
-                    <th className="text-center px-3 py-3.5 font-semibold">{tr("Margin", "Margin")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((p) => {
-                    const po = parseRibuanId(poInputs[p.id] || "");
-                    const biaya = Number(p.total_biaya) || 0;
-                    const profit = po - biaya;
-                    const margin = po > 0 ? (profit / po) * 100 : 0;
-                    const dirty =
-                      String(parseRibuanId(poInputs[p.id] || "")) !==
-                      String(Math.round(Number(p.nominal_po) || 0));
-                    const state = saveState[p.id] || "idle";
-
-                    return (
-                      <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50/60 transition">
-                        <td className="px-5 py-4">
-                          <p className="font-semibold text-slate-800 truncate">{p.jenis_pekerjaan}</p>
-                          <p className="text-xs text-slate-500 mt-0.5 truncate">
-                            {p.karyawan} {p.alamat ? `· ${p.alamat}` : ""}
-                          </p>
-                        </td>
-                        <td className="px-3 py-4">
-                          <DivisiBadge divisi={p.divisi} />
-                        </td>
-                        <td className="px-3 py-4 text-slate-600 text-xs">
-                          <div className="whitespace-nowrap">{formatTanggal(p.start_date, dateLocale)}</div>
-                          {p.status && (
-                            <span className="mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-600 ring-1 ring-slate-200/70">
-                              {p.status}
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-5 py-4 bg-indigo-50/20">
-                          <PoInput
-                            value={poInputs[p.id] || ""}
-                            onChange={(v) => handlePoChange(p.id, v)}
-                            onBlur={() => dirty && savePo(p.id)}
-                            state={state}
-                            fullWidth
-                          />
-                        </td>
-                        <td className="px-3 py-4 text-right text-slate-700 tabular-nums whitespace-nowrap">
-                          {formatRupiah(biaya)}
-                        </td>
-                        <td className="px-3 py-4 text-right tabular-nums whitespace-nowrap">
-                          <ProfitText profit={profit} hasPo={po > 0} />
-                        </td>
-                        <td className="px-3 py-4 text-center">
-                          <MarginPill margin={margin} hasPo={po > 0} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                <tfoot className="bg-slate-50/60 text-sm font-semibold text-slate-800 border-t-2 border-slate-200">
-                  <tr>
-                    <td className="px-5 py-3.5" colSpan={3}>
-                      {tr("Total", "Total")}{" "}
-                      <span className="text-xs text-slate-500 font-normal">
-                        ({filtered.length} {tr("projek", "projects")})
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5 text-right tabular-nums text-indigo-700 bg-indigo-50/20">
-                      {formatRupiah(summary.totalPO)}
-                    </td>
-                    <td className="px-3 py-3.5 text-right tabular-nums whitespace-nowrap">
-                      {formatRupiah(summary.totalBiaya)}
-                    </td>
-                    <td className="px-3 py-3.5 text-right tabular-nums whitespace-nowrap">
-                      <ProfitText profit={summary.totalProfit} hasPo={summary.totalPO > 0} />
-                    </td>
-                    <td className="px-3 py-3.5 text-center">
-                      <MarginPill margin={summary.margin} hasPo={summary.totalPO > 0} />
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
+            <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-slate-100 bg-slate-50/80 px-4 py-3 sm:px-5">
+              <p className="min-w-0 flex-1 basis-[min(100%,12rem)] text-[11px] font-semibold uppercase leading-snug tracking-wide text-slate-500 break-words">
+                {tr("Daftar Projek", "Project List")}{" "}
+                <span className="font-normal normal-case text-slate-400">
+                  ({tr("maks. 5 per slide", "max. 5 per slide")})
+                </span>
+              </p>
+              {canSlideProjects && (
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-xs tabular-nums text-slate-500">
+                    {projectSlide + 1} / {projectSlideCount}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => scrollToProjectSlide(projectSlide - 1)}
+                    disabled={projectSlide === 0}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={tr("Projek sebelumnya", "Previous projects")}
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => scrollToProjectSlide(projectSlide + 1)}
+                    disabled={projectSlide >= projectSlideCount - 1}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label={tr("Projek berikutnya", "Next projects")}
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* MOBILE / TABLET CARDS */}
-            <div className="lg:hidden divide-y divide-slate-100">
-              {filtered.map((p) => {
-                const po = parseRibuanId(poInputs[p.id] || "");
-                const biaya = Number(p.total_biaya) || 0;
-                const profit = po - biaya;
-                const margin = po > 0 ? (profit / po) * 100 : 0;
-                const dirty =
-                  String(parseRibuanId(poInputs[p.id] || "")) !==
-                  String(Math.round(Number(p.nominal_po) || 0));
-                const state = saveState[p.id] || "idle";
-
-                return (
-                  <div key={p.id} className="p-4 space-y-3">
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="font-semibold text-slate-800">{p.jenis_pekerjaan}</p>
-                        <DivisiBadge divisi={p.divisi} />
-                      </div>
-                      <div className="flex items-center gap-2 flex-wrap mt-1 text-xs text-slate-500">
-                        <Calendar size={11} />
-                        <span>{formatTanggal(p.start_date, dateLocale)}</span>
-                        {p.status && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 ring-1 ring-slate-200/70">
-                            {p.status}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-                        {tr("Nominal PO", "PO Amount")}
-                      </label>
-                      <PoInput
-                        value={poInputs[p.id] || ""}
-                        onChange={(v) => handlePoChange(p.id, v)}
-                        onBlur={() => dirty && savePo(p.id)}
-                        state={state}
-                        fullWidth
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2 text-xs">
-                      <MobileStat label={tr("Biaya", "Cost")} value={formatRupiah(biaya)} tone="slate" />
-                      <MobileStat
-                        label={tr("Profit", "Profit")}
-                        value={po > 0 ? formatRupiah(profit) : "-"}
-                        tone={po > 0 ? (profit >= 0 ? "emerald" : "rose") : "slate"}
-                      />
-                      <MobileStat
-                        label={tr("Margin", "Margin")}
-                        value={po > 0 ? `${margin.toFixed(1)}%` : "-"}
-                        tone={po > 0 ? (margin >= 0 ? "emerald" : "rose") : "slate"}
-                      />
-                    </div>
+            <div
+              ref={projectCarouselRef}
+              onScroll={handleProjectCarouselScroll}
+              className="flex overflow-x-auto scroll-smooth snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            >
+              {projectSlides.map((slideProjects, slideIdx) => (
+                <div
+                  key={`slide-${slideIdx}`}
+                  className="w-full min-w-0 shrink-0 snap-start snap-always px-3 py-4 sm:px-4"
+                >
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                    {slideProjects.map((p) => {
+                      const { po, biaya, profit, margin, dirty, state } = getProjectMetrics(p);
+                      return (
+                        <ProjectCard
+                          key={p.id}
+                          p={p}
+                          po={po}
+                          biaya={biaya}
+                          profit={profit}
+                          margin={margin}
+                          dirty={dirty}
+                          state={state}
+                          poValue={poInputs[p.id] || ""}
+                          onPoChange={(v) => handlePoChange(p.id, v)}
+                          onPoBlur={() => dirty && savePo(p.id)}
+                          dateLocale={dateLocale}
+                          tr={tr}
+                        />
+                      );
+                    })}
                   </div>
-                );
-              })}
+                </div>
+              ))}
             </div>
+
+            {canSlideProjects && (
+              <div className="flex justify-center gap-1.5 border-t border-slate-100 px-4 py-3">
+                {projectSlides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => scrollToProjectSlide(idx)}
+                    className={`h-2 rounded-full transition-all ${
+                      idx === projectSlide ? "w-6 bg-indigo-600" : "w-2 bg-slate-300 hover:bg-slate-400"
+                    }`}
+                    aria-label={`${tr("Slide", "Slide")} ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="border-t-2 border-slate-200 bg-slate-50/60 px-4 py-4 sm:px-5">
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div className="col-span-2 sm:col-span-1">
+                  <p className="text-xs font-semibold text-slate-800">
+                    {tr("Total", "Total")}{" "}
+                    <span className="font-normal text-slate-500">
+                      ({filtered.length} {tr("projek", "projects")})
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-indigo-600">{tr("Nominal PO", "PO Amount")}</p>
+                  <p className="font-bold tabular-nums text-indigo-700">{formatRupiah(summary.totalPO)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">{tr("Total Biaya", "Total Cost")}</p>
+                  <p className="font-bold tabular-nums text-slate-800">{formatRupiah(summary.totalBiaya)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">{tr("Profit / Margin", "Profit / Margin")}</p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                    <ProfitText profit={summary.totalProfit} hasPo={summary.totalPO > 0} />
+                    <MarginPill margin={summary.margin} hasPo={summary.totalPO > 0} />
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </>
         )}
       </DashboardSurface>
@@ -532,10 +528,111 @@ const DivisiBadge = ({ divisi }) => {
   if (!divisi) return <span className="text-slate-400 text-xs">-</span>;
   const tone = DIVISI_TONE[divisi] || "bg-slate-100 text-slate-700 ring-slate-200/70";
   return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ring-1 ${tone}`}>
-      <Building2 size={11} />
+    <span
+      className={`inline-flex max-w-full shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${tone}`}
+    >
+      <Building2 size={11} className="shrink-0" />
       {divisi}
     </span>
+  );
+};
+
+const ProjectStatRow = ({ label, value, valueTitle }) => (
+  <div className="min-w-0 space-y-1.5 py-2.5">
+    <p className="text-[10px] font-semibold uppercase leading-none tracking-wider text-slate-500">{label}</p>
+    <div className="flex min-w-0 justify-end">
+      <div
+        className="max-w-full overflow-x-auto overflow-y-hidden rounded-sm px-0.5 [-ms-overflow-style:none] [scrollbar-width:thin] [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/90"
+        title={typeof valueTitle === "string" ? valueTitle : undefined}
+      >
+        {typeof value === "string" ? (
+          <span className="inline-block whitespace-nowrap text-right text-[13px] font-bold tabular-nums leading-snug text-slate-800 sm:text-sm">
+            {value}
+          </span>
+        ) : (
+          <div className="inline-flex min-w-0 items-center justify-end whitespace-nowrap text-right text-[13px] font-bold leading-snug sm:text-sm">
+            {value}
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
+const ProjectCard = ({
+  p,
+  po,
+  biaya,
+  profit,
+  margin,
+  poValue,
+  onPoChange,
+  onPoBlur,
+  state,
+  dateLocale,
+  tr,
+}) => {
+  const metaLine = [p.karyawan, p.alamat].filter(Boolean).join(" · ");
+
+  return (
+    <article className="flex h-full min-w-0 flex-col rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/40 shadow-sm ring-1 ring-slate-900/[0.04] transition hover:border-slate-300 hover:shadow-md">
+      <header className="space-y-2 border-b border-slate-100 bg-white px-3.5 pb-3 pt-3.5 sm:px-4 sm:pt-4">
+        <h3
+          className="w-full min-w-0 text-sm font-bold leading-snug text-slate-900 break-words [overflow-wrap:anywhere]"
+          title={p.jenis_pekerjaan}
+        >
+          {p.jenis_pekerjaan}
+        </h3>
+        {metaLine ? (
+          <p
+            className="w-full min-w-0 text-[11px] leading-relaxed text-slate-500 break-words [overflow-wrap:anywhere]"
+            title={metaLine}
+          >
+            {metaLine}
+          </p>
+        ) : null}
+        <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1.5 text-[11px] text-slate-500">
+          <DivisiBadge divisi={p.divisi} />
+          <span className="inline-flex min-w-0 items-center gap-1">
+            <Calendar size={12} className="shrink-0 text-slate-400" />
+            {formatTanggal(p.start_date, dateLocale)}
+          </span>
+          {p.status ? (
+            <span className="inline-flex max-w-full shrink-0 items-center rounded-md bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-sky-200/80">
+              {p.status}
+            </span>
+          ) : null}
+        </div>
+      </header>
+
+      <div className="px-3.5 py-3 sm:px-4">
+        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+          {tr("Nominal PO", "PO Amount")}
+        </p>
+        <PoInput
+          value={poValue}
+          onChange={onPoChange}
+          onBlur={onPoBlur}
+          state={state}
+          fullWidth
+          compact
+        />
+      </div>
+
+      <footer className="mt-auto divide-y divide-slate-200/80 border-t border-slate-100 bg-slate-50/80 px-3 py-1 sm:px-3.5">
+        <ProjectStatRow label={tr("Total Biaya", "Total Cost")} value={formatRupiah(biaya)} valueTitle={formatRupiah(biaya)} />
+        <ProjectStatRow
+          label={tr("Profit", "Profit")}
+          value={<ProfitText profit={profit} hasPo={po > 0} />}
+          valueTitle={po > 0 ? formatRupiah(profit) : undefined}
+        />
+        <ProjectStatRow
+          label={tr("Margin", "Margin")}
+          value={<MarginPill margin={margin} hasPo={po > 0} />}
+          valueTitle={po > 0 ? `${margin.toFixed(2)}%` : undefined}
+        />
+      </footer>
+    </article>
   );
 };
 
@@ -561,7 +658,7 @@ const SummaryCard = ({ label, value, accent, glow, badge, icon: Icon, hint }) =>
 );
 
 /* ============================================================
- * PROFIT PANEL — combines Total Profit + Margin Profit + donut chart
+ * PROFIT PANEL - combines Total Profit + Margin Profit + donut chart
  * ============================================================ */
 const ProfitPanel = ({ summary, tr }) => {
   const { totalPO, totalBiaya, totalProfit, margin } = summary;
@@ -605,27 +702,28 @@ const ProfitPanel = ({ summary, tr }) => {
       <div className="relative grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-5 md:p-6 items-center">
         {/* CHART KIRI */}
         <div className="flex flex-col items-center">
-          <div className="relative w-[160px] h-[160px] sm:w-[180px] sm:h-[180px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={chartData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius="65%"
-                  outerRadius="95%"
-                  paddingAngle={hasData ? 2 : 0}
-                  dataKey="value"
-                  startAngle={90}
-                  endAngle={-270}
-                  isAnimationActive={false}
-                >
-                  {chartData.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.color} stroke="none" />
-                  ))}
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
+          <div
+            className="relative mx-auto shrink-0"
+            style={{ width: PROFIT_CHART_SIZE, height: PROFIT_CHART_SIZE }}
+          >
+            <PieChart width={PROFIT_CHART_SIZE} height={PROFIT_CHART_SIZE}>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius="65%"
+                outerRadius="95%"
+                paddingAngle={hasData ? 2 : 0}
+                dataKey="value"
+                startAngle={90}
+                endAngle={-270}
+                isAnimationActive={false}
+              >
+                {chartData.map((entry, idx) => (
+                  <Cell key={idx} fill={entry.color} stroke="none" />
+                ))}
+              </Pie>
+            </PieChart>
 
             {/* CENTER LABEL */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -760,7 +858,7 @@ const BreakdownItem = ({ label, value, color }) => {
   );
 };
 
-const PoInput = ({ value, onChange, onBlur, state, fullWidth = false }) => {
+const PoInput = ({ value, onChange, onBlur, state, fullWidth = false, compact = false }) => {
   const ring =
     state === "saving"
       ? "ring-amber-300 border-amber-300 bg-amber-50/30"
@@ -774,29 +872,30 @@ const PoInput = ({ value, onChange, onBlur, state, fullWidth = false }) => {
 
   return (
     <div
-      className={`flex items-center gap-1.5 rounded-lg border bg-white pl-3 pr-2 py-2 ring-1 transition ${ring} ${
-        fullWidth ? "w-full" : "w-[200px]"
-      }`}
+      className={`flex min-w-0 items-center rounded-lg border bg-white ring-1 transition ${ring} ${
+        compact ? "gap-1.5 py-1.5 pl-2 pr-2" : "gap-1.5 py-2 pl-3 pr-2"
+      } ${fullWidth ? "w-full" : "w-[200px]"}`}
     >
-      <span className="text-xs text-slate-500 font-semibold shrink-0">Rp</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onBlur={onBlur}
-        placeholder={value ? "0" : "Ketik nominal..."}
-        className="flex-1 min-w-0 bg-transparent outline-none text-sm font-semibold text-slate-900 tabular-nums text-right placeholder:text-indigo-400/60 placeholder:font-normal placeholder:text-xs"
-      />
-      <span className="w-5 h-5 flex items-center justify-center shrink-0">
+      <span className="shrink-0 text-xs font-semibold text-slate-500">Rp</span>
+      <div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <input
+          type="text"
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={onBlur}
+          placeholder={value ? "0" : compact ? "Nominal" : "Ketik nominal..."}
+          className={`box-border min-w-full w-max max-w-none bg-transparent text-right font-semibold text-slate-900 outline-none tabular-nums placeholder:font-normal placeholder:text-slate-400 ${
+            compact ? "text-[11px] placeholder:text-[11px]" : "text-sm placeholder:text-xs"
+          }`}
+        />
+      </div>
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
         {state === "saving" && <Loader2 size={13} className="animate-spin text-amber-500" />}
         {state === "saved" && <CheckCircle2 size={14} className="text-emerald-500" />}
         {state === "error" && <AlertCircle size={14} className="text-rose-500" />}
-        {state === "idle" && (
-          value
-            ? <Save size={12} className="text-slate-300" />
-            : <Pencil size={12} className="text-indigo-400" />
-        )}
+        {state === "idle" && !compact && (value ? <Save size={12} className="text-slate-300" /> : <Pencil size={12} className="text-indigo-400" />)}
+        {state === "idle" && compact && value ? <Save size={11} className="text-slate-300" /> : null}
       </span>
     </div>
   );
@@ -806,7 +905,9 @@ const ProfitText = ({ profit, hasPo }) => {
   if (!hasPo) return <span className="text-slate-400 text-sm">-</span>;
   const positive = profit >= 0;
   return (
-    <span className={`font-semibold ${positive ? "text-emerald-700" : "text-rose-600"}`}>
+    <span
+      className={`inline-block whitespace-nowrap font-bold tabular-nums leading-snug ${positive ? "text-emerald-700" : "text-rose-600"}`}
+    >
       {positive ? "+" : ""}
       {formatRupiah(profit)}
     </span>
@@ -816,7 +917,7 @@ const ProfitText = ({ profit, hasPo }) => {
 const MarginPill = ({ margin, hasPo }) => {
   if (!hasPo) {
     return (
-      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-500 ring-1 ring-slate-200/70">
+      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500 ring-1 ring-slate-200/70">
         -
       </span>
     );
@@ -824,7 +925,7 @@ const MarginPill = ({ margin, hasPo }) => {
   const positive = margin >= 0;
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap ${
         positive
           ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/70"
           : "bg-rose-50 text-rose-700 ring-1 ring-rose-200/70"
@@ -833,19 +934,5 @@ const MarginPill = ({ margin, hasPo }) => {
       {positive ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
       {margin.toFixed(1)}%
     </span>
-  );
-};
-
-const MobileStat = ({ label, value, tone = "slate" }) => {
-  const toneClass = {
-    slate: "text-slate-800",
-    emerald: "text-emerald-700",
-    rose: "text-rose-600",
-  };
-  return (
-    <div className="rounded-lg bg-slate-50 ring-1 ring-slate-200/70 px-2 py-1.5">
-      <p className="text-[9px] uppercase tracking-wider text-slate-500 font-semibold">{label}</p>
-      <p className={`mt-0.5 text-xs font-bold tabular-nums truncate ${toneClass[tone] || toneClass.slate}`}>{value}</p>
-    </div>
   );
 };

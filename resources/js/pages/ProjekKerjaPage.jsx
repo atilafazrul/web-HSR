@@ -2261,6 +2261,7 @@ export default function ProjekKerjaPage() {
                           {renderKategoriColumn(true)}
                         </div>
                       </div>
+                      {role === "super_admin" && (
                       <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                           <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">{tr("Total belum lunas", "Total unpaid")}</p>
@@ -2275,6 +2276,7 @@ export default function ProjekKerjaPage() {
                           <p className="text-lg font-bold tabular-nums text-slate-900">{formatRupiah(grandTotal)}</p>
                         </div>
                       </div>
+                      )}
                     </>
                   );
                 })()}
