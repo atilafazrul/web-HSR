@@ -1244,7 +1244,36 @@ class ProjekKerjaController extends Controller
                     }
 
                     if (! empty($row['is_lunas'])) {
-                        $lun = $lunasQueue[0] ?? null;
+                        $lun = null;
+                        if (isset($existing[$idx]) && is_array($existing[$idx]) && ! empty($existing[$idx]['is_lunas'])) {
+                            $lun = $existing[$idx];
+                            foreach ($lunasQueue as $qIdx => $candidate) {
+                                if ($candidate === $lun) {
+                                    unset($lunasQueue[$qIdx]);
+                                    $lunasQueue = array_values($lunasQueue);
+                                    break;
+                                }
+                            }
+                        } else {
+                            $olehIncoming = trim((string) ($row['oleh'] ?? ''));
+                            foreach ($lunasQueue as $qIdx => $candidate) {
+                                if (! is_array($candidate)) {
+                                    continue;
+                                }
+                                if ($olehIncoming !== '' && trim((string) ($candidate['oleh'] ?? '')) === $olehIncoming) {
+                                    $lun = $candidate;
+                                    unset($lunasQueue[$qIdx]);
+                                    $lunasQueue = array_values($lunasQueue);
+                                    break;
+                                }
+                            }
+                            if (! $lun) {
+                                $lun = $lunasQueue[0] ?? null;
+                                if ($lun) {
+                                    array_shift($lunasQueue);
+                                }
+                            }
+                        }
                         if (! $lun) {
                             throw new \InvalidArgumentException('Baris biaya lunas tidak valid atau tidak boleh ditambah.');
                         }
@@ -1252,10 +1281,9 @@ class ProjekKerjaController extends Controller
                         $lk = trim((string) ($lun['keterangan'] ?? ''));
                         $rn = round((float) ($row['nominal'] ?? 0), 2);
                         $rk = trim((string) ($row['keterangan'] ?? ''));
-                        if ($ln !== $rn) {
+                        if (abs($ln - $rn) > 0.009) {
                             throw new \InvalidArgumentException('Baris yang sudah lunas tidak boleh diubah nominalnya.');
                         }
-                        array_shift($lunasQueue);
                         $item = [
                             'nominal' => $ln,
                             // Izinkan update keterangan untuk catatan koreksi/admin.
@@ -1371,7 +1399,7 @@ class ProjekKerjaController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Biaya berhasil diupdate',
-                'data' => $projek
+                'data' => $projek->fresh(),
             ]);
 
         } catch (\InvalidArgumentException $e) {
@@ -1562,6 +1590,13 @@ class ProjekKerjaController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Akun monitoring tidak dapat mengunduh data biaya.',
+            ], 403);
+        }
+
+        if ((auth()->user()->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya super admin yang dapat mengunduh ekspor biaya lengkap.',
             ], 403);
         }
 

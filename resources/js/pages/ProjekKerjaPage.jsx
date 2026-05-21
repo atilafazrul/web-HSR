@@ -472,9 +472,11 @@ export default function ProjekKerjaPage() {
       console.log("Sorted data:", sorted);
       setDataList(sorted);
       // Jangan reset currentPage agar pagination tetap di halaman yang sama
+      return sorted;
     } catch (err) {
       console.error("Fetch error:", err);
       setDataList([]);
+      return [];
     }
   };
 
@@ -799,9 +801,127 @@ export default function ProjekKerjaPage() {
       photoFiles: [],
       photoPaths: r.photo_paths ?? [],
     }));
-    console.log("normalizeBiayaRows result:", result);
     return result;
   };
+
+  const biayaOlehLower = (r) => String(r?.oleh || "").trim().toLowerCase();
+  const currentUserOlehLower = () => String(user?.name || "").trim().toLowerCase();
+
+  const isMeaningfulBiayaRow = (r) =>
+    parseRibuanId(r?.nominal) > 0 ||
+    String(r?.keterangan || "").trim() !== "" ||
+    (Array.isArray(r?.photoFiles) && r.photoFiles.length > 0) ||
+    (Array.isArray(r?.photoPaths) && r.photoPaths.length > 0);
+
+  /** Non–super admin: hanya baris milik pengguna login (match `oleh` dengan nama user). Super admin: semua baris. */
+  const filterBiayaRowsForCurrentUserOnly = (rows) => {
+    if (role === "super_admin") return Array.isArray(rows) ? rows : [];
+    const me = currentUserOlehLower();
+    return (Array.isArray(rows) ? rows : []).filter((r) => biayaOlehLower(r) === me);
+  };
+
+  /** State modal: super admin = semua baris; lainnya = hanya baris atas nama user. */
+  const normalizeBiayaRowsForModalOpen = (arr) => {
+    if (role === "super_admin") return normalizeBiayaRows(arr);
+    const mine = filterBiayaRowsForCurrentUserOnly(Array.isArray(arr) ? arr : []);
+    return mine.length ? normalizeBiayaRows(mine) : normalizeBiayaRows([]);
+  };
+
+  /**
+   * Gabungkan edit (hanya baris milik user di UI) dengan baris karyawan lain dari server.
+   * Cocokkan baris form ↔ server lewat `created_at` (bukan urutan array) agar tidak hilang saat simpan.
+   */
+  const mergeBiayaCategoryForSave = (baseItem, edit, key, fieldName) => {
+    if (role === "super_admin") return edit[key] || [];
+    const raw = baseItem?.[fieldName];
+    const serverRows =
+      Array.isArray(raw) && raw.length > 0 ? normalizeBiayaRows(raw) : [];
+    const mineRows = (edit[key] || []).filter(isMeaningfulBiayaRow);
+    const me = currentUserOlehLower();
+    const usedCreatedAt = new Set();
+    const out = [];
+
+    const findEditMatch = (serverRow) => {
+      const serverCa = String(serverRow.created_at || "").trim();
+      if (!serverCa) return null;
+      return (
+        mineRows.find(
+          (e) => String(e.created_at || "").trim() === serverCa && !usedCreatedAt.has(serverCa),
+        ) || null
+      );
+    };
+
+    for (const row of serverRows) {
+      if (biayaOlehLower(row) !== me) {
+        out.push(row);
+        continue;
+      }
+      const rep = findEditMatch(row);
+      const serverCa = String(row.created_at || "").trim();
+      if (rep) {
+        if (serverCa) usedCreatedAt.add(serverCa);
+        if (Boolean(row.is_lunas)) {
+          out.push({
+            ...rep,
+            nominal: row.nominal,
+            is_lunas: true,
+            oleh: row.oleh || rep.oleh || user?.name || "",
+            created_at: row.created_at || rep.created_at,
+            photoPaths: row.photoPaths ?? rep.photoPaths ?? [],
+            photoFiles: [],
+          });
+        } else {
+          out.push({
+            ...rep,
+            is_lunas: false,
+            oleh: row.oleh || rep.oleh || user?.name || "",
+            created_at: row.created_at || rep.created_at,
+            photoPaths: rep.photoPaths ?? row.photoPaths ?? [],
+            photoFiles: rep.photoFiles || [],
+          });
+        }
+      } else if (Boolean(row.is_lunas)) {
+        out.push(row);
+      }
+    }
+
+    for (const rep of mineRows) {
+      const ca = String(rep.created_at || "").trim();
+      if (ca && usedCreatedAt.has(ca)) continue;
+      const existsOnServer = serverRows.some(
+        (r) => biayaOlehLower(r) === me && String(r.created_at || "").trim() === ca,
+      );
+      if (!existsOnServer) {
+        out.push({
+          ...rep,
+          oleh: rep.oleh || user?.name || "",
+          photoFiles: rep.photoFiles || [],
+        });
+      }
+    }
+
+    return out;
+  };
+
+  const applyProjekBiayaToModal = (projek) => {
+    if (!projek?.id) return;
+    setDataList((prev) =>
+      (Array.isArray(prev) ? prev : []).map((p) =>
+        p.id === projek.id ? { ...p, ...projek } : p,
+      ),
+    );
+    setBiayaEdit({
+      jalan: normalizeBiayaRowsForModalOpen(projek.biaya_jalan_items),
+      pengeluaran: normalizeBiayaRowsForModalOpen(projek.biaya_pengeluaran_items),
+      reimbursment: normalizeBiayaRowsForModalOpen(projek.biaya_reimbursment_items),
+    });
+  };
+
+  const buildBiayaPayloadForSave = (baseItem) => ({
+    jalan: mergeBiayaCategoryForSave(baseItem, biayaEdit, "jalan", "biaya_jalan_items"),
+    pengeluaran: mergeBiayaCategoryForSave(baseItem, biayaEdit, "pengeluaran", "biaya_pengeluaran_items"),
+    reimbursment: mergeBiayaCategoryForSave(baseItem, biayaEdit, "reimbursment", "biaya_reimbursment_items"),
+  });
 
   const sumBiayaRows = (rows) =>
     rows.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
@@ -830,16 +950,15 @@ export default function ProjekKerjaPage() {
       created_at: r.created_at || new Date().toISOString(),
       photo_paths: r.photoPaths || [],
     }));
-    console.log("biayaToPayload result:", result);
     return result;
   };
 
   const openUangModal = (item) => {
     setCurrentId(item.id);
     setBiayaEdit({
-      jalan: normalizeBiayaRows(item.biaya_jalan_items),
-      pengeluaran: normalizeBiayaRows(item.biaya_pengeluaran_items),
-      reimbursment: normalizeBiayaRows(item.biaya_reimbursment_items),
+      jalan: normalizeBiayaRowsForModalOpen(item.biaya_jalan_items),
+      pengeluaran: normalizeBiayaRowsForModalOpen(item.biaya_pengeluaran_items),
+      reimbursment: normalizeBiayaRowsForModalOpen(item.biaya_reimbursment_items),
     });
     setEditUang(false);
     setShowUangModal(true);
@@ -939,15 +1058,19 @@ export default function ProjekKerjaPage() {
   const handleUpdateUang = async () => {
     if (!currentId) return;
     const item = dataList.find(i => i.id === currentId);
+    if (!item) return;
     if (!canEditCurrentBiayaProject) {
       alert("Anda tidak punya akses untuk mengubah project ini.");
       return;
     }
 
+    const payloadBiaya = buildBiayaPayloadForSave(item);
+
     try {
+      let savedProjek = null;
       // Cek apakah ada foto yang perlu diupload
-      const hasPhotos = biayaEdit.pengeluaran.some(r => r.photoFiles?.length > 0) ||
-                          biayaEdit.reimbursment.some(r => r.photoFiles?.length > 0);
+      const hasPhotos = payloadBiaya.pengeluaran.some(r => r.photoFiles?.length > 0) ||
+                          payloadBiaya.reimbursment.some(r => r.photoFiles?.length > 0);
 
       if (hasPhotos) {
         // Gunakan FormData untuk upload foto
@@ -956,33 +1079,10 @@ export default function ProjekKerjaPage() {
         // Kirim sebagai POST + method spoofing agar Laravel tetap memproses sebagai PATCH.
         fd.append("_method", "PATCH");
 
-        console.log("Data biaya yang akan dikirim:", {
-          jalan: biayaEdit.jalan,
-          pengeluaran: biayaEdit.pengeluaran,
-          reimbursment: biayaEdit.reimbursment,
-        });
-
-        // Cek detail foto untuk logging
-        const pengeluaranPhotosCount = biayaEdit.pengeluaran.reduce((sum, row) => sum + (row.photoFiles?.length || 0), 0);
-        const reimbursmentPhotosCount = biayaEdit.reimbursment.reduce((sum, row) => sum + (row.photoFiles?.length || 0), 0);
-        console.log(`Total foto yang akan dikirim: pengeluaran=${pengeluaranPhotosCount}, reimbursment=${reimbursmentPhotosCount}`);
-
-        // Tampilkan detail foto yang ada untuk setiap baris
-        biayaEdit.pengeluaran.forEach((row, idx) => {
-          if (row.photoFiles?.length > 0) {
-            console.log(`Foto pengeluaran baris ${idx}:`, row.photoFiles.map(f => f.name));
-          }
-        });
-        biayaEdit.reimbursment.forEach((row, idx) => {
-          if (row.photoFiles?.length > 0) {
-            console.log(`Foto reimbursment baris ${idx}:`, row.photoFiles.map(f => f.name));
-          }
-        });
-
         // Validasi minimal 1 baris valid per kategori
-        const jalanValid = biayaEdit.jalan.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== ""));
-        const pengeluaranValid = biayaEdit.pengeluaran.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== "") || (r.photoFiles?.length > 0));
-        const reimbursmentValid = biayaEdit.reimbursment.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== "") || (r.photoFiles?.length > 0));
+        const jalanValid = payloadBiaya.jalan.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== ""));
+        const pengeluaranValid = payloadBiaya.pengeluaran.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== "") || (r.photoFiles?.length > 0));
+        const reimbursmentValid = payloadBiaya.reimbursment.some(r => parseRibuanId(r.nominal) > 0 || (r.keterangan && String(r.keterangan).trim() !== "") || (r.photoFiles?.length > 0));
 
         if (!jalanValid && !pengeluaranValid && !reimbursmentValid) {
           alert("Minimal ada satu data biaya yang valid (nominal > 0 atau keterangan tidak kosong atau ada foto).");
@@ -990,88 +1090,84 @@ export default function ProjekKerjaPage() {
         }
 
         // Tambah data biaya sebagai array langsung, bukan JSON string
-        biayaToPayload(biayaEdit.jalan).forEach((item, idx) => {
-          Object.keys(item).forEach(key => {
+        biayaToPayload(payloadBiaya.jalan).forEach((rowPayload, idx) => {
+          Object.keys(rowPayload).forEach(key => {
             // Skip photo_paths - akan dihandle terpisah
             if (key === 'photo_paths') return;
             // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
-            const value = key === 'is_lunas' ? (item[key] ? '1' : '0') : item[key];
+            const value = key === 'is_lunas' ? (rowPayload[key] ? '1' : '0') : rowPayload[key];
             fd.append(`biaya_jalan_items[${idx}][${key}]`, value);
           });
         });
-        biayaToPayload(biayaEdit.pengeluaran).forEach((item, idx) => {
-          Object.keys(item).forEach(key => {
+        biayaToPayload(payloadBiaya.pengeluaran).forEach((rowPayload, idx) => {
+          Object.keys(rowPayload).forEach(key => {
             // Skip photo_paths - akan dihandle terpisah
             if (key === 'photo_paths') return;
             // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
-            const value = key === 'is_lunas' ? (item[key] ? '1' : '0') : item[key];
+            const value = key === 'is_lunas' ? (rowPayload[key] ? '1' : '0') : rowPayload[key];
             fd.append(`biaya_pengeluaran_items[${idx}][${key}]`, value);
           });
           // Kirim photo_paths sebagai array terpisah
-          if (item.photo_paths && Array.isArray(item.photo_paths)) {
-            item.photo_paths.forEach((path, pathIdx) => {
+          if (rowPayload.photo_paths && Array.isArray(rowPayload.photo_paths)) {
+            rowPayload.photo_paths.forEach((path, pathIdx) => {
               fd.append(`biaya_pengeluaran_items[${idx}][photo_paths][${pathIdx}]`, path);
             });
           }
         });
-        biayaToPayload(biayaEdit.reimbursment).forEach((item, idx) => {
-          Object.keys(item).forEach(key => {
+        biayaToPayload(payloadBiaya.reimbursment).forEach((rowPayload, idx) => {
+          Object.keys(rowPayload).forEach(key => {
             // Skip photo_paths - akan dihandle terpisah
             if (key === 'photo_paths') return;
             // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
-            const value = key === 'is_lunas' ? (item[key] ? '1' : '0') : item[key];
+            const value = key === 'is_lunas' ? (rowPayload[key] ? '1' : '0') : rowPayload[key];
             fd.append(`biaya_reimbursment_items[${idx}][${key}]`, value);
           });
           // Kirim photo_paths sebagai array terpisah
-          if (item.photo_paths && Array.isArray(item.photo_paths)) {
-            item.photo_paths.forEach((path, pathIdx) => {
+          if (rowPayload.photo_paths && Array.isArray(rowPayload.photo_paths)) {
+            rowPayload.photo_paths.forEach((path, pathIdx) => {
               fd.append(`biaya_reimbursment_items[${idx}][photo_paths][${pathIdx}]`, path);
             });
           }
         });
 
         // Tambah foto untuk setiap baris pengeluaran
-        biayaEdit.pengeluaran.forEach((row, idx) => {
+        payloadBiaya.pengeluaran.forEach((row, idx) => {
           if (row.photoFiles?.length > 0) {
-            console.log(`Menambahkan ${row.photoFiles.length} foto ke pengeluaran baris ${idx}`);
             row.photoFiles.forEach((file, fileIdx) => {
-              console.log(`  - fd.append('pengeluaran_photos[${idx}][${fileIdx}]', ${file.name})`);
               fd.append(`pengeluaran_photos[${idx}][${fileIdx}]`, file);
             });
           }
         });
 
         // Tambah foto untuk setiap baris reimbursment
-        biayaEdit.reimbursment.forEach((row, idx) => {
+        payloadBiaya.reimbursment.forEach((row, idx) => {
           if (row.photoFiles?.length > 0) {
-            console.log(`Menambahkan ${row.photoFiles.length} foto ke reimbursment baris ${idx}`);
             row.photoFiles.forEach((file, fileIdx) => {
-              console.log(`  - fd.append('reimbursment_photos[${idx}][${fileIdx}]', ${file.name})`);
               fd.append(`reimbursment_photos[${idx}][${fileIdx}]`, file);
             });
           }
         });
 
-        console.log("FormData entries sebelum dikirim:");
-        for (let [key, value] of fd.entries()) {
-          if (value instanceof File) {
-            console.log(`  ${key}: ${value.name} (${(value.size / 1024).toFixed(2)} KB)`);
-          }
-        }
-
-        await api.post(`/projek-kerja/${currentId}/uang`, fd);
+        const saveRes = await api.post(`/projek-kerja/${currentId}/uang`, fd);
+        savedProjek = saveRes.data?.data;
       } else {
         // Tanpa foto, kirim JSON biasa
-        await api.patch(`/projek-kerja/${currentId}/uang`, {
-          biaya_jalan_items: biayaToPayload(biayaEdit.jalan),
-          biaya_pengeluaran_items: biayaToPayload(biayaEdit.pengeluaran),
-          biaya_reimbursment_items: biayaToPayload(biayaEdit.reimbursment),
+        const saveRes = await api.patch(`/projek-kerja/${currentId}/uang`, {
+          biaya_jalan_items: biayaToPayload(payloadBiaya.jalan),
+          biaya_pengeluaran_items: biayaToPayload(payloadBiaya.pengeluaran),
+          biaya_reimbursment_items: biayaToPayload(payloadBiaya.reimbursment),
         });
+        savedProjek = saveRes.data?.data;
       }
 
+      const freshList = await fetchData();
       setEditUang(false);
-      setShowUangModal(false);
-      fetchData();
+      if (savedProjek && Number(savedProjek.id) === Number(currentId)) {
+        applyProjekBiayaToModal(savedProjek);
+      } else {
+        const updated = (Array.isArray(freshList) ? freshList : []).find((i) => i.id === currentId);
+        if (updated) applyProjekBiayaToModal(updated);
+      }
     } catch (err) {
       const msg =
         err.response?.data?.message ||
@@ -1371,13 +1467,7 @@ export default function ProjekKerjaPage() {
       currentProject && isInviteeOnProject(currentProject) && !canEditCurrentBiayaProject
     );
 
-  const rowsForProjekBiayaModal = (rows) => {
-    if (!restrictedInvitedBiayaView) return rows;
-    const me = String(user?.name || "").trim().toLowerCase();
-    return (Array.isArray(rows) ? rows : []).filter(
-      (r) => String(r?.oleh || "").trim().toLowerCase() === me,
-    );
-  };
+  const rowsForProjekBiayaModal = (rows) => filterBiayaRowsForCurrentUserOnly(rows);
 
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -2091,14 +2181,14 @@ export default function ProjekKerjaPage() {
                 })()}
               </h3>
               <p className="mt-2 max-w-3xl text-sm text-slate-500">
-                {restrictedInvitedBiayaView
+                {role === "super_admin" && !restrictedInvitedBiayaView
                   ? tr(
-                      "Menampilkan biaya atas nama Anda (Biaya Jalan, Pengeluaran, dan Reimbursment) pada project ini.",
-                      "Showing costs under your name (travel, expense, and reimbursement) for this project.",
-                    )
-                  : tr(
                       "Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.",
                       "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.",
+                    )
+                  : tr(
+                      "Menampilkan biaya atas nama Anda (Biaya Jalan, Pengeluaran, dan Reimbursment) pada project ini. Karyawan lain tidak melihat entri Anda.",
+                      "Showing costs under your name (travel, expense, and reimbursement) for this project. Other employees do not see your entries.",
                     )}
               </p>
             </div>
@@ -2293,7 +2383,7 @@ export default function ProjekKerjaPage() {
                       </button>
                     );
                   })()}
-                  {!restrictedInvitedBiayaView ? (
+                  {role === "super_admin" && !restrictedInvitedBiayaView ? (
                     <button
                       type="button"
                       onClick={handleExportBiaya}
@@ -2518,9 +2608,9 @@ export default function ProjekKerjaPage() {
                       const item = dataList.find((i) => i.id === currentId);
                       if (item) {
                         setBiayaEdit({
-                          jalan: normalizeBiayaRows(item.biaya_jalan_items),
-                          pengeluaran: normalizeBiayaRows(item.biaya_pengeluaran_items),
-                          reimbursment: normalizeBiayaRows(item.biaya_reimbursment_items),
+                          jalan: normalizeBiayaRowsForModalOpen(item.biaya_jalan_items),
+                          pengeluaran: normalizeBiayaRowsForModalOpen(item.biaya_pengeluaran_items),
+                          reimbursment: normalizeBiayaRowsForModalOpen(item.biaya_reimbursment_items),
                         });
                       }
                     }}
