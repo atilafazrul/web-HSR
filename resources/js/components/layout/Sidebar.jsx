@@ -90,6 +90,29 @@ export default function Sidebar({
     { name: "Purchasing", path: "purchasing", icon: <ShoppingCart size={18} /> },
   ];
 
+  const go = (path) => {
+    navigate(path);
+    if (isMobile) setSidebarOpen(false);
+  };
+
+  const currentDivisiPath = (user?.divisi || "service").toLowerCase();
+  const isAnyDivisiActive = (divisiPath) => isActive(`${basePath}/${divisiPath}`);
+
+  const fallbackDivisi = {
+    name: user?.divisi || "Service",
+    path: currentDivisiPath,
+    icon: <Wrench size={18} />,
+  };
+
+  const divisiMenuItems = isSuperAdmin
+    ? allDivisis
+    : isAdmin || isUser
+      ? [allDivisis.find((d) => d.path === currentDivisiPath) || fallbackDivisi]
+      : [];
+
+  const showDivisiMenu = divisiMenuItems.length > 0;
+  const divisiSectionActive = divisiMenuItems.some((d) => isAnyDivisiActive(d.path));
+
   return (
     <>
       {/* MOBILE OVERLAY */}
@@ -150,10 +173,11 @@ export default function Sidebar({
           {/* NAVIGATION MENU */}
           <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
             {/* ================= DASHBOARD ================= */}
-            <div onClick={() => {
-              navigate(`${basePath}/dashboard`);
-              if (isMobile) setSidebarOpen(false);
-            }}>
+            <button
+              type="button"
+              className="w-full text-left"
+              onClick={() => go(`${basePath}/dashboard`)}
+            >
               <SidebarItem
                 icon={<LayoutDashboard size={18} />}
                 text={t("dashboard", "Dashboard")}
@@ -161,15 +185,16 @@ export default function Sidebar({
                 expanded={expanded}
                 isMobile={isMobile}
               />
-            </div>
+            </button>
 
             {/* ================= KARYAWAN (SUPER ADMIN ONLY) ================= */}
             {isSuperAdmin && (
               <>
-                <div onClick={() => {
-                  navigate(`${basePath}/karyawan`);
-                  if (isMobile) setSidebarOpen(false);
-                }}>
+                <button
+                  type="button"
+                  className="w-full text-left"
+                  onClick={() => go(`${basePath}/karyawan`)}
+                >
                   <SidebarItem
                     icon={<Users size={18} />}
                     text={t("employee", "Karyawan")}
@@ -177,12 +202,13 @@ export default function Sidebar({
                     expanded={expanded}
                     isMobile={isMobile}
                   />
-                </div>
+                </button>
 
-                <div onClick={() => {
-                  navigate(`${basePath}/rekap-akun`);
-                  if (isMobile) setSidebarOpen(false);
-                }}>
+                <button
+                  type="button"
+                  className="w-full text-left"
+                  onClick={() => go(`${basePath}/rekap-akun`)}
+                >
                   <SidebarItem
                     icon={<FileText size={18} />}
                     text={t("expenseRecap", "Rekap Biaya Karyawan")}
@@ -190,16 +216,17 @@ export default function Sidebar({
                     expanded={expanded}
                     isMobile={isMobile}
                   />
-                </div>
+                </button>
               </>
             )}
 
             {/* ================= REKAP BIAYA AKUN (ADMIN) ================= */}
             {isAdmin && (
-              <div onClick={() => {
-                navigate(`${basePath}/rekap-akun`);
-                if (isMobile) setSidebarOpen(false);
-              }}>
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => go(`${basePath}/rekap-akun`)}
+              >
                 <SidebarItem
                   icon={<FileText size={18} />}
                   text={t("expenseRecap", "Rekap Biaya Karyawan")}
@@ -207,15 +234,16 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </div>
+              </button>
             )}
 
             {/* ================= BERITA ACARA (SUPER ADMIN & ADMIN) ================= */}
             {(isSuperAdmin || isAdmin) && (
-              <div onClick={() => {
-                navigate(`${basePath}/berita-acara`);
-                if (isMobile) setSidebarOpen(false);
-              }}>
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => go(`${basePath}/berita-acara`)}
+              >
                 <SidebarItem
                   icon={<FileText size={18} />}
                   text={t("minutesReport", "Berita Acara")}
@@ -223,15 +251,16 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </div>
+              </button>
             )}
 
             {/* ================= APPROVAL CUTI (SUPER ADMIN) ================= */}
             {isSuperAdmin && (
-              <div onClick={() => {
-                navigate(`${basePath}/cuti-approval`);
-                if (isMobile) setSidebarOpen(false);
-              }}>
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => go(`${basePath}/cuti-approval`)}
+              >
                 <SidebarItem
                   icon={<ClipboardCheck size={18} />}
                   text={t("leaveApproval", "Approval Cuti")}
@@ -239,15 +268,16 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </div>
+              </button>
             )}
 
             {/* ================= PENGAJUAN CUTI (ADMIN ONLY) ================= */}
             {isAdmin && (
-              <div onClick={() => {
-                navigate(`${basePath}/cuti`);
-                if (isMobile) setSidebarOpen(false);
-              }}>
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => go(`${basePath}/cuti`)}
+              >
                 <SidebarItem
                   icon={<CalendarCheck size={18} />}
                   text={t("leaveRequest", "Pengajuan Cuti")}
@@ -255,40 +285,39 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </div>
+              </button>
             )}
 
-            {/* ================= DIVISI (SUPER ADMIN) ================= */}
-            {isSuperAdmin && (
+            {/* ================= DIVISI (SUPER ADMIN / ADMIN / USER) ================= */}
+            {showDivisiMenu && (
               <div>
-                <div
-                  className="flex items-center justify-between px-3 py-2.5 rounded-lg hover:bg-slate-700 cursor-pointer transition-colors"
+                <button
+                  type="button"
+                  className="w-full text-left"
                   onClick={() => setOpenDivisi(!openDivisi)}
                 >
-                  <span className={`flex items-center ${!expanded ? 'mx-auto' : ''}`}>
-                    <Folder size={18} className="flex-shrink-0" />
-                    <span className={`ml-3 truncate ${expanded ? "block" : "hidden"}`}>
-                      {t("division", "Divisi")}
-                    </span>
-                  </span>
+                  <SidebarItem
+                    icon={<Folder size={18} />}
+                    text={t("division", "Divisi")}
+                    active={divisiSectionActive}
+                    expanded={expanded}
+                    isMobile={isMobile}
+                    rightIcon={
+                      expanded ? (
+                        openDivisi ? <ChevronDown size={16} /> : <ChevronRight size={16} />
+                      ) : null
+                    }
+                  />
+                </button>
 
-                  {expanded && (
-                    <span className="flex-shrink-0">
-                      {openDivisi ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-                    </span>
-                  )}
-                </div>
-
-                {/* ================= DIVISI LIST ================= */}
                 {openDivisi && (
                   <div className="mt-1 space-y-1">
-                    {allDivisis.map((d) => (
-                      <div
-                        key={d.name}
-                        onClick={() => {
-                          navigate(`${basePath}/${d.path}`);
-                          if (isMobile) setSidebarOpen(false);
-                        }}
+                    {divisiMenuItems.map((d) => (
+                      <button
+                        type="button"
+                        className="w-full text-left"
+                        key={d.path}
+                        onClick={() => go(`${basePath}/${d.path}`)}
                       >
                         <SidebarItem
                           icon={d.icon}
@@ -296,36 +325,21 @@ export default function Sidebar({
                           active={isActive(`${basePath}/${d.path}`)}
                           expanded={expanded}
                           isMobile={isMobile}
+                          indented
                         />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 )}
               </div>
             )}
 
-            {/* ================= ADMIN: SINGLE DIVISI ================= */}
-            {(isAdmin || isUser) && !isSuperAdmin && (
-              <div onClick={() => {
-                navigate(`${basePath}/${user?.divisi?.toLowerCase() || "service"}`);
-                if (isMobile) setSidebarOpen(false);
-              }}>
-                <SidebarItem
-                  icon={<Folder size={18} />}
-                  text={user?.divisi || "Service"}
-                  active={isActive(`${basePath}/${user?.divisi?.toLowerCase() || "service"}`)}
-                  expanded={expanded}
-                  indented
-                  isMobile={isMobile}
-                />
-              </div>
-            )}
-
             {/* ================= PROFILE ================= */}
-            <div onClick={() => {
-              navigate(`${basePath}/profile`);
-              if (isMobile) setSidebarOpen(false);
-            }}>
+            <button
+              type="button"
+              className="w-full text-left"
+              onClick={() => go(`${basePath}/profile`)}
+            >
               <SidebarItem
                 icon={<User size={18} />}
                 text={t("profile", "Profil")}
@@ -333,7 +347,7 @@ export default function Sidebar({
                 expanded={expanded}
                 isMobile={isMobile}
               />
-            </div>
+            </button>
           </nav>
         </div>
 
@@ -362,14 +376,15 @@ const SidebarItem = ({
   active,
   expanded,
   indented = false,
-  isMobile = false
+  isMobile = false,
+  rightIcon = null,
 }) => {
   // Di mobile saat sidebar terbuka, selalu tampilkan teks
   const showText = expanded || isMobile;
 
   return (
     <div
-      className={`flex items-center py-2.5 rounded-lg cursor-pointer transition-all
+      className={`relative flex items-center py-2.5 rounded-lg transition-all select-none
         ${active ? "bg-indigo-600 hover:bg-indigo-700 text-white" : "hover:bg-slate-700 text-slate-100"}
         ${indented && showText ? "pl-8 pr-3" : "px-3"}
         ${!showText ? "justify-center" : ""}
@@ -380,10 +395,16 @@ const SidebarItem = ({
       </span>
 
       {showText && (
-        <span className="ml-3 truncate text-sm">
+        <span className="ml-3 truncate text-sm flex-1">
           {text}
         </span>
       )}
+
+      {showText && rightIcon ? (
+        <span className="ml-2 flex-shrink-0 opacity-90">
+          {rightIcon}
+        </span>
+      ) : null}
 
       {/* Tooltip untuk collapsed state di desktop */}
       {!showText && !isMobile && (
