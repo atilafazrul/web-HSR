@@ -54,6 +54,7 @@ class ProjekKerjaNotificationService
                     'projek_kerja_id' => $projek->id,
                     'report_no' => $projek->report_no,
                     'divisi' => $projek->divisi,
+                    'created_by_divisi' => $projek->created_by_divisi,
                 ],
             ]);
             $notifiedIds[] = $admin->id;
@@ -121,6 +122,7 @@ class ProjekKerjaNotificationService
                     'projek_kerja_id' => $projek->id,
                     'report_no' => $projek->report_no,
                     'divisi' => $projek->divisi,
+                    'created_by_divisi' => $projek->created_by_divisi,
                 ],
             ]);
         }

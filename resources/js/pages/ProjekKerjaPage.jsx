@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 
 /** Simpan / pulihkan nomor halaman daftar setelah kembali dari halaman edit (route berbeda → unmount). */
 function projekKerjaPaginationStorageKey(pathname) {
@@ -363,6 +363,10 @@ export default function ProjekKerjaPage() {
     reimbursment: [emptyBiayaRow()],
   });
   const hasHandledOpenBiayaFromQueryRef = useRef(false);
+  const hasHandledProjekIdFromQueryRef = useRef(false);
+  const pendingProjekIdFromQueryRef = useRef(null);
+  const rowRefs = useRef({});
+  const [highlightProjekId, setHighlightProjekId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -980,6 +984,107 @@ export default function ProjekKerjaPage() {
     navigate(`${location.pathname}${nextQuery ? `?${nextQuery}` : ""}`, { replace: true });
   }, [location.search, location.pathname, dataList, navigate, isUserRole]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const projekIdParam = params.get("projek_id");
+    if (!projekIdParam) {
+      hasHandledProjekIdFromQueryRef.current = false;
+      pendingProjekIdFromQueryRef.current = null;
+      return;
+    }
+    const projekId = Number(projekIdParam);
+    if (!projekId || hasHandledProjekIdFromQueryRef.current) return;
+    if (!dataList.length) {
+      pendingProjekIdFromQueryRef.current = projekId;
+      return;
+    }
+
+    const matched = dataList.find((item) => Number(item?.id) === projekId);
+    if (!matched) return;
+
+    hasHandledProjekIdFromQueryRef.current = true;
+    pendingProjekIdFromQueryRef.current = null;
+    setHighlightProjekId(projekId);
+
+    params.delete("projek_id");
+    const nextQuery = params.toString();
+    navigate(`${location.pathname}${nextQuery ? `?${nextQuery}` : ""}`, { replace: true });
+  }, [location.search, location.pathname, dataList, navigate]);
+
+  const itemMatchesSearch = (item, term) => {
+    if (!term) return true;
+    const t = term.toLowerCase().trim();
+    return (
+      item.divisi?.toLowerCase().includes(t) ||
+      item.jenis_pekerjaan?.toLowerCase().includes(t) ||
+      item.karyawan?.toLowerCase().includes(t) ||
+      item.alamat?.toLowerCase().includes(t) ||
+      item.status?.toLowerCase().includes(t) ||
+      String(item.report_no || "").toLowerCase().includes(t) ||
+      (item.barang_dibeli && item.barang_dibeli.toLowerCase().includes(t))
+    );
+  };
+
+  const filteredData = useMemo(() => {
+    return dataList.filter((item) => {
+      if (role === "super_admin") {
+        if (isArchiveContext && !item.is_archived) {
+          return false;
+        }
+        if (isSelesaiContext && String(item.status || "").trim().toLowerCase() !== "selesai") {
+          return false;
+        }
+        if (currentDivisi && !projectRelatedToDivisi(item, currentDivisi)) {
+          return false;
+        }
+      }
+      return itemMatchesSearch(item, searchTerm);
+    });
+  }, [
+    dataList,
+    role,
+    isArchiveContext,
+    isSelesaiContext,
+    currentDivisi,
+    searchTerm,
+  ]);
+
+  useEffect(() => {
+    if (!highlightProjekId || !dataList.length) return;
+
+    const matched = dataList.find((item) => Number(item.id) === highlightProjekId);
+    if (!matched) return;
+
+    if (searchTerm && !itemMatchesSearch(matched, searchTerm)) {
+      setSearchTerm("");
+      return;
+    }
+
+    const indexInFiltered = filteredData.findIndex(
+      (item) => Number(item.id) === highlightProjekId
+    );
+    if (indexInFiltered < 0) return;
+
+    const page = Math.floor(indexInFiltered / itemsPerPage) + 1;
+    setCurrentPage((cp) => (cp === page ? cp : page));
+
+    const timer = window.setTimeout(() => {
+      rowRefs.current[highlightProjekId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }, 200);
+
+    const clearTimer = window.setTimeout(() => {
+      setHighlightProjekId(null);
+    }, 8000);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.clearTimeout(clearTimer);
+    };
+  }, [highlightProjekId, filteredData, searchTerm, dataList, itemsPerPage]);
+
   const addBiayaRow = (key) => {
     setBiayaEdit((prev) => ({
       ...prev,
@@ -1416,32 +1521,6 @@ export default function ProjekKerjaPage() {
    * - di konteks /seles atau /selesai: hanya status selesai
    * - di halaman projek biasa: tampilkan semua status
    */
-  const filteredData = dataList.filter((item) => {
-    if (role === "super_admin") {
-      if (isArchiveContext && !item.is_archived) {
-        return false;
-      }
-      if (isSelesaiContext && String(item.status || "").trim().toLowerCase() !== "selesai") {
-        return false;
-      }
-      // Untuk super admin, project tetap terlihat di divisi asal/tujuan berdasarkan riwayat divisi_flow.
-      // Jadi saat project dioper, tidak hilang dari daftar divisi yang pernah menangani.
-      if (currentDivisi && !projectRelatedToDivisi(item, currentDivisi)) {
-        return false;
-      }
-    }
-    const term = searchTerm.toLowerCase().trim();
-    if (!term) return true;
-    return (
-      item.divisi?.toLowerCase().includes(term) ||
-      item.jenis_pekerjaan?.toLowerCase().includes(term) ||
-      item.karyawan?.toLowerCase().includes(term) ||
-      item.alamat?.toLowerCase().includes(term) ||
-      item.status?.toLowerCase().includes(term) ||
-      (item.barang_dibeli && item.barang_dibeli.toLowerCase().includes(term))
-    );
-  });
-
   // Pagination logic
   const totalItems = filteredData.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -1844,8 +1923,21 @@ export default function ProjekKerjaPage() {
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((item) => (
-                <tr key={item.id} className="border-b border-slate-100 transition hover:bg-slate-50/70">
+              {currentItems.map((item) => {
+                const isHighlighted = Number(highlightProjekId) === Number(item.id);
+                return (
+                <tr
+                  key={item.id}
+                  ref={(el) => {
+                    if (el) rowRefs.current[item.id] = el;
+                  }}
+                  id={isHighlighted ? `projek-row-${item.id}` : undefined}
+                  className={`border-b border-slate-100 transition hover:bg-slate-50/70 ${
+                    isHighlighted
+                      ? "bg-indigo-50 ring-2 ring-indigo-500 ring-inset shadow-sm"
+                      : ""
+                  }`}
+                >
                   <td className="p-2.5">
                     <select
                       className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
@@ -2005,7 +2097,8 @@ export default function ProjekKerjaPage() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
           {filteredData.length === 0 && (

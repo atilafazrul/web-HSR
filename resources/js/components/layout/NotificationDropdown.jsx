@@ -3,13 +3,7 @@ import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axiosConfig";
 import { useI18n } from "../../i18n/index.jsx";
-
-function divisiToSlug(divisi) {
-  return String(divisi || "")
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, "");
-}
+import { resolveNotificationPath } from "../../utils/notificationPaths.js";
 
 function formatRelativeTime(iso, language) {
   if (!iso) return "";
@@ -72,18 +66,6 @@ export default function NotificationDropdown({ user }) {
     return () => document.removeEventListener("mousedown", onOutside);
   }, [open]);
 
-  const projekPath = (notification) => {
-    const divisi = notification?.data?.divisi;
-    const slug = divisiToSlug(divisi);
-    if (user?.role === "super_admin") {
-      return slug ? `/super_admin/${slug}/projek` : "/super_admin/projek-kerja";
-    }
-    if (user?.role === "user") {
-      return slug ? `/user/${slug}/projek` : "/user/dashboard";
-    }
-    return slug ? `/admin/${slug}/projek` : "/admin/dashboard";
-  };
-
   const handleOpen = () => {
     setOpen((prev) => !prev);
     if (!open) {
@@ -108,7 +90,8 @@ export default function NotificationDropdown({ user }) {
       }
     }
     setOpen(false);
-    navigate(projekPath(notification));
+    const target = resolveNotificationPath(notification, user);
+    navigate(target);
   };
 
   const handleMarkAllRead = async (e) => {
