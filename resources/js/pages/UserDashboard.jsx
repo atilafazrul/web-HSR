@@ -181,7 +181,6 @@ export default function UserDashboard({ user, logout }) {
       <main className={`flex-1 min-w-0 flex flex-col transition-all duration-300 ${sidebarExpanded ? "lg:pl-72" : "lg:pl-20"}`}>
         <Header
           user={user}
-          showBell={false}
           sidebarExpanded={sidebarExpanded}
           setSidebarExpanded={setSidebarExpanded}
           sidebarOpen={sidebarOpen}

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import api from "../api/axiosConfig";
 import { DollarSign, Calendar, User, TrendingUp, Download, Search, X, FileText, ChevronRight } from "lucide-react";
-import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { useI18n } from "../i18n";
 
@@ -514,186 +513,54 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
   }, []);
 
   const handleExportCSV = async () => {
-    // Jika ada akun terpilih, hanya export akun tersebut
-    const dataToExport = selectedAkun ? [selectedAkun] : dataByAkun;
-
-    if (dataToExport.length === 0) {
-      const message = selectedAkun
-        ? "Tidak ada data biaya untuk diekspor"
-        : tr("Tidak ada data biaya", "No cost data");
-      alert(message);
+    if (dataByAkun.length === 0) {
+      alert(tr("Tidak ada data biaya", "No cost data"));
       return;
     }
 
-    // Helper function to format number without currency symbol
-    const formatNumberForCSV = (n) => new Intl.NumberFormat("id-ID", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(Number(n || 0));
+    const params = new URLSearchParams({
+      bulan: selectedMonth,
+      tahun: String(selectedYear),
+    });
 
-    const monthName = new Date(selectedYear, selectedMonth - 1).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
-    const accountName = selectedAkun?.nama_akun || selectedAkun?.name || "";
-
-    // Format waktu dengan format Tanggal, Bulan, dan Tahun kemudian jam
-    const now = new Date();
-    const tanggal = now.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
-    const jam = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", hour12: false });
-    const waktuDibuat = `${tanggal} ${jam}`;
-
-    // Buat workbook baru
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Rekap Biaya');
-
-    // Set kolom width
-    worksheet.columns = [
-      { width: 5 },
-      { width: 25 },
-      { width: 20 },
-      { width: 25 },
-      { width: 20 },
-      { width: 20 },
-    ];
-
-    // Header title
-    worksheet.mergeCells('A1:F1');
-    const cellA1 = worksheet.getCell('A1');
-    cellA1.value = 'REKAPITULASI BIAYYA PER AKUN';
-    cellA1.font = { bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
-    cellA1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF172238' } };
-    cellA1.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    // Periode
-    worksheet.mergeCells('A2:F2');
-    const cellA2 = worksheet.getCell('A2');
-    cellA2.value = `Periode: ${monthName}`;
-    cellA2.font = { bold: true, size: 11 };
-    cellA2.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    // Dibuat
-    worksheet.mergeCells('A3:F3');
-    const cellA3 = worksheet.getCell('A3');
-    cellA3.value = `Dibuat: ${waktuDibuat}`;
-    cellA3.font = { size: 10 };
-    cellA3.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    // Akun (jika ada akun terpilih)
-    if (selectedAkun) {
-      worksheet.mergeCells('A4:F4');
-      const cellA4 = worksheet.getCell('A4');
-      cellA4.value = `Akun: ${accountName}`;
-      cellA4.font = { bold: true, size: 11 };
-      cellA4.alignment = { horizontal: 'left', vertical: 'middle' };
+    const accountName = selectedAkun?.nama_akun || selectedAkun?.name;
+    if (accountName) {
+      params.append("nama_akun", accountName);
     }
 
-    // Header tabel
-    const headers = ['No.', 'Nama Akun', 'Biaya Jalan', 'Biaya Pengeluaran ', 'Biaya Reimbursment', 'Total'];
-    headers.forEach((header, index) => {
-      const cell = worksheet.getCell(6, index + 1);
-      cell.value = header;
-      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4472C4' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FF000000' } },
-        left: { style: 'thin', color: { argb: 'FF000000' } },
-        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-        right: { style: 'thin', color: { argb: 'FF000000' } },
-      };
-    });
-
-    // Data
-    dataToExport.forEach((akun, idx) => {
-      let jalanTotal = akun.jalan || 0;
-      let pengeluaranTotal = akun.pengeluaran || 0;
-      let reimbursmentTotal = akun.reimbursment || 0;
-      let total = akun.total || 0;
-
-      if (detailBiaya.length > 0 && selectedAkun && akun.nama_akun === selectedAkun.nama_akun) {
-        jalanTotal = detailBiaya.filter(d => d.kategori === 'jalan').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0);
-        pengeluaranTotal = detailBiaya.filter(d => d.kategori === 'pengeluaran').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0);
-        reimbursmentTotal = detailBiaya.filter(d => d.kategori === 'reimbursment').reduce((sum, d) => sum + (Number(d.nominal) || 0), 0);
-        total = jalanTotal + pengeluaranTotal + reimbursmentTotal;
-      }
-
-      const rowIndex = idx + 7;
-      const rowData = [
-        idx + 1,
-        akun.nama_akun || akun.name,
-        formatNumberForCSV(jalanTotal),
-        formatNumberForCSV(pengeluaranTotal),
-        formatNumberForCSV(reimbursmentTotal),
-        formatNumberForCSV(total),
-      ];
-
-      rowData.forEach((value, colIndex) => {
-        const cell = worksheet.getCell(rowIndex, colIndex + 1);
-        cell.value = value;
-        cell.font = { size: 10 };
-        cell.alignment = {
-          horizontal: colIndex === 0 ? 'center' : 'left',
-          vertical: 'middle'
-        };
-        cell.border = {
-          top: { style: 'thin', color: { argb: 'FF000000' } },
-          left: { style: 'thin', color: { argb: 'FF000000' } },
-          bottom: { style: 'thin', color: { argb: 'FF000000' } },
-          right: { style: 'thin', color: { argb: 'FF000000' } },
-        };
-
-        // Warna latar baris selang-seling
-        if (idx % 2 === 0) {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
-        }
+    try {
+      const res = await api.get(`/dashboard-biaya/export-kas?${params.toString()}`, {
+        responseType: "blob",
       });
-    });
 
-    // Total row
-    const totalJalan = dataToExport.reduce((sum, a) => {
-      if (detailBiaya.length > 0 && selectedAkun && a.nama_akun === selectedAkun.nama_akun) {
-        return sum + detailBiaya.filter(d => d.kategori === 'jalan').reduce((s, d) => s + (Number(d.nominal) || 0), 0);
+      const monthLabel = new Date(selectedYear, Number(selectedMonth) - 1)
+        .toLocaleDateString("id-ID", { month: "long" })
+        .toUpperCase();
+      const fallbackName = accountName
+        ? `KAS_HSR_${monthLabel}_${selectedYear}_${accountName}.xlsx`
+        : `KAS_HSR_${monthLabel}_${selectedYear}.xlsx`;
+
+      const disposition = res.headers?.["content-disposition"] || "";
+      const match = disposition.match(/filename="?([^"]+)"?/i);
+      const fileName = match?.[1] || fallbackName;
+
+      saveAs(res.data, fileName);
+    } catch (err) {
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          const json = JSON.parse(text);
+          alert(json.message || tr("Gagal mengekspor Excel", "Failed to export Excel"));
+          return;
+        } catch {
+          // fall through
+        }
       }
-      return sum + (Number(a.jalan) || 0);
-    }, 0);
-
-    const totalPengeluaran = dataToExport.reduce((sum, a) => {
-      if (detailBiaya.length > 0 && selectedAkun && a.nama_akun === selectedAkun.nama_akun) {
-        return sum + detailBiaya.filter(d => d.kategori === 'pengeluaran').reduce((s, d) => s + (Number(d.nominal) || 0), 0);
-      }
-      return sum + (Number(a.pengeluaran) || 0);
-    }, 0);
-
-    const totalReimbursment = dataToExport.reduce((sum, a) => {
-      if (detailBiaya.length > 0 && selectedAkun && a.nama_akun === selectedAkun.nama_akun) {
-        return sum + detailBiaya.filter(d => d.kategori === 'reimbursment').reduce((s, d) => s + (Number(d.nominal) || 0), 0);
-      }
-      return sum + (Number(a.reimbursment) || 0);
-    }, 0);
-
-    const grandTotal = totalJalan + totalPengeluaran + totalReimbursment;
-
-    const totalRowIndex = dataToExport.length + 7;
-    const totalData = ['', '', formatNumberForCSV(totalJalan), formatNumberForCSV(totalPengeluaran), formatNumberForCSV(totalReimbursment), formatNumberForCSV(grandTotal)];
-
-    totalData.forEach((value, colIndex) => {
-      const cell = worksheet.getCell(totalRowIndex, colIndex + 1);
-      cell.value = value;
-      cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
-      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF28A745' } };
-      cell.alignment = { horizontal: 'center', vertical: 'middle' };
-      cell.border = {
-        top: { style: 'thin', color: { argb: 'FF000000' } },
-        left: { style: 'thin', color: { argb: 'FF000000' } },
-        bottom: { style: 'thin', color: { argb: 'FF000000' } },
-        right: { style: 'thin', color: { argb: 'FF000000' } },
-      };
-    });
-
-    // Generate buffer dan save file
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, selectedAkun
-      ? `rekap_biaya_${accountName}_${selectedYear}_${selectedMonth}.xlsx`
-      : `rekap_biaya_${selectedYear}_${selectedMonth}.xlsx`);
+      alert(
+        err?.response?.data?.message ||
+          tr("Gagal mengekspor Excel", "Failed to export Excel")
+      );
+    }
   };
 
   // Filter akun berdasarkan search term

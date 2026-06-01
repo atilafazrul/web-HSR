@@ -6,6 +6,7 @@ use App\Models\ProjekKerja;
 use App\Models\ProjekKerjaPhoto;
 use App\Models\ProjekKerjaFile;
 use App\Models\User;
+use App\Services\ProjekKerjaNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
@@ -645,6 +646,19 @@ class ProjekKerjaController extends Controller
 
             $projek = ProjekKerja::create($data);
 
+            $notifier = app(ProjekKerjaNotificationService::class);
+            $adminNotifiedIds = $notifier->notifyAdminsNewProjek($projek, auth()->user());
+            $invitedUserIds = $notifier->resolveInvitedUserIds(
+                $projek->karyawan_terlibat ?? [],
+                $projek->invited_user_ids ?? []
+            );
+            $notifier->notifyKaryawanInvited(
+                $projek,
+                $invitedUserIds,
+                auth()->user(),
+                $adminNotifiedIds
+            );
+
             // Optional: buat folder awal saat create project (tanpa upload file/foto dulu).
             $initialFileFolder = $this->sanitizeFolderName($validated['file_folder_name'] ?? null);
             if ($initialFileFolder) {
@@ -897,7 +911,18 @@ class ProjekKerjaController extends Controller
                 $data['status_history'] = $history;
             }
 
+            $previousKaryawanTerlibat = $projek->karyawan_terlibat;
+            $previousInvitedUserIds = $projek->invited_user_ids;
+
             $projek->update($data);
+
+            $notifier = app(ProjekKerjaNotificationService::class);
+            $notifier->notifyNewInvitesAfterUpdate(
+                $projek->fresh(),
+                is_array($previousKaryawanTerlibat) ? $previousKaryawanTerlibat : [],
+                is_array($previousInvitedUserIds) ? $previousInvitedUserIds : [],
+                auth()->user()
+            );
 
             DB::commit();
 

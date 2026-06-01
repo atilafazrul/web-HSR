@@ -37,6 +37,10 @@ const translations = {
     signIn: "Masuk",
     needHelp: "Butuh bantuan? Hubungi administrator sistem Anda",
     securedBadge: "Diamankan dengan enkripsi tingkat enterprise",
+    notifications: "Notifikasi",
+    markAllRead: "Tandai semua dibaca",
+    noNotifications: "Belum ada notifikasi",
+    loadingNotifications: "Memuat notifikasi...",
   },
   en: {
     appLoading: "Loading...",
@@ -68,6 +72,10 @@ const translations = {
     signIn: "Sign In",
     needHelp: "Need help? Contact your system administrator",
     securedBadge: "Secured with enterprise-grade encryption",
+    notifications: "Notifications",
+    markAllRead: "Mark all read",
+    noNotifications: "No notifications yet",
+    loadingNotifications: "Loading notifications...",
   },
 };
 

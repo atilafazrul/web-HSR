@@ -271,7 +271,6 @@ export default function AdminDashboard({ user, logout }) {
       >
         <Header
           user={currentUser}
-          showBell={false}
           sidebarExpanded={sidebarExpanded}
           setSidebarExpanded={setSidebarExpanded}
           sidebarOpen={sidebarOpen}

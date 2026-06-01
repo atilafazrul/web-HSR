@@ -3,9 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\DashboardBiaya;
+use App\Models\ProjekKerja;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DashboardBiayaController extends Controller
 {
@@ -813,6 +818,285 @@ class DashboardBiayaController extends Controller
             'success' => true,
             'data' => $data,
         ]);
+    }
+
+    protected function kasTemplatePath(): string
+    {
+        return storage_path('app/templates/kas-hsr-template.xlsx');
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    protected function kasMonthNames(): array
+    {
+        return [
+            1 => 'JANUARI',
+            2 => 'FEBRUARI',
+            3 => 'MARET',
+            4 => 'APRIL',
+            5 => 'MEI',
+            6 => 'JUNI',
+            7 => 'JULI',
+            8 => 'AGUSTUS',
+            9 => 'SEPTEMBER',
+            10 => 'OKTOBER',
+            11 => 'NOVEMBER',
+            12 => 'DESEMBER',
+        ];
+    }
+
+    /**
+     * @return array<int, array{date: \Carbon\Carbon, keterangan: string, debit: float, kredit: float, staff: string}>
+     */
+    protected function collectKasTransactionLines(int $bulan, int $tahun, User $authUser, ?string $namaAkunFilter = null): array
+    {
+        $isSuperAdmin = ($authUser->role ?? null) === 'super_admin';
+        $filterName = $namaAkunFilter !== null ? strtolower(trim($namaAkunFilter)) : '';
+        $lines = [];
+
+        $activeUserNames = User::query()
+            ->pluck('name')
+            ->map(fn ($name) => strtolower(trim((string) $name)))
+            ->flip();
+
+        // Dashboard biaya (di luar proyek)
+        $dashboardQuery = DashboardBiaya::query()
+            ->whereYear('created_at', $tahun)
+            ->whereMonth('created_at', $bulan)
+            ->whereNotNull('created_by')
+            ->with('creator:id,name');
+
+        if (! $isSuperAdmin) {
+            $dashboardQuery->where('created_by', $authUser->id);
+        } elseif ($filterName !== '') {
+            $dashboardQuery->whereHas('creator', function ($q) use ($filterName) {
+                $q->whereRaw('LOWER(TRIM(name)) = ?', [$filterName]);
+            });
+        }
+
+        foreach ($dashboardQuery->orderBy('created_at')->get() as $row) {
+            if (! $row->creator) {
+                continue;
+            }
+            $staff = trim((string) $row->creator->name);
+            $nominal = (float) $row->nominal;
+            if ($nominal <= 0) {
+                continue;
+            }
+            $keterangan = trim((string) ($row->keterangan ?? ''));
+            if ($keterangan === '') {
+                $keterangan = strtoupper((string) ($row->kategori ?? 'BIAYA'));
+            }
+
+            $lines[] = [
+                'date' => Carbon::parse($row->created_at),
+                'keterangan' => $keterangan,
+                'debit' => 0.0,
+                'kredit' => $nominal,
+                'staff' => $staff,
+            ];
+        }
+
+        // Biaya dari proyek kerja
+        $projekKerjas = ProjekKerja::query()->get([
+            'id',
+            'biaya_jalan_items',
+            'biaya_pengeluaran_items',
+            'biaya_reimbursment_items',
+            'created_at',
+        ]);
+
+        $kategoriLabels = [
+            'jalan' => 'UANG JALAN',
+            'pengeluaran' => 'BIAYA PENGELUARAN',
+            'reimbursment' => 'BIAYA REIMBURSMENT',
+        ];
+
+        foreach ($projekKerjas as $projek) {
+            foreach ($kategoriLabels as $kategori => $defaultLabel) {
+                $items = $projek->{"biaya_{$kategori}_items"} ?? [];
+                foreach ($items as $item) {
+                    $oleh = trim((string) ($item['oleh'] ?? ''));
+                    $nominal = (float) ($item['nominal'] ?? 0);
+                    if (! $this->isProjectItemInPeriod((array) $item, $projek->created_at, $bulan, $tahun)) {
+                        continue;
+                    }
+                    if ($nominal <= 0 || $oleh === '') {
+                        continue;
+                    }
+                    if (! $activeUserNames->has(strtolower($oleh))) {
+                        continue;
+                    }
+                    if (! $isSuperAdmin && strtolower($oleh) !== strtolower(trim((string) $authUser->name))) {
+                        continue;
+                    }
+                    if ($filterName !== '' && strtolower($oleh) !== $filterName) {
+                        continue;
+                    }
+
+                    $keterangan = trim((string) ($item['keterangan'] ?? ''));
+                    if ($keterangan === '') {
+                        $keterangan = $defaultLabel;
+                    }
+
+                    $rawDate = $item['created_at'] ?? $projek->created_at;
+                    $lines[] = [
+                        'date' => Carbon::parse($rawDate),
+                        'keterangan' => $keterangan,
+                        'debit' => 0.0,
+                        'kredit' => $nominal,
+                        'staff' => $oleh,
+                    ];
+                }
+            }
+        }
+
+        usort($lines, function ($a, $b) {
+            return $a['date']->timestamp <=> $b['date']->timestamp;
+        });
+
+        return $lines;
+    }
+
+    public function exportKas(Request $request)
+    {
+        $user = $request->user();
+
+        if (! in_array(($user->role ?? null), ['super_admin', 'admin', 'user'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak diizinkan mengekspor rekapitulasi kas.',
+            ], 403);
+        }
+
+        $bulan = (int) $request->input('bulan');
+        $tahun = (int) $request->input('tahun');
+        $namaAkun = trim((string) $request->input('nama_akun', ''));
+
+        if (! $bulan || ! $tahun) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bulan dan tahun wajib diisi.',
+            ], 422);
+        }
+
+        if (! file_exists($this->kasTemplatePath())) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Template KAS HSR tidak ditemukan di server.',
+            ], 500);
+        }
+
+        $lines = $this->collectKasTransactionLines(
+            $bulan,
+            $tahun,
+            $user,
+            $namaAkun !== '' ? $namaAkun : null
+        );
+
+        if (empty($lines)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada data biaya untuk periode ini.',
+            ], 422);
+        }
+
+        $monthNames = $this->kasMonthNames();
+        $monthLabel = $monthNames[$bulan] ?? strtoupper(Carbon::create($tahun, $bulan, 1)->locale('id')->translatedFormat('F'));
+        $title = 'KAS PT HSR '.$monthLabel.' '.$tahun;
+
+        $styleTemplate = IOFactory::load($this->kasTemplatePath());
+        $styleSheet = $styleTemplate->getActiveSheet();
+        $dataRowStyle = $styleSheet->getStyle('A3:G3');
+        $footerTotalStyle = $styleSheet->getStyle('A139:G139');
+        $footerSisaStyle = $styleSheet->getStyle('A140:G140');
+
+        $spreadsheet = IOFactory::load($this->kasTemplatePath());
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle(substr($monthLabel.' '.$tahun, 0, 31));
+        $sheet->setCellValue('A1', $title);
+
+        $dataStyleRow = 3;
+        $highest = (int) $sheet->getHighestRow();
+        if ($highest > 2) {
+            $sheet->removeRow(3, $highest - 2);
+        }
+
+        $row = 3;
+        $no = 1;
+        $firstDataRow = 3;
+        $rpMoneyFormat = '[$Rp-421]#,##0';
+        $rpSaldoFormat = '"Rp"#,##0';
+
+        foreach ($lines as $line) {
+            if ($row > $dataStyleRow) {
+                $sheet->insertNewRowBefore($row);
+            }
+            $sheet->duplicateStyle($dataRowStyle, "A{$row}:G{$row}");
+
+            $debit = (float) ($line['debit'] ?? 0);
+            $kredit = (float) ($line['kredit'] ?? 0);
+
+            $sheet->setCellValue("A{$row}", $no);
+            $sheet->setCellValue("B{$row}", ExcelDate::PHPToExcel($line['date']));
+            $sheet->getStyle("B{$row}")->getNumberFormat()->setFormatCode('m/d/yyyy');
+            $sheet->setCellValue("C{$row}", $line['keterangan']);
+            if ($debit > 0) {
+                $sheet->setCellValue("D{$row}", $debit);
+            }
+            if ($kredit > 0) {
+                $sheet->setCellValue("E{$row}", $kredit);
+            }
+
+            // Rumus saldo berjalan (sama seperti template KAS HSR)
+            if ($row === $firstDataRow) {
+                $sheet->setCellValue("F{$row}", "=D{$row}-E{$row}");
+            } else {
+                $prev = $row - 1;
+                $sheet->setCellValue("F{$row}", "=F{$prev}+D{$row}-E{$row}");
+            }
+
+            $sheet->getStyle("D{$row}")->getNumberFormat()->setFormatCode($rpMoneyFormat);
+            $sheet->getStyle("E{$row}")->getNumberFormat()->setFormatCode($rpMoneyFormat);
+            $sheet->getStyle("F{$row}")->getNumberFormat()->setFormatCode($rpSaldoFormat);
+
+            $sheet->setCellValue("G{$row}", $line['staff']);
+
+            $no++;
+            $row++;
+        }
+
+        $lastDataRow = $row - 1;
+        $totalRow = $row;
+        $sheet->duplicateStyle($footerTotalStyle, "A{$totalRow}:G{$totalRow}");
+
+        $sheet->setCellValue("C{$totalRow}", 'TOTAL');
+        $sheet->setCellValue("D{$totalRow}", "=SUM(D{$firstDataRow}:D{$lastDataRow})");
+        $sheet->setCellValue("E{$totalRow}", "=SUM(E{$firstDataRow}:E{$lastDataRow})");
+        $sheet->getStyle("D{$totalRow}:E{$totalRow}")->getNumberFormat()->setFormatCode($rpMoneyFormat);
+
+        $sisaRow = $totalRow + 1;
+        $sheet->duplicateStyle($footerSisaStyle, "A{$sisaRow}:G{$sisaRow}");
+        $sheet->setCellValue("C{$sisaRow}", 'SISA SALDO');
+        $sheet->setCellValue("F{$sisaRow}", "=D{$totalRow}-E{$totalRow}");
+        $sheet->getStyle("F{$sisaRow}")->getNumberFormat()->setFormatCode($rpSaldoFormat);
+
+        $writer = new Xlsx($spreadsheet);
+        $tempPath = storage_path('app/temp/kas-export-'.uniqid('', true).'.xlsx');
+        if (! is_dir(dirname($tempPath))) {
+            mkdir(dirname($tempPath), 0755, true);
+        }
+        $writer->save($tempPath);
+
+        $filename = 'KAS_HSR_'.$monthLabel.'_'.$tahun;
+        if ($namaAkun !== '') {
+            $safeName = preg_replace('/[^a-zA-Z0-9_-]+/', '_', $namaAkun);
+            $filename .= '_'.$safeName;
+        }
+        $filename .= '.xlsx';
+
+        return response()->download($tempPath, $filename)->deleteFileAfterSend(true);
     }
 
     public function destroy(Request $request, $id)

@@ -1,7 +1,8 @@
 import React from "react";
-import { Bell, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "../../i18n/index.jsx";
+import NotificationDropdown from "./NotificationDropdown.jsx";
 
 export default function Header({
   user,
@@ -88,15 +89,8 @@ export default function Header({
             <option value="en">English</option>
           </select>
         </div>
-        {/* Bell */}
-        {showBell && (
-          <button
-            className="p-2 rounded-lg hover:bg-gray-100 relative"
-            style={{ minWidth: "44px", minHeight: "44px", touchAction: "manipulation" }}
-            aria-label="Notifications"
-          >
-            <Bell size={20} className="text-gray-600" />
-          </button>
+        {showBell && (user?.role === "admin" || user?.role === "user") && (
+          <NotificationDropdown user={user} />
         )}
 
         {/* USER - ubah dari onDoubleClick ke onClick */}
