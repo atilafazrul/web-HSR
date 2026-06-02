@@ -13,6 +13,7 @@ import {
   Users,
   X,
   AlertTriangle,
+  Wallet,
   Truck,
   ShoppingCart,
   FileText,
@@ -232,7 +233,7 @@ export default function Sidebar({
                   onClick={() => go(`${basePath}/rekap-akun`)}
                 >
                   <SidebarItem
-                    icon={<FileText size={18} />}
+                    icon={<Wallet size={18} />}
                     text={t("expenseRecap", "Rekap Biaya Karyawan")}
                     active={isActive(`${basePath}/rekap-akun`)}
                     expanded={expanded}
@@ -250,7 +251,7 @@ export default function Sidebar({
                 onClick={() => go(`${basePath}/rekap-akun`)}
               >
                 <SidebarItem
-                  icon={<FileText size={18} />}
+                  icon={<Wallet size={18} />}
                   text={t("expenseRecap", "Rekap Biaya Karyawan")}
                   active={isActive(`${basePath}/rekap-akun`)}
                   expanded={expanded}
