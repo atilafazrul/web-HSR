@@ -59,6 +59,35 @@ class NotificationController extends Controller
         ]);
     }
 
+    public function destroy(Request $request, int $id)
+    {
+        $notification = Notification::query()
+            ->where('user_id', $request->user()->id)
+            ->findOrFail($id);
+
+        $wasUnread = ! $notification->read_at;
+        $notification->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Notifikasi dihapus',
+            'was_unread' => $wasUnread,
+        ]);
+    }
+
+    public function destroyAll(Request $request)
+    {
+        $deleted = Notification::query()
+            ->where('user_id', $request->user()->id)
+            ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Semua notifikasi dihapus',
+            'deleted_count' => $deleted,
+        ]);
+    }
+
     private function transform(Notification $notification): array
     {
         return [
