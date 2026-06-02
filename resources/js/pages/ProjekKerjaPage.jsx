@@ -349,6 +349,11 @@ export default function ProjekKerjaPage() {
   // State untuk kompresi foto biaya
   const [compressingPhotoKey, setCompressingPhotoKey] = useState(null);
 
+  // Modal konfirmasi hapus project
+  const [showDeleteProjectModal, setShowDeleteProjectModal] = useState(false);
+  const [deleteProjectTarget, setDeleteProjectTarget] = useState(null);
+  const [deletingProject, setDeletingProject] = useState(false);
+
   const emptyBiayaRow = () => ({
     nominal: "",
     keterangan: "",
@@ -701,12 +706,24 @@ export default function ProjekKerjaPage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Yakin hapus project ini?")) return;
+    // Open confirmation modal instead of browser confirm
+    const target = dataList.find((p) => Number(p?.id) === Number(id));
+    setDeleteProjectTarget(target || { id });
+    setShowDeleteProjectModal(true);
+  };
+
+  const confirmDeleteProject = async () => {
+    if (!deleteProjectTarget?.id || deletingProject) return;
+    setDeletingProject(true);
     try {
-      await api.delete(`/projek-kerja/${id}`);
+      await api.delete(`/projek-kerja/${deleteProjectTarget.id}`);
+      setShowDeleteProjectModal(false);
+      setDeleteProjectTarget(null);
       fetchData();
     } catch {
       alert("Gagal hapus data");
+    } finally {
+      setDeletingProject(false);
     }
   };
 
@@ -2842,6 +2859,72 @@ export default function ProjekKerjaPage() {
                 className="flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm bg-red-600 hover:bg-red-700"
               >
                 Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL KONFIRMASI HAPUS PROJECT ================= */}
+      {showDeleteProjectModal && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
+          onClick={() => !deletingProject && setShowDeleteProjectModal(false)}
+        >
+          <div
+            className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-rose-500 to-orange-400" />
+
+            <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-rose-100 shadow-inner ring-1 ring-red-100">
+                <Trash2 size={30} className="text-red-600" strokeWidth={2} />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-800">
+                {tr("Hapus Projek Kerja", "Delete Project")}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                {tr(
+                  "Projek ini akan dihapus permanen dan tidak dapat dikembalikan.",
+                  "This project will be permanently removed and cannot be restored."
+                )}
+              </p>
+            </div>
+
+            {deleteProjectTarget ? (
+              <div className="px-6 pb-5">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                  <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    {deleteProjectTarget.report_no || tr("Projek", "Project")}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-800 line-clamp-2">
+                    {deleteProjectTarget.jenis_pekerjaan || "-"}
+                  </p>
+                  {deleteProjectTarget.alamat ? (
+                    <p className="mt-1 text-xs text-slate-500 line-clamp-1">{deleteProjectTarget.alamat}</p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setShowDeleteProjectModal(false)}
+                disabled={deletingProject}
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {tr("Batal", "Cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteProject}
+                disabled={deletingProject}
+                className="flex-1 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-500/25 transition hover:from-red-700 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {deletingProject ? tr("Menghapus...", "Deleting...") : tr("Ya, Hapus", "Yes, Delete")}
               </button>
             </div>
           </div>

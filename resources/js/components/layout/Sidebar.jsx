@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   LayoutDashboard,
   Folder,
@@ -12,6 +12,7 @@ import {
   LogOut,
   Users,
   X,
+  AlertTriangle,
   Truck,
   ShoppingCart,
   FileText,
@@ -36,6 +37,9 @@ export default function Sidebar({
 
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const logoutConfirmRef = useRef(null);
 
   const [openDivisi, setOpenDivisi] = useState(() => {
     const saved = localStorage.getItem("sidebarDivisiOpen");
@@ -45,6 +49,24 @@ export default function Sidebar({
   useEffect(() => {
     localStorage.setItem("sidebarDivisiOpen", JSON.stringify(openDivisi));
   }, [openDivisi]);
+
+  useEffect(() => {
+    if (!showLogoutConfirm) return;
+    const onOutside = (e) => {
+      if (logoutConfirmRef.current && !logoutConfirmRef.current.contains(e.target)) {
+        setShowLogoutConfirm(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape") setShowLogoutConfirm(false);
+    };
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [showLogoutConfirm]);
 
   // Effect untuk mendeteksi resize window
   useEffect(() => {
@@ -355,8 +377,7 @@ export default function Sidebar({
         <div className="px-3 py-4 border-t border-slate-800">
           <button
             onClick={() => {
-              logout();
-              if (isMobile) setSidebarOpen(false);
+              setShowLogoutConfirm(true);
             }}
             className="w-full bg-slate-700 hover:bg-slate-600 py-2.5 rounded-xl font-medium shadow transition-colors flex items-center justify-center gap-2"
           >
@@ -365,6 +386,64 @@ export default function Sidebar({
           </button>
         </div>
       </aside>
+
+      {/* ================= LOGOUT CONFIRM MODAL ================= */}
+      {showLogoutConfirm && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
+          onClick={() => !loggingOut && setShowLogoutConfirm(false)}
+        >
+          <div
+            ref={logoutConfirmRef}
+            className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-sky-400" />
+
+            <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-50 to-violet-100 shadow-inner ring-1 ring-indigo-100">
+                <AlertTriangle size={30} className="text-indigo-600" strokeWidth={2} />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-800">
+                {t("logoutConfirmTitle", "Confirm Logout")}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                {t("logoutConfirmDesc", "Are you sure you want to log out?")}
+              </p>
+            </div>
+
+            <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                disabled={loggingOut}
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("cancel", "Cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (loggingOut) return;
+                  setLoggingOut(true);
+                  try {
+                    await Promise.resolve(logout?.());
+                  } finally {
+                    setLoggingOut(false);
+                    setShowLogoutConfirm(false);
+                    if (isMobile) setSidebarOpen(false);
+                  }
+                }}
+                disabled={loggingOut}
+                className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-500/25 transition hover:from-indigo-700 hover:to-violet-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {loggingOut ? t("loggingOut", "Logging out...") : t("confirmLogout", "Yes, Logout")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

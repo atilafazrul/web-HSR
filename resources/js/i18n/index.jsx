@@ -51,6 +51,10 @@ const translations = {
     confirmDelete: "Ya, Hapus",
     cancel: "Batal",
     deleting: "Menghapus...",
+    logoutConfirmTitle: "Konfirmasi Keluar",
+    logoutConfirmDesc: "Apakah Anda yakin ingin keluar?",
+    confirmLogout: "Ya, Keluar",
+    loggingOut: "Sedang keluar...",
   },
   en: {
     appLoading: "Loading...",
@@ -96,6 +100,10 @@ const translations = {
     confirmDelete: "Yes, Delete",
     cancel: "Cancel",
     deleting: "Deleting...",
+    logoutConfirmTitle: "Confirm Logout",
+    logoutConfirmDesc: "Are you sure you want to log out?",
+    confirmLogout: "Yes, Logout",
+    loggingOut: "Logging out...",
   },
 };
 
