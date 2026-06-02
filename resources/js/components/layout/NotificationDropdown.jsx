@@ -177,7 +177,15 @@ export default function NotificationDropdown({ user }) {
         </button>
 
         {open && (
-          <div className="absolute right-0 mt-2 w-[min(100vw-2rem,22rem)] bg-white border border-gray-200 rounded-xl shadow-lg z-[60] overflow-hidden">
+          <div
+            className="
+              fixed left-3 right-3 top-[72px] mt-2
+              w-auto
+              bg-white border border-gray-200 rounded-2xl shadow-2xl z-[60] overflow-hidden
+              sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2
+              sm:w-[min(100vw-2rem,22rem)] sm:rounded-xl sm:shadow-lg
+            "
+          >
             <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-800">
                 {t("notifications", "Notifications")}
@@ -204,7 +212,7 @@ export default function NotificationDropdown({ user }) {
               )}
             </div>
 
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-[calc(100vh-200px)] overflow-y-auto sm:max-h-80">
               {loading && items.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-gray-500 text-center">
                   {t("loadingNotifications", "Loading...")}
@@ -233,7 +241,7 @@ export default function NotificationDropdown({ user }) {
                       <button
                         type="button"
                         onClick={(e) => handleDeleteClick(e, n)}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-gray-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 transition"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-xl text-gray-400 opacity-100 sm:p-1.5 sm:rounded-lg sm:opacity-0 sm:group-hover:opacity-100 hover:text-red-600 hover:bg-red-50 transition"
                         aria-label={t("deleteNotification", "Delete notification")}
                       >
                         <Trash2 size={14} />

@@ -64,6 +64,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   // State untuk modal konfirmasi
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmProcessing, setConfirmProcessing] = useState(false);
 
   const kategoriWithPhotos = (key) => key === "jalan" || key === "pengeluaran" || key === "reimbursment";
   const isCompressingKategori = (key) => compressingKey === key;
@@ -191,6 +192,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
     const newStatus = !row.is_lunas;
     const statusText = newStatus ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid");
     setConfirmAction({
+      type: "status",
       row,
       newStatus,
       statusText,
@@ -198,44 +200,63 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
     setShowConfirmModal(true);
   };
 
-  const handleConfirmStatus = async () => {
-    if (!confirmAction) return;
+  const requestDeleteRow = (row) => {
+    setConfirmAction({
+      type: "delete",
+      row,
+    });
+    setShowConfirmModal(true);
+  };
 
-    const { row, newStatus } = confirmAction;
+  const kategoriLabel = (key) => {
+    const found = kategoriConfig.find((k) => k.key === key);
+    if (!found) return key || "-";
+    return tr(
+      found.label,
+      key === "jalan" ? "Travel Cost" : key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost"
+    );
+  };
 
+  const handleConfirmAction = async () => {
+    if (!confirmAction || confirmProcessing) return;
+
+    setConfirmProcessing(true);
     try {
-      await api.patch(`/dashboard-biaya/${row.id}`, { is_lunas: newStatus });
-      setItems((prev) =>
-        prev.map((x) =>
-          x.id === row.id ? { ...x, is_lunas: newStatus, lunas_at: newStatus ? new Date().toISOString() : null } : x
-        )
-      );
-      fetchAll();
-    } catch (err) {
-      alert(err.response?.data?.message || tr("Gagal update lunas", "Failed to update payment status"));
-    } finally {
+      if (confirmAction.type === "delete") {
+        const { row } = confirmAction;
+        await api.delete(`/dashboard-biaya/${row.id}`);
+        if (editingId === row.id) {
+          setEditingId(null);
+          setEditForm({ nominal: "", keterangan: "", photoFiles: [] });
+        }
+        fetchAll();
+      } else {
+        const { row, newStatus } = confirmAction;
+        await api.patch(`/dashboard-biaya/${row.id}`, { is_lunas: newStatus });
+        setItems((prev) =>
+          prev.map((x) =>
+            x.id === row.id ? { ...x, is_lunas: newStatus, lunas_at: newStatus ? new Date().toISOString() : null } : x
+          )
+        );
+        fetchAll();
+      }
       setShowConfirmModal(false);
       setConfirmAction(null);
+    } catch (err) {
+      const fallback =
+        confirmAction.type === "delete"
+          ? tr("Gagal hapus data", "Failed to delete data")
+          : tr("Gagal update lunas", "Failed to update payment status");
+      alert(err.response?.data?.message || fallback);
+    } finally {
+      setConfirmProcessing(false);
     }
   };
 
   const handleCancelConfirm = () => {
+    if (confirmProcessing) return;
     setShowConfirmModal(false);
     setConfirmAction(null);
-  };
-
-  const removeRow = async (id) => {
-    if (!window.confirm(tr("Hapus data biaya ini?", "Delete this cost data?"))) return;
-    try {
-      await api.delete(`/dashboard-biaya/${id}`);
-      if (editingId === id) {
-        setEditingId(null);
-        setEditForm({ nominal: "", keterangan: "", photoFiles: [] });
-      }
-      fetchAll();
-    } catch (err) {
-      alert(err.response?.data?.message || tr("Gagal hapus data", "Failed to delete data"));
-    }
   };
 
   const startEdit = (row) => {
@@ -395,7 +416,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                   {canDeleteRow(row) ? (
                     <button
                       type="button"
-                      onClick={() => removeRow(row.id)}
+                      onClick={() => requestDeleteRow(row)}
                       title={tr("Hapus", "Delete")}
                       className="rounded-md border border-rose-200 bg-rose-50 px-2 py-1 text-rose-700 transition hover:bg-rose-100"
                     >
@@ -552,78 +573,155 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       ) : null}
     </DashboardSurface>
 
-    {/* Modal Konfirmasi Status */}
+    {/* Modal Konfirmasi */}
     {showConfirmModal && confirmAction && (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all animate-in fade-in zoom-in duration-200">
-          {/* Header dengan icon */}
-          <div className="pt-6 pb-2 px-6 flex flex-col items-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
-              confirmAction.newStatus
-                ? 'bg-emerald-100'
-                : 'bg-amber-100'
-            }`}>
-              {confirmAction.newStatus ? (
-                <CheckCircle size={32} className="text-emerald-600" />
-              ) : (
-                <AlertCircle size={32} className="text-amber-600" />
-              )}
-            </div>
-
-            <h3 className="text-lg font-bold text-gray-800 mb-1">
-              {tr("Ubah Status Biaya", "Change Cost Status")}
-            </h3>
-            <p className="text-sm text-gray-500 text-center">
-              {tr("Apakah Anda yakin ingin mengubah status menjadi", "Are you sure you want to change status to")}
-            </p>
-          </div>
-
-          {/* Status yang akan diubah */}
-          <div className="px-6 pb-4">
-            <div className={`py-3 px-4 rounded-xl text-center font-semibold ${
-              confirmAction.newStatus
-                ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
-                : 'bg-amber-50 text-amber-700 border-2 border-amber-200'
-            }`}>
-              {confirmAction.statusText}
-            </div>
-          </div>
-
-          {/* Info tambahan */}
-          {confirmAction.row && (
-            <div className="px-6 pb-4">
-              <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-gray-500 mb-1">{tr("Nominal", "Amount")}:</p>
-                <p className="font-semibold text-gray-700">{rupiah(confirmAction.row.nominal)}</p>
-                {confirmAction.row.keterangan && (
-                  <>
-                    <p className="text-xs text-gray-500 mb-1 mt-2">{tr("Keterangan", "Description")}:</p>
-                    <p className="text-sm text-gray-700 truncate">{confirmAction.row.keterangan}</p>
-                  </>
-                )}
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
+        onClick={handleCancelConfirm}
+      >
+        <div
+          className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {confirmAction.type === "delete" ? (
+            <>
+              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-rose-500 to-orange-400" />
+              <button
+                type="button"
+                onClick={handleCancelConfirm}
+                disabled={confirmProcessing}
+                className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                aria-label={tr("Batal", "Cancel")}
+              >
+                <X size={18} />
+              </button>
+              <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
+                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-rose-100 shadow-inner ring-1 ring-red-100">
+                  <Trash2 size={30} className="text-red-600" strokeWidth={2} />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800">
+                  {tr("Hapus Data Biaya", "Delete Cost Data")}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                  {tr(
+                    "Data biaya ini akan dihapus permanen dan tidak dapat dikembalikan.",
+                    "This cost entry will be permanently removed and cannot be restored."
+                  )}
+                </p>
               </div>
-            </div>
+              {confirmAction.row && (
+                <div className="px-6 pb-5">
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                      {kategoriLabel(confirmAction.row.kategori)}
+                    </p>
+                    <p className="mt-1 text-lg font-bold text-slate-800">
+                      {rupiah(confirmAction.row.nominal)}
+                    </p>
+                    {confirmAction.row.keterangan ? (
+                      <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                        {confirmAction.row.keterangan}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={handleCancelConfirm}
+                  disabled={confirmProcessing}
+                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {tr("Batal", "Cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAction}
+                  disabled={confirmProcessing}
+                  className="flex-1 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-500/25 transition hover:from-red-700 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  {confirmProcessing
+                    ? tr("Menghapus...", "Deleting...")
+                    : tr("Ya, Hapus", "Yes, Delete")}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col items-center px-6 pb-2 pt-6">
+                <div
+                  className={`mb-3 flex h-16 w-16 items-center justify-center rounded-full ${
+                    confirmAction.newStatus ? "bg-emerald-100" : "bg-amber-100"
+                  }`}
+                >
+                  {confirmAction.newStatus ? (
+                    <CheckCircle size={32} className="text-emerald-600" />
+                  ) : (
+                    <AlertCircle size={32} className="text-amber-600" />
+                  )}
+                </div>
+                <h3 className="mb-1 text-lg font-bold text-gray-800">
+                  {tr("Ubah Status Biaya", "Change Cost Status")}
+                </h3>
+                <p className="text-center text-sm text-gray-500">
+                  {tr(
+                    "Apakah Anda yakin ingin mengubah status menjadi",
+                    "Are you sure you want to change status to"
+                  )}
+                </p>
+              </div>
+              <div className="px-6 pb-4">
+                <div
+                  className={`rounded-xl px-4 py-3 text-center font-semibold ${
+                    confirmAction.newStatus
+                      ? "border-2 border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : "border-2 border-amber-200 bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  {confirmAction.statusText}
+                </div>
+              </div>
+              {confirmAction.row && (
+                <div className="px-6 pb-4">
+                  <div className="rounded-lg bg-gray-50 p-3">
+                    <p className="mb-1 text-xs text-gray-500">{tr("Nominal", "Amount")}:</p>
+                    <p className="font-semibold text-gray-700">{rupiah(confirmAction.row.nominal)}</p>
+                    {confirmAction.row.keterangan && (
+                      <>
+                        <p className="mb-1 mt-2 text-xs text-gray-500">{tr("Keterangan", "Description")}:</p>
+                        <p className="truncate text-sm text-gray-700">{confirmAction.row.keterangan}</p>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-3 px-6 pb-6">
+                <button
+                  type="button"
+                  onClick={handleCancelConfirm}
+                  disabled={confirmProcessing}
+                  className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                >
+                  {tr("Batal", "Cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmAction}
+                  disabled={confirmProcessing}
+                  className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-70 ${
+                    confirmAction.newStatus
+                      ? "bg-emerald-600 hover:bg-emerald-700"
+                      : "bg-amber-600 hover:bg-amber-700"
+                  }`}
+                >
+                  {confirmProcessing
+                    ? tr("Memproses...", "Processing...")
+                    : tr("Ya, Ubah Status", "Yes, Change Status")}
+                </button>
+              </div>
+            </>
           )}
-
-          {/* Tombol Action */}
-          <div className="px-6 pb-6 flex gap-3">
-            <button
-              onClick={handleCancelConfirm}
-              className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm"
-            >
-              {tr("Batal", "Cancel")}
-            </button>
-            <button
-              onClick={handleConfirmStatus}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm ${
-                confirmAction.newStatus
-                  ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-amber-600 hover:bg-amber-700'
-              }`}
-            >
-              {tr("Ya, Ubah Status", "Yes, Change Status")}
-            </button>
-          </div>
         </div>
       </div>
     )}
