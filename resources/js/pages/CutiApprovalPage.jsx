@@ -16,6 +16,7 @@ import {
   Building2,
   CalendarRange,
   ChevronDown,
+  FileText,
 } from "lucide-react";
 import {
   DashboardSurface,
@@ -124,7 +125,7 @@ export default function CutiApprovalPage() {
   const [error, setError] = useState(null);
 
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState("pending");
+  const [filterStatus, setFilterStatus] = useState("");
   const [filterDivisi, setFilterDivisi] = useState("");
   const [filterBulan, setFilterBulan] = useState("");
   const [filterTahun, setFilterTahun] = useState("");
@@ -252,7 +253,7 @@ export default function CutiApprovalPage() {
     });
   }, [items, search, filterStatus, filterDivisi, filterBulan, filterTahun]);
 
-  const hasActiveFilter = !!(search || filterStatus !== "pending" || filterDivisi || filterBulan || filterTahun);
+  const hasActiveFilter = !!(search || filterStatus || filterDivisi || filterBulan || filterTahun);
 
   /* ================= RENDER ================= */
   return (

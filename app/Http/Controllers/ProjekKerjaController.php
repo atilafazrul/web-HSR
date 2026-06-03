@@ -1076,6 +1076,16 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Parse is_lunas dari JSON, multipart ("0"/"1"), atau boolean.
+     */
+    protected function parseBiayaIsLunas(mixed $value): bool
+    {
+        $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+        return $parsed ?? false;
+    }
+
+    /**
      * Update biaya (uang) of a project
      */
     public function updateUang(Request $request, $id)
@@ -1210,7 +1220,7 @@ class ProjekKerjaController extends Controller
                         }
                         $keterangan = trim((string) ($row['keterangan'] ?? ''));
 
-                        $isLunas = (bool) ($row['is_lunas'] ?? false);
+                        $isLunas = $this->parseBiayaIsLunas($row['is_lunas'] ?? false);
 
                         // Get atau buat 'oleh' field
                         $oleh = trim((string) ($row['oleh'] ?? ''));
@@ -1229,7 +1239,13 @@ class ProjekKerjaController extends Controller
                             $createdAt = $existing[$idx]['created_at'];
                         }
 
-                        if ($nominal > 0 || $keterangan !== '') {
+                        $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths'])
+                            ? array_values(array_filter($row['photo_paths']))
+                            : [];
+                        $hasNewPhotos = isset($storedPhotosByIndex[$idx]) && ! empty($storedPhotosByIndex[$idx]);
+                        $hasPhotos = $hasNewPhotos || ! empty($existingPhotos);
+
+                        if ($nominal > 0 || $keterangan !== '' || $hasPhotos) {
                             $item = [
                                 'nominal' => round($nominal, 2),
                                 'keterangan' => $keterangan,
@@ -1239,18 +1255,9 @@ class ProjekKerjaController extends Controller
                             if ($createdAt !== '') {
                                 $item['created_at'] = $createdAt;
                             }
-                            // Log photo_paths dari input
-                            \Log::info("Processing item idx {$idx}", [
-                                'photo_paths_from_input' => $row['photo_paths'] ?? null,
-                                'stored_photos_for_idx' => $storedPhotosByIndex[$idx] ?? null,
-                            ]);
-                            // Tambahkan foto jika ada (hanya untuk pengeluaran dan reimbursment)
-                            $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths']) ? $row['photo_paths'] : [];
-                            if (isset($storedPhotosByIndex[$idx])) {
-                                // Gabungkan foto lama dengan foto baru
+                            if ($hasNewPhotos) {
                                 $item['photo_paths'] = array_values(array_unique(array_merge($existingPhotos, $storedPhotosByIndex[$idx])));
-                            } elseif (!empty($existingPhotos)) {
-                                // Hanya gunakan foto lama
+                            } elseif (! empty($existingPhotos)) {
                                 $item['photo_paths'] = $existingPhotos;
                             }
                             $result[] = $item;
@@ -1261,44 +1268,85 @@ class ProjekKerjaController extends Controller
                 }
 
                 // Non–super admin: baris is_lunas tidak boleh diubah nominal / dihapus; keterangan masih boleh diubah.
-                $lunasQueue = array_values(array_filter($existing, fn ($r) => is_array($r) && ! empty($r['is_lunas'])));
+                $lunasQueue = array_values(array_filter(
+                    $existing,
+                    fn ($r) => is_array($r) && $this->parseBiayaIsLunas($r['is_lunas'] ?? false)
+                ));
                 $result = [];
+                $findLunasMatch = function (array $row, int $idx) use ($existing, &$lunasQueue): ?array {
+                    $createdAtIncoming = trim((string) ($row['created_at'] ?? ''));
+                    if ($createdAtIncoming !== '') {
+                        foreach ($lunasQueue as $qIdx => $candidate) {
+                            if (! is_array($candidate)) {
+                                continue;
+                            }
+                            if (trim((string) ($candidate['created_at'] ?? '')) === $createdAtIncoming) {
+                                $lun = $candidate;
+                                unset($lunasQueue[$qIdx]);
+                                $lunasQueue = array_values($lunasQueue);
+
+                                return $lun;
+                            }
+                        }
+                    }
+
+                    if (isset($existing[$idx]) && is_array($existing[$idx]) && $this->parseBiayaIsLunas($existing[$idx]['is_lunas'] ?? false)) {
+                        $lun = $existing[$idx];
+                        foreach ($lunasQueue as $qIdx => $candidate) {
+                            if ($candidate === $lun) {
+                                unset($lunasQueue[$qIdx]);
+                                $lunasQueue = array_values($lunasQueue);
+
+                                return $lun;
+                            }
+                        }
+                    }
+
+                    $olehIncoming = trim((string) ($row['oleh'] ?? ''));
+                    foreach ($lunasQueue as $qIdx => $candidate) {
+                        if (! is_array($candidate)) {
+                            continue;
+                        }
+                        if ($olehIncoming !== '' && trim((string) ($candidate['oleh'] ?? '')) === $olehIncoming) {
+                            $lun = $candidate;
+                            unset($lunasQueue[$qIdx]);
+                            $lunasQueue = array_values($lunasQueue);
+
+                            return $lun;
+                        }
+                    }
+
+                    $lun = $lunasQueue[0] ?? null;
+                    if ($lun) {
+                        array_shift($lunasQueue);
+                    }
+
+                    return $lun;
+                };
+                $buildPreservedLunasItem = function (array $lun, array $row) use ($userName): array {
+                    $item = [
+                        'nominal' => round((float) ($lun['nominal'] ?? 0), 2),
+                        'keterangan' => trim((string) ($row['keterangan'] ?? $lun['keterangan'] ?? '')),
+                        'is_lunas' => true,
+                        'oleh' => $lun['oleh'] ?? $userName,
+                    ];
+                    if (isset($lun['created_at'])) {
+                        $item['created_at'] = $lun['created_at'];
+                    }
+                    if (isset($lun['photo_paths'])) {
+                        $item['photo_paths'] = $lun['photo_paths'];
+                    }
+
+                    return $item;
+                };
+
                 foreach ($incoming as $idx => $row) {
                     if (! is_array($row)) {
                         continue;
                     }
 
-                    if (! empty($row['is_lunas'])) {
-                        $lun = null;
-                        if (isset($existing[$idx]) && is_array($existing[$idx]) && ! empty($existing[$idx]['is_lunas'])) {
-                            $lun = $existing[$idx];
-                            foreach ($lunasQueue as $qIdx => $candidate) {
-                                if ($candidate === $lun) {
-                                    unset($lunasQueue[$qIdx]);
-                                    $lunasQueue = array_values($lunasQueue);
-                                    break;
-                                }
-                            }
-                        } else {
-                            $olehIncoming = trim((string) ($row['oleh'] ?? ''));
-                            foreach ($lunasQueue as $qIdx => $candidate) {
-                                if (! is_array($candidate)) {
-                                    continue;
-                                }
-                                if ($olehIncoming !== '' && trim((string) ($candidate['oleh'] ?? '')) === $olehIncoming) {
-                                    $lun = $candidate;
-                                    unset($lunasQueue[$qIdx]);
-                                    $lunasQueue = array_values($lunasQueue);
-                                    break;
-                                }
-                            }
-                            if (! $lun) {
-                                $lun = $lunasQueue[0] ?? null;
-                                if ($lun) {
-                                    array_shift($lunasQueue);
-                                }
-                            }
-                        }
+                    if ($this->parseBiayaIsLunas($row['is_lunas'] ?? false)) {
+                        $lun = $findLunasMatch($row, $idx);
                         if (! $lun) {
                             throw new \InvalidArgumentException('Baris biaya lunas tidak valid atau tidak boleh ditambah.');
                         }
@@ -1340,7 +1388,13 @@ class ProjekKerjaController extends Controller
                         $oleh = $userName;
                     }
 
-                    if ($nominal > 0 || $keterangan !== '') {
+                    $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths'])
+                        ? array_values(array_filter($row['photo_paths']))
+                        : [];
+                    $hasNewPhotos = isset($storedPhotosByIndex[$idx]) && ! empty($storedPhotosByIndex[$idx]);
+                    $hasPhotos = $hasNewPhotos || ! empty($existingPhotos);
+
+                    if ($nominal > 0 || $keterangan !== '' || $hasPhotos) {
                         $item = [
                             'nominal' => round($nominal, 2),
                             'keterangan' => $keterangan,
@@ -1351,22 +1405,21 @@ class ProjekKerjaController extends Controller
                         if ($createdAt !== '') {
                             $item['created_at'] = $createdAt;
                         }
-                        // Pertahankan photo_paths untuk baris yang belum lunas
-                        $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths']) ? $row['photo_paths'] : [];
-                        if (!empty($existingPhotos)) {
+                        if ($hasNewPhotos) {
+                            $item['photo_paths'] = array_values(array_unique(array_merge($existingPhotos, $storedPhotosByIndex[$idx])));
+                        } elseif (! empty($existingPhotos)) {
                             $item['photo_paths'] = $existingPhotos;
-                        }
-                        // Gabungkan dengan foto baru jika ada
-                        if (isset($storedPhotosByIndex[$idx])) {
-                            $currentPhotos = $item['photo_paths'] ?? [];
-                            $item['photo_paths'] = array_values(array_unique(array_merge($currentPhotos, $storedPhotosByIndex[$idx])));
                         }
                         $result[] = $item;
                     }
                 }
 
-                if (count($lunasQueue) > 0) {
-                    throw new \InvalidArgumentException('Baris biaya yang sudah lunas tidak boleh dihapus.');
+                // Baris lunas yang tidak ikut payload (mis. multipart) tetap dipertahankan, bukan dianggap dihapus.
+                foreach ($lunasQueue as $remainingLunas) {
+                    if (! is_array($remainingLunas)) {
+                        continue;
+                    }
+                    $result[] = $buildPreservedLunasItem($remainingLunas, $remainingLunas);
                 }
 
                 return $result;

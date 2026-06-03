@@ -337,6 +337,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ProjekKerjaController::class,
         'updateUang'
     ]);
+    // Multipart upload foto memakai POST (+ _method PATCH di FormData)
+    Route::post('/projek-kerja/{id}/uang', [
+        ProjekKerjaController::class,
+        'updateUang'
+    ]);
     Route::patch('/projek-kerja/{id}/lunas', [
         ProjekKerjaController::class,
         'setLunas'
