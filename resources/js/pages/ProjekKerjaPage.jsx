@@ -1211,46 +1211,15 @@ export default function ProjekKerjaPage() {
           return;
         }
 
-        // Tambah data biaya sebagai array langsung, bukan JSON string
-        biayaToPayload(payloadBiaya.jalan).forEach((rowPayload, idx) => {
-          Object.keys(rowPayload).forEach(key => {
-            // Skip photo_paths - akan dihandle terpisah
-            if (key === 'photo_paths') return;
-            // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
-            const value = key === 'is_lunas' ? (rowPayload[key] ? '1' : '0') : rowPayload[key];
-            fd.append(`biaya_jalan_items[${idx}][${key}]`, value);
-          });
-        });
-        biayaToPayload(payloadBiaya.pengeluaran).forEach((rowPayload, idx) => {
-          Object.keys(rowPayload).forEach(key => {
-            // Skip photo_paths - akan dihandle terpisah
-            if (key === 'photo_paths') return;
-            // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
-            const value = key === 'is_lunas' ? (rowPayload[key] ? '1' : '0') : rowPayload[key];
-            fd.append(`biaya_pengeluaran_items[${idx}][${key}]`, value);
-          });
-          // Kirim photo_paths sebagai array terpisah
-          if (rowPayload.photo_paths && Array.isArray(rowPayload.photo_paths)) {
-            rowPayload.photo_paths.forEach((path, pathIdx) => {
-              fd.append(`biaya_pengeluaran_items[${idx}][photo_paths][${pathIdx}]`, path);
-            });
-          }
-        });
-        biayaToPayload(payloadBiaya.reimbursment).forEach((rowPayload, idx) => {
-          Object.keys(rowPayload).forEach(key => {
-            // Skip photo_paths - akan dihandle terpisah
-            if (key === 'photo_paths') return;
-            // Untuk is_lunas, kirim sebagai string "1" atau "0" agar validasi Laravel bisa membaca sebagai boolean
-            const value = key === 'is_lunas' ? (rowPayload[key] ? '1' : '0') : rowPayload[key];
-            fd.append(`biaya_reimbursment_items[${idx}][${key}]`, value);
-          });
-          // Kirim photo_paths sebagai array terpisah
-          if (rowPayload.photo_paths && Array.isArray(rowPayload.photo_paths)) {
-            rowPayload.photo_paths.forEach((path, pathIdx) => {
-              fd.append(`biaya_reimbursment_items[${idx}][photo_paths][${pathIdx}]`, path);
-            });
-          }
-        });
+        // Satu field JSON agar tidak membengkak (hindari max_input_vars PHP saat banyak foto/barisan).
+        fd.append(
+          "biaya_json",
+          JSON.stringify({
+            biaya_jalan_items: biayaToPayload(payloadBiaya.jalan),
+            biaya_pengeluaran_items: biayaToPayload(payloadBiaya.pengeluaran),
+            biaya_reimbursment_items: biayaToPayload(payloadBiaya.reimbursment),
+          }),
+        );
 
         // Tambah foto untuk setiap baris pengeluaran
         payloadBiaya.pengeluaran.forEach((row, idx) => {

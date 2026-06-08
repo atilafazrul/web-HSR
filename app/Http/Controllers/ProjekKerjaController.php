@@ -1086,6 +1086,102 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Ambil photo_paths dari data existing berdasarkan created_at (fallback jika tidak ikut terkirim).
+     */
+    protected function lookupExistingPhotoPaths(array $existing, string $createdAt): array
+    {
+        $createdAt = trim($createdAt);
+        if ($createdAt === '') {
+            return [];
+        }
+
+        foreach ($existing as $existRow) {
+            if (! is_array($existRow)) {
+                continue;
+            }
+            if (trim((string) ($existRow['created_at'] ?? '')) === $createdAt) {
+                $paths = $existRow['photo_paths'] ?? [];
+
+                return is_array($paths) ? array_values(array_filter($paths)) : [];
+            }
+        }
+
+        return [];
+    }
+
+    /**
+     * Pertahankan baris milik karyawan lain yang tidak ikut dalam payload (safety net).
+     */
+    protected function preserveOtherUsersBiayaRows(array $result, array $existing, string $userName): array
+    {
+        $userLower = strtolower(trim($userName));
+        $presentCreatedAts = [];
+
+        foreach ($result as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $createdAt = trim((string) ($row['created_at'] ?? ''));
+            if ($createdAt !== '') {
+                $presentCreatedAts[$createdAt] = true;
+            }
+        }
+
+        foreach ($existing as $existRow) {
+            if (! is_array($existRow)) {
+                continue;
+            }
+
+            $oleh = strtolower(trim((string) ($existRow['oleh'] ?? '')));
+            if ($oleh === '' || $oleh === $userLower) {
+                continue;
+            }
+
+            $createdAt = trim((string) ($existRow['created_at'] ?? ''));
+            if ($createdAt !== '' && isset($presentCreatedAts[$createdAt])) {
+                continue;
+            }
+
+            $result[] = $existRow;
+            if ($createdAt !== '') {
+                $presentCreatedAts[$createdAt] = true;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Parse payload biaya dari field biaya_json (FormData kompak) ke request array.
+     */
+    protected function mergeBiayaJsonIntoRequest(Request $request): void
+    {
+        if (! $request->filled('biaya_json')) {
+            return;
+        }
+
+        $decoded = json_decode((string) $request->input('biaya_json'), true);
+        if (! is_array($decoded)) {
+            throw new \InvalidArgumentException('Format data biaya tidak valid.');
+        }
+
+        $merge = [];
+        if (array_key_exists('biaya_jalan_items', $decoded)) {
+            $merge['biaya_jalan_items'] = is_array($decoded['biaya_jalan_items']) ? $decoded['biaya_jalan_items'] : [];
+        }
+        if (array_key_exists('biaya_pengeluaran_items', $decoded)) {
+            $merge['biaya_pengeluaran_items'] = is_array($decoded['biaya_pengeluaran_items']) ? $decoded['biaya_pengeluaran_items'] : [];
+        }
+        if (array_key_exists('biaya_reimbursment_items', $decoded)) {
+            $merge['biaya_reimbursment_items'] = is_array($decoded['biaya_reimbursment_items']) ? $decoded['biaya_reimbursment_items'] : [];
+        }
+
+        if ($merge !== []) {
+            $request->merge($merge);
+        }
+    }
+
+    /**
      * Update biaya (uang) of a project
      */
     public function updateUang(Request $request, $id)
@@ -1113,7 +1209,17 @@ class ProjekKerjaController extends Controller
             ], 403);
         }
 
+        try {
+            $this->mergeBiayaJsonIntoRequest($request);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
         $validated = $request->validate([
+            'biaya_json' => 'nullable|string',
             'biaya_jalan_items' => 'nullable|array',
             'biaya_jalan_items.*.nominal' => 'nullable|numeric|min:0',
             'biaya_jalan_items.*.keterangan' => 'nullable|string',
@@ -1153,12 +1259,13 @@ class ProjekKerjaController extends Controller
 
             // Log untuk debug photo_paths
             \Log::info('updateUang - Validated data:', [
-                'biaya_pengeluaran_items' => $validated['biaya_pengeluaran_items'] ?? null,
-                'biaya_reimbursment_items' => $validated['biaya_reimbursment_items'] ?? null,
+                'used_biaya_json' => $request->filled('biaya_json'),
+                'jalan_count' => isset($validated['biaya_jalan_items']) ? count($validated['biaya_jalan_items']) : 0,
+                'pengeluaran_count' => isset($validated['biaya_pengeluaran_items']) ? count($validated['biaya_pengeluaran_items']) : 0,
+                'reimbursment_count' => isset($validated['biaya_reimbursment_items']) ? count($validated['biaya_reimbursment_items']) : 0,
                 'has_pengeluaran_photos' => $request->has('pengeluaran_photos'),
                 'has_reimbursment_photos' => $request->has('reimbursment_photos'),
                 'all_files' => array_keys($request->allFiles()),
-                'all_input_keys' => array_keys($request->all()),
             ]);
 
             // Handle foto upload untuk pengeluaran dan reimbursment
@@ -1242,6 +1349,9 @@ class ProjekKerjaController extends Controller
                         $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths'])
                             ? array_values(array_filter($row['photo_paths']))
                             : [];
+                        if ($existingPhotos === [] && $createdAt !== '') {
+                            $existingPhotos = $this->lookupExistingPhotoPaths($existing, $createdAt);
+                        }
                         $hasNewPhotos = isset($storedPhotosByIndex[$idx]) && ! empty($storedPhotosByIndex[$idx]);
                         $hasPhotos = $hasNewPhotos || ! empty($existingPhotos);
 
@@ -1388,9 +1498,14 @@ class ProjekKerjaController extends Controller
                         $oleh = $userName;
                     }
 
+                    $createdAt = trim((string) ($row['created_at'] ?? ''));
+
                     $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths'])
                         ? array_values(array_filter($row['photo_paths']))
                         : [];
+                    if ($existingPhotos === [] && $createdAt !== '') {
+                        $existingPhotos = $this->lookupExistingPhotoPaths($existing, $createdAt);
+                    }
                     $hasNewPhotos = isset($storedPhotosByIndex[$idx]) && ! empty($storedPhotosByIndex[$idx]);
                     $hasPhotos = $hasNewPhotos || ! empty($existingPhotos);
 
@@ -1401,7 +1516,6 @@ class ProjekKerjaController extends Controller
                             'is_lunas' => false,
                             'oleh' => $oleh,
                         ];
-                        $createdAt = trim((string) ($row['created_at'] ?? ''));
                         if ($createdAt !== '') {
                             $item['created_at'] = $createdAt;
                         }
@@ -1422,7 +1536,7 @@ class ProjekKerjaController extends Controller
                     $result[] = $buildPreservedLunasItem($remainingLunas, $remainingLunas);
                 }
 
-                return $result;
+                return $this->preserveOtherUsersBiayaRows($result, $existing, $userName);
             };
 
             if (isset($validated['biaya_jalan_items'])) {
