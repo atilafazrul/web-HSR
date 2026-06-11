@@ -2047,6 +2047,73 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Delete media folder (file/photo) and all contents inside it.
+     */
+    public function deleteMediaFolder(Request $request, $id)
+    {
+        $projek = ProjekKerja::find($id);
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|string|in:file,photo',
+            'folder_name' => 'required|string|max:100',
+        ]);
+
+        $folderName = $this->sanitizeFolderName($validated['folder_name'] ?? null);
+        if (!$folderName) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama folder tidak valid',
+            ], 422);
+        }
+
+        $baseDir = $validated['type'] === 'file' ? 'projek-kerja-files' : 'projek-kerja-photos';
+        $folderPath = $this->buildProjectMediaPath($baseDir, (int) $projek->id, $folderName);
+
+        if (!Storage::disk('public')->exists($folderPath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Folder tidak ditemukan',
+            ], 404);
+        }
+
+        try {
+            if ($validated['type'] === 'file') {
+                ProjekKerjaFile::query()
+                    ->where('projek_kerja_id', $projek->id)
+                    ->where('file', 'like', $folderPath . '/%')
+                    ->get()
+                    ->each(fn (ProjekKerjaFile $file) => $file->delete());
+            } else {
+                ProjekKerjaPhoto::query()
+                    ->where('projek_kerja_id', $projek->id)
+                    ->where('photo', 'like', $folderPath . '/%')
+                    ->get()
+                    ->each(fn (ProjekKerjaPhoto $photo) => $photo->delete());
+            }
+
+            Storage::disk('public')->deleteDirectory($folderPath);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Folder berhasil dihapus',
+                'folder_name' => $folderName,
+                'type' => $validated['type'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus folder: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Add file to a project
      */
     public function addFile(Request $request, $id)

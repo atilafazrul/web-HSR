@@ -48,7 +48,7 @@ class ActivityLogService
         // Foto & dokumen proyek
         [['POST'], '#^api/projek-kerja/\d+/add-photo$#'],
         [['DELETE'], '#^api/projek-kerja/photo/\d+$#'],
-        [['POST'], '#^api/projek-kerja/\d+/folders$#'],
+        [['POST', 'DELETE'], '#^api/projek-kerja/\d+/folders$#'],
         [['POST'], '#^api/projek-kerja/\d+/add-file$#'],
         [['DELETE'], '#^api/projek-kerja/file/\d+$#'],
 
@@ -99,6 +99,7 @@ class ActivityLogService
         $method = strtoupper($request->method());
         $path = $this->normalizePath($request->path());
         [$module, $baseAction, $description] = $this->describeRoute($method, $path);
+        $description = $this->enrichFolderDescription($request, $method, $path, $description);
 
         $isError = $statusCode !== null && $statusCode >= 400;
         $errorMessage = $isError ? $this->extractErrorMessage($response) : null;
@@ -214,11 +215,17 @@ class ActivityLogService
             'route_params' => $request->route()?->parameters() ?? [],
         ];
 
-        if (in_array(strtoupper($request->method()), ['POST', 'PUT', 'PATCH'], true)) {
+        if (in_array(strtoupper($request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             $payload = $this->sanitizePayload($request->all());
             if (!empty($payload)) {
                 $properties['payload'] = $payload;
             }
+        }
+
+        if (preg_match('#^api/projek-kerja/\d+/folders$#', $path)) {
+            $properties['subject'] = 'projek_folder';
+            $properties['folder_name'] = $this->sanitizeFolderName($request->input('folder_name'));
+            $properties['folder_type'] = $request->input('type');
         }
 
         if (Str::contains($path, 'projek-kerja')) {
@@ -268,8 +275,50 @@ class ActivityLogService
     /**
      * @return array{0: string, 1: string, 2: string}
      */
+    private function enrichFolderDescription(Request $request, string $method, string $path, string $description): string
+    {
+        if (!preg_match('#^api/projek-kerja/\d+/folders$#', $path)) {
+            return $description;
+        }
+
+        $folderName = $this->sanitizeFolderName($request->input('folder_name'));
+        if (!$folderName) {
+            return $description;
+        }
+
+        $typeLabel = $request->input('type') === 'photo' ? 'foto' : 'dokumen';
+
+        if ($method === 'DELETE') {
+            return "Menghapus folder {$typeLabel}: {$folderName}";
+        }
+
+        return "Membuat folder {$typeLabel}: {$folderName}";
+    }
+
+    private function sanitizeFolderName(?string $name): ?string
+    {
+        $raw = trim((string) $name);
+        if ($raw === '') {
+            return null;
+        }
+
+        $sanitized = preg_replace('/[^a-zA-Z0-9 _-]/', '', $raw);
+        $sanitized = preg_replace('/\s+/', '_', (string) $sanitized);
+        $sanitized = trim((string) $sanitized, '_- ');
+
+        return $sanitized !== '' ? $sanitized : null;
+    }
+
     private function describeRoute(string $method, string $path): array
     {
+        if (preg_match('#^api/projek-kerja/\d+/folders$#', $path)) {
+            if ($method === 'DELETE') {
+                return ['projek_kerja', 'delete', 'Menghapus folder proyek'];
+            }
+
+            return ['projek_kerja', 'folder', 'Membuat folder proyek'];
+        }
+
         $patterns = [
             ['#^api/karyawan$#', 'karyawan', 'karyawan', 'Mengelola data karyawan'],
             ['#^api/karyawan/\d+#', 'karyawan', 'karyawan', 'Mengelola data karyawan'],
@@ -284,7 +333,6 @@ class ActivityLogService
             ['#^api/projek-kerja/\d+/unarchive$#', 'projek_kerja', 'unarchive', 'Membuka arsip proyek kerja'],
             ['#^api/projek-kerja/\d+/add-photo$#', 'projek_kerja', 'photo', 'Mengunggah foto proyek'],
             ['#^api/projek-kerja/photo/\d+$#', 'projek_kerja', 'photo', 'Menghapus foto proyek'],
-            ['#^api/projek-kerja/\d+/folders$#', 'projek_kerja', 'folder', 'Membuat folder dokumen proyek'],
             ['#^api/projek-kerja/\d+/add-file$#', 'projek_kerja', 'file', 'Mengunggah dokumen proyek'],
             ['#^api/projek-kerja/file/\d+$#', 'projek_kerja', 'file', 'Menghapus dokumen proyek'],
             ['#^api/projek-kerja/\d+$#', 'projek_kerja', 'update', 'Memperbarui proyek kerja'],

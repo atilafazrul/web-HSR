@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 import axios from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
 import { useI18n } from "../i18n/index.jsx";
@@ -29,6 +30,9 @@ export default function FotoProjekPage() {
   const [newFileFolderName, setNewFileFolderName] = useState("");
   const [newPhotoFolderName, setNewPhotoFolderName] = useState("");
   const [projectTaskName, setProjectTaskName] = useState("");
+  const [deleteFolderTarget, setDeleteFolderTarget] = useState(null);
+  const [deletingFolder, setDeletingFolder] = useState(false);
+  const deleteFolderModalRef = useRef(null);
 
   const fetchPhotos = async () => {
     try {
@@ -100,6 +104,26 @@ export default function FotoProjekPage() {
     const fullTitle = projectTaskName ? `${baseTitle} - ${projectTaskName}` : baseTitle;
     document.title = `WEB HSR - ${fullTitle}`;
   }, [projectTaskName, language]);
+
+  useEffect(() => {
+    if (!deleteFolderTarget) return;
+
+    const onOutside = (e) => {
+      if (deleteFolderModalRef.current && !deleteFolderModalRef.current.contains(e.target)) {
+        if (!deletingFolder) setDeleteFolderTarget(null);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !deletingFolder) setDeleteFolderTarget(null);
+    };
+
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [deleteFolderTarget, deletingFolder]);
 
   const getFolderFromUrl = (url, mediaRoot) => {
     const marker = `/storage/${mediaRoot}/${id}/`;
@@ -313,6 +337,38 @@ export default function FotoProjekPage() {
     }
   };
 
+  const requestDeleteFolder = (type, folderName) => {
+    if (!folderName) return;
+    setDeleteFolderTarget({ type, folderName });
+  };
+
+  const confirmDeleteFolder = async () => {
+    if (!deleteFolderTarget || deletingFolder) return;
+
+    const { type, folderName } = deleteFolderTarget;
+    setDeletingFolder(true);
+
+    try {
+      await axios.delete(`${import.meta.env.VITE_API_URL}/projek-kerja/${id}/folders`, {
+        data: {
+          type,
+          folder_name: folderName,
+        },
+      });
+
+      if (folderRouteState.inFolder && folderRouteState.folder === folderName && folderRouteState.type === type) {
+        goFolderHome();
+      }
+
+      await Promise.all([fetchFolders(), fetchFiles(), fetchPhotos()]);
+      setDeleteFolderTarget(null);
+    } catch (err) {
+      alert(err?.response?.data?.message || tr("Gagal hapus folder", "Failed to delete folder"));
+    } finally {
+      setDeletingFolder(false);
+    }
+  };
+
   if (loading) {
     return <div className="p-10 text-gray-500">Loading...</div>;
   }
@@ -383,17 +439,29 @@ export default function FotoProjekPage() {
                 <p className="col-span-full rounded-lg bg-slate-50 p-3 text-sm text-slate-500">{tr("Belum ada folder dokumen.", "No document folders yet.")}</p>
               ) : (
                 fileFolders.map((folder) => (
-                  <button
+                  <div
                     key={folder}
-                    type="button"
-                    onClick={() => openFolder("file", folder)}
-                    className="group flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50"
+                    className="group relative flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50"
                   >
-                    <span className="text-3xl leading-none">📁</span>
-                    <span className="line-clamp-2 text-center text-xs font-medium text-slate-700 break-all">
-                      {folder}
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => openFolder("file", folder)}
+                      className="flex w-full flex-col items-center justify-center gap-2"
+                    >
+                      <span className="text-3xl leading-none">📁</span>
+                      <span className="line-clamp-2 text-center text-xs font-medium text-slate-700 break-all">
+                        {folder}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      title={tr("Hapus folder", "Delete folder")}
+                      onClick={() => requestDeleteFolder("file", folder)}
+                      className="absolute right-2 top-2 rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-rose-600 opacity-0 shadow-sm ring-1 ring-rose-200 transition group-hover:opacity-100 hover:bg-rose-50"
+                    >
+                      {tr("Hapus", "Delete")}
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -422,17 +490,29 @@ export default function FotoProjekPage() {
                 <p className="col-span-full rounded-lg bg-slate-50 p-3 text-sm text-slate-500">{tr("Belum ada folder foto.", "No photo folders yet.")}</p>
               ) : (
                 photoFolders.map((folder) => (
-                  <button
+                  <div
                     key={folder}
-                    type="button"
-                    onClick={() => openFolder("photo", folder)}
-                    className="group flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"
+                    className="group relative flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"
                   >
-                    <span className="text-3xl leading-none">📁</span>
-                    <span className="line-clamp-2 text-center text-xs font-medium text-slate-700 break-all">
-                      {folder}
-                    </span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => openFolder("photo", folder)}
+                      className="flex w-full flex-col items-center justify-center gap-2"
+                    >
+                      <span className="text-3xl leading-none">📁</span>
+                      <span className="line-clamp-2 text-center text-xs font-medium text-slate-700 break-all">
+                        {folder}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      title={tr("Hapus folder", "Delete folder")}
+                      onClick={() => requestDeleteFolder("photo", folder)}
+                      className="absolute right-2 top-2 rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-rose-600 opacity-0 shadow-sm ring-1 ring-rose-200 transition group-hover:opacity-100 hover:bg-rose-50"
+                    >
+                      {tr("Hapus", "Delete")}
+                    </button>
+                  </div>
                 ))
               )}
             </div>
@@ -440,13 +520,22 @@ export default function FotoProjekPage() {
         </>
       ) : (
         <>
-          <div className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h3 className="text-lg font-semibold text-gray-800 mb-1">
-              {tr("Folder", "Folder")}: {currentFolder}
-            </h3>
-            <p className="text-sm text-gray-500">
-              {(folderRouteState.type === "file" ? tr("Dokumen", "Documents") : tr("Foto", "Photos"))} {tr("di dalam folder ini.", "inside this folder.")}
-            </p>
+          <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="mb-1 text-lg font-semibold text-gray-800">
+                {tr("Folder", "Folder")}: {currentFolder}
+              </h3>
+              <p className="text-sm text-gray-500">
+                {(folderRouteState.type === "file" ? tr("Dokumen", "Documents") : tr("Foto", "Photos"))} {tr("di dalam folder ini.", "inside this folder.")}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => requestDeleteFolder(folderRouteState.type, currentFolder)}
+              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
+            >
+              {tr("Hapus Folder", "Delete Folder")}
+            </button>
           </div>
 
           {folderRouteState.type === "file" ? (
@@ -568,6 +657,61 @@ export default function FotoProjekPage() {
         </>
       )}
       </div>
+
+      {deleteFolderTarget && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
+          onClick={() => !deletingFolder && setDeleteFolderTarget(null)}
+        >
+          <div
+            ref={deleteFolderModalRef}
+            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-rose-500 via-red-500 to-orange-400" />
+
+            <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-50 to-red-100 shadow-inner ring-1 ring-rose-100">
+                <AlertTriangle size={30} className="text-rose-600" strokeWidth={2} />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-800">
+                {tr("Konfirmasi Hapus Folder", "Confirm Delete Folder")}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                {deleteFolderTarget.type === "file"
+                  ? tr(
+                      `Hapus folder dokumen "${deleteFolderTarget.folderName}" beserta semua file di dalamnya? Tindakan ini tidak dapat dibatalkan.`,
+                      `Delete document folder "${deleteFolderTarget.folderName}" and all files inside? This action cannot be undone.`
+                    )
+                  : tr(
+                      `Hapus folder foto "${deleteFolderTarget.folderName}" beserta semua foto di dalamnya? Tindakan ini tidak dapat dibatalkan.`,
+                      `Delete photo folder "${deleteFolderTarget.folderName}" and all photos inside? This action cannot be undone.`
+                    )}
+              </p>
+            </div>
+
+            <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setDeleteFolderTarget(null)}
+                disabled={deletingFolder}
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {tr("Batal", "Cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeleteFolder}
+                disabled={deletingFolder}
+                className="flex-1 rounded-xl bg-gradient-to-r from-rose-600 to-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-rose-500/25 transition hover:from-rose-700 hover:to-red-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {deletingFolder ? tr("Menghapus...", "Deleting...") : tr("Ya, Hapus Folder", "Yes, Delete Folder")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
