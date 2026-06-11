@@ -416,6 +416,11 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
         'createMediaFolder'
     ]);
 
+    Route::patch('/projek-kerja/{id}/folders', [
+        ProjekKerjaController::class,
+        'updateMediaFolder'
+    ]);
+
     Route::delete('/projek-kerja/{id}/folders', [
         ProjekKerjaController::class,
         'deleteMediaFolder'

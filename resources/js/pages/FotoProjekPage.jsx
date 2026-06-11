@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Pencil } from "lucide-react";
 import axios from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
 import { useI18n } from "../i18n/index.jsx";
@@ -32,7 +32,11 @@ export default function FotoProjekPage() {
   const [projectTaskName, setProjectTaskName] = useState("");
   const [deleteFolderTarget, setDeleteFolderTarget] = useState(null);
   const [deletingFolder, setDeletingFolder] = useState(false);
+  const [editFolderTarget, setEditFolderTarget] = useState(null);
+  const [editFolderName, setEditFolderName] = useState("");
+  const [savingFolder, setSavingFolder] = useState(false);
   const deleteFolderModalRef = useRef(null);
+  const editFolderModalRef = useRef(null);
 
   const fetchPhotos = async () => {
     try {
@@ -124,6 +128,26 @@ export default function FotoProjekPage() {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [deleteFolderTarget, deletingFolder]);
+
+  useEffect(() => {
+    if (!editFolderTarget) return;
+
+    const onOutside = (e) => {
+      if (editFolderModalRef.current && !editFolderModalRef.current.contains(e.target)) {
+        if (!savingFolder) setEditFolderTarget(null);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !savingFolder) setEditFolderTarget(null);
+    };
+
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [editFolderTarget, savingFolder]);
 
   const getFolderFromUrl = (url, mediaRoot) => {
     const marker = `/storage/${mediaRoot}/${id}/`;
@@ -342,6 +366,51 @@ export default function FotoProjekPage() {
     setDeleteFolderTarget({ type, folderName });
   };
 
+  const requestEditFolder = (type, folderName) => {
+    if (!folderName) return;
+    setEditFolderTarget({ type, folderName });
+    setEditFolderName(folderName);
+  };
+
+  const confirmEditFolder = async () => {
+    if (!editFolderTarget || savingFolder) return;
+
+    const newName = String(editFolderName || "").trim();
+    if (!newName) {
+      alert(tr("Nama folder tidak boleh kosong.", "Folder name cannot be empty."));
+      return;
+    }
+
+    const { type, folderName: oldName } = editFolderTarget;
+    setSavingFolder(true);
+
+    try {
+      const res = await axios.patch(`${import.meta.env.VITE_API_URL}/projek-kerja/${id}/folders`, {
+        type,
+        old_folder_name: oldName,
+        new_folder_name: newName,
+      });
+
+      const finalName = String(res?.data?.folder_name || newName).trim();
+
+      if (
+        folderRouteState.inFolder &&
+        folderRouteState.folder === oldName &&
+        folderRouteState.type === type
+      ) {
+        openFolder(type, finalName);
+      }
+
+      await Promise.all([fetchFolders(), fetchFiles(), fetchPhotos()]);
+      setEditFolderTarget(null);
+      setEditFolderName("");
+    } catch (err) {
+      alert(err?.response?.data?.message || tr("Gagal mengubah folder", "Failed to rename folder"));
+    } finally {
+      setSavingFolder(false);
+    }
+  };
+
   const confirmDeleteFolder = async () => {
     if (!deleteFolderTarget || deletingFolder) return;
 
@@ -453,14 +522,24 @@ export default function FotoProjekPage() {
                         {folder}
                       </span>
                     </button>
-                    <button
-                      type="button"
-                      title={tr("Hapus folder", "Delete folder")}
-                      onClick={() => requestDeleteFolder("file", folder)}
-                      className="absolute right-2 top-2 rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-rose-600 opacity-0 shadow-sm ring-1 ring-rose-200 transition group-hover:opacity-100 hover:bg-rose-50"
-                    >
-                      {tr("Hapus", "Delete")}
-                    </button>
+                    <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                      <button
+                        type="button"
+                        title={tr("Edit folder", "Edit folder")}
+                        onClick={() => requestEditFolder("file", folder)}
+                        className="rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-blue-600 shadow-sm ring-1 ring-blue-200 hover:bg-blue-50"
+                      >
+                        {tr("Edit", "Edit")}
+                      </button>
+                      <button
+                        type="button"
+                        title={tr("Hapus folder", "Delete folder")}
+                        onClick={() => requestDeleteFolder("file", folder)}
+                        className="rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-rose-600 shadow-sm ring-1 ring-rose-200 hover:bg-rose-50"
+                      >
+                        {tr("Hapus", "Delete")}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -504,14 +583,24 @@ export default function FotoProjekPage() {
                         {folder}
                       </span>
                     </button>
-                    <button
-                      type="button"
-                      title={tr("Hapus folder", "Delete folder")}
-                      onClick={() => requestDeleteFolder("photo", folder)}
-                      className="absolute right-2 top-2 rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-rose-600 opacity-0 shadow-sm ring-1 ring-rose-200 transition group-hover:opacity-100 hover:bg-rose-50"
-                    >
-                      {tr("Hapus", "Delete")}
-                    </button>
+                    <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
+                      <button
+                        type="button"
+                        title={tr("Edit folder", "Edit folder")}
+                        onClick={() => requestEditFolder("photo", folder)}
+                        className="rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-blue-600 shadow-sm ring-1 ring-blue-200 hover:bg-blue-50"
+                      >
+                        {tr("Edit", "Edit")}
+                      </button>
+                      <button
+                        type="button"
+                        title={tr("Hapus folder", "Delete folder")}
+                        onClick={() => requestDeleteFolder("photo", folder)}
+                        className="rounded-md bg-white/90 px-2 py-1 text-xs font-medium text-rose-600 shadow-sm ring-1 ring-rose-200 hover:bg-rose-50"
+                      >
+                        {tr("Hapus", "Delete")}
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -529,13 +618,22 @@ export default function FotoProjekPage() {
                 {(folderRouteState.type === "file" ? tr("Dokumen", "Documents") : tr("Foto", "Photos"))} {tr("di dalam folder ini.", "inside this folder.")}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => requestDeleteFolder(folderRouteState.type, currentFolder)}
-              className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
-            >
-              {tr("Hapus Folder", "Delete Folder")}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => requestEditFolder(folderRouteState.type, currentFolder)}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+              >
+                {tr("Edit Folder", "Edit Folder")}
+              </button>
+              <button
+                type="button"
+                onClick={() => requestDeleteFolder(folderRouteState.type, currentFolder)}
+                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
+              >
+                {tr("Hapus Folder", "Delete Folder")}
+              </button>
+            </div>
           </div>
 
           {folderRouteState.type === "file" ? (
@@ -657,6 +755,67 @@ export default function FotoProjekPage() {
         </>
       )}
       </div>
+
+      {editFolderTarget && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
+          onClick={() => !savingFolder && setEditFolderTarget(null)}
+        >
+          <div
+            ref={editFolderModalRef}
+            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-400" />
+
+            <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-100 shadow-inner ring-1 ring-blue-100">
+                <Pencil size={28} className="text-blue-600" strokeWidth={2} />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-800">
+                {tr("Edit Nama Folder", "Edit Folder Name")}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                {editFolderTarget.type === "file"
+                  ? tr("Ubah nama folder dokumen.", "Rename document folder.")
+                  : tr("Ubah nama folder foto.", "Rename photo folder.")}
+              </p>
+
+              <input
+                type="text"
+                value={editFolderName}
+                onChange={(e) => setEditFolderName(e.target.value)}
+                placeholder={tr("Nama folder baru", "New folder name")}
+                className="mt-4 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none ring-blue-200 focus:ring-2"
+                disabled={savingFolder}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") confirmEditFolder();
+                }}
+              />
+            </div>
+
+            <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setEditFolderTarget(null)}
+                disabled={savingFolder}
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {tr("Batal", "Cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmEditFolder}
+                disabled={savingFolder}
+                className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {savingFolder ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {deleteFolderTarget && (
         <div

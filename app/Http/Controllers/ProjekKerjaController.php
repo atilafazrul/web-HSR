@@ -2114,6 +2114,102 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Rename media folder (file/photo) and update related file paths.
+     */
+    public function updateMediaFolder(Request $request, $id)
+    {
+        $projek = ProjekKerja::find($id);
+        if (!$projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan',
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'type' => 'required|string|in:file,photo',
+            'old_folder_name' => 'required|string|max:100',
+            'new_folder_name' => 'required|string|max:100',
+        ]);
+
+        $oldFolderName = $this->sanitizeFolderName($validated['old_folder_name'] ?? null);
+        $newFolderName = $this->sanitizeFolderName($validated['new_folder_name'] ?? null);
+
+        if (!$oldFolderName || !$newFolderName) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama folder tidak valid',
+            ], 422);
+        }
+
+        if ($oldFolderName === $newFolderName) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Nama folder tidak berubah',
+                'folder_name' => $newFolderName,
+                'type' => $validated['type'],
+            ]);
+        }
+
+        $baseDir = $validated['type'] === 'file' ? 'projek-kerja-files' : 'projek-kerja-photos';
+        $oldPath = $this->buildProjectMediaPath($baseDir, (int) $projek->id, $oldFolderName);
+        $newPath = $this->buildProjectMediaPath($baseDir, (int) $projek->id, $newFolderName);
+
+        if (!Storage::disk('public')->exists($oldPath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Folder lama tidak ditemukan',
+            ], 404);
+        }
+
+        if (Storage::disk('public')->exists($newPath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama folder sudah digunakan',
+            ], 422);
+        }
+
+        try {
+            Storage::disk('public')->move($oldPath, $newPath);
+
+            if ($validated['type'] === 'file') {
+                ProjekKerjaFile::query()
+                    ->where('projek_kerja_id', $projek->id)
+                    ->where('file', 'like', $oldPath . '/%')
+                    ->get()
+                    ->each(function (ProjekKerjaFile $file) use ($oldPath, $newPath) {
+                        $file->update([
+                            'file' => str_replace($oldPath, $newPath, $file->file),
+                        ]);
+                    });
+            } else {
+                ProjekKerjaPhoto::query()
+                    ->where('projek_kerja_id', $projek->id)
+                    ->where('photo', 'like', $oldPath . '/%')
+                    ->get()
+                    ->each(function (ProjekKerjaPhoto $photo) use ($oldPath, $newPath) {
+                        $photo->update([
+                            'photo' => str_replace($oldPath, $newPath, $photo->photo),
+                        ]);
+                    });
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Folder berhasil diubah',
+                'folder_name' => $newFolderName,
+                'old_folder_name' => $oldFolderName,
+                'type' => $validated['type'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengubah folder: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Add file to a project
      */
     public function addFile(Request $request, $id)

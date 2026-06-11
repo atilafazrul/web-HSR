@@ -48,7 +48,7 @@ class ActivityLogService
         // Foto & dokumen proyek
         [['POST'], '#^api/projek-kerja/\d+/add-photo$#'],
         [['DELETE'], '#^api/projek-kerja/photo/\d+$#'],
-        [['POST', 'DELETE'], '#^api/projek-kerja/\d+/folders$#'],
+        [['POST', 'PATCH', 'DELETE'], '#^api/projek-kerja/\d+/folders$#'],
         [['POST'], '#^api/projek-kerja/\d+/add-file$#'],
         [['DELETE'], '#^api/projek-kerja/file/\d+$#'],
 
@@ -224,8 +224,10 @@ class ActivityLogService
 
         if (preg_match('#^api/projek-kerja/\d+/folders$#', $path)) {
             $properties['subject'] = 'projek_folder';
-            $properties['folder_name'] = $this->sanitizeFolderName($request->input('folder_name'));
             $properties['folder_type'] = $request->input('type');
+            $properties['folder_name'] = $this->sanitizeFolderName($request->input('folder_name'));
+            $properties['old_folder_name'] = $this->sanitizeFolderName($request->input('old_folder_name'));
+            $properties['new_folder_name'] = $this->sanitizeFolderName($request->input('new_folder_name'));
         }
 
         if (Str::contains($path, 'projek-kerja')) {
@@ -281,12 +283,20 @@ class ActivityLogService
             return $description;
         }
 
+        $typeLabel = $request->input('type') === 'photo' ? 'foto' : 'dokumen';
+
+        if (in_array($method, ['PATCH', 'PUT'], true)) {
+            $oldName = $this->sanitizeFolderName($request->input('old_folder_name'));
+            $newName = $this->sanitizeFolderName($request->input('new_folder_name'));
+            if ($oldName && $newName) {
+                return "Mengubah nama folder {$typeLabel}: {$oldName} → {$newName}";
+            }
+        }
+
         $folderName = $this->sanitizeFolderName($request->input('folder_name'));
         if (!$folderName) {
             return $description;
         }
-
-        $typeLabel = $request->input('type') === 'photo' ? 'foto' : 'dokumen';
 
         if ($method === 'DELETE') {
             return "Menghapus folder {$typeLabel}: {$folderName}";
@@ -314,6 +324,10 @@ class ActivityLogService
         if (preg_match('#^api/projek-kerja/\d+/folders$#', $path)) {
             if ($method === 'DELETE') {
                 return ['projek_kerja', 'delete', 'Menghapus folder proyek'];
+            }
+
+            if (in_array($method, ['PATCH', 'PUT'], true)) {
+                return ['projek_kerja', 'folder', 'Mengubah nama folder proyek'];
             }
 
             return ['projek_kerja', 'folder', 'Membuat folder proyek'];
