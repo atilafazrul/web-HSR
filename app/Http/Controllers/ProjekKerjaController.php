@@ -6,6 +6,7 @@ use App\Models\ProjekKerja;
 use App\Models\ProjekKerjaPhoto;
 use App\Models\ProjekKerjaFile;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Services\ProjekKerjaNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -1152,6 +1153,40 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Pertahankan baris biaya existing yang tidak ikut payload (berdasarkan created_at).
+     */
+    protected function preserveMissingBiayaRowsByCreatedAt(array $result, array $existing): array
+    {
+        $presentCreatedAts = [];
+
+        foreach ($result as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $createdAt = trim((string) ($row['created_at'] ?? ''));
+            if ($createdAt !== '') {
+                $presentCreatedAts[$createdAt] = true;
+            }
+        }
+
+        foreach ($existing as $existRow) {
+            if (! is_array($existRow)) {
+                continue;
+            }
+
+            $createdAt = trim((string) ($existRow['created_at'] ?? ''));
+            if ($createdAt === '' || isset($presentCreatedAts[$createdAt])) {
+                continue;
+            }
+
+            $result[] = $existRow;
+            $presentCreatedAts[$createdAt] = true;
+        }
+
+        return $result;
+    }
+
+    /**
      * Parse payload biaya dari field biaya_json (FormData kompak) ke request array.
      */
     protected function mergeBiayaJsonIntoRequest(Request $request): void
@@ -1374,7 +1409,7 @@ class ProjekKerjaController extends Controller
                         }
                     }
 
-                    return $result;
+                    return $this->preserveMissingBiayaRowsByCreatedAt($result, $existing);
                 }
 
                 // Non–super admin: baris is_lunas tidak boleh diubah nominal / dihapus; keterangan masih boleh diubah.
@@ -1585,6 +1620,11 @@ class ProjekKerjaController extends Controller
                 'pengeluaran_items' => $updateData['biaya_pengeluaran_items'] ?? null,
                 'reimbursment_items' => $updateData['biaya_reimbursment_items'] ?? null,
             ]);
+
+            $request->attributes->set(
+                'activity_log_biaya_summary',
+                app(ActivityLogService::class)->buildBiayaChangeSummary($validated, $projek, $storedPhotos, $request)
+            );
 
             $projek->update($updateData);
 

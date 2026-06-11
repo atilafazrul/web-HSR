@@ -853,11 +853,11 @@ export default function ProjekKerjaPage() {
    * Cocokkan baris form ↔ server lewat `created_at` (bukan urutan array) agar tidak hilang saat simpan.
    */
   const mergeBiayaCategoryForSave = (baseItem, edit, key, fieldName) => {
-    if (role === "super_admin") return edit[key] || [];
     const raw = baseItem?.[fieldName];
     const serverRows =
       Array.isArray(raw) && raw.length > 0 ? normalizeBiayaRows(raw) : [];
-    const mineRows = (edit[key] || []).filter(isMeaningfulBiayaRow);
+    const editRows = (edit[key] || []).filter(isMeaningfulBiayaRow);
+    const isSuperAdmin = role === "super_admin";
     const me = currentUserOlehLower();
     const usedCreatedAt = new Set();
     const out = [];
@@ -866,52 +866,68 @@ export default function ProjekKerjaPage() {
       const serverCa = String(serverRow.created_at || "").trim();
       if (!serverCa) return null;
       return (
-        mineRows.find(
+        editRows.find(
           (e) => String(e.created_at || "").trim() === serverCa && !usedCreatedAt.has(serverCa),
         ) || null
       );
     };
 
+    const pushMergedRow = (serverRow, rep) => {
+      const serverCa = String(serverRow.created_at || "").trim();
+      if (serverCa) usedCreatedAt.add(serverCa);
+
+      if (Boolean(serverRow.is_lunas)) {
+        out.push({
+          ...rep,
+          nominal: serverRow.nominal,
+          is_lunas: true,
+          oleh: serverRow.oleh || rep.oleh || user?.name || "",
+          created_at: serverRow.created_at || rep.created_at,
+          photoPaths: serverRow.photoPaths ?? rep.photoPaths ?? [],
+          photoFiles: rep.photoFiles || [],
+        });
+        return;
+      }
+
+      out.push({
+        ...rep,
+        is_lunas: Boolean(rep.is_lunas),
+        oleh: serverRow.oleh || rep.oleh || user?.name || "",
+        created_at: serverRow.created_at || rep.created_at,
+        photoPaths: rep.photoPaths ?? serverRow.photoPaths ?? [],
+        photoFiles: rep.photoFiles || [],
+      });
+    };
+
     for (const row of serverRows) {
-      if (biayaOlehLower(row) !== me) {
+      if (!isSuperAdmin && biayaOlehLower(row) !== me) {
         out.push(row);
         continue;
       }
+
       const rep = findEditMatch(row);
-      const serverCa = String(row.created_at || "").trim();
       if (rep) {
-        if (serverCa) usedCreatedAt.add(serverCa);
-        if (Boolean(row.is_lunas)) {
-          out.push({
-            ...rep,
-            nominal: row.nominal,
-            is_lunas: true,
-            oleh: row.oleh || rep.oleh || user?.name || "",
-            created_at: row.created_at || rep.created_at,
-            photoPaths: row.photoPaths ?? rep.photoPaths ?? [],
-            photoFiles: [],
-          });
-        } else {
-          out.push({
-            ...rep,
-            is_lunas: false,
-            oleh: row.oleh || rep.oleh || user?.name || "",
-            created_at: row.created_at || rep.created_at,
-            photoPaths: rep.photoPaths ?? row.photoPaths ?? [],
-            photoFiles: rep.photoFiles || [],
-          });
-        }
-      } else if (Boolean(row.is_lunas)) {
+        pushMergedRow(row, rep);
+        continue;
+      }
+
+      // Baris server yang tidak ada di form tetap dipertahankan (hindari hilang saat simpan).
+      if (isSuperAdmin || Boolean(row.is_lunas)) {
         out.push(row);
       }
     }
 
-    for (const rep of mineRows) {
+    for (const rep of editRows) {
       const ca = String(rep.created_at || "").trim();
       if (ca && usedCreatedAt.has(ca)) continue;
-      const existsOnServer = serverRows.some(
-        (r) => biayaOlehLower(r) === me && String(r.created_at || "").trim() === ca,
-      );
+
+      const existsOnServer = serverRows.some((r) => {
+        const serverCa = String(r.created_at || "").trim();
+        if (!serverCa || serverCa !== ca) return false;
+        if (isSuperAdmin) return true;
+        return biayaOlehLower(r) === me;
+      });
+
       if (!existsOnServer) {
         out.push({
           ...rep,

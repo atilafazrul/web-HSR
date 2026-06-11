@@ -100,6 +100,7 @@ class ActivityLogService
         $path = $this->normalizePath($request->path());
         [$module, $baseAction, $description] = $this->describeRoute($method, $path);
         $description = $this->enrichFolderDescription($request, $method, $path, $description);
+        $description = $this->enrichBiayaDescription($request, $path, $description, $user);
 
         $isError = $statusCode !== null && $statusCode >= 400;
         $errorMessage = $isError ? $this->extractErrorMessage($response) : null;
@@ -209,6 +210,92 @@ class ActivityLogService
         return null;
     }
 
+    public function buildBiayaChangeSummary(
+        array $validated,
+        \App\Models\ProjekKerja $projek,
+        array $storedPhotos,
+        Request $request
+    ): array {
+        $categories = [
+            'jalan' => ['field' => 'biaya_jalan_items', 'photo_key' => null],
+            'pengeluaran' => ['field' => 'biaya_pengeluaran_items', 'photo_key' => 'pengeluaran'],
+            'reimbursment' => ['field' => 'biaya_reimbursment_items', 'photo_key' => 'reimbursment'],
+        ];
+
+        $changes = [];
+
+        foreach ($categories as $label => $config) {
+            $field = $config['field'];
+            if (! array_key_exists($field, $validated)) {
+                continue;
+            }
+
+            $photoKey = $config['photo_key'];
+            $storedByIndex = $photoKey ? ($storedPhotos[$photoKey] ?? []) : [];
+            $uploadNames = $photoKey
+                ? $this->collectBiayaUploadPhotoNames($request, $photoKey . '_photos')
+                : [];
+
+            $changes = array_merge(
+                $changes,
+                $this->diffBiayaCategoryForLog(
+                    $label,
+                    is_array($validated[$field]) ? $validated[$field] : [],
+                    is_array($projek->{$field}) ? $projek->{$field} : [],
+                    $storedByIndex,
+                    $uploadNames
+                )
+            );
+        }
+
+        $uploadedPhotos = [
+            'pengeluaran' => $this->collectBiayaUploadPhotoNames($request, 'pengeluaran_photos'),
+            'reimbursment' => $this->collectBiayaUploadPhotoNames($request, 'reimbursment_photos'),
+        ];
+        $uploadedPhotos['total_new_files'] = count($uploadedPhotos['pengeluaran']) + count($uploadedPhotos['reimbursment']);
+
+        return [
+            'changes' => $changes,
+            'change_count' => count($changes),
+            'uploaded_photos' => $uploadedPhotos,
+        ];
+    }
+
+    private function summarizePayloadForLog(Request $request, string $path): ?array
+    {
+        if (preg_match('#^api/projek-kerja/\d+/uang$#', $path)) {
+            $user = $request->user();
+            $base = [
+                'action' => 'update_biaya',
+                'edited_by' => $user?->name,
+                'editor_email' => $user?->email,
+                'editor_role' => $user?->role,
+                'projek_id' => $request->route('id'),
+                'used_biaya_json' => $request->filled('biaya_json'),
+            ];
+
+            $summary = $request->attributes->get('activity_log_biaya_summary');
+            if (is_array($summary)) {
+                return array_merge($base, $summary);
+            }
+
+            return array_merge($base, [
+                'changes' => [],
+                'change_count' => 0,
+                'note' => 'Ringkasan perubahan tidak tersedia',
+            ]);
+        }
+
+        if (preg_match('#^api/dashboard-biaya#', $path)) {
+            return [
+                'action' => 'dashboard_biaya',
+                'fields' => array_keys($request->except(['password', 'token'])),
+            ];
+        }
+
+        return null;
+    }
+
     private function buildProperties(Request $request, string $path): array
     {
         $properties = [
@@ -216,9 +303,14 @@ class ActivityLogService
         ];
 
         if (in_array(strtoupper($request->method()), ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
-            $payload = $this->sanitizePayload($request->all());
-            if (!empty($payload)) {
-                $properties['payload'] = $payload;
+            $summary = $this->summarizePayloadForLog($request, $path);
+            if ($summary !== null) {
+                $properties['payload'] = $summary;
+            } else {
+                $payload = $this->sanitizePayload($request->all());
+                if (!empty($payload)) {
+                    $properties['payload'] = $payload;
+                }
             }
         }
 
@@ -275,8 +367,223 @@ class ActivityLogService
     }
 
     /**
-     * @return array{0: string, 1: string, 2: string}
+     * @param  array<int, string>  $storedPhotoPaths
+     * @param  array<int, array{row: int, name: string}>  $uploadNames
+     * @return array<int, array<string, mixed>>
      */
+    private function diffBiayaCategoryForLog(
+        string $category,
+        array $incoming,
+        array $existing,
+        array $storedPhotosByIndex,
+        array $uploadNames
+    ): array {
+        $existingByCreatedAt = [];
+        foreach ($existing as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $createdAt = trim((string) ($row['created_at'] ?? ''));
+            if ($createdAt !== '') {
+                $existingByCreatedAt[$createdAt] = $row;
+            }
+        }
+
+        $incomingCreatedAts = [];
+        $changes = [];
+
+        foreach ($incoming as $idx => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $createdAt = trim((string) ($row['created_at'] ?? ''));
+            if ($createdAt !== '') {
+                $incomingCreatedAts[$createdAt] = true;
+            }
+
+            $newStoredPaths = is_array($storedPhotosByIndex[$idx] ?? null)
+                ? $storedPhotosByIndex[$idx]
+                : [];
+            $uploadNamesForRow = array_values(array_filter(
+                $uploadNames,
+                fn ($upload) => (int) ($upload['row'] ?? -1) === (int) $idx
+            ));
+
+            $existingRow = ($createdAt !== '' && isset($existingByCreatedAt[$createdAt]))
+                ? $existingByCreatedAt[$createdAt]
+                : null;
+
+            if ($existingRow === null) {
+                $changes[] = $this->formatBiayaChangeRow('create', $category, $row, $newStoredPaths, $uploadNamesForRow);
+
+                continue;
+            }
+
+            if ($this->biayaRowChanged($existingRow, $row, $newStoredPaths)) {
+                $changes[] = $this->formatBiayaChangeRow(
+                    'update',
+                    $category,
+                    $row,
+                    $newStoredPaths,
+                    $uploadNamesForRow,
+                    $existingRow
+                );
+            }
+        }
+
+        foreach ($existing as $oldRow) {
+            if (! is_array($oldRow)) {
+                continue;
+            }
+            $createdAt = trim((string) ($oldRow['created_at'] ?? ''));
+            if ($createdAt === '' || isset($incomingCreatedAts[$createdAt])) {
+                continue;
+            }
+
+            $changes[] = $this->formatBiayaChangeRow('delete', $category, $oldRow, [], []);
+        }
+
+        return $changes;
+    }
+
+    /**
+     * @param  array<int, string>  $newStoredPaths
+     * @param  array<int, array{row: int, name: string}>  $uploadNamesForRow
+     */
+    private function formatBiayaChangeRow(
+        string $action,
+        string $category,
+        array $row,
+        array $newStoredPaths,
+        array $uploadNamesForRow,
+        ?array $previousRow = null
+    ): array {
+        // Prefer original upload names; stored paths are hashed server filenames (same file, not a second photo).
+        $newPhotoFiles = $uploadNamesForRow !== []
+            ? array_values(array_column($uploadNamesForRow, 'name'))
+            : array_values(array_map(fn ($path) => basename((string) $path), $newStoredPaths));
+
+        $entry = [
+            'action' => $action,
+            'category' => $category,
+            'oleh' => trim((string) ($row['oleh'] ?? '')) ?: null,
+            'nominal' => round((float) ($row['nominal'] ?? 0), 2),
+            'keterangan' => Str::limit(trim((string) ($row['keterangan'] ?? '')), 80, '...') ?: null,
+            'is_lunas' => $this->parseBiayaIsLunasFlag($row['is_lunas'] ?? false),
+            'created_at' => $row['created_at'] ?? null,
+            'new_photo_files' => $newPhotoFiles,
+            'new_photo_count' => count($newStoredPaths),
+        ];
+
+        if ($action === 'update' && is_array($previousRow)) {
+            $entry['previous_nominal'] = round((float) ($previousRow['nominal'] ?? 0), 2);
+            $entry['previous_keterangan'] = Str::limit(trim((string) ($previousRow['keterangan'] ?? '')), 80, '...') ?: null;
+        }
+
+        return $entry;
+    }
+
+    private function biayaRowChanged(array $existingRow, array $incomingRow, array $newStoredPaths): bool
+    {
+        if ($newStoredPaths !== []) {
+            return true;
+        }
+
+        $oldNominal = round((float) ($existingRow['nominal'] ?? 0), 2);
+        $newNominal = round((float) ($incomingRow['nominal'] ?? 0), 2);
+        if (abs($oldNominal - $newNominal) > 0.009) {
+            return true;
+        }
+
+        if (trim((string) ($existingRow['keterangan'] ?? '')) !== trim((string) ($incomingRow['keterangan'] ?? ''))) {
+            return true;
+        }
+
+        if ($this->parseBiayaIsLunasFlag($existingRow['is_lunas'] ?? false) !== $this->parseBiayaIsLunasFlag($incomingRow['is_lunas'] ?? false)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function parseBiayaIsLunasFlag(mixed $value): bool
+    {
+        $parsed = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+        return $parsed ?? false;
+    }
+
+    /**
+     * @return array<int, array{row: int, name: string}>
+     */
+    private function collectBiayaUploadPhotoNames(Request $request, string $field): array
+    {
+        $result = [];
+
+        foreach (($request->file($field) ?? []) as $rowIndex => $files) {
+            foreach ((array) $files as $file) {
+                if ($file && $file->isValid()) {
+                    $result[] = [
+                        'row' => (int) $rowIndex,
+                        'name' => $file->getClientOriginalName(),
+                    ];
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    private function enrichBiayaDescription(Request $request, string $path, string $description, ?User $user): string
+    {
+        if (! preg_match('#^api/projek-kerja/\d+/uang$#', $path)) {
+            return $description;
+        }
+
+        $editor = trim((string) ($user?->name ?? '')) ?: 'Sistem';
+        $summary = $request->attributes->get('activity_log_biaya_summary');
+        $changes = is_array($summary) ? ($summary['changes'] ?? []) : [];
+
+        if ($changes === []) {
+            return $description . " (oleh {$editor}, tidak ada perubahan terdeteksi)";
+        }
+
+        $parts = ["oleh {$editor}", count($changes) . ' perubahan'];
+
+        $first = $changes[0];
+        $categoryLabel = match ($first['category'] ?? '') {
+            'jalan' => 'biaya jalan',
+            'pengeluaran' => 'pengeluaran',
+            'reimbursment' => 'reimbursment',
+            default => (string) ($first['category'] ?? 'biaya'),
+        };
+        $actionLabel = match ($first['action'] ?? '') {
+            'create' => 'tambah',
+            'update' => 'ubah',
+            'delete' => 'hapus',
+            default => (string) ($first['action'] ?? ''),
+        };
+
+        $nominal = (float) ($first['nominal'] ?? 0);
+        if ($nominal > 0) {
+            $parts[] = "{$actionLabel} {$categoryLabel} Rp " . number_format($nominal, 0, ',', '.');
+        } else {
+            $parts[] = "{$actionLabel} {$categoryLabel}";
+        }
+
+        $newPhotos = is_array($first['new_photo_files'] ?? null) ? count($first['new_photo_files']) : 0;
+        if ($newPhotos > 0) {
+            $parts[] = "{$newPhotos} foto baru";
+        }
+
+        if (count($changes) > 1) {
+            $parts[] = '+' . (count($changes) - 1) . ' lainnya';
+        }
+
+        return $description . ' (' . implode(', ', $parts) . ')';
+    }
+
     private function enrichFolderDescription(Request $request, string $method, string $path, string $description): string
     {
         if (!preg_match('#^api/projek-kerja/\d+/folders$#', $path)) {
