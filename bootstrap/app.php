@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Register middleware aliases
         $middleware->alias([
             'session.timeout' => \App\Http\Middleware\SessionTimeoutMiddleware::class,
+            'log.activity' => \App\Http\Middleware\LogActivityMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

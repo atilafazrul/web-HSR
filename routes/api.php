@@ -27,6 +27,7 @@ use App\Http\Controllers\CutiController;
 use App\Http\Controllers\RfiController;
 use App\Http\Controllers\WorkChecklistController;
 use App\Http\Controllers\DailyReportController;
+use App\Http\Controllers\ActivityLogController;
 
 
 /*
@@ -59,7 +60,7 @@ Route::get('/karyawan/{id}/sertifikat', [UserController::class, 'downloadSertifi
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     
     /*
     |--------------------------------------------------------------------------
@@ -674,5 +675,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/daily-report/drafts/{draft}', [DailyReportController::class, 'updateDraft']);
     Route::delete('/daily-report/drafts/{draft}', [DailyReportController::class, 'destroyDraft']);
     Route::post('/daily-report/generate', [DailyReportController::class, 'generate']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | ACTIVITY LOGS (Super Admin only)
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/activity-logs/summary', [ActivityLogController::class, 'summary']);
+    Route::get('/activity-logs/filters', [ActivityLogController::class, 'filters']);
+    Route::get('/activity-logs', [ActivityLogController::class, 'index']);
 
 });

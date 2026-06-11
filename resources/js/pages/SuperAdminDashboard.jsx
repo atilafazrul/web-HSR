@@ -62,6 +62,7 @@ import GeneratePDFPage from "./GeneratePDFPage";
 import KaryawanPage from "./KaryawanPage";
 import TargetPage from "./TargetPage";
 import CutiApprovalPage from "./CutiApprovalPage";
+import ActivityLogPage from "./ActivityLogPage";
 import RfiFormPage from "./RfiFormPage";
 import WorkChecklistFormPage from "./WorkChecklistFormPage";
 import DailyReportFormPage from "./DailyReportFormPage";
@@ -172,6 +173,9 @@ export default function SuperAdminDashboard({ user, logout }) {
 
             {/* APPROVAL CUTI */}
             <Route path="cuti-approval" element={<CutiApprovalPage />} />
+
+            {/* ACTIVITY LOG */}
+            <Route path="activity-log" element={<ActivityLogPage />} />
 
             {/* BERITA ACARA */}
             <Route path="berita-acara" element={<BeritaAcaraPage />} />

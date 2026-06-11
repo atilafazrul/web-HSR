@@ -19,6 +19,7 @@ import {
   FileText,
   CalendarCheck,
   ClipboardCheck,
+  History as HistoryIcon,
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -371,6 +372,23 @@ export default function Sidebar({
                 isMobile={isMobile}
               />
             </button>
+
+            {/* ================= LOG AKTIVITAS (SUPER ADMIN) ================= */}
+            {isSuperAdmin && (
+              <button
+                type="button"
+                className="w-full text-left"
+                onClick={() => go(`${basePath}/activity-log`)}
+              >
+                <SidebarItem
+                  icon={<HistoryIcon size={18} />}
+                  text={t("activityLog", "Log Aktivitas")}
+                  active={isActive(`${basePath}/activity-log`)}
+                  expanded={expanded}
+                  isMobile={isMobile}
+                />
+              </button>
+            )}
           </nav>
         </div>
 
