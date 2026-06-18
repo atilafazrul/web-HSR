@@ -30,7 +30,19 @@ const PurchasingPage = () => {
           : "Kelola pengadaan, progres pekerjaan, dan dokumentasi purchasing"}
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {!isUserRole && (
+          <Card
+            icon={<Package size={24} className="text-indigo-600" />}
+            title="Inventory"
+            desc={
+              language === "en"
+                ? "Manage purchasing stock and assets"
+                : "Kelola stok dan aset divisi purchasing"
+            }
+            onClick={() => navigate(`${basePath}/purchasing/inventory`)}
+          />
+        )}
         <Card
           icon={<ListTodo size={24} className="text-indigo-600" />}
           title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}

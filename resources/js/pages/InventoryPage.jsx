@@ -1,22 +1,30 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, Package, Search, Eye, Pencil, Trash2 } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n/index.jsx";
+import {
+  getBasePathFromRole,
+  getInventoryDivisiFromPath,
+  inventoryListPath,
+} from "../utils/inventoryRoute";
 
 export default function InventoryPage() {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role?.toLowerCase();
 
-  const basePath =
-    role === "super_admin"
-      ? "/super_admin"
-      : "/admin";
+  const basePath = getBasePathFromRole(role);
+  const inventoryDivisi = useMemo(
+    () => getInventoryDivisiFromPath(location.pathname),
+    [location.pathname],
+  );
+  const inventoryPath = inventoryListPath(role, inventoryDivisi);
 
   const API_URL = import.meta.env.VITE_API_URL;
   const ASSET_BASE_URL = (API_URL || "").replace(/\/api\/?$/, "");
@@ -135,7 +143,7 @@ export default function InventoryPage() {
         {/* Tombol Tambah Barang */}
         <button
           onClick={() =>
-            navigate(`${basePath}/it/inventory/tambah`)
+            navigate(`${inventoryPath}/tambah`)
           }
           className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start"
         >
@@ -225,7 +233,7 @@ export default function InventoryPage() {
                         </button>
                       )}
                       <button
-                        onClick={() => navigate(`${basePath}/it/inventory/edit/${b.id}`)}
+                        onClick={() => navigate(`${inventoryPath}/edit/${b.id}`)}
                         className="text-blue-600 hover:text-blue-800"
                         title={tr("Edit", "Edit")}
                       >
@@ -322,7 +330,7 @@ export default function InventoryPage() {
                   </button>
                 )}
                 <button
-                  onClick={() => navigate(`${basePath}/it/inventory/edit/${b.id}`)}
+                  onClick={() => navigate(`${inventoryPath}/edit/${b.id}`)}
                   className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-600 p-3 rounded-lg transition flex items-center justify-center"
                   title={tr("Edit", "Edit")}
                 >

@@ -239,6 +239,9 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route index element={<PurchasingPage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
               <Route path="projek/archive" element={<ProjekKerjaPage />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="inventory/tambah" element={<FormBarangPage />} />
+              <Route path="inventory/edit/:id" element={<EditBarangPage />} />
               <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
               <Route path="pembelian" element={<PembelianPage />} />
             </Route>

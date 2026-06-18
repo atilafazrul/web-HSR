@@ -1,22 +1,30 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
 import { useI18n } from "../i18n/index.jsx";
+import {
+  getBasePathFromRole,
+  getInventoryDivisiFromPath,
+  inventoryListPath,
+} from "../utils/inventoryRoute";
 
 export default function TambahBarangPage() {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
 
-  const basePath =
-    role === "super_admin"
-      ? "/super_admin"
-      : "/admin";
+  const basePath = getBasePathFromRole(role);
+  const inventoryDivisi = useMemo(
+    () => getInventoryDivisiFromPath(location.pathname),
+    [location.pathname],
+  );
+  const inventoryPath = inventoryListPath(role, inventoryDivisi);
 
   /* ================= STATE ================= */
 
@@ -154,7 +162,7 @@ export default function TambahBarangPage() {
 
       alert(tr("Barang berhasil ditambahkan ✅", "Item added successfully ✅"));
 
-      navigate(`${basePath}/it/inventory`);
+      navigate(inventoryPath);
 
     } catch (err) {
 

@@ -648,6 +648,9 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="logistik/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="purchasing/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="purchasing/pembelian" element={<PembelianPage />} />
+            <Route path="purchasing/inventory" element={<InventoryPage />} />
+            <Route path="purchasing/inventory/tambah" element={<FormBarangPage />} />
+            <Route path="purchasing/inventory/edit/:id" element={<EditBarangPage />} />
 
             <Route path="logistik/inventory" element={<LogistikInventoryPage />} />
             <Route path="logistik/inventory/tambah" element={<LogistikFormBarangPage />} />
