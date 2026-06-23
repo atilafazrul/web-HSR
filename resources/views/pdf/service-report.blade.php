@@ -190,7 +190,8 @@
             margin-top: 3px;
             background-color: transparent;
             font-size: 10px;
-            line-height: 1.3;
+            line-height: 1.15;
+            word-wrap: break-word;
         }
 
         /* SIGNATURE SECTION */
@@ -373,10 +374,16 @@
                     <td align="center">{{ $report->serial_no ?? '-' }}</td>
                     <td align="center">{{ $report->description ?? '-' }}</td>
                     <td align="center">
-                        {{ isset($report->start_date) ? \Carbon\Carbon::parse($report->start_date)->format('d-m-Y') : '-' }}
+                        @include('pdf.partials.service_report_datetime', [
+                            'date' => $report->start_date ?? null,
+                            'time' => $report->start_time ?? null,
+                        ])
                     </td>
                     <td align="center">
-                        {{ isset($report->completed_date) ? \Carbon\Carbon::parse($report->completed_date)->format('d-m-Y') : '-' }}
+                        @include('pdf.partials.service_report_datetime', [
+                            'date' => $report->completed_date ?? null,
+                            'time' => $report->completed_time ?? null,
+                        ])
                     </td>
                 </tr>
             </tbody>
@@ -427,35 +434,35 @@
 
         <div style="margin-top: 6px;">
             <strong style="font-size: 11px;">Problem Description:</strong>
-            <div class="box-description">{{ $report->problem_description ?? '' }}</div>
+            <div class="box-description">@include('pdf.partials.multiline_text', ['text' => $report->problem_description ?? ''])</div>
         </div>
         <div style="margin-top: 5px;">
             <strong style="font-size: 11px;">Service Performed:</strong>
-            <div class="box-description">{{ $report->service_performed ?? '' }}</div>
+            <div class="box-description">@include('pdf.partials.multiline_text', ['text' => $report->service_performed ?? ''])</div>
         </div>
         <div style="margin-top: 5px;">
             <strong style="font-size: 11px;">Recommendation:</strong>
-            <div class="box-description">{{ $report->recommendation ?? '' }}</div>
+            <div class="box-description">@include('pdf.partials.multiline_text', ['text' => $report->recommendation ?? ''])</div>
         </div>
 
         <table class="signature-section">
             <tr>
                 <td width="50%" align="center">
-                    <div style="margin-bottom: 80px; font-size: 11px;">
-                        Tangerang,
-                        {{ isset($report->completed_date) ? \Carbon\Carbon::parse($report->completed_date)->format('d F Y') : '........................' }}
+                    <div style="margin-bottom: {{ !empty($report->ttd_teknisi) ? '8px' : '80px' }}; font-size: 11px;">
+                        {{ trim($report->kota ?? '') ?: 'Tangerang' }},
+                        {{ isset($report->tanggal) ? \Carbon\Carbon::parse($report->tanggal)->format('d F Y') : (isset($report->completed_date) ? \Carbon\Carbon::parse($report->completed_date)->format('d F Y') : '........................') }}
                     </div>
-                    <div
-                        style="border-top: 1px solid #000; padding-top: 3px; min-width: 180px; display: inline-block; font-size: 11px;">
-                        ( {{ $report->nama_teknisi ?? '........................' }} )
-                    </div>
+                    @include('pdf.partials.signature_service_report', [
+                        'signature' => $report->ttd_teknisi ?? null,
+                        'name' => $report->nama_teknisi ?? null,
+                    ])
                 </td>
                 <td width="50%" align="center">
-                    <div style="margin-bottom: 80px; font-size: 11px;">Customer</div>
-                    <div
-                        style="border-top: 1px solid #000; padding-top: 3px; min-width: 180px; display: inline-block; font-size: 11px;">
-                        ( {{ $report->nama_client ?? '........................' }} )
-                    </div>
+                    <div style="margin-bottom: {{ !empty($report->ttd_klien) ? '8px' : '80px' }}; font-size: 11px;">Customer</div>
+                    @include('pdf.partials.signature_service_report', [
+                        'signature' => $report->ttd_klien ?? null,
+                        'name' => $report->nama_client ?? null,
+                    ])
                 </td>
             </tr>
         </table>

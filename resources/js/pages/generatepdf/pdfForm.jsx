@@ -13,8 +13,10 @@ import {
   Trash2,
   X,
   Edit,
+  PenLine,
 } from "lucide-react";
 import { useI18n } from "../../i18n";
+import SignaturePad from "../berita-acara/components/forms/SignaturePad";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -33,6 +35,7 @@ export default function pdfForm({
   onRemoveParts,
   onSubmit,
   onReset,
+  onSignatureChange,
   loading,
   user,
   isEditing,
@@ -119,6 +122,11 @@ export default function pdfForm({
           formData={formData}
           onInputChange={onInputChange}
           user={user}
+        />
+
+        <SignatureSection
+          formData={formData}
+          onSignatureChange={onSignatureChange}
         />
 
       </div>
@@ -336,6 +344,17 @@ function EquipmentSection({ formData, onInputChange }) {
           </div>
         </div>
 
+        {/* Start Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+          <input
+            type="time"
+            value={formData.start_time}
+            onChange={(e) => onInputChange("start_time", e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
         {/* Completed Date */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Completed Date</label>
@@ -348,6 +367,17 @@ function EquipmentSection({ formData, onInputChange }) {
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
+        </div>
+
+        {/* Completed Time */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">Completed Time</label>
+          <input
+            type="time"
+            value={formData.completed_time}
+            onChange={(e) => onInputChange("completed_time", e.target.value)}
+            className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {/* Description */}
@@ -492,10 +522,11 @@ function ProblemDescriptionSection({ formData, onInputChange }) {
       <textarea
         value={formData.problem_description}
         onChange={(e) => onInputChange("problem_description", e.target.value)}
-        rows={4}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        placeholder={tr("Jelaskan masalah atau keluhan yang dilaporkan customer...", "Explain the issue or complaint reported by the customer...")}
+        rows={5}
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[120px]"
+        placeholder={tr("Satu poin per baris. Contoh:\n- AC tidak dingin\n- Bunyi berisik pada unit outdoor", "One point per line. Example:\n- AC not cooling\n- Noisy outdoor unit")}
       />
+      <p className="text-xs text-gray-500 mt-1">{tr("Tekan Enter untuk poin baru di baris berikutnya", "Press Enter for a new point on the next line")}</p>
     </div>
   );
 }
@@ -510,10 +541,11 @@ function ServicePerformedSection({ formData, onInputChange }) {
       <textarea
         value={formData.service_performed}
         onChange={(e) => onInputChange("service_performed", e.target.value)}
-        rows={4}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        placeholder={tr("Jelaskan tindakan/perbaikan yang telah dilakukan...", "Describe actions/repairs that have been performed...")}
+        rows={5}
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[120px]"
+        placeholder={tr("Satu poin per baris. Contoh:\n- Cek tekanan freon\n- Bersihkan filter AC", "One point per line. Example:\n- Check freon pressure\n- Clean AC filter")}
       />
+      <p className="text-xs text-gray-500 mt-1">{tr("Tekan Enter untuk poin baru di baris berikutnya", "Press Enter for a new point on the next line")}</p>
     </div>
   );
 }
@@ -528,17 +560,18 @@ function RecommendationSection({ formData, onInputChange }) {
       <textarea
         value={formData.recommendation}
         onChange={(e) => onInputChange("recommendation", e.target.value)}
-        rows={3}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-        placeholder={tr("Saran atau rekomendasi untuk perawatan selanjutnya...", "Suggestions or recommendations for next maintenance...")}
+        rows={4}
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y min-h-[100px]"
+        placeholder={tr("Satu poin per baris. Contoh:\n- Service berkala 3 bulan\n- Ganti filter setiap bulan", "One point per line. Example:\n- Service every 3 months\n- Replace filter monthly")}
       />
+      <p className="text-xs text-gray-500 mt-1">{tr("Tekan Enter untuk poin baru di baris berikutnya", "Press Enter for a new point on the next line")}</p>
     </div>
   );
 }
 
 function AdministrationSection({ formData, onInputChange, user }) {
   return (
-    <div className="bg-gray-50 rounded-xl p-6">
+    <div className="bg-gray-50 rounded-xl p-6 mb-8">
       <h4 className="text-lg font-semibold mb-4 text-gray-700 flex items-center gap-2">
         <User size={20} />
         Administration
@@ -605,6 +638,35 @@ function AdministrationSection({ formData, onInputChange, user }) {
             />
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SignatureSection({ formData, onSignatureChange }) {
+  return (
+    <div className="mb-8">
+      <h4 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b flex items-center gap-2">
+        <PenLine size={20} className="text-blue-600" />
+        {tr("Tanda Tangan", "Signatures")}
+      </h4>
+      <p className="text-sm text-gray-500 mb-4">
+        {tr(
+          "Opsional — kosongkan jika ingin menandatangani manual setelah cetak. Nama di dalam ( ) diambil dari field Nama Teknisi dan Nama Client di atas.",
+          "Optional — leave blank to sign manually after printing. Names inside ( ) come from Technician Name and Client Name fields above."
+        )}
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <SignaturePad
+          label={tr("Tanda Tangan Teknisi", "Technician Signature")}
+          value={formData.ttd_teknisi}
+          onChange={(value) => onSignatureChange("ttd_teknisi", value)}
+        />
+        <SignaturePad
+          label={tr("Tanda Tangan Customer", "Customer Signature")}
+          value={formData.ttd_klien}
+          onChange={(value) => onSignatureChange("ttd_klien", value)}
+        />
       </div>
     </div>
   );

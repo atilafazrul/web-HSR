@@ -24,13 +24,17 @@ export const usePdf = (user, currentDivisi = "IT") => {
     model: "",
     serial_no: "",
     start_date: "",
+    start_time: "",
     completed_date: "",
+    completed_time: "",
     description: "",
     problem_description: "",
     service_performed: "",
     recommendation: "",
     nama_teknisi: user?.name || "",
     nama_client: "",
+    ttd_teknisi: "",
+    ttd_klien: "",
     kota: "",
     tanggal: new Date().toISOString().split('T')[0],
   });
@@ -61,6 +65,10 @@ export const usePdf = (user, currentDivisi = "IT") => {
 
   // ================= HANDLERS =================
   const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSignatureChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -99,13 +107,17 @@ export const usePdf = (user, currentDivisi = "IT") => {
       model: "",
       serial_no: "",
       start_date: "",
+      start_time: "",
       completed_date: "",
+      completed_time: "",
       description: "",
       problem_description: "",
       service_performed: "",
       recommendation: "",
       nama_teknisi: user?.name || "",
       nama_client: "",
+      ttd_teknisi: "",
+      ttd_klien: "",
       kota: "",
       tanggal: new Date().toISOString().split('T')[0],
     });
@@ -166,13 +178,17 @@ export const usePdf = (user, currentDivisi = "IT") => {
           model: item.model,
           serial_no: item.serial_no,
           start_date: item.start_date,
+          start_time: item.start_time,
           completed_date: item.completed_date,
+          completed_time: item.completed_time,
           description: item.description,
           problem_description: item.problem_description,
           service_performed: item.service_performed,
           recommendation: item.recommendation,
           nama_teknisi: item.nama_teknisi,
           nama_client: item.nama_client,
+          ttd_teknisi: item.ttd_teknisi,
+          ttd_klien: item.ttd_klien,
           kota: item.kota,
           tanggal: item.tanggal,
           divisi: item.divisi,
@@ -240,6 +256,8 @@ export const usePdf = (user, currentDivisi = "IT") => {
 
       const submitData = {
         ...formData,
+        ttd_teknisi: formData.ttd_teknisi || null,
+        ttd_klien: formData.ttd_klien || null,
         checkboxes: selectedCheckboxes,
         partsList: partsData,
         divisi: divisiToSend,
@@ -306,13 +324,17 @@ export const usePdf = (user, currentDivisi = "IT") => {
           model: data.model || "",
           serial_no: data.serial_no || "",
           start_date: data.start_date ? data.start_date.split('T')[0] : "",
+          start_time: data.start_time || "",
           completed_date: data.completed_date ? data.completed_date.split('T')[0] : "",
+          completed_time: data.completed_time || "",
           description: data.description || "",
           problem_description: data.problem_description || "",
           service_performed: data.service_performed || "",
           recommendation: data.recommendation || "",
           nama_teknisi: data.nama_teknisi || "",
           nama_client: data.nama_client || "",
+          ttd_teknisi: data.ttd_teknisi || "",
+          ttd_klien: data.ttd_klien || "",
           kota: data.kota || "",
           tanggal: data.tanggal ? data.tanggal.split('T')[0] : new Date().toISOString().split('T')[0],
         });
@@ -443,6 +465,7 @@ export const usePdf = (user, currentDivisi = "IT") => {
 
     // Handlers
     handleInputChange,
+    handleSignatureChange,
     handleCheckboxChange,
     handlePartsChange,
     handleAddParts,

@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Filter, FileText, User, Eye, Download, MapPin, X, Calendar, Wrench, Edit } from "lucide-react";
+import { Search, Filter, FileText, User, Eye, Download, MapPin, X, Calendar, Wrench, Edit, PenLine } from "lucide-react";
 import { useI18n } from "../../i18n";
 
 // Format tanggal dari ISO string ke format yang lebih mudah dibaca
@@ -245,6 +245,43 @@ export default function pdfHistory({
                   </div>
                 </div>
               </div>
+
+              {(selectedItem.ttd_teknisi || selectedItem.ttd_klien) && (
+                <div className="bg-gray-50 rounded-2xl p-5">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <PenLine size={18} className="text-blue-600" />
+                    {tr("Tanda Tangan", "Signatures")}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {selectedItem.ttd_teknisi && (
+                      <div className="bg-white rounded-xl border p-4">
+                        <p className="text-sm text-gray-500 mb-2">{tr("Teknisi", "Technician")}</p>
+                        <img
+                          src={selectedItem.ttd_teknisi}
+                          alt={tr("Tanda tangan teknisi", "Technician signature")}
+                          className="max-h-24 w-full object-contain bg-white rounded border mb-2"
+                        />
+                        {selectedItem.nama_teknisi && (
+                          <p className="text-sm font-medium text-center">({selectedItem.nama_teknisi})</p>
+                        )}
+                      </div>
+                    )}
+                    {selectedItem.ttd_klien && (
+                      <div className="bg-white rounded-xl border p-4">
+                        <p className="text-sm text-gray-500 mb-2">Customer</p>
+                        <img
+                          src={selectedItem.ttd_klien}
+                          alt={tr("Tanda tangan customer", "Customer signature")}
+                          className="max-h-24 w-full object-contain bg-white rounded border mb-2"
+                        />
+                        {selectedItem.nama_client && (
+                          <p className="text-sm font-medium text-center">({selectedItem.nama_client})</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* DESCRIPTIONS */}
               <div className="bg-gray-50 rounded-2xl p-5">
