@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DashboardBiaya;
 use App\Models\ProjekKerja;
 use App\Models\User;
+use App\Services\BiayaNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
@@ -187,6 +188,8 @@ class DashboardBiayaController extends Controller
             'created_by' => $user->id ?? null,
             'updated_by' => $user->id ?? null,
         ]);
+
+        app(BiayaNotificationService::class)->notifyDashboardBiaya($row, $user);
 
         return response()->json([
             'success' => true,

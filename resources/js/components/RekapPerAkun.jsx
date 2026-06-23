@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { DollarSign, Calendar, User, TrendingUp, Download, Search, X, FileText, ChevronRight } from "lucide-react";
 import { saveAs } from 'file-saver';
@@ -44,13 +45,87 @@ const getPhotoUrlsFromItem = (item) => {
     .filter((u) => u !== "");
 };
 
+const getBiayaRowKey = (item) => {
+  if (item?.source === "projek") {
+    return `projek-${item.project_id}-${item.kategori}-${item.item_index}`;
+  }
+  return `dashboard-${item.id}`;
+};
+
+const matchesBiayaHighlight = (item, target) => {
+  if (!target || !item) return false;
+  if (target.type === "dashboard") {
+    return item.source !== "projek" && String(item.id) === String(target.id);
+  }
+  if (target.type === "projek") {
+    return (
+      item.source === "projek" &&
+      String(item.project_id) === String(target.project_id) &&
+      Number(item.item_index) === Number(target.item_index) &&
+      String(item.kategori) === String(target.kategori)
+    );
+  }
+  return false;
+};
+
+const parseHighlightFromParams = (params) => {
+  const type = params.get("highlight_type");
+  const nominal = params.get("highlight_nominal");
+  const kategori = params.get("highlight_kategori");
+
+  if (type === "dashboard") {
+    const id = params.get("highlight_id");
+    if (!id) return null;
+    return {
+      type: "dashboard",
+      id,
+      kategori,
+      nominal: nominal != null ? Number(nominal) : null,
+    };
+  }
+
+  if (type === "projek") {
+    const projectId = params.get("highlight_project_id");
+    const itemIndex = params.get("highlight_item_index");
+    if (projectId == null || itemIndex == null || !kategori) return null;
+    return {
+      type: "projek",
+      project_id: projectId,
+      item_index: itemIndex,
+      kategori,
+      nominal: nominal != null ? Number(nominal) : null,
+    };
+  }
+
+  return null;
+};
+
+const parseDeepLinkFromSearchParams = (params) => {
+  if (params.get("detail") !== "1") return null;
+  const namaAkun = params.get("nama_akun");
+  if (!namaAkun) return null;
+  return {
+    nama_akun: namaAkun,
+    created_by: params.get("created_by"),
+    source: params.get("source"),
+    bulan: params.get("bulan"),
+    tahun: params.get("tahun"),
+    highlight: parseHighlightFromParams(params),
+  };
+};
+
 // Menggunakan React.memo untuk mencegah unmount/remount yang tidak perlu
 export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false }) {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const isSuperAdmin = user?.role === "super_admin";
   const canViewDetail = isSuperAdmin || onlyCurrentUser;
-  console.log("User role:", user?.role, "isSuperAdmin:", isSuperAdmin);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const deepLinkTargetRef = useRef(parseDeepLinkFromSearchParams(searchParams));
+  const deepLinkOpenedRef = useRef(false);
+  const lockedSourceTabRef = useRef(null);
+  const highlightTargetRef = useRef(null);
+  const [highlightedRowKey, setHighlightedRowKey] = useState(null);
 
   const abortControllerRef = useRef(null); // Untuk cancel request
   const [dataByAkun, setDataByAkun] = useState([]);
@@ -58,11 +133,18 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
   const [loading, setLoading] = useState(true);
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
+    const dl = deepLinkTargetRef.current;
     const now = new Date();
-    return String(now.getMonth() + 1).padStart(2, '0');
+    if (dl?.bulan) return String(dl.bulan).padStart(2, "0");
+    return String(now.getMonth() + 1).padStart(2, "0");
   });
 
-  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState(() => {
+    const dl = deepLinkTargetRef.current;
+    const now = new Date();
+    if (dl?.tahun) return Number(dl.tahun);
+    return now.getFullYear();
+  });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -339,9 +421,20 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
     }
   };
 
-  const openDetailModal = async (akun) => {
+  const openDetailModal = async (akun, options = {}) => {
     console.log("=== openDetailModal called ===");
     console.log("Input akun:", akun);
+
+    const sourceTab = options.sourceTab;
+    if (sourceTab === "projek" || sourceTab === "diluar") {
+      lockedSourceTabRef.current = sourceTab;
+      setActiveDetailSourceTab(sourceTab);
+    }
+
+    if (options.highlight) {
+      highlightTargetRef.current = options.highlight;
+      setHighlightedRowKey(null);
+    }
 
     // Cari id dari mapping atau gunakan created_by langsung
     const akunName = akun?.nama_akun || akun?.name;
@@ -436,6 +529,9 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
 
   const closeDetailModal = () => {
     setShowDetailModal(false);
+    lockedSourceTabRef.current = null;
+    highlightTargetRef.current = null;
+    setHighlightedRowKey(null);
     // Don't reset selectedAkun so it can be used for other actions
   };
 
@@ -485,12 +581,83 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
 
   useEffect(() => {
     if (!showDetailModal) return;
+    if (lockedSourceTabRef.current) {
+      setActiveDetailSourceTab(lockedSourceTabRef.current);
+      return;
+    }
     if (detailBySource.projek.length > 0) {
       setActiveDetailSourceTab("projek");
     } else {
       setActiveDetailSourceTab("diluar");
     }
   }, [showDetailModal, detailBySource.projek.length, detailBySource.diluar.length]);
+
+  useEffect(() => {
+    const target = parseDeepLinkFromSearchParams(searchParams);
+    if (!target) return;
+
+    deepLinkTargetRef.current = target;
+    deepLinkOpenedRef.current = false;
+    setSearchParams({}, { replace: true });
+
+    if (target.bulan) setSelectedMonth(String(target.bulan).padStart(2, "0"));
+    if (target.tahun) setSelectedYear(Number(target.tahun));
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    const target = deepLinkTargetRef.current;
+    if (!target || deepLinkOpenedRef.current || loading || !canViewDetail) return;
+
+    deepLinkOpenedRef.current = true;
+
+    const sourceTab =
+      target.source === "projek" ? "projek" : target.source === "diluar" ? "diluar" : null;
+
+    const createdById = target.created_by ? Number(target.created_by) : null;
+    const akun = {
+      nama_akun: target.nama_akun,
+      name: target.nama_akun,
+      ...(createdById ? { created_by: createdById, id: createdById } : {}),
+      ...(target.source === "projek" ? { source: "projek" } : {}),
+    };
+
+    void openDetailModal(akun, { sourceTab, highlight: target.highlight });
+  }, [loading, canViewDetail]);
+
+  useEffect(() => {
+    if (!showDetailModal || detailLoading || !highlightTargetRef.current) return;
+    if (detailBiaya.length === 0) return;
+
+    const target = highlightTargetRef.current;
+    let match = detailBiaya.find((item) => matchesBiayaHighlight(item, target));
+
+    if (!match && target.kategori && target.nominal != null) {
+      const sourceFilter = target.type === "projek" ? "projek" : "dashboard";
+      match = detailBiaya.find((item) => {
+        const isProjek = item.source === "projek";
+        if (sourceFilter === "projek" ? !isProjek : isProjek) return false;
+        return (
+          item.kategori === target.kategori &&
+          Math.abs(Number(item.nominal) - Number(target.nominal)) < 0.01
+        );
+      });
+    }
+
+    if (!match) return;
+
+    const rowKey = getBiayaRowKey(match);
+    const timer = window.setTimeout(() => {
+      const el = document.getElementById(`biaya-row-${rowKey}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightedRowKey(rowKey);
+        window.setTimeout(() => setHighlightedRowKey(null), 5000);
+      }
+      highlightTargetRef.current = null;
+    }, 200);
+
+    return () => window.clearTimeout(timer);
+  }, [showDetailModal, detailLoading, detailBiaya, activeDetailSourceTab]);
 
   useEffect(() => {
     fetchRekap();
@@ -961,8 +1128,19 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
                                             </td>
                                           </tr>
                                         ) : (
-                                          rows.map((item, idx) => (
-                                            <tr key={`${item.id}-${idx}`} className="border-b border-slate-100 hover:bg-slate-50">
+                                          rows.map((item, idx) => {
+                                            const rowKey = getBiayaRowKey(item);
+                                            const isHighlighted = highlightedRowKey === rowKey;
+                                            return (
+                                            <tr
+                                              key={`${item.id}-${idx}`}
+                                              id={`biaya-row-${rowKey}`}
+                                              className={`border-b border-slate-100 transition-colors ${
+                                                isHighlighted
+                                                  ? "bg-amber-100 ring-2 ring-inset ring-amber-400"
+                                                  : "hover:bg-slate-50"
+                                              }`}
+                                            >
                                               <td className="p-2">{idx + 1}</td>
                                               <td className="p-2 font-medium">{rupiah(item.nominal)}</td>
                                               <td className="p-2 text-slate-600">{item.keterangan || "-"}</td>
@@ -1012,7 +1190,8 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
                                               </td>
                                               <td className="p-2 text-slate-500">{formatDateTime(item.created_at)}</td>
                                             </tr>
-                                          ))
+                                            );
+                                          })
                                         )}
                                       </tbody>
                                     </table>

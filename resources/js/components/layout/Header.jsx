@@ -152,7 +152,7 @@ export default function Header({
           )}
         </div>
 
-        {showBell && (user?.role === "admin" || user?.role === "user") && (
+        {showBell && user?.id && (
           <NotificationDropdown user={user} />
         )}
 

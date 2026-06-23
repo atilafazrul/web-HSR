@@ -157,7 +157,6 @@ export default function SuperAdminDashboard({ user, logout }) {
       >
         <Header
           user={user}
-          showBell={false}
           sidebarExpanded={sidebarExpanded}
           setSidebarExpanded={setSidebarExpanded}
           sidebarOpen={sidebarOpen}

@@ -7,6 +7,7 @@ use App\Models\ProjekKerjaPhoto;
 use App\Models\ProjekKerjaFile;
 use App\Models\User;
 use App\Services\ActivityLogService;
+use App\Services\BiayaNotificationService;
 use App\Services\ProjekKerjaNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -1621,12 +1622,21 @@ class ProjekKerjaController extends Controller
                 'reimbursment_items' => $updateData['biaya_reimbursment_items'] ?? null,
             ]);
 
-            $request->attributes->set(
-                'activity_log_biaya_summary',
-                app(ActivityLogService::class)->buildBiayaChangeSummary($validated, $projek, $storedPhotos, $request)
+            $biayaSummary = app(ActivityLogService::class)->buildBiayaChangeSummary(
+                $validated,
+                $projek,
+                $storedPhotos,
+                $request
             );
+            $request->attributes->set('activity_log_biaya_summary', $biayaSummary);
 
             $projek->update($updateData);
+
+            app(BiayaNotificationService::class)->notifyProjectBiayaCreates(
+                $projek->fresh(),
+                $biayaSummary['changes'] ?? [],
+                auth()->user()
+            );
 
             return response()->json([
                 'success' => true,
