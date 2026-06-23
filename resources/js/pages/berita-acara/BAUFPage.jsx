@@ -19,6 +19,7 @@ export default function BAUFPage() {
     selectedItem,
     showViewModal,
     handleInputChange,
+    handleSignatureChange,
     handleItemChange,
     addItem,
     removeItem,
@@ -69,6 +70,7 @@ export default function BAUFPage() {
           <BAUFForm
             formData={formData}
             onInputChange={handleInputChange}
+            onSignatureChange={handleSignatureChange}
             onItemChange={handleItemChange}
             onAddItem={addItem}
             onRemoveItem={removeItem}

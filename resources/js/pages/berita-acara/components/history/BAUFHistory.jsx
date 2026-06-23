@@ -139,6 +139,26 @@ export const BAUFHistory = ({
                 </div>
               </div>
 
+              {(selectedItem.ttd_hsr || selectedItem.ttd_klien) && (
+                <div>
+                  <label className="text-sm text-gray-500 mb-2 block">{tr("Tanda Tangan", "Signatures")}</label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {selectedItem.ttd_hsr && (
+                      <div className="rounded-lg border bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500 mb-2">PT HSR</p>
+                        <img src={selectedItem.ttd_hsr} alt="Tanda tangan HSR" className="max-h-24 w-full object-contain bg-white rounded border" />
+                      </div>
+                    )}
+                    {selectedItem.ttd_klien && (
+                      <div className="rounded-lg border bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500 mb-2">{tr("Klien", "Client")}</p>
+                        <img src={selectedItem.ttd_klien} alt="Tanda tangan klien" className="max-h-24 w-full object-contain bg-white rounded border" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="text-sm text-gray-500 mb-2 block">{tr("Daftar Peralatan", "Equipment List")}</label>
                 <div className="overflow-x-auto">

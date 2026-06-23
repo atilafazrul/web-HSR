@@ -373,50 +373,60 @@
                     <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
                         <span lang="EN-ID">PT. HAYATI SEMESTA RAHARJA</span>
                     </p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    @if(!empty($ttd_hsr))
+                    <table border="0" cellspacing="0" cellpadding="0" align="left" style="border-collapse: collapse;">
+                        <tr>
+                            <td align="center" style="text-align: center; padding: 0;">
+                                <img src="{{ $ttd_hsr }}" alt="Tanda Tangan HSR" style="height: 62px; max-width: 240px; display: block; margin: 0 auto;" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="text-align: center; padding: 0;">
+                                <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
+                                    <span lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                    @else
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
                     <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
-                        <span
-                            lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+                        <span lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
                     </p>
+                    @endif
                 </td>
                 <td width="301" valign="top" style="width: 225.4pt; padding: 0in 5.4pt 0in 5.4pt; height: 119.85pt">
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="right"
-                        style="margin-bottom: 0in; text-align: right; line-height: normal">
-                        <span
-                            lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    @if(!empty($ttd_klien))
+                    <table border="0" cellspacing="0" cellpadding="0" align="right" style="border-collapse: collapse;">
+                        <tr>
+                            <td align="center" style="text-align: center; padding: 0;">
+                                <img src="{{ $ttd_klien }}" alt="Tanda Tangan Klien" style="height: 62px; max-width: 240px; display: block; margin: 0 auto;" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" style="text-align: center; padding: 0;">
+                                <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal">
+                                    <span lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
+                                </p>
+                            </td>
+                        </tr>
+                    </table>
+                    @else
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="right" style="margin-bottom: 0in; text-align: right; line-height: normal">
+                        <span lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
                     </p>
+                    @endif
                 </td>
             </tr>
         </table>

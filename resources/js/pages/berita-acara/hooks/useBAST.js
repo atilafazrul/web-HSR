@@ -26,6 +26,8 @@ export const useBAST = () => {
     tanggal_tanda_tangan: "",
     tanggal_tanda_tangan_display: "",
     kota_tanda_tangan: "Tangerang",
+    ttd_hsr: "",
+    ttd_klien: "",
     hasil: "BAIK",
     items: [{ nama_alat: "", merk: "", jumlah: "1" }]
   });
@@ -129,10 +131,16 @@ export const useBAST = () => {
       tanggal_tanda_tangan: "",
       tanggal_tanda_tangan_display: "",
       kota_tanda_tangan: "Tangerang",
+      ttd_hsr: "",
+      ttd_klien: "",
       hasil: "BAIK",
       items: [{ nama_alat: "", merk: "", jumlah: "1" }]
     });
     fetchNextNomorSurat();
+  };
+
+  const handleSignatureChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -146,6 +154,8 @@ export const useBAST = () => {
         nama_klient: formData.nama_klient,
         tanggal_tanda_tangan: formData.tanggal_tanda_tangan_display || formatDateToIndonesian(formData.tanggal_tanda_tangan),
         kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
+        ttd_hsr: formData.ttd_hsr || null,
+        ttd_klien: formData.ttd_klien || null,
         hasil: formData.hasil,
         items: formData.items
       };
@@ -257,6 +267,7 @@ export const useBAST = () => {
     selectedItem,
     showViewModal,
     handleInputChange,
+    handleSignatureChange,
     handleItemChange,
     addItem,
     removeItem,
