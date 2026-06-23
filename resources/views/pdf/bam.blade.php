@@ -375,50 +375,17 @@
                     <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
                         <span lang="EN-ID">PT. HAYATI SEMESTA RAHARJA</span>
                     </p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
-                        <span
-                            lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
-                    </p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    @include('pdf.partials.signature_block_hsr')
                 </td>
                 <td width="301" valign="top" style="width: 225.4pt; padding: 0in 5.4pt 0in 5.4pt; height: 119.85pt">
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal"><span
-                            lang="EN-ID">&nbsp;</span></p>
-                    <p class="MsoNormal" align="right"
-                        style="margin-bottom: 0in; text-align: right; line-height: normal">
-                        <span
-                            lang="EN-ID">(&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)</span>
-                    </p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                    @include('pdf.partials.signature_block_klien')
                 </td>
             </tr>
         </table>

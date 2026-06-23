@@ -1,10 +1,12 @@
 import React from "react";
-import { Plus, Download, Trash2, FileText, Calendar } from "lucide-react";
+import { Plus, Download, Trash2, FileText, Calendar, PenLine } from "lucide-react";
 import { useI18n } from "../../../../i18n";
+import SignaturePad from "./SignaturePad";
 
 export const BAMForm = ({
   formData,
   onInputChange,
+  onSignatureChange,
   onItemChange,
   onAddItem,
   onRemoveItem,
@@ -224,6 +226,58 @@ export const BAMForm = ({
               </div>
             </div>
           ))}
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b flex items-center gap-2">
+            <PenLine size={20} className="text-blue-600" />
+            {tr("Tanda Tangan", "Signatures")}
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            {tr("Opsional — kosongkan jika ingin menandatangani manual setelah cetak.", "Optional — leave blank to sign manually after printing.")}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3">
+              <SignaturePad
+                label={tr("Tanda Tangan PT HSR", "PT HSR Signature")}
+                value={formData.ttd_hsr}
+                onChange={(value) => onSignatureChange("ttd_hsr", value)}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {tr("Nama di dalam ( )", "Name inside ( )")}
+                </label>
+                <input
+                  type="text"
+                  name="nama_ttd_hsr"
+                  value={formData.nama_ttd_hsr}
+                  onChange={onInputChange}
+                  placeholder={tr("Contoh: Budi Santoso", "Example: Budi Santoso")}
+                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <SignaturePad
+                label={tr("Tanda Tangan Klien", "Client Signature")}
+                value={formData.ttd_klien}
+                onChange={(value) => onSignatureChange("ttd_klien", value)}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {tr("Nama di dalam ( )", "Name inside ( )")}
+                </label>
+                <input
+                  type="text"
+                  name="nama_ttd_klien"
+                  value={formData.nama_ttd_klien}
+                  onChange={onInputChange}
+                  placeholder={tr("Contoh: Dr. Andi", "Example: Dr. Andi")}
+                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Buttons */}

@@ -28,6 +28,8 @@ export const useBAUF = () => {
     kota_tanda_tangan: "Tangerang",
     ttd_hsr: "",
     ttd_klien: "",
+    nama_ttd_hsr: "",
+    nama_ttd_klien: "",
     hasil: "BAIK",
     items: [{ nama_alat: "", merk: "", jumlah: "1" }]
   });
@@ -132,6 +134,8 @@ export const useBAUF = () => {
       kota_tanda_tangan: "Tangerang",
       ttd_hsr: "",
       ttd_klien: "",
+      nama_ttd_hsr: "",
+      nama_ttd_klien: "",
       hasil: "BAIK",
       items: [{ nama_alat: "", merk: "", jumlah: "1" }]
     });
@@ -154,6 +158,8 @@ export const useBAUF = () => {
         kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
         ttd_hsr: formData.ttd_hsr || null,
         ttd_klien: formData.ttd_klien || null,
+        nama_ttd_hsr: (formData.nama_ttd_hsr || "").trim() || null,
+        nama_ttd_klien: (formData.nama_ttd_klien || "").trim() || null,
         hasil: formData.hasil,
         items: formData.items
       };

@@ -244,16 +244,46 @@ export const BASTForm = ({
             {tr("Opsional — kosongkan jika ingin menandatangani manual setelah cetak.", "Optional — leave blank to sign manually after printing.")}
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            <SignaturePad
-              label={tr("Tanda Tangan PT HSR", "PT HSR Signature")}
-              value={formData.ttd_hsr}
-              onChange={(value) => onSignatureChange("ttd_hsr", value)}
-            />
-            <SignaturePad
-              label={tr("Tanda Tangan Klien", "Client Signature")}
-              value={formData.ttd_klien}
-              onChange={(value) => onSignatureChange("ttd_klien", value)}
-            />
+            <div className="space-y-3">
+              <SignaturePad
+                label={tr("Tanda Tangan PT HSR", "PT HSR Signature")}
+                value={formData.ttd_hsr}
+                onChange={(value) => onSignatureChange("ttd_hsr", value)}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {tr("Nama di dalam ( )", "Name inside ( )")}
+                </label>
+                <input
+                  type="text"
+                  name="nama_ttd_hsr"
+                  value={formData.nama_ttd_hsr}
+                  onChange={onInputChange}
+                  placeholder={tr("Contoh: Budi Santoso", "Example: Budi Santoso")}
+                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <SignaturePad
+                label={tr("Tanda Tangan Klien", "Client Signature")}
+                value={formData.ttd_klien}
+                onChange={(value) => onSignatureChange("ttd_klien", value)}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  {tr("Nama di dalam ( )", "Name inside ( )")}
+                </label>
+                <input
+                  type="text"
+                  name="nama_ttd_klien"
+                  value={formData.nama_ttd_klien}
+                  onChange={onInputChange}
+                  placeholder={tr("Contoh: Dr. Andi", "Example: Dr. Andi")}
+                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

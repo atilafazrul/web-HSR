@@ -19,6 +19,7 @@ export default function BAMPage() {
     selectedItem,
     showViewModal,
     handleInputChange,
+    handleSignatureChange,
     handleItemChange,
     addItem,
     removeItem,
@@ -77,6 +78,7 @@ export default function BAMPage() {
           <BAMForm
             formData={formData}
             onInputChange={handleInputChange}
+            onSignatureChange={handleSignatureChange}
             onItemChange={handleItemChange}
             onAddItem={addItem}
             onRemoveItem={removeItem}
