@@ -25,6 +25,7 @@ export const useBAUF = () => {
     nama_klient: "",
     tanggal_tanda_tangan: "",
     tanggal_tanda_tangan_display: "",
+    kota_tanda_tangan: "Tangerang",
     hasil: "BAIK",
     items: [{ nama_alat: "", merk: "", jumlah: "1" }]
   });
@@ -126,6 +127,7 @@ export const useBAUF = () => {
       nama_klient: "",
       tanggal_tanda_tangan: "",
       tanggal_tanda_tangan_display: "",
+      kota_tanda_tangan: "Tangerang",
       hasil: "BAIK",
       items: [{ nama_alat: "", merk: "", jumlah: "1" }]
     });
@@ -141,6 +143,7 @@ export const useBAUF = () => {
         tanggal_bauf: formData.tanggal_bauf_display || formatDateToIndonesian(formData.tanggal_bauf),
         nama_klient: formData.nama_klient,
         tanggal_tanda_tangan: formData.tanggal_tanda_tangan_display || formatDateToIndonesian(formData.tanggal_tanda_tangan),
+        kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
         hasil: formData.hasil,
         items: formData.items
       };

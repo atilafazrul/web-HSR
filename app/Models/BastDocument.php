@@ -15,6 +15,7 @@ class BastDocument extends Model
         'tanggal_bast',
         'nama_klient',
         'tanggal_tanda_tangan',
+        'kota_tanda_tangan',
         'hasil',
         'items',
         'nomor_urut',

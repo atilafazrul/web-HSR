@@ -362,7 +362,7 @@
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
 
         <p class="MsoNormal" style="margin-bottom: 0in">
-            <span lang="EN-ID">Tangerang, {{ $tanggal_tanda_tangan ?? '(TANGGAL-BULAN-TAHUN)' }}</span>
+            <span lang="EN-ID">{{ $kota_tanda_tangan ?? 'Tangerang' }}, {{ $tanggal_tanda_tangan ?? '(TANGGAL-BULAN-TAHUN)' }}</span>
         </p>
 
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>

@@ -101,6 +101,7 @@ class BASTController extends Controller
             'tanggal_bast' => 'required|string',
             'nama_klient' => 'required|string',
             'tanggal_tanda_tangan' => 'required|string',
+            'kota_tanda_tangan' => 'nullable|string|max:100',
             'hasil' => 'required|string',
             'items' => 'required|array|min:1',
             'items.*.nama_alat' => 'required|string',
@@ -118,6 +119,7 @@ class BASTController extends Controller
             'tanggal_bast' => $validated['tanggal_bast'],
             'nama_klient' => $validated['nama_klient'],
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
+            'kota_tanda_tangan' => trim((string) ($validated['kota_tanda_tangan'] ?? '')) ?: 'Tangerang',
             'hasil' => $validated['hasil'],
             'items' => $validated['items'],
             'nomor_urut' => $nomorData['nomor_urut'],
@@ -131,6 +133,7 @@ class BASTController extends Controller
             'tanggal_bast' => $validated['tanggal_bast'],
             'nama_klient' => $validated['nama_klient'],
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
+            'kota_tanda_tangan' => trim((string) ($validated['kota_tanda_tangan'] ?? '')) ?: 'Tangerang',
             'hasil' => $validated['hasil'],
             'items' => $validated['items'],
         ];
@@ -151,6 +154,7 @@ class BASTController extends Controller
             'tanggal_bast' => $document->tanggal_bast,
             'nama_klient' => $document->nama_klient,
             'tanggal_tanda_tangan' => $document->tanggal_tanda_tangan,
+            'kota_tanda_tangan' => trim((string) ($document->kota_tanda_tangan ?? '')) ?: 'Tangerang',
             'hasil' => $document->hasil ?? 'BAIK',
             'items' => $document->items,
         ];

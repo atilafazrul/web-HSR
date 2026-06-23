@@ -130,6 +130,10 @@ export const BASTHistory = ({
                   <p className="font-medium">{selectedItem.tanggal_bast}</p>
                 </div>
                 <div>
+                  <label className="text-sm text-gray-500">{tr("Kota Tanda Tangan", "Signature City")}</label>
+                  <p className="font-medium">{selectedItem.kota_tanda_tangan || "Tangerang"}</p>
+                </div>
+                <div>
                   <label className="text-sm text-gray-500">{tr("Tanggal Tanda Tangan", "Signature Date")}</label>
                   <p className="font-medium">{selectedItem.tanggal_tanda_tangan}</p>
                 </div>

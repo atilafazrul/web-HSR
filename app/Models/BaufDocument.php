@@ -15,6 +15,7 @@ class BaufDocument extends Model
         'tanggal_bauf',
         'nama_klient',
         'tanggal_tanda_tangan',
+        'kota_tanda_tangan',
         'hasil',
         'items',
         'nomor_urut',
