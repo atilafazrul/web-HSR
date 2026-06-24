@@ -312,10 +312,11 @@ export default function KaryawanPage() {
 
             <button
               onClick={() => setCreateData({ name: "", email: "", password: "", divisi: "", role: "user" })}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 hover:shadow-md transition-all duration-200 font-medium"
+              className="inline-flex shrink-0 items-center justify-center p-3 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 transition"
+              title={trText("Tambah Karyawan", "Add Employee")}
+              aria-label={trText("Tambah Karyawan", "Add Employee")}
             >
-              <UserPlus size={18} />
-              <span>{trText("Tambah Karyawan", "Add Employee")}</span>
+              <UserPlus size={20} />
             </button>
           </div>
         </div>
