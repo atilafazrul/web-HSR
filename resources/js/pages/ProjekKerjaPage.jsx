@@ -693,8 +693,8 @@ export default function ProjekKerjaPage() {
     return map[status] || status;
   };
 
-  const actionBtnBase =
-    "inline-flex items-center justify-center rounded-xl p-1.5 text-white shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px] hover:shadow-md active:translate-y-0 active:shadow-sm";
+  const actionIconBtn =
+    "inline-flex items-center justify-center rounded-lg p-2 transition";
 
   const handleStatusChange = async (id, status) => {
     try {
@@ -2049,13 +2049,23 @@ export default function ProjekKerjaPage() {
                     </button>
                   </td>
                   <td className="p-2.5">
-                    <div className="flex justify-center gap-1">
-                      <button onClick={() => handleViewPhoto(item.id)} className={`${actionBtnBase} bg-slate-500 hover:bg-slate-600`} title={tr("Lihat Foto", "View Photos")}>
-                        <FileText size={14} />
+                    <div className="flex justify-center items-center gap-1">
+                      <button
+                        onClick={() => handleViewPhoto(item.id)}
+                        className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
+                        title={tr("Lihat Foto", "View Photos")}
+                      >
+                        <FileText size={18} />
                       </button>
                       {!isUserRole && item.file_url && (
-                        <a href={item.file_url} target="_blank" rel="noreferrer" className={`${actionBtnBase} bg-sky-600 hover:bg-sky-700`} title={tr("Download File", "Download File")}>
-                          <Download size={14} />
+                        <a
+                          href={item.file_url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className={`${actionIconBtn} text-sky-600 hover:bg-sky-50`}
+                          title={tr("Download File", "Download File")}
+                        >
+                          <Download size={18} />
                         </a>
                       )}
                       {canOpenBiayaAction(item) && (
@@ -2063,26 +2073,26 @@ export default function ProjekKerjaPage() {
                           {!isUserRole && !isArchiveContext && canEditProjectAction(item) ? (
                             <button
                               onClick={() => goToEditProjectPage(item)}
-                              className={`${actionBtnBase} bg-violet-600 hover:bg-violet-700`}
+                              className={`${actionIconBtn} text-blue-600 hover:bg-blue-50`}
                               title="Edit project & oper divisi"
                             >
-                              <Edit3 size={14} />
+                              <Edit3 size={18} />
                             </button>
                           ) : null}
                           <button
                             onClick={() => openUangModal(item)}
-                            className={`${actionBtnBase} ${item.is_lunas ? "bg-emerald-600 hover:bg-emerald-700" : "bg-amber-500 hover:bg-amber-600"}`}
+                            className={`${actionIconBtn} ${item.is_lunas ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"}`}
                             title={item.is_lunas ? "Biaya (Lunas)" : "Biaya (Belum Lunas)"}
                           >
-                            <DollarSign size={14} />
+                            <DollarSign size={18} />
                           </button>
                           {isArchiveContext ? (
                             <button
                               onClick={() => handleUnarchiveProject(item)}
-                              className={`${actionBtnBase} bg-emerald-600 hover:bg-emerald-700`}
+                              className={`${actionIconBtn} text-emerald-600 hover:bg-emerald-50`}
                               title={tr("Batalkan Archive", "Cancel Archive")}
                             >
-                              <RotateCcw size={14} />
+                              <RotateCcw size={18} />
                             </button>
                           ) : null}
                         </>
@@ -2090,10 +2100,10 @@ export default function ProjekKerjaPage() {
                       {!isUserRole && !isArchiveContext && canEditProjectAction(item) && (
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className={`${actionBtnBase} bg-rose-600 hover:bg-rose-700`}
+                          className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
                           title={tr("Hapus", "Delete")}
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={18} />
                         </button>
                       )}
                     </div>

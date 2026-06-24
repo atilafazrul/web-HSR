@@ -290,6 +290,9 @@ const Dashboard = ({ user, windowWidth }) => {
       ? "/super_admin"
       : "/admin";
 
+  const actionIconBtn =
+    "inline-flex items-center justify-center rounded-lg p-2 transition";
+
   const loadData = async () => {
     try {
       // Super Admin melihat semua data, Admin hanya melihat data divisi sendiri
@@ -673,34 +676,31 @@ const Dashboard = ({ user, windowWidth }) => {
                       </span>
                     </td>
                     <td className="p-3 lg:p-4">
-                      <div className="flex items-center justify-center gap-1 lg:gap-2">
-                        {/* DOWNLOAD - HANYA TAMPIL DI DESKTOP JIKA ADA FILE_URL */}
+                      <div className="flex items-center justify-center gap-1">
                         {item.file_url && (
                           <a
                             href={item.file_url}
                             target="_blank"
                             rel="noreferrer"
-                            className="bg-sky-600 hover:bg-sky-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px]"
+                            className={`${actionIconBtn} text-sky-600 hover:bg-sky-50`}
                             title="Download"
                           >
-                            <Download size={16} />
+                            <Download size={18} />
                           </a>
                         )}
-                        {/* FOTO PROJEK - HANYA ICON, TANPA TEKS */}
                         <button
                           onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)}
-                          className="bg-slate-500 hover:bg-slate-600 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px]"
+                          className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
                           title="Foto Projek"
                         >
-                          <FileText size={16} />
+                          <FileText size={18} />
                         </button>
-                        {/* DELETE - HANYA ICON, TANPA TEKS */}
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="bg-rose-600 hover:bg-rose-700 text-white p-1.5 lg:p-2 rounded-lg lg:rounded-xl shadow-sm ring-1 ring-black/5 transition-all duration-200 hover:-translate-y-[1px]"
+                          className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
                           title="Hapus"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={18} />
                         </button>
                       </div>
                     </td>
@@ -741,9 +741,7 @@ const Dashboard = ({ user, windowWidth }) => {
                   </div>
                 </div>
 
-                {/* ACTION BUTTONS - HANYA ICON, TANPA TEKS, SESUAI KETERSEDIAAN FILE */}
-                <div className="flex gap-2 pt-2 sm:pt-3 border-t border-gray-100">
-                  {/* LIHAT DESKRIPSI - SELALU ADA */}
+                <div className="flex items-center justify-center gap-1 pt-2 sm:pt-3 border-t border-gray-100">
                   <button
                     onClick={() => {
                       setSelectedId(item.id);
@@ -751,38 +749,35 @@ const Dashboard = ({ user, windowWidth }) => {
                       setEditDesc(false);
                       setShowDesc(true);
                     }}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-lg transition flex items-center justify-center"
+                    className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
                     title="Lihat Deskripsi"
                   >
                     <Eye size={18} />
                   </button>
 
-                  {/* DOWNLOAD - HANYA TAMPIL JIKA ADA FILE_URL */}
                   {item.file_url && (
                     <a
                       href={item.file_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex-1 bg-sky-600 hover:bg-sky-700 text-white p-2 rounded-lg transition flex items-center justify-center"
+                      className={`${actionIconBtn} text-sky-600 hover:bg-sky-50`}
                       title="Download"
                     >
                       <Download size={18} />
                     </a>
                   )}
 
-                  {/* FOTO PROJEK - SELALU ADA */}
                   <button
                     onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)}
-                    className="flex-1 bg-slate-500 hover:bg-slate-600 text-white p-2 rounded-lg transition flex items-center justify-center"
+                    className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
                     title="Foto Projek"
                   >
                     <FileText size={18} />
                   </button>
 
-                  {/* HAPUS - SELALU ADA */}
                   <button
                     onClick={() => handleDelete(item.id)}
-                    className="flex-1 bg-rose-600 hover:bg-rose-700 text-white p-2 rounded-lg transition flex items-center justify-center"
+                    className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
                     title="Hapus"
                   >
                     <Trash2 size={18} />
