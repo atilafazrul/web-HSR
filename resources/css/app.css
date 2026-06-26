@@ -8,6 +8,18 @@
     --text-muted: #475569;
     --brand-primary: #4f46e5;
     --brand-primary-hover: #4338ca;
+
+    /* Dark-mode palette (overridden below when browser is in dark mode) */
+    --dk-page: #0f172a;     /* page / recessed background          */
+    --dk-surface: #1e293b;  /* cards & elevated surfaces           */
+    --dk-raised: #334155;   /* pills, badges, hover states         */
+    --dk-raised-2: #475569; /* stronger raised / active            */
+    --dk-border: #334155;
+    --dk-border-strong: #475569;
+    --dk-text: #f1f5f9;     /* headings / strong text              */
+    --dk-text-soft: #cbd5e1;/* body text                           */
+    --dk-text-muted: #94a3b8; /* muted / secondary                 */
+    --dk-text-faint: #64748b; /* very subtle                       */
 }
 
 /* ================= RESET ================= */
@@ -247,4 +259,219 @@ textarea::placeholder {
 .projek-kerja-date-input::-webkit-calendar-picker-indicator {
     opacity: 0.55;
     margin-inline-start: 0.25rem;
+}
+
+/* =================================================================
+   DARK MODE
+   Mengikuti setelan tema browser / sistem operasi secara otomatis
+   (prefers-color-scheme). Tidak perlu tombol — saat browser dalam
+   mode gelap, seluruh aplikasi ikut gelap.
+
+   Catatan teknis: aturan di bawah sengaja TIDAK dibungkus @layer
+   agar selalu menang melawan utility class Tailwind. Beberapa class
+   neutral dipetakan ulang ke palet gelap tanpa harus menyentuh
+   ratusan komponen.
+   ================================================================= */
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-app: var(--dk-page);
+        --bg-surface: var(--dk-surface);
+        --border-soft: var(--dk-border);
+        --text-main: var(--dk-text);
+        --text-muted: var(--dk-text-muted);
+        /* brand sedikit dicerahkan agar kontras di latar gelap */
+        --brand-primary: #6366f1;
+        --brand-primary-hover: #818cf8;
+    }
+
+    html {
+        color-scheme: dark;
+    }
+
+    body {
+        background-color: var(--dk-page);
+        color: var(--dk-text);
+    }
+
+    /* ---------- SCROLLBAR ---------- */
+    ::-webkit-scrollbar-thumb {
+        background: #475569;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: #64748b;
+    }
+
+    /* ---------- TEXT SELECTION ---------- */
+    ::selection {
+        background: #6366f1;
+        color: #ffffff;
+    }
+
+    /* ================= SURFACES ================= */
+
+    /* Putih -> permukaan kartu (termasuk varian opacity bg-white/xx) */
+    [class*="bg-white"] {
+        background-color: var(--dk-surface) !important;
+    }
+
+    /* Latar halaman / area cekung */
+    .bg-gray-50,
+    [class*="bg-gray-50/"],
+    .bg-slate-50,
+    [class*="bg-slate-50/"] {
+        background-color: var(--dk-page) !important;
+    }
+
+    /* Area sedikit terangkat: pill, tag, header tabel */
+    .bg-gray-100,
+    [class*="bg-gray-100/"],
+    .bg-slate-100,
+    [class*="bg-slate-100/"] {
+        background-color: var(--dk-raised) !important;
+    }
+
+    .bg-gray-200,
+    [class*="bg-gray-200/"],
+    .bg-slate-200,
+    [class*="bg-slate-200/"],
+    .bg-gray-300,
+    .bg-slate-300,
+    [class*="bg-slate-300/"] {
+        background-color: var(--dk-raised-2) !important;
+    }
+
+    /* ---------- HOVER STATES ---------- */
+    .hover\:bg-gray-50:hover,
+    .hover\:bg-slate-50:hover,
+    .hover\:bg-gray-100:hover,
+    .hover\:bg-slate-100:hover {
+        background-color: var(--dk-raised) !important;
+    }
+    .hover\:bg-gray-200:hover,
+    .hover\:bg-slate-200:hover {
+        background-color: var(--dk-raised-2) !important;
+    }
+
+    /* ================= TEXT ================= */
+    .text-gray-900, .text-gray-800,
+    .text-slate-900, .text-slate-800,
+    .text-black {
+        color: var(--dk-text) !important;
+    }
+    .text-gray-700, .text-gray-600,
+    .text-slate-700, .text-slate-600 {
+        color: var(--dk-text-soft) !important;
+    }
+    .text-gray-500, .text-gray-400,
+    .text-slate-500, .text-slate-400 {
+        color: var(--dk-text-muted) !important;
+    }
+    .text-gray-300, .text-slate-300 {
+        color: var(--dk-text-faint) !important;
+    }
+
+    /* ================= BORDERS ================= */
+    .border-gray-100, .border-gray-200, .border-gray-300,
+    [class*="border-gray-200/"], [class*="border-gray-300/"],
+    .border-slate-100, .border-slate-200, .border-slate-300,
+    [class*="border-slate-100/"], [class*="border-slate-200/"], [class*="border-slate-300/"] {
+        border-color: var(--dk-border) !important;
+    }
+    .border-gray-400, .border-slate-400 {
+        border-color: var(--dk-border-strong) !important;
+    }
+
+    /* divide-* (border antar anak) */
+    .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+    .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+    .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+    .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+        border-color: var(--dk-border) !important;
+    }
+
+    /* ================= GRADIENT STOPS (neutral) ================= */
+    .from-slate-50, .from-slate-100, .from-gray-50, .from-gray-100 {
+        --tw-gradient-from: var(--dk-surface) !important;
+    }
+    .via-slate-50, .via-slate-100, .via-gray-50, .via-gray-100 {
+        --tw-gradient-via: var(--dk-surface) !important;
+    }
+    .to-slate-50, .to-slate-100, .to-gray-50, .to-gray-100 {
+        --tw-gradient-to: var(--dk-page) !important;
+    }
+
+    /* ================= FORM CONTROLS ================= */
+    input,
+    textarea,
+    select {
+        background-color: var(--dk-surface);
+        color: var(--dk-text);
+        border-color: var(--dk-border);
+        color-scheme: dark;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        color: var(--dk-text-faint);
+    }
+
+    .projek-kerja-date-input {
+        color-scheme: dark;
+    }
+
+    /* ================= STATUS CHIPS (pastel -> tint gelap) =================
+       Latar pastel terang (bg-*-50 / bg-*-100) dipetakan ke tint gelap
+       transparan, dan teksnya dicerahkan agar tetap terbaca.
+    */
+    .bg-red-50, .bg-red-100, .bg-rose-50, .bg-rose-100 {
+        background-color: rgba(244, 63, 94, 0.16) !important;
+    }
+    .bg-green-50, .bg-green-100,
+    .bg-emerald-50, .bg-emerald-100,
+    .bg-teal-50, .bg-teal-100 {
+        background-color: rgba(16, 185, 129, 0.16) !important;
+    }
+    .bg-amber-50, .bg-amber-100,
+    .bg-yellow-50, .bg-yellow-100,
+    .bg-orange-50, .bg-orange-100 {
+        background-color: rgba(217, 119, 6, 0.18) !important;
+    }
+    .bg-blue-50, .bg-blue-100,
+    .bg-sky-50, .bg-sky-100,
+    .bg-cyan-50, .bg-cyan-100 {
+        background-color: rgba(59, 130, 246, 0.16) !important;
+    }
+    .bg-indigo-50, .bg-indigo-100,
+    .bg-violet-50, .bg-violet-100,
+    .bg-purple-50, .bg-purple-100 {
+        background-color: rgba(99, 102, 241, 0.18) !important;
+    }
+
+    /* Teks aksen pada chip & link supaya kontras di latar gelap */
+    .text-red-600, .text-red-700, .text-red-800 {
+        color: #fca5a5 !important;
+    }
+    .text-rose-600, .text-rose-700, .text-rose-800 {
+        color: #fda4af !important;
+    }
+    .text-green-600, .text-green-700, .text-green-800,
+    .text-emerald-600, .text-emerald-700, .text-emerald-800,
+    .text-teal-600, .text-teal-700, .text-teal-800 {
+        color: #6ee7b7 !important;
+    }
+    .text-amber-600, .text-amber-700, .text-amber-800,
+    .text-yellow-600, .text-yellow-700, .text-yellow-800,
+    .text-orange-600, .text-orange-700, .text-orange-800 {
+        color: #fcd34d !important;
+    }
+    .text-sky-600, .text-sky-700, .text-sky-800,
+    .text-cyan-600, .text-cyan-700, .text-cyan-800 {
+        color: #93c5fd !important;
+    }
+
+    /* Shadow lebih dalam agar elevasi tetap terasa di latar gelap */
+    .shadow-sm, .shadow, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl {
+        --tw-shadow-color: rgba(0, 0, 0, 0.55) !important;
+    }
 }
