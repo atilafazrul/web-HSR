@@ -1103,6 +1103,7 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
 
                             {["jalan", "pengeluaran", "reimbursment"].map((kategori) => {
                               const rows = statusRows.filter((item) => item.kategori === kategori);
+                              const kategoriTotal = rows.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0);
                               return (
                                 <div key={`${sourceBlock.key}-${statusKey}-${kategori}`} className="border rounded-lg overflow-hidden mb-3 last:mb-0">
                                   <div className="bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700">
@@ -1194,11 +1195,27 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
                                           })
                                         )}
                                       </tbody>
+                                      <tfoot>
+                                        <tr className="border-t-2 border-slate-200 bg-slate-50 font-semibold text-slate-800">
+                                          <td className="p-2">{tr("Total", "Total")}</td>
+                                          <td className="p-2">{rupiah(kategoriTotal)}</td>
+                                          <td className="p-2" colSpan={4}></td>
+                                        </tr>
+                                      </tfoot>
                                     </table>
                                   </div>
                                 </div>
                               );
                             })}
+
+                            <div className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold ${statusKey === "lunas" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                              <span>
+                                {statusKey === "lunas" ? tr("Total Lunas", "Total Paid") : tr("Total Belum Lunas", "Total Unpaid")}
+                              </span>
+                              <span>
+                                {rupiah(statusRows.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0))}
+                              </span>
+                            </div>
                           </div>
                         );
                       })}

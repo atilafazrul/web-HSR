@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { DollarSign, Eye, Pencil, Trash2, Clock, CheckCircle, AlertCircle, X } from "lucide-react";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
@@ -40,6 +41,15 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const isSuperAdmin = user?.role === "super_admin";
+
+  const location = useLocation();
+  const navigate = useNavigate();
+  const panelRef = useRef(null);
+  const rowRefs = useRef({});
+  const handledHighlightRef = useRef(null);
+  const highlightTimersRef = useRef([]);
+  const [pendingHighlightId, setPendingHighlightId] = useState(null);
+  const [highlightId, setHighlightId] = useState(null);
 
   const [summary, setSummary] = useState({
     jalan: 0,
@@ -128,6 +138,67 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   useEffect(() => {
     fetchAll();
   }, [scopeUserId]);
+
+  // Simpan ID dari query notifikasi, lalu bersihkan URL.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const idParam = params.get("biaya_diluar");
+    if (!idParam) return;
+
+    setPendingHighlightId(String(idParam));
+
+    params.delete("biaya_diluar");
+    const nextQuery = params.toString();
+    navigate(`${location.pathname}${nextQuery ? `?${nextQuery}` : ""}`, { replace: true });
+  }, [location.search, location.pathname, navigate]);
+
+  // Bersihkan timer highlight saat komponen di-unmount.
+  useEffect(
+    () => () => {
+      highlightTimersRef.current.forEach((t) => window.clearTimeout(t));
+      highlightTimersRef.current = [];
+    },
+    []
+  );
+
+  // Setelah data dimuat, scroll ke panel biaya dan sorot baris terkait.
+  useEffect(() => {
+    if (!pendingHighlightId || loading) return;
+    if (handledHighlightRef.current === pendingHighlightId) return;
+
+    const target = items.find(
+      (item) => String(item.id) === String(pendingHighlightId)
+    );
+    if (!target) return; // Tunggu data; jika memang tidak ada, biarkan tanpa highlight.
+
+    handledHighlightRef.current = pendingHighlightId;
+    const targetId = String(target.id);
+    setHighlightId(targetId);
+
+    const scrollToTarget = () => {
+      const el =
+        document.getElementById(`biaya-diluar-row-${targetId}`) ||
+        rowRefs.current[targetId];
+
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        return true;
+      }
+
+      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return false;
+    };
+
+    // Timer disimpan di ref agar tidak terhapus oleh perubahan state lain.
+    highlightTimersRef.current.forEach((t) => window.clearTimeout(t));
+    const scrollTimer = window.setTimeout(() => {
+      if (!scrollToTarget()) {
+        window.setTimeout(scrollToTarget, 400);
+      }
+    }, 200);
+    const clearTimer = window.setTimeout(() => setHighlightId(null), 5000);
+    highlightTimersRef.current = [scrollTimer, clearTimer];
+  }, [pendingHighlightId, loading, items]);
 
   const groupedByLunas = useMemo(() => {
     const byNewest = (arr) => [...arr].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -313,7 +384,15 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
         {(rows || []).map((row) => (
           <div
             key={row.id}
-            className="rounded-lg border border-slate-200/80 bg-slate-50/40 p-2.5 text-xs shadow-sm transition hover:border-slate-300/90 hover:bg-white"
+            id={`biaya-diluar-row-${row.id}`}
+            ref={(el) => {
+              rowRefs.current[String(row.id)] = el;
+            }}
+            className={`rounded-lg border p-2.5 text-xs shadow-sm transition ${
+              String(highlightId) === String(row.id)
+                ? "border-amber-300 bg-amber-50 ring-2 ring-amber-400/70"
+                : "border-slate-200/80 bg-slate-50/40 hover:border-slate-300/90 hover:bg-white"
+            }`}
           >
             {editingId === row.id ? (
               <div className="space-y-2">
@@ -439,7 +518,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
 
   return (
     <>
-      <DashboardSurface className="mb-6 p-4 sm:mb-8 sm:p-5 md:mb-10 md:p-6 lg:p-8">
+      <DashboardSurface ref={panelRef} className="mb-6 p-4 sm:mb-8 sm:p-5 md:mb-10 md:p-6 lg:p-8">
       <div className="mb-6 flex flex-col gap-3 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-indigo-500/10 ring-1 ring-emerald-500/20">

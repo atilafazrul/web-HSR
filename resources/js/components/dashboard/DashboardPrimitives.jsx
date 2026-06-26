@@ -5,15 +5,19 @@ export const dashboardShellBgClass =
   "flex min-h-screen w-full overflow-x-hidden bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/20";
 
 /** Kartu konten utama: putih, border halus, bayangan ringan */
-export function DashboardSurface({ children, className = "" }) {
+export const DashboardSurface = React.forwardRef(function DashboardSurface(
+  { children, className = "" },
+  ref
+) {
   return (
     <div
+      ref={ref}
       className={`rounded-2xl sm:rounded-3xl border border-slate-200/90 bg-white/95 shadow-sm shadow-slate-900/5 ring-1 ring-slate-900/[0.03] backdrop-blur-sm ${className}`.trim()}
     >
       {children}
     </div>
   );
-}
+});
 
 /** Judul sambutan */
 export function DashboardWelcome({ greeting, name, tag }) {

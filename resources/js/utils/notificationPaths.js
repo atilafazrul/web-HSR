@@ -22,53 +22,34 @@ function roleBasePath(role) {
   return "/admin";
 }
 
-function buildRekapAkunPath(base, data) {
-  const params = new URLSearchParams();
-  params.set("detail", "1");
+/**
+ * Bangun path ke halaman daftar Projek Kerja sesuai role, lengkap dengan query string opsional.
+ */
+function buildProjekListPath(base, role, data, user, query) {
+  const projectSlug = resolveDivisiSlug(data.divisi);
+  const userSlug = resolveDivisiSlug(user?.divisi);
+  const suffix = query ? `?${query}` : "";
 
-  const namaAkun = data.nama_akun || data.created_by_name || data.oleh;
-  if (namaAkun) {
-    params.set("nama_akun", String(namaAkun));
-  }
-  if (data.created_by) {
-    params.set("created_by", String(data.created_by));
-  }
-  if (data.bulan) {
-    params.set("bulan", String(data.bulan));
-  }
-  if (data.tahun) {
-    params.set("tahun", String(data.tahun));
+  if (role === "super_admin") {
+    return projectSlug
+      ? `${base}/${projectSlug}/projek${suffix}`
+      : `${base}/projek-kerja${suffix}`;
   }
 
-  const scope = data.scope;
-  if (scope === "dalam_projek") {
-    params.set("source", "projek");
-  } else if (scope === "diluar_projek") {
-    params.set("source", "diluar");
+  if (role === "user") {
+    return userSlug ? `${base}/${userSlug}/projek${suffix}` : `${base}/dashboard`;
   }
 
-  if (data.dashboard_biaya_id) {
-    params.set("highlight_type", "dashboard");
-    params.set("highlight_id", String(data.dashboard_biaya_id));
-    if (data.kategori) params.set("highlight_kategori", String(data.kategori));
-    if (data.nominal != null) params.set("highlight_nominal", String(data.nominal));
-  } else if (
-    data.projek_kerja_id != null &&
-    data.item_index != null &&
-    data.kategori
-  ) {
-    params.set("highlight_type", "projek");
-    params.set("highlight_project_id", String(data.projek_kerja_id));
-    params.set("highlight_item_index", String(data.item_index));
-    params.set("highlight_kategori", String(data.kategori));
-    if (data.nominal != null) params.set("highlight_nominal", String(data.nominal));
-  }
-
-  return `${base}/rekap-akun?${params.toString()}`;
+  // Admin: buka daftar divisi sendiri (proyek undangan tetap muncul di API)
+  const slug = userSlug || projectSlug;
+  return slug ? `${base}/${slug}/projek${suffix}` : `${base}/dashboard`;
 }
 
 /**
- * Arahkan ke halaman daftar Projek Kerja + query `projek_id` untuk sorot baris proyek.
+ * Tentukan tujuan navigasi saat notifikasi diklik.
+ * - Biaya di dalam projek  → buka projek terkait (modal biaya proyek).
+ * - Biaya di luar projek   → buka panel "Biaya Diluar Projek" pada dashboard.
+ * - Notifikasi proyek      → buka daftar projek & sorot barisnya.
  * @param {{ type?: string, data?: Record<string, unknown> }} notification
  * @param {{ role?: string, divisi?: string }} user
  */
@@ -78,33 +59,28 @@ export function resolveNotificationPath(notification, user) {
   const projekId = data.projek_kerja_id;
   const role = user?.role || "admin";
   const base = roleBasePath(role);
-  const projectSlug = resolveDivisiSlug(data.divisi);
-  const userSlug = resolveDivisiSlug(user?.divisi);
 
-  if (type === "biaya_diluar_projek" || type === "biaya_projek") {
-    return buildRekapAkunPath(base, data);
+  // Biaya di luar projek → dashboard (panel Biaya Diluar Projek), sorot baris terkait.
+  if (type === "biaya_diluar_projek") {
+    const params = new URLSearchParams();
+    if (data.dashboard_biaya_id != null) {
+      params.set("biaya_diluar", String(data.dashboard_biaya_id));
+    }
+    const q = params.toString();
+    return `${base}/dashboard${q ? `?${q}` : ""}`;
+  }
+
+  // Biaya di dalam projek → buka projek terkait dan tampilkan modal biaya proyek.
+  if (type === "biaya_projek") {
+    if (!projekId) return `${base}/dashboard`;
+    const query = `open_biaya=${encodeURIComponent(String(projekId))}`;
+    return buildProjekListPath(base, role, data, user, query);
   }
 
   if (!projekId) {
     return `${base}/dashboard`;
   }
 
-  const id = encodeURIComponent(String(projekId));
-  const withProjekQuery = (path) => `${path}?projek_id=${id}`;
-
-  if (role === "super_admin") {
-    const slug = projectSlug;
-    return slug
-      ? withProjekQuery(`${base}/${slug}/projek`)
-      : withProjekQuery(`${base}/projek-kerja`);
-  }
-
-  if (role === "user") {
-    const slug = userSlug;
-    return slug ? withProjekQuery(`${base}/${slug}/projek`) : `${base}/dashboard`;
-  }
-
-  // Admin: buka daftar divisi sendiri (proyek undangan tetap muncul di API)
-  const slug = userSlug || projectSlug;
-  return slug ? withProjekQuery(`${base}/${slug}/projek`) : `${base}/dashboard`;
+  const query = `projek_id=${encodeURIComponent(String(projekId))}`;
+  return buildProjekListPath(base, role, data, user, query);
 }
