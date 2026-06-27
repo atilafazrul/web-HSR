@@ -39,14 +39,15 @@ class AuthController extends Controller
             $expirationMinutes = 60 * 24 * 7;
             $token = $user->createToken('auth-token', ['*'], now()->addMinutes($expirationMinutes));
         } else {
-            // Normal: 15 menit (sesuai config sanctum)
-            $token = $user->createToken('auth-token');
+            // Normal: 60 menit idle session
+            $expirationMinutes = 60;
+            $token = $user->createToken('auth-token', ['*'], now()->addMinutes($expirationMinutes));
         }
 
         // Hitung waktu expired
         $expiresAt = $rememberMe 
             ? now()->addMinutes(60 * 24 * 7)
-            : now()->addMinutes(2);
+            : now()->addMinutes(60);
 
         // Jika login berhasil
         return response()->json([
@@ -56,7 +57,7 @@ class AuthController extends Controller
                 'user' => $user,
                 'token' => $token->plainTextToken,
                 'expires_at' => $expiresAt->toISOString(),
-                'expires_in_seconds' => $rememberMe ? 60 * 24 * 7 * 60 : 15 * 60,
+                'expires_in_seconds' => $rememberMe ? 60 * 24 * 7 * 60 : 60 * 60,
                 'remember_me' => $rememberMe
             ]
         ]);

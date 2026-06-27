@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import apiClient from '../api/axiosConfig';
 import tokenManager from '../utils/tokenManager';
 
-// Waktu idle sebelum session timeout (15 menit)
-const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+// Waktu idle sebelum session timeout (60 menit)
+const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
 
 // Event-event yang dianggap sebagai aktivitas user
 const ACTIVITY_EVENTS = ['mousemove', 'keydown', 'mousedown', 'scroll', 'touchstart', 'wheel'];

@@ -4,7 +4,7 @@ import { useI18n } from "../i18n/index.jsx";
 /**
  * SessionTimeoutModal Component
  * 
- * Modal yang muncul ketika session timeout (15 menit).
+ * Modal yang muncul ketika session timeout (60 menit idle).
  * Menampilkan pesan dan tombol untuk login kembali.
  * 
  * @param {Object} props
