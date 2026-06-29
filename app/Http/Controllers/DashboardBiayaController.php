@@ -207,6 +207,7 @@ class DashboardBiayaController extends Controller
 
         $request->validate([
             'is_lunas' => 'nullable|boolean',
+            'lunas_group_id' => 'nullable|string|max:64',
             'keterangan' => 'nullable|string|max:2000',
             'nominal' => 'nullable|numeric|min:0',
             'photos' => 'nullable|array|max:25',
@@ -263,6 +264,11 @@ class DashboardBiayaController extends Controller
             $isLunas = (bool) $request->boolean('is_lunas');
             $payload['is_lunas'] = $isLunas;
             $payload['lunas_at'] = $isLunas ? now() : null;
+            if ($isLunas && $request->filled('lunas_group_id')) {
+                $payload['lunas_group_id'] = (string) $request->input('lunas_group_id');
+            } elseif (! $isLunas) {
+                $payload['lunas_group_id'] = null;
+            }
         }
 
         $row->update($payload);
@@ -730,6 +736,8 @@ class DashboardBiayaController extends Controller
                         'nominal' => $nominal,
                         'keterangan' => $item['keterangan'] ?? '',
                         'is_lunas' => $item['is_lunas'] ?? false,
+                        'lunas_group_id' => $item['lunas_group_id'] ?? null,
+                        'lunas_at' => $item['lunas_at'] ?? null,
                         'oleh' => $oleh,
                         'created_at' => $item['created_at'] ?? $projek->created_at,
                         'updated_at' => $projek->updated_at,
@@ -766,6 +774,8 @@ class DashboardBiayaController extends Controller
                         'nominal' => $nominal,
                         'keterangan' => $item['keterangan'] ?? '',
                         'is_lunas' => $item['is_lunas'] ?? false,
+                        'lunas_group_id' => $item['lunas_group_id'] ?? null,
+                        'lunas_at' => $item['lunas_at'] ?? null,
                         'oleh' => $oleh,
                         'created_at' => $item['created_at'] ?? $projek->created_at,
                         'updated_at' => $projek->updated_at,
@@ -802,6 +812,8 @@ class DashboardBiayaController extends Controller
                         'nominal' => $nominal,
                         'keterangan' => $item['keterangan'] ?? '',
                         'is_lunas' => $item['is_lunas'] ?? false,
+                        'lunas_group_id' => $item['lunas_group_id'] ?? null,
+                        'lunas_at' => $item['lunas_at'] ?? null,
                         'oleh' => $oleh,
                         'created_at' => $item['created_at'] ?? $projek->created_at,
                         'updated_at' => $projek->updated_at,

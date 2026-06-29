@@ -1791,6 +1791,7 @@ class ProjekKerjaController extends Controller
             'kategori' => 'required|in:jalan,pengeluaran,reimbursment',
             'item_index' => 'required|integer|min:0',
             'is_lunas' => 'required|boolean',
+            'lunas_group_id' => 'nullable|string|max:64',
         ]);
 
         $fieldMap = [
@@ -1810,9 +1811,17 @@ class ProjekKerjaController extends Controller
             ], 404);
         }
 
-        // Hanya update field is_lunas, semua field lain tetap sama
-        // Ini untuk mencegah perubahan tidak sengaja pada field 'oleh' atau field lainnya
-        $items[$index]['is_lunas'] = (bool) $validated['is_lunas'];
+        // Hanya update field lunas, semua field lain (oleh, nominal, keterangan, created_at) tetap sama.
+        $isLunas = (bool) $validated['is_lunas'];
+        $items[$index]['is_lunas'] = $isLunas;
+        if ($isLunas) {
+            if (! empty($validated['lunas_group_id'])) {
+                $items[$index]['lunas_group_id'] = (string) $validated['lunas_group_id'];
+            }
+            $items[$index]['lunas_at'] = now()->toIso8601String();
+        } else {
+            unset($items[$index]['lunas_group_id'], $items[$index]['lunas_at']);
+        }
         $projek->{$field} = $items; // Gunakan items langsung tanpa array_values untuk menjaga index
         $projek->save();
 

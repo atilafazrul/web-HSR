@@ -52,6 +52,53 @@ const getBiayaRowKey = (item) => {
   return `dashboard-${item.id}`;
 };
 
+const createLunasGroupId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `grp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+};
+
+const getLunasGroupKey = (item) => {
+  if (item?.lunas_group_id) return String(item.lunas_group_id);
+  return `legacy-${getBiayaRowKey(item)}`;
+};
+
+const kategoriLabel = (kategori, tr) => {
+  if (kategori === "jalan") return tr("Biaya Jalan", "Travel Cost");
+  if (kategori === "pengeluaran") return tr("Biaya Pengeluaran", "Expense Cost");
+  return tr("Biaya Reimbursment", "Reimbursement Cost");
+};
+
+const groupPaidRows = (rows) => {
+  const groups = new Map();
+  for (const row of rows) {
+    const groupKey = getLunasGroupKey(row);
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(row);
+  }
+
+  return Array.from(groups.entries())
+    .map(([groupKey, items]) => {
+      const lunasAt = items.reduce((latest, item) => {
+        const value = item?.lunas_at;
+        if (!value) return latest;
+        const time = new Date(value).getTime();
+        if (Number.isNaN(time)) return latest;
+        if (!latest || time > latest) return time;
+        return latest;
+      }, null);
+
+      return {
+        groupKey,
+        items,
+        total: items.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0),
+        lunasAt,
+      };
+    })
+    .sort((a, b) => (b.lunasAt || 0) - (a.lunasAt || 0));
+};
+
 const matchesBiayaHighlight = (item, target) => {
   if (!target || !item) return false;
   if (target.type === "dashboard") {
@@ -154,6 +201,9 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
   const [searchLoading, setSearchLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [confirmStatusItem, setConfirmStatusItem] = useState(null);
+  const [selectedUnpaidKeys, setSelectedUnpaidKeys] = useState(() => new Set());
+  const [showBulkLunasiConfirm, setShowBulkLunasiConfirm] = useState(false);
+  const [bulkLunasiProcessing, setBulkLunasiProcessing] = useState(false);
   const [activeDetailSourceTab, setActiveDetailSourceTab] = useState("projek");
   // Mapping nama_akun ke id untuk mencari id dari dataByAkun yang tidak punya id
   const [akunIdMap, setAkunIdMap] = useState({});
@@ -506,6 +556,7 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
 
     setSelectedAkun(akunWithId);
     setDetailBiaya([]); // Reset detail before fetching
+    setSelectedUnpaidKeys(new Set());
     setDetailLoading(true); // Show loading state
     setShowDetailModal(true); // Show modal immediately with loading state
 
@@ -532,7 +583,48 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
     lockedSourceTabRef.current = null;
     highlightTargetRef.current = null;
     setHighlightedRowKey(null);
+    setSelectedUnpaidKeys(new Set());
+    setShowBulkLunasiConfirm(false);
     // Don't reset selectedAkun so it can be used for other actions
+  };
+
+  const toggleUnpaidSelection = (item) => {
+    const key = getBiayaRowKey(item);
+    setSelectedUnpaidKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
+
+  const toggleSelectAllUnpaidInRows = (rows) => {
+    const keys = rows.map(getBiayaRowKey);
+    setSelectedUnpaidKeys((prev) => {
+      const next = new Set(prev);
+      const allSelected = keys.length > 0 && keys.every((k) => next.has(k));
+      if (allSelected) keys.forEach((k) => next.delete(k));
+      else keys.forEach((k) => next.add(k));
+      return next;
+    });
+  };
+
+  const updateDetailBiayaLunasByKeys = (keys, targetStatus, extraFields = {}) => {
+    const keySet = keys instanceof Set ? keys : new Set(keys);
+    setDetailBiaya((prev) =>
+      (prev || []).map((row) => {
+        if (!keySet.has(getBiayaRowKey(row))) return row;
+        if (!targetStatus) {
+          return { ...row, is_lunas: false, lunas_at: null, lunas_group_id: null };
+        }
+        return {
+          ...row,
+          is_lunas: true,
+          lunas_at: extraFields.lunas_at || row.lunas_at || new Date().toISOString(),
+          lunas_group_id: extraFields.lunas_group_id ?? row.lunas_group_id ?? null,
+        };
+      })
+    );
   };
 
   const handleToggleDetailLunas = async (item) => {
@@ -544,6 +636,7 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
     if (!confirmStatusItem || !isSuperAdmin) return;
     const item = confirmStatusItem;
     const targetStatus = !Boolean(item?.is_lunas);
+    const lunasGroupId = targetStatus ? createLunasGroupId() : null;
     try {
       if (item?.source === "projek") {
         if (item?.project_id == null || item?.item_index == null) {
@@ -554,22 +647,82 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
           kategori: item.kategori,
           item_index: item.item_index,
           is_lunas: targetStatus,
+          ...(lunasGroupId ? { lunas_group_id: lunasGroupId } : {}),
         });
       } else {
-        await api.patch(`/dashboard-biaya/${item.id}`, { is_lunas: targetStatus });
+        await api.patch(`/dashboard-biaya/${item.id}`, {
+          is_lunas: targetStatus,
+          ...(lunasGroupId ? { lunas_group_id: lunasGroupId } : {}),
+        });
       }
 
-      setDetailBiaya((prev) =>
-        (prev || []).map((row) =>
-          row.id === item.id ? { ...row, is_lunas: targetStatus } : row
-        )
-      );
+      const now = new Date().toISOString();
+      updateDetailBiayaLunasByKeys(new Set([getBiayaRowKey(item)]), targetStatus, {
+        lunas_group_id: lunasGroupId,
+        lunas_at: targetStatus ? now : null,
+      });
     } catch (err) {
       alert(err?.response?.data?.message || tr("Gagal update status lunas", "Failed to update paid status"));
     } finally {
       setConfirmStatusItem(null);
     }
   };
+
+  const markItemsAsLunas = async (items, lunasGroupId) => {
+    await Promise.all(
+      items.map(async (item) => {
+        if (item?.source === "projek") {
+          if (item?.project_id == null || item?.item_index == null) {
+            throw new Error(tr("Data item projek tidak lengkap untuk update status lunas.", "Project item data is incomplete for paid-status update."));
+          }
+          await api.patch(`/projek-kerja/${item.project_id}/biaya-item-lunas`, {
+            kategori: item.kategori,
+            item_index: item.item_index,
+            is_lunas: true,
+            lunas_group_id: lunasGroupId,
+          });
+        } else {
+          await api.patch(`/dashboard-biaya/${item.id}`, {
+            is_lunas: true,
+            lunas_group_id: lunasGroupId,
+          });
+        }
+      })
+    );
+  };
+
+  const executeBulkLunasi = async () => {
+    if (!isSuperAdmin || bulkLunasiProcessing) return;
+    const items = (detailBiaya || []).filter(
+      (row) => !Boolean(row.is_lunas) && selectedUnpaidKeys.has(getBiayaRowKey(row))
+    );
+    if (items.length === 0) return;
+
+    setBulkLunasiProcessing(true);
+    try {
+      const lunasGroupId = createLunasGroupId();
+      const now = new Date().toISOString();
+      await markItemsAsLunas(items, lunasGroupId);
+      const keys = new Set(items.map(getBiayaRowKey));
+      updateDetailBiayaLunasByKeys(keys, true, { lunas_group_id: lunasGroupId, lunas_at: now });
+      setSelectedUnpaidKeys(new Set());
+      setShowBulkLunasiConfirm(false);
+    } catch (err) {
+      alert(err?.response?.data?.message || err?.message || tr("Gagal melunasi biaya terpilih", "Failed to mark selected costs as paid"));
+    } finally {
+      setBulkLunasiProcessing(false);
+    }
+  };
+
+  const selectedUnpaidItems = useMemo(() => {
+    const rows = Array.isArray(detailBiaya) ? detailBiaya : [];
+    return rows.filter((row) => !Boolean(row.is_lunas) && selectedUnpaidKeys.has(getBiayaRowKey(row)));
+  }, [detailBiaya, selectedUnpaidKeys]);
+
+  const selectedUnpaidTotal = useMemo(
+    () => selectedUnpaidItems.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0),
+    [selectedUnpaidItems]
+  );
 
   const detailBySource = useMemo(() => {
     const rows = Array.isArray(detailBiaya) ? detailBiaya : [];
@@ -1103,16 +1256,169 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
 
                             {["jalan", "pengeluaran", "reimbursment"].map((kategori) => {
                               const rows = statusRows.filter((item) => item.kategori === kategori);
-                              const kategoriTotal = rows.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0);
+                              const showCheckboxes = statusKey === "belum" && isSuperAdmin;
+                              const kategoriGroups = statusKey === "lunas" ? groupPaidRows(rows) : [];
+                              const kategoriTotal = showCheckboxes
+                                ? rows
+                                    .filter((item) => selectedUnpaidKeys.has(getBiayaRowKey(item)))
+                                    .reduce((sum, item) => sum + (Number(item.nominal) || 0), 0)
+                                : rows.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0);
+                              const allRowsSelected =
+                                showCheckboxes &&
+                                rows.length > 0 &&
+                                rows.every((item) => selectedUnpaidKeys.has(getBiayaRowKey(item)));
+                              const someRowsSelected =
+                                showCheckboxes &&
+                                rows.some((item) => selectedUnpaidKeys.has(getBiayaRowKey(item)));
+                              const emptyColSpan = showCheckboxes ? 7 : 6;
+
+                              const renderItemRow = (item, idx, rowOptions = {}) => {
+                                const rowKey = getBiayaRowKey(item);
+                                const isHighlighted = highlightedRowKey === rowKey;
+                                const isSelected = rowOptions.isSelected ?? selectedUnpaidKeys.has(rowKey);
+                                return (
+                                  <tr
+                                    key={`${rowOptions.rowKeyPrefix || ""}${item.id}-${idx}`}
+                                    id={`biaya-row-${rowKey}`}
+                                    className={`border-b border-slate-100 transition-colors ${
+                                      isHighlighted
+                                        ? "bg-amber-100 ring-2 ring-inset ring-amber-400"
+                                        : isSelected
+                                          ? "bg-indigo-50 hover:bg-indigo-100"
+                                          : "hover:bg-slate-50"
+                                    }`}
+                                  >
+                                    {showCheckboxes && (
+                                      <td className="p-2 text-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          onChange={() => toggleUnpaidSelection(item)}
+                                          className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                        />
+                                      </td>
+                                    )}
+                                    <td className="p-2">{idx + 1}</td>
+                                    <td className="p-2 font-medium">{rupiah(item.nominal)}</td>
+                                    <td className="p-2 text-slate-600">{item.keterangan || "-"}</td>
+                                    <td className="p-2">
+                                      {(() => {
+                                        const photoUrls = getPhotoUrlsFromItem(item);
+                                        if (photoUrls.length === 0) {
+                                          return <span className="text-slate-400">-</span>;
+                                        }
+                                        return (
+                                          <div className="flex flex-wrap items-center gap-1.5">
+                                            {photoUrls.map((url, photoIdx) => (
+                                              <a
+                                                key={`${item.id}-photo-${photoIdx}`}
+                                                href={url}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-200"
+                                                title={`${tr("Lihat foto", "View photo")} ${photoIdx + 1}`}
+                                              >
+                                                {photoUrls.length === 1 ? tr("Lihat", "View") : `${tr("Foto", "Photo")} ${photoIdx + 1}`}
+                                              </a>
+                                            ))}
+                                          </div>
+                                        );
+                                      })()}
+                                    </td>
+                                    <td className="p-2">
+                                      {isSuperAdmin ? (
+                                        <button
+                                          type="button"
+                                          onClick={() => handleToggleDetailLunas(item)}
+                                          className={`px-2 py-1 rounded-full text-xs font-medium transition ${
+                                            item.is_lunas
+                                              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
+                                              : "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                                          }`}
+                                          title={item.is_lunas ? tr("Klik untuk ubah ke Belum Lunas", "Click to change to Unpaid") : tr("Klik untuk ubah ke Lunas", "Click to change to Paid")}
+                                        >
+                                          {item.is_lunas ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid")}
+                                        </button>
+                                      ) : (
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_lunas ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
+                                          {item.is_lunas ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid")}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td className="p-2 text-slate-500">{formatDateTime(item.created_at)}</td>
+                                  </tr>
+                                );
+                              };
+
                               return (
                                 <div key={`${sourceBlock.key}-${statusKey}-${kategori}`} className="border rounded-lg overflow-hidden mb-3 last:mb-0">
                                   <div className="bg-slate-100 px-3 py-2 text-xs font-medium text-slate-700">
-                                    {kategori === "jalan" ? tr("Biaya Jalan", "Travel Cost") : kategori === "pengeluaran" ? tr("Biaya Pengeluaran", "Expense Cost") : tr("Biaya Reimbursment", "Reimbursement Cost")}
+                                    {kategoriLabel(kategori, tr)}
                                   </div>
+
+                                  {statusKey === "lunas" ? (
+                                    kategoriGroups.length === 0 ? (
+                                      <div className="p-3 text-gray-400 text-center text-xs">
+                                        {tr("Tidak ada data", "No data")}
+                                      </div>
+                                    ) : (
+                                      kategoriGroups.map((group, groupIdx) => (
+                                        <div key={group.groupKey} className="border-t border-emerald-100">
+                                          <div className="bg-emerald-50 px-3 py-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-emerald-700">
+                                            <span className="font-semibold text-emerald-800">
+                                              {tr("Pembayaran", "Payment")} #{kategoriGroups.length - groupIdx}
+                                              <span className="ml-1.5 font-normal">
+                                                · {group.items.length} {tr("transaksi", "transactions")}
+                                              </span>
+                                            </span>
+                                            <span className="flex flex-wrap items-center gap-2">
+                                              {group.lunasAt && (
+                                                <span>{tr("Dilunasi", "Paid on")}: {formatDateTime(new Date(group.lunasAt).toISOString())}</span>
+                                              )}
+                                              <span className="font-bold">{rupiah(group.total)}</span>
+                                            </span>
+                                          </div>
+                                          <div className="overflow-x-auto">
+                                            <table className="min-w-full text-xs">
+                                              <thead className="bg-white text-slate-600">
+                                                <tr className="text-left">
+                                                  <th className="p-2 font-semibold">{tr("No", "No")}</th>
+                                                  <th className="p-2 font-semibold">{tr("Nominal", "Amount")}</th>
+                                                  <th className="p-2 font-semibold">{tr("Keterangan", "Description")}</th>
+                                                  <th className="p-2 font-semibold">{tr("Foto", "Photo")}</th>
+                                                  <th className="p-2 font-semibold">{tr("Status", "Status")}</th>
+                                                  <th className="p-2 font-semibold">{tr("Tanggal", "Date")}</th>
+                                                </tr>
+                                              </thead>
+                                              <tbody>
+                                                {group.items.map((item, idx) =>
+                                                  renderItemRow(item, idx, { rowKeyPrefix: `${group.groupKey}-` })
+                                                )}
+                                              </tbody>
+                                            </table>
+                                          </div>
+                                        </div>
+                                      ))
+                                    )
+                                  ) : (
                                   <div className="overflow-x-auto">
                                     <table className="min-w-full text-xs">
                                       <thead className="bg-white text-slate-600">
                                         <tr className="text-left">
+                                          {showCheckboxes && (
+                                            <th className="p-2 w-10 text-center">
+                                              <input
+                                                type="checkbox"
+                                                checked={allRowsSelected}
+                                                ref={(el) => {
+                                                  if (el) el.indeterminate = someRowsSelected && !allRowsSelected;
+                                                }}
+                                                onChange={() => toggleSelectAllUnpaidInRows(rows)}
+                                                title={tr("Pilih semua", "Select all")}
+                                                className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                              />
+                                            </th>
+                                          )}
                                           <th className="p-2 font-semibold">{tr("No", "No")}</th>
                                           <th className="p-2 font-semibold">{tr("Nominal", "Amount")}</th>
                                           <th className="p-2 font-semibold">{tr("Keterangan", "Description")}</th>
@@ -1124,96 +1430,53 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
                                       <tbody>
                                         {rows.length === 0 ? (
                                           <tr>
-                                            <td colSpan={6} className="p-3 text-gray-400 text-center">
+                                            <td colSpan={emptyColSpan} className="p-3 text-gray-400 text-center">
                                               {tr("Tidak ada data", "No data")}
                                             </td>
                                           </tr>
                                         ) : (
-                                          rows.map((item, idx) => {
-                                            const rowKey = getBiayaRowKey(item);
-                                            const isHighlighted = highlightedRowKey === rowKey;
-                                            return (
-                                            <tr
-                                              key={`${item.id}-${idx}`}
-                                              id={`biaya-row-${rowKey}`}
-                                              className={`border-b border-slate-100 transition-colors ${
-                                                isHighlighted
-                                                  ? "bg-amber-100 ring-2 ring-inset ring-amber-400"
-                                                  : "hover:bg-slate-50"
-                                              }`}
-                                            >
-                                              <td className="p-2">{idx + 1}</td>
-                                              <td className="p-2 font-medium">{rupiah(item.nominal)}</td>
-                                              <td className="p-2 text-slate-600">{item.keterangan || "-"}</td>
-                                              <td className="p-2">
-                                                {(() => {
-                                                  const photoUrls = getPhotoUrlsFromItem(item);
-                                                  if (photoUrls.length === 0) {
-                                                    return <span className="text-slate-400">-</span>;
-                                                  }
-                                                  return (
-                                                    <div className="flex flex-wrap items-center gap-1.5">
-                                                      {photoUrls.map((url, photoIdx) => (
-                                                        <a
-                                                          key={`${item.id}-photo-${photoIdx}`}
-                                                          href={url}
-                                                          target="_blank"
-                                                          rel="noreferrer"
-                                                          className="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-200"
-                                                          title={`${tr("Lihat foto", "View photo")} ${photoIdx + 1}`}
-                                                        >
-                                                          {photoUrls.length === 1 ? tr("Lihat", "View") : `${tr("Foto", "Photo")} ${photoIdx + 1}`}
-                                                        </a>
-                                                      ))}
-                                                    </div>
-                                                  );
-                                                })()}
-                                              </td>
-                                              <td className="p-2">
-                                                {isSuperAdmin ? (
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => handleToggleDetailLunas(item)}
-                                                    className={`px-2 py-1 rounded-full text-xs font-medium transition ${
-                                                      item.is_lunas
-                                                        ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                                                        : "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                                                    }`}
-                                                    title={item.is_lunas ? tr("Klik untuk ubah ke Belum Lunas", "Click to change to Unpaid") : tr("Klik untuk ubah ke Lunas", "Click to change to Paid")}
-                                                  >
-                                                    {item.is_lunas ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid")}
-                                                  </button>
-                                                ) : (
-                                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${item.is_lunas ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>
-                                                    {item.is_lunas ? tr("Lunas", "Paid") : tr("Belum Lunas", "Unpaid")}
-                                                  </span>
-                                                )}
-                                              </td>
-                                              <td className="p-2 text-slate-500">{formatDateTime(item.created_at)}</td>
-                                            </tr>
-                                            );
-                                          })
+                                          rows.map((item, idx) => renderItemRow(item, idx))
                                         )}
                                       </tbody>
                                       <tfoot>
                                         <tr className="border-t-2 border-slate-200 bg-slate-50 font-semibold text-slate-800">
-                                          <td className="p-2">{tr("Total", "Total")}</td>
+                                          <td className="p-2" colSpan={showCheckboxes ? 2 : 1}>
+                                            {showCheckboxes && someRowsSelected
+                                              ? tr("Total Terpilih", "Selected Total")
+                                              : tr("Total", "Total")}
+                                          </td>
                                           <td className="p-2">{rupiah(kategoriTotal)}</td>
                                           <td className="p-2" colSpan={4}></td>
                                         </tr>
                                       </tfoot>
                                     </table>
                                   </div>
+                                  )}
+
+                                  {statusKey === "lunas" && rows.length > 0 && (
+                                    <div className="flex items-center justify-between border-t-2 border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-800">
+                                      <span>{tr("Total", "Total")}</span>
+                                      <span>{rupiah(kategoriTotal)}</span>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
 
                             <div className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-semibold ${statusKey === "lunas" ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
                               <span>
-                                {statusKey === "lunas" ? tr("Total Lunas", "Total Paid") : tr("Total Belum Lunas", "Total Unpaid")}
+                                {statusKey === "lunas"
+                                  ? tr("Total Lunas", "Total Paid")
+                                  : isSuperAdmin && selectedUnpaidItems.length > 0
+                                    ? tr("Total Terpilih (Belum Lunas)", "Selected Total (Unpaid)")
+                                    : tr("Total Belum Lunas", "Total Unpaid")}
                               </span>
                               <span>
-                                {rupiah(statusRows.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0))}
+                                {statusKey === "lunas"
+                                  ? rupiah(statusRows.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0))
+                                  : isSuperAdmin
+                                    ? rupiah(selectedUnpaidTotal)
+                                    : rupiah(statusRows.reduce((sum, item) => sum + (Number(item.nominal) || 0), 0))}
                               </span>
                             </div>
                           </div>
@@ -1226,15 +1489,76 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t flex justify-between items-center">
+            <div className="px-6 py-4 border-t flex justify-between items-center gap-3">
               <p className="text-sm text-gray-500">
                 {tr("Total", "Total")} {detailBiaya.length} {tr("transaksi", "transactions")}
+                {isSuperAdmin && selectedUnpaidItems.length > 0 && (
+                  <span className="ml-2 text-indigo-600 font-medium">
+                    · {selectedUnpaidItems.length} {tr("terpilih", "selected")} ({rupiah(selectedUnpaidTotal)})
+                  </span>
+                )}
               </p>
+              <div className="flex items-center gap-2">
+                {isSuperAdmin && selectedUnpaidItems.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowBulkLunasiConfirm(true)}
+                    disabled={bulkLunasiProcessing}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 text-white px-5 py-2 rounded-lg font-medium transition text-sm"
+                  >
+                    {bulkLunasiProcessing
+                      ? tr("Memproses...", "Processing...")
+                      : `${tr("Lunasi Terpilih", "Pay Selected")} (${selectedUnpaidItems.length})`}
+                  </button>
+                )}
+                <button
+                  onClick={closeDetailModal}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition"
+                >
+                  {tr("Tutup", "Close")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkLunasiConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[10000] p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm">
+            <div className="pt-6 pb-2 px-6 flex flex-col items-center">
+              <div className="w-16 h-16 rounded-full flex items-center justify-center mb-3 bg-emerald-100">
+                <FileText size={30} className="text-emerald-600" />
+              </div>
+              <h3 className="text-lg font-bold text-gray-800 mb-1">{tr("Lunasi Biaya Terpilih", "Pay Selected Costs")}</h3>
+              <p className="text-sm text-gray-500 text-center">
+                {tr(
+                  `Anda akan melunasi ${selectedUnpaidItems.length} transaksi sekaligus.`,
+                  `You are about to mark ${selectedUnpaidItems.length} transactions as paid at once.`
+                )}
+              </p>
+            </div>
+
+            <div className="px-6 pb-4">
+              <div className="bg-emerald-50 border-2 border-emerald-200 py-3 px-4 rounded-xl text-center font-semibold text-emerald-700">
+                {tr("Total", "Total")}: {rupiah(selectedUnpaidTotal)}
+              </div>
+            </div>
+
+            <div className="px-6 pb-6 flex gap-3">
               <button
-                onClick={closeDetailModal}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition"
+                onClick={() => setShowBulkLunasiConfirm(false)}
+                disabled={bulkLunasiProcessing}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors text-sm disabled:opacity-60"
               >
-                {tr("Tutup", "Close")}
+                {tr("Batal", "Cancel")}
+              </button>
+              <button
+                onClick={executeBulkLunasi}
+                disabled={bulkLunasiProcessing}
+                className="flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60"
+              >
+                {bulkLunasiProcessing ? tr("Memproses...", "Processing...") : tr("Ya, Lunasi", "Yes, Pay")}
               </button>
             </div>
           </div>

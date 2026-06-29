@@ -18,6 +18,7 @@ class DashboardBiaya extends Model
         'photo_paths',
         'is_lunas',
         'lunas_at',
+        'lunas_group_id',
         'created_by',
         'updated_by',
     ];
