@@ -306,6 +306,7 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     */
     Route::get('/dashboard-biaya', [DashboardBiayaController::class, 'index']);
     Route::get('/dashboard-biaya/summary', [DashboardBiayaController::class, 'summary']);
+    Route::get('/dashboard-biaya/summary-per-divisi', [DashboardBiayaController::class, 'summaryPerDivisi']);
     Route::post('/dashboard-biaya', [DashboardBiayaController::class, 'store']);
     Route::patch('/dashboard-biaya/{id}', [DashboardBiayaController::class, 'update']);
     Route::delete('/dashboard-biaya/{id}', [DashboardBiayaController::class, 'destroy']);

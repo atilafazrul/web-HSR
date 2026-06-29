@@ -148,6 +148,65 @@ class DashboardBiayaController extends Controller
         ]);
     }
 
+    /**
+     * Ringkasan biaya dashboard (di luar projek) per divisi.
+     */
+    public function summaryPerDivisi(Request $request)
+    {
+        $user = $request->user();
+        $isSuperAdmin = ($user->role ?? null) === 'super_admin';
+        $role = $user->role ?? null;
+
+        if (! in_array($role, ['super_admin', 'admin', 'user'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Role tidak diizinkan mengakses ringkasan biaya per divisi.',
+            ], 403);
+        }
+
+        $query = DashboardBiaya::query();
+
+        if (! $isSuperAdmin) {
+            if ($role === 'admin' && ! empty($user->divisi)) {
+                $query->where('divisi', $user->divisi);
+            } else {
+                $query->where('created_by', $user->id);
+            }
+        }
+
+        if ($request->filled('divisi')) {
+            $divisi = trim((string) $request->input('divisi'));
+            $query->whereRaw('LOWER(TRIM(divisi)) = ?', [strtolower($divisi)]);
+        }
+
+        $rows = $query->get();
+
+        $byDivisi = $rows->groupBy(fn ($row) => trim((string) ($row->divisi ?: 'Tanpa Divisi')));
+
+        $data = $byDivisi->map(function ($items, $divisi) {
+            $sumBy = fn (string $kategori) => (float) $items->where('kategori', $kategori)->sum('nominal');
+            $jalan = $sumBy('jalan');
+            $pengeluaran = $sumBy('pengeluaran');
+            $reimbursment = $sumBy('reimbursment');
+
+            return [
+                'divisi' => $divisi,
+                'jalan' => $jalan,
+                'pengeluaran' => $pengeluaran,
+                'reimbursment' => $reimbursment,
+                'total' => $jalan + $pengeluaran + $reimbursment,
+            ];
+        })->values()->sortBy('divisi')->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'by_divisi' => $data,
+                'grand_total' => (float) $data->sum('total'),
+            ],
+        ]);
+    }
+
     public function store(Request $request)
     {
         $user = $request->user();

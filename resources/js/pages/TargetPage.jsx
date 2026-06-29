@@ -81,6 +81,8 @@ export default function TargetPage() {
   const [projek, setProjek] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [biayaLuarProjek, setBiayaLuarProjek] = useState({ by_divisi: [], grand_total: 0 });
+  const [biayaLuarLoading, setBiayaLuarLoading] = useState(true);
 
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
@@ -120,6 +122,24 @@ export default function TargetPage() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const fetchBiayaLuarProjek = async (divisiFilter = "") => {
+    setBiayaLuarLoading(true);
+    try {
+      const params = divisiFilter ? { divisi: divisiFilter } : {};
+      const res = await api.get("/dashboard-biaya/summary-per-divisi", { params });
+      setBiayaLuarProjek(res.data?.data || { by_divisi: [], grand_total: 0 });
+    } catch (err) {
+      console.error(err);
+      setBiayaLuarProjek({ by_divisi: [], grand_total: 0 });
+    } finally {
+      setBiayaLuarLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBiayaLuarProjek(filterDivisi);
+  }, [filterDivisi]);
 
   /* ================= HANDLERS ================= */
   const handlePoChange = (id, raw) => {
@@ -181,10 +201,20 @@ export default function TargetPage() {
     const list = filtered;
     const totalPO = list.reduce((s, p) => s + (Number(p.nominal_po) || 0), 0);
     const totalBiaya = list.reduce((s, p) => s + (Number(p.total_biaya) || 0), 0);
-    const totalProfit = totalPO - totalBiaya;
+    const totalBiayaLuar = Number(biayaLuarProjek?.grand_total) || 0;
+    const totalBiayaGabungan = totalBiaya + totalBiayaLuar;
+    const totalProfit = totalPO - totalBiayaGabungan;
     const margin = totalPO > 0 ? (totalProfit / totalPO) * 100 : 0;
-    return { totalPO, totalBiaya, totalProfit, margin, count: list.length };
-  }, [filtered]);
+    return {
+      totalPO,
+      totalBiaya,
+      totalBiayaLuar,
+      totalBiayaGabungan,
+      totalProfit,
+      margin,
+      count: list.length,
+    };
+  }, [filtered, biayaLuarProjek?.grand_total]);
 
   const statusOptions = useMemo(() => {
     const set = new Set();
@@ -261,25 +291,32 @@ export default function TargetPage() {
 
       {/* SUMMARY GRID - 2 angka kiri + chart panel kanan */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4">
-        {/* KIRI: 2 stack card sederhana */}
-        <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
-          <SummaryCard
-            label={tr("Total PO", "Total PO")}
-            value={formatRupiah(summary.totalPO)}
-            accent="from-indigo-500 to-indigo-600"
-            glow="bg-indigo-300/15"
-            badge="bg-indigo-50 text-indigo-700 ring-indigo-200/70"
-            icon={Wallet}
-            hint={tr("Akumulasi semua PO", "Sum of all POs")}
-          />
-          <SummaryCard
-            label={tr("Total Biaya", "Total Cost")}
-            value={formatRupiah(summary.totalBiaya)}
-            accent="from-slate-500 to-slate-700"
-            glow="bg-slate-300/20"
-            badge="bg-slate-100 text-slate-700 ring-slate-200/70"
-            icon={Receipt}
-            hint={tr("Jalan + Pengeluaran + Reimburs.", "Travel + Expense + Reimburs.")}
+        <div className="flex flex-col gap-3 sm:gap-4">
+          <div className="grid grid-cols-2 lg:grid-cols-1 gap-3 sm:gap-4">
+            <SummaryCard
+              label={tr("Total PO", "Total PO")}
+              value={formatRupiah(summary.totalPO)}
+              accent="from-indigo-500 to-indigo-600"
+              glow="bg-indigo-300/15"
+              badge="bg-indigo-50 text-indigo-700 ring-indigo-200/70"
+              icon={Wallet}
+              hint={tr("Akumulasi semua PO", "Sum of all POs")}
+            />
+            <SummaryCard
+              label={tr("Total di Dalam Projek", "Total In-Project")}
+              value={formatRupiah(summary.totalBiaya)}
+              accent="from-slate-500 to-slate-700"
+              glow="bg-slate-300/20"
+              badge="bg-slate-100 text-slate-700 ring-slate-200/70"
+              icon={Receipt}
+              hint={tr("Jalan + Pengeluaran + Reimburs. (dalam projek)", "Travel + Expense + Reimburs. (in project)")}
+            />
+          </div>
+          <OutsideProjectBiayaCard
+            data={biayaLuarProjek}
+            loading={biayaLuarLoading}
+            filterDivisi={filterDivisi}
+            tr={tr}
           />
         </div>
 
@@ -471,7 +508,7 @@ export default function TargetPage() {
                   <p className="font-bold tabular-nums text-indigo-700">{formatRupiah(summary.totalPO)}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase tracking-wide text-slate-500">{tr("Total Biaya", "Total Cost")}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-slate-500">{tr("Total di Dalam Projek", "Total In-Project")}</p>
                   <p className="font-bold tabular-nums text-slate-800">{formatRupiah(summary.totalBiaya)}</p>
                 </div>
                 <div>
@@ -620,7 +657,7 @@ const ProjectCard = ({
       </div>
 
       <footer className="mt-auto divide-y divide-slate-200/80 border-t border-slate-100 bg-slate-50/80 px-3 py-1 sm:px-3.5">
-        <ProjectStatRow label={tr("Total Biaya", "Total Cost")} value={formatRupiah(biaya)} valueTitle={formatRupiah(biaya)} />
+        <ProjectStatRow label={tr("Biaya di Dalam Projek", "In-Project Cost")} value={formatRupiah(biaya)} valueTitle={formatRupiah(biaya)} />
         <ProjectStatRow
           label={tr("Profit", "Profit")}
           value={<ProfitText profit={profit} hasPo={po > 0} />}
@@ -657,23 +694,91 @@ const SummaryCard = ({ label, value, accent, glow, badge, icon: Icon, hint }) =>
   </div>
 );
 
+const OutsideProjectBiayaCard = ({ data, loading, filterDivisi, tr }) => {
+  const rows = Array.isArray(data?.by_divisi) ? data.by_divisi : [];
+  const grandTotal = Number(data?.grand_total) || 0;
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-violet-200/80 bg-gradient-to-br from-white to-violet-50/40 p-3 sm:p-4 shadow-sm h-full">
+      <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl bg-violet-300/15" />
+      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-violet-500 to-violet-600 opacity-90" />
+      <div className="relative">
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+              {tr("Biaya di Luar Projek", "Off-Project Cost")}
+            </p>
+            <p className="mt-0.5 text-[10px] text-slate-500 leading-tight">
+              {filterDivisi
+                ? tr(`Per divisi · ${filterDivisi}`, `Per division · ${filterDivisi}`)
+                : tr("Per divisi", "Per division")}
+            </p>
+          </div>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 ring-1 ring-violet-200/70">
+            <Building2 size={16} />
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-6 text-slate-400">
+            <Loader2 size={18} className="animate-spin" />
+          </div>
+        ) : rows.length === 0 ? (
+          <p className="py-4 text-center text-xs text-slate-400">
+            {tr("Belum ada biaya di luar projek", "No off-project costs yet")}
+          </p>
+        ) : (
+          <div className="space-y-1.5 max-h-40 overflow-y-auto pr-0.5">
+            {rows.map((row) => {
+              const tone = DIVISI_TONE[row.divisi] || "bg-slate-100 text-slate-700 ring-slate-200/70";
+              return (
+                <div
+                  key={row.divisi}
+                  className="flex items-center justify-between gap-2 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-slate-200/70"
+                >
+                  <span className={`inline-flex max-w-[55%] items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${tone}`}>
+                    <Building2 size={10} className="shrink-0" />
+                    <span className="truncate">{row.divisi}</span>
+                  </span>
+                  <span className="shrink-0 text-xs font-bold tabular-nums text-slate-800" title={formatRupiah(row.total)}>
+                    {formatRupiahCompact(row.total)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="mt-3 flex items-center justify-between border-t border-violet-100 pt-2.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+            {tr("Total Luar Projek", "Total Off-Project")}
+          </span>
+          <span className="text-sm font-bold tabular-nums text-violet-800" title={formatRupiah(grandTotal)}>
+            {loading ? "—" : formatRupiahCompact(grandTotal)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 /* ============================================================
  * PROFIT PANEL - combines Total Profit + Margin Profit + donut chart
  * ============================================================ */
 const ProfitPanel = ({ summary, tr }) => {
-  const { totalPO, totalBiaya, totalProfit, margin } = summary;
+  const { totalPO, totalBiaya, totalBiayaLuar, totalBiayaGabungan, totalProfit, margin } = summary;
   const isProfit = totalProfit >= 0;
   const hasData = totalPO > 0;
 
   // Untuk donut chart: persentase biaya & profit terhadap PO
-  const biayaPct = totalPO > 0 ? (totalBiaya / totalPO) * 100 : 0;
+  const biayaPct = totalPO > 0 ? (totalBiayaGabungan / totalPO) * 100 : 0;
   const profitPct = totalPO > 0 ? Math.max(0, (totalProfit / totalPO) * 100) : 0;
   const overshootPct = totalPO > 0 && totalProfit < 0 ? Math.min(100, (Math.abs(totalProfit) / totalPO) * 100) : 0;
 
   const chartData = hasData
     ? totalProfit >= 0
       ? [
-          { name: tr("Biaya", "Cost"), value: totalBiaya, color: "#475569" },
+          { name: tr("Biaya", "Cost"), value: totalBiayaGabungan, color: "#475569" },
           { name: tr("Profit", "Profit"), value: totalProfit, color: "#10b981" },
         ]
       : [
@@ -812,18 +917,29 @@ const ProfitPanel = ({ summary, tr }) => {
           </div>
 
           {/* Inline mini breakdown */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          <div className="grid grid-cols-2 gap-2 pt-1 sm:grid-cols-3">
             <BreakdownItem
               label={tr("PO", "PO")}
               value={formatRupiahCompact(totalPO)}
               color="indigo"
             />
             <BreakdownItem
-              label={tr("Biaya", "Cost")}
+              label={tr("Biaya Projek", "Project Cost")}
               value={formatRupiahCompact(totalBiaya)}
               color="slate"
             />
+            <BreakdownItem
+              label={tr("Biaya Luar", "Off-Project")}
+              value={formatRupiahCompact(totalBiayaLuar)}
+              color="violet"
+            />
           </div>
+          <p className="pt-1 text-[9px] leading-relaxed text-slate-400">
+            {tr(
+              "Profit = PO − (Biaya Projek + Biaya Luar Projek)",
+              "Profit = PO − (Project Cost + Off-Project Cost)"
+            )}
+          </p>
         </div>
       </div>
     </div>
@@ -845,6 +961,7 @@ const BreakdownItem = ({ label, value, color }) => {
   const tone = {
     indigo: "bg-indigo-50 text-indigo-700 ring-indigo-200/70",
     slate: "bg-slate-50 text-slate-700 ring-slate-200/70",
+    violet: "bg-violet-50 text-violet-700 ring-violet-200/70",
     emerald: "bg-emerald-50 text-emerald-700 ring-emerald-200/70",
     rose: "bg-rose-50 text-rose-700 ring-rose-200/70",
   };
