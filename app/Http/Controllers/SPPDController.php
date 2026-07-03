@@ -7,6 +7,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Carbon\Carbon;
 use App\Models\SppdDocument;
+use App\Services\SignatureStampMerger;
 
 class SPPDController extends Controller
 {
@@ -106,6 +107,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => 'required|string',
             'approve_nama' => 'required|string',
             'approve_jabatan' => 'nullable|string',
+            'ttd_dibuat_oleh' => 'nullable|string|max:500000',
+            'ttd_menyetujui' => 'nullable|string|max:500000',
         ]);
 
         $nomorData = $this->generateNomorSurat();
@@ -131,6 +134,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
             'approve_nama' => $validated['approve_nama'],
             'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
+            'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
+            'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
         ]);
 
         return response()->json([
@@ -159,6 +164,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => 'required|string',
             'approve_nama' => 'required|string',
             'approve_jabatan' => 'nullable|string',
+            'ttd_dibuat_oleh' => 'nullable|string|max:500000',
+            'ttd_menyetujui' => 'nullable|string|max:500000',
         ]);
 
         $nomorData = $this->generateNomorSurat();
@@ -184,6 +191,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
             'approve_nama' => $validated['approve_nama'],
             'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
+            'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
+            'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
         ]);
 
         $data = [
@@ -204,6 +213,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
             'approve_nama' => $validated['approve_nama'],
             'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
+            'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
+            'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
         ];
 
         return $this->generatePDFResponse($data);
@@ -231,6 +242,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => $document->tanggal_tanda_tangan,
             'approve_nama' => $document->approve_nama,
             'approve_jabatan' => $document->approve_jabatan ?? 'Direktur',
+            'ttd_dibuat_oleh' => $document->ttd_dibuat_oleh,
+            'ttd_menyetujui' => $document->ttd_menyetujui,
         ];
 
         return $this->generatePDFResponse($data);
@@ -273,6 +286,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => 'required|string',
             'approve_nama' => 'required|string',
             'approve_jabatan' => 'nullable|string',
+            'ttd_dibuat_oleh' => 'nullable|string|max:500000',
+            'ttd_menyetujui' => 'nullable|string|max:500000',
         ]);
 
         $document = SppdDocument::findOrFail($id);
@@ -294,6 +309,8 @@ class SPPDController extends Controller
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
             'approve_nama' => $validated['approve_nama'],
             'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
+            'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
+            'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
         ]);
 
         return response()->json([
@@ -319,6 +336,7 @@ class SPPDController extends Controller
         $conexaLogoPath = public_path('images/conexa.png');
         $mksLogoPath = public_path('images/mks logo.png');
         $watermarkPath = public_path('images/LOGO HSR.png');
+        $capStampPath = public_path('images/Cap HSR.png');
 
         $hsrLogoBase64 = '';
         $isoLogoBase64 = '';
@@ -328,6 +346,7 @@ class SPPDController extends Controller
         $conexaLogoBase64 = '';
         $mksLogoBase64 = '';
         $watermarkBase64 = '';
+        $capStampBase64 = '';
 
         if (file_exists($hsrLogoPath)) {
             $hsrLogoData = base64_encode(file_get_contents($hsrLogoPath));
@@ -367,6 +386,24 @@ class SPPDController extends Controller
         if (file_exists($watermarkPath)) {
             $watermarkData = base64_encode(file_get_contents($watermarkPath));
             $watermarkBase64 = 'data:image/png;base64,' . $watermarkData;
+        }
+
+        if (file_exists($capStampPath)) {
+            $capStampData = base64_encode(file_get_contents($capStampPath));
+            $capStampBase64 = 'data:image/png;base64,' . $capStampData;
+        }
+
+        if (!empty($capStampBase64)) {
+            $merger = new SignatureStampMerger();
+            $data['ttd_menyetujui'] = $merger->merge(
+                $data['ttd_menyetujui'] ?? null,
+                $capStampBase64
+            );
+        }
+
+        if (!empty($data['ttd_dibuat_oleh'])) {
+            $merger = $merger ?? new SignatureStampMerger();
+            $data['ttd_dibuat_oleh'] = $merger->normalizeSignature($data['ttd_dibuat_oleh']);
         }
 
         $data['hsrLogo'] = $hsrLogoBase64;

@@ -1,9 +1,10 @@
 import React from "react";
-import { Save, FileText, Calendar, Edit, X } from "lucide-react";
+import { Save, FileText, Calendar, Edit, X, PenLine } from "lucide-react";
 import { useI18n } from "../../../../i18n";
+import SignaturePad from "./SignaturePad";
 
 export const SPPDForm = ({
-  formData, onInputChange, onSubmit, onReset, loading, nextNomorSurat, fetchingNomor, isEditing
+  formData, onInputChange, onSignatureChange, onSubmit, onReset, loading, nextNomorSurat, fetchingNomor, isEditing
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -263,6 +264,38 @@ export const SPPDForm = ({
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                 required
               />
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b flex items-center gap-2">
+            <PenLine size={20} className="text-blue-600" />
+            {tr("Tanda Tangan", "Signatures")}
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            {tr("Opsional — kosongkan jika ingin menandatangani manual setelah cetak.", "Optional — leave blank to sign manually after printing.")}
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+            <div className="space-y-3">
+              <SignaturePad
+                label={tr("Tanda Tangan Dibuat Oleh", "Created By Signature")}
+                value={formData.ttd_dibuat_oleh}
+                onChange={(value) => onSignatureChange("ttd_dibuat_oleh", value)}
+              />
+              <p className="text-xs text-gray-500">
+                {tr("Nama akan diambil dari field Dibuat Oleh di atas.", "Name will be taken from the Created By field above.")}
+              </p>
+            </div>
+            <div className="space-y-3">
+              <SignaturePad
+                label={tr("Tanda Tangan Menyetujui", "Approver Signature")}
+                value={formData.ttd_menyetujui}
+                onChange={(value) => onSignatureChange("ttd_menyetujui", value)}
+              />
+              <p className="text-xs text-gray-500">
+                {tr("Nama akan diambil dari field Nama Penyetuju di atas.", "Name will be taken from the Approver Name field above.")}
+              </p>
             </div>
           </div>
         </div>

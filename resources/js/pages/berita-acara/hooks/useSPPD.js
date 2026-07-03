@@ -40,6 +40,8 @@ export const useSPPD = () => {
     tanggal_tanda_tangan_display: "",
     approve_nama: "",
     approve_jabatan: "",
+    ttd_dibuat_oleh: "",
+    ttd_menyetujui: "",
   });
 
   useEffect(() => {
@@ -91,6 +93,10 @@ export const useSPPD = () => {
     }
   };
 
+  const handleSignatureChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name === "tanggal_berangkat") {
@@ -137,6 +143,8 @@ export const useSPPD = () => {
       tanggal_tanda_tangan_display: "",
       approve_nama: "",
       approve_jabatan: "",
+      ttd_dibuat_oleh: "",
+      ttd_menyetujui: "",
     });
     fetchNextNomorSurat();
   };
@@ -162,6 +170,8 @@ export const useSPPD = () => {
         tanggal_tanda_tangan: formData.tanggal_tanda_tangan_display || formatDateToIndonesian(formData.tanggal_tanda_tangan),
         approve_nama: formData.approve_nama,
         approve_jabatan: formData.approve_jabatan,
+        ttd_dibuat_oleh: formData.ttd_dibuat_oleh || null,
+        ttd_menyetujui: formData.ttd_menyetujui || null,
       };
 
       let response;
@@ -290,6 +300,8 @@ export const useSPPD = () => {
         tanggal_tanda_tangan_display: data.tanggal_tanda_tangan || "",
         approve_nama: data.approve_nama || "",
         approve_jabatan: data.approve_jabatan || "",
+        ttd_dibuat_oleh: data.ttd_dibuat_oleh || "",
+        ttd_menyetujui: data.ttd_menyetujui || "",
       });
 
       setEditId(item.id);
@@ -333,6 +345,7 @@ export const useSPPD = () => {
     isEditing,
     editId,
     handleInputChange,
+    handleSignatureChange,
     resetForm,
     handleSubmit,
     handleView,

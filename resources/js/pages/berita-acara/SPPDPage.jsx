@@ -22,6 +22,7 @@ export default function SPPDPage() {
     showViewModal,
     isEditing,
     handleInputChange,
+    handleSignatureChange,
     resetForm,
     handleSubmit,
     handleView,
@@ -78,6 +79,7 @@ export default function SPPDPage() {
           <SPPDForm
             formData={formData}
             onInputChange={handleInputChange}
+            onSignatureChange={handleSignatureChange}
             onSubmit={handleSubmit}
             onReset={isEditing ? cancelEdit : resetForm}
             loading={loading}

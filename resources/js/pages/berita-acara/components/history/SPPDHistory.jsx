@@ -162,6 +162,36 @@ export const SPPDHistory = ({
                     <p className="text-sm font-medium">{selectedItem.approve_nama} ({selectedItem.approve_jabatan})</p>
                   </div>
                 </div>
+
+                {(selectedItem.ttd_dibuat_oleh || selectedItem.ttd_menyetujui) && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <label className="text-sm text-gray-500 mb-2 block">{tr("Tanda Tangan", "Signatures")}</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {selectedItem.ttd_dibuat_oleh && (
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs text-gray-500 mb-2">{tr("Dibuat Oleh", "Created By")}</p>
+                          <img
+                            src={selectedItem.ttd_dibuat_oleh}
+                            alt={tr("Tanda tangan dibuat oleh", "Created by signature")}
+                            className="max-h-24 w-full object-contain bg-white rounded border mb-2"
+                          />
+                          <p className="text-sm font-medium text-center">{selectedItem.dibuat_oleh}</p>
+                        </div>
+                      )}
+                      {selectedItem.ttd_menyetujui && (
+                        <div className="p-3 bg-gray-50 rounded-xl">
+                          <p className="text-xs text-gray-500 mb-2">{tr("Menyetujui", "Approved By")}</p>
+                          <img
+                            src={selectedItem.ttd_menyetujui}
+                            alt={tr("Tanda tangan menyetujui", "Approver signature")}
+                            className="max-h-24 w-full object-contain bg-white rounded border mb-2"
+                          />
+                          <p className="text-sm font-medium text-center">{selectedItem.approve_nama}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

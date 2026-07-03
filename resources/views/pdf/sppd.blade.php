@@ -348,12 +348,11 @@
                         <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
                             <span lang="EN-ID">Dibuat oleh,</span>
                         </p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                        @include('pdf.partials.signature_with_cap', [
+                            'signature' => $ttd_dibuat_oleh ?? null,
+                            'blankLines' => 5,
+                            'merged' => false,
+                        ])
                         <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
                             <span lang="EN-ID"><span class="name-bold">{{ $dibuat_oleh ?? '-' }}</span></span>
                         </p>
@@ -365,11 +364,11 @@
                         <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
                             <span lang="EN-ID">Menyetujui,</span>
                         </p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
-                        <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal"><span lang="EN-ID">&nbsp;</span></p>
+                        @include('pdf.partials.signature_with_cap', [
+                            'signature' => $ttd_menyetujui ?? null,
+                            'blankLines' => 4,
+                            'merged' => true,
+                        ])
                         <p class="MsoNormal" style="margin-bottom: 0in; line-height: normal">
                             <span lang="EN-ID"><span class="name-bold">{{ $approve_nama ?? '-' }}</span></span>
                         </p>

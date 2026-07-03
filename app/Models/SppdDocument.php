@@ -30,5 +30,7 @@ class SppdDocument extends Model
         'tanggal_tanda_tangan',
         'approve_nama',
         'approve_jabatan',
+        'ttd_dibuat_oleh',
+        'ttd_menyetujui',
     ];
 }
