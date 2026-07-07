@@ -44,6 +44,7 @@ import {
   CheckCircle,
   AlertCircle,
   X,
+  ClipboardCheck,
 } from "lucide-react";
 
 function BiayaMetaFooter({ meta }) {
@@ -730,6 +731,10 @@ export default function ProjekKerjaPage() {
   const handleViewPhoto = (id) => {
     const base = role === "super_admin" ? "/super_admin" : role === "user" ? "/user" : "/admin";
     navigate(`${base}/projek-kerja/foto/${id}`);
+  };
+
+  const handleBeritaAcara = (id) => {
+    navigate(`${basePath}/projek-kerja/berita-acara/${id}`);
   };
 
   const handleUpdateDesc = async () => {
@@ -2057,6 +2062,15 @@ export default function ProjekKerjaPage() {
                       >
                         <FileText size={18} />
                       </button>
+                      {canManageProject && (
+                        <button
+                          onClick={() => handleBeritaAcara(item.id)}
+                          className={`${actionIconBtn} text-indigo-600 hover:bg-indigo-50`}
+                          title={tr("Berita Acara", "Minutes Report")}
+                        >
+                          <ClipboardCheck size={18} />
+                        </button>
+                      )}
                       {!isUserRole && item.file_url && (
                         <a
                           href={item.file_url}

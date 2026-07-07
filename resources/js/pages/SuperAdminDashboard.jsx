@@ -114,6 +114,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     const path = location.pathname;
 
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Manage Photos & Documents" : "Kelola Foto & dokumen";
+    if (path.includes("projek-kerja/berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("projek-kerja")) return language === "en" ? "Project Work" : "Projek Kerja";
     if (path.includes("/it/buat-pdf")) return language === "en" ? "Create PDF - IT" : "Buat PDF - IT";
     if (path.includes("/service/buat-pdf")) return language === "en" ? "Create PDF - Service" : "Buat PDF - Service";
@@ -248,6 +249,11 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="projek-kerja" element={<ProjekKerjaPage />} />
             <Route path="projek-kerja/foto/:id/*" element={<FotoProjekPage />} />
             <Route path="projek-kerja/edit/:id" element={<EditProjekKerjaPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId" element={<BeritaAcaraPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/bam" element={<BAMPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/bauf" element={<BAUFPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/bast" element={<BASTPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/sppd" element={<SPPDPage />} />
 
             <Route
               path="profile"

@@ -158,6 +158,7 @@ export default function AdminDashboard({ user, logout }) {
     if (path.includes("rekap-akun")) return language === "en" ? "Account Cost Recap" : "Rekap Biaya Akun";
     if (path.includes("target")) return language === "en" ? "Sales Target" : "Target Penjualan";
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Project Photos" : "Foto Projek";
+    if (path.includes("projek-kerja/berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("it")) return language === "en" ? "IT Division" : "Divisi IT";
     if (path.includes("service")) return language === "en" ? "Service Division" : "Divisi Service";
@@ -605,6 +606,14 @@ export default function AdminDashboard({ user, logout }) {
               element={<FotoProjekPage />}
             />
             <Route path="projek-kerja/edit/:id" element={<EditProjekKerjaPage />} />
+
+            {/* ================= BERITA ACARA PER PROJEK ================= */}
+            <Route path="projek-kerja/berita-acara/:projekId" element={<BeritaAcaraPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/bam" element={<BAMPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/bauf" element={<BAUFPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/bast" element={<BASTPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/sppd" element={<SPPDPage />} />
+
             <Route path="karyawan" element={<KaryawanPage />} />
 
             {/* ================= INVENTORY ================= */}

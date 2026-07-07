@@ -43,7 +43,6 @@ class BASTController extends Controller
         $bulan = $now->month;
         $bulanRomawi = $this->bulanToRomawi($bulan);
         
-        // Cari nomor urut terakhir untuk bulan dan tahun ini
         $lastDocument = BastDocument::where('tahun', $tahun)
             ->where('bulan', $bulan)
             ->orderBy('nomor_urut', 'desc')
@@ -113,10 +112,8 @@ class BASTController extends Controller
             'items.*.jumlah' => 'required|string',
         ]);
 
-        // Generate nomor surat otomatis
         $nomorData = $this->generateNomorSurat();
 
-        // Simpan ke database
         $document = BastDocument::create([
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $validated['nama_hari'],
