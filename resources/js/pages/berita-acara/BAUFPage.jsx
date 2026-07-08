@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import { History, Plus } from "lucide-react";
 import { useBAUF } from "./hooks/useBAUF";
 import { BAUFForm } from "./components/forms/BAUFForm";
@@ -6,6 +7,7 @@ import { BAUFHistory } from "./components/history/BAUFHistory";
 import { useI18n } from "../../i18n";
 
 export default function BAUFPage() {
+  const { projekId } = useParams();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const {
@@ -29,7 +31,12 @@ export default function BAUFPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
-  } = useBAUF();
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
+  } = useBAUF(projekId);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -77,6 +84,11 @@ export default function BAUFPage() {
             onSubmit={handleSubmit}
             onReset={resetForm}
             loading={loading}
+            scheduledAt={scheduledAt}
+            onScheduledAtChange={setScheduledAt}
+            onScheduleGenerate={handleScheduleGenerate}
+            scheduling={scheduling}
+            canSchedule={canSchedule}
           />
         ) : (
           <BAUFHistory

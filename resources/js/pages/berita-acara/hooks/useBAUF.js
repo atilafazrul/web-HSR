@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian, getDayName } from "../utils/dateHelpers";
+import { useDocumentSchedule } from "./useDocumentSchedule";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
   return localStorage.getItem("app_language") === "en" ? en : id;
 };
 
-export const useBAUF = () => {
+export const useBAUF = (projekKerjaId = null) => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
   const [fetchingNomor, setFetchingNomor] = useState(false);
@@ -17,6 +18,14 @@ export const useBAUF = () => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [nextNomorSurat, setNextNomorSurat] = useState("");
+
+  const {
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleSchedule,
+    canSchedule,
+  } = useDocumentSchedule(projekKerjaId, "bauf");
 
   const [formData, setFormData] = useState({
     nama_hari: "",
@@ -32,6 +41,20 @@ export const useBAUF = () => {
     nama_ttd_klien: "",
     hasil: "BAIK",
     items: [{ nama_alat: "", merk: "", jumlah: "1" }]
+  });
+
+  const buildSubmitData = () => ({
+    nama_hari: formData.nama_hari,
+    tanggal_bauf: formData.tanggal_bauf_display || formatDateToIndonesian(formData.tanggal_bauf),
+    nama_klient: formData.nama_klient,
+    tanggal_tanda_tangan: formData.tanggal_tanda_tangan_display || formatDateToIndonesian(formData.tanggal_tanda_tangan),
+    kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
+    ttd_hsr: formData.ttd_hsr || null,
+    ttd_klien: formData.ttd_klien || null,
+    nama_ttd_hsr: (formData.nama_ttd_hsr || "").trim() || null,
+    nama_ttd_klien: (formData.nama_ttd_klien || "").trim() || null,
+    hasil: formData.hasil,
+    items: formData.items,
   });
 
   useEffect(() => {
@@ -150,19 +173,7 @@ export const useBAUF = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const submitData = {
-        nama_hari: formData.nama_hari,
-        tanggal_bauf: formData.tanggal_bauf_display || formatDateToIndonesian(formData.tanggal_bauf),
-        nama_klient: formData.nama_klient,
-        tanggal_tanda_tangan: formData.tanggal_tanda_tangan_display || formatDateToIndonesian(formData.tanggal_tanda_tangan),
-        kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
-        ttd_hsr: formData.ttd_hsr || null,
-        ttd_klien: formData.ttd_klien || null,
-        nama_ttd_hsr: (formData.nama_ttd_hsr || "").trim() || null,
-        nama_ttd_klien: (formData.nama_ttd_klien || "").trim() || null,
-        hasil: formData.hasil,
-        items: formData.items
-      };
+      const submitData = buildSubmitData();
 
       const response = await api.post(
         "/bauf/pdf",
@@ -194,6 +205,10 @@ export const useBAUF = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleScheduleGenerate = (formElement) => {
+    handleSchedule(buildSubmitData(), formElement);
   };
 
   const handleView = (item) => {
@@ -282,5 +297,10 @@ export const useBAUF = () => {
     handleGeneratePDF,
     handleDelete,
     fetchHistory,
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
   };
 };

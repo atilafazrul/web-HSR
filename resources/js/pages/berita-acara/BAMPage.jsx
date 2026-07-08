@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import { History, Plus } from "lucide-react";
 import { useBAM } from "./hooks/useBAM";
 import { BAMForm } from "./components/forms/BAMForm";
@@ -6,6 +7,7 @@ import { BAMHistory } from "./components/history/BAMHistory";
 import { useI18n } from "../../i18n";
 
 export default function BAMPage() {
+  const { projekId } = useParams();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const {
@@ -29,7 +31,12 @@ export default function BAMPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
-  } = useBAM();
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
+  } = useBAM(projekId);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -85,6 +92,11 @@ export default function BAMPage() {
             onSubmit={handleSubmit}
             onReset={resetForm}
             loading={loading}
+            scheduledAt={scheduledAt}
+            onScheduledAtChange={setScheduledAt}
+            onScheduleGenerate={handleScheduleGenerate}
+            scheduling={scheduling}
+            canSchedule={canSchedule}
           />
         ) : (
           <BAMHistory

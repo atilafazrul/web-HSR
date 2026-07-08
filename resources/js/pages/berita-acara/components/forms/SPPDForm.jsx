@@ -2,15 +2,21 @@ import React from "react";
 import { Save, FileText, Calendar, Edit, X, PenLine } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import SignaturePad from "./SignaturePad";
+import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 
 export const SPPDForm = ({
-  formData, onInputChange, onSignatureChange, onSubmit, onReset, loading, nextNomorSurat, fetchingNomor, isEditing
+  formData, onInputChange, onSignatureChange, onSubmit, onReset, loading, nextNomorSurat, fetchingNomor, isEditing,
+  scheduledAt,
+  onScheduledAtChange,
+  onScheduleGenerate,
+  scheduling,
+  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   return (
     <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
-      <form onSubmit={onSubmit}>
+      <form id="sppd-form" onSubmit={onSubmit}>
         <div className="mb-6">
           {/* EDITING INDICATOR */}
           {isEditing && (
@@ -299,6 +305,15 @@ export const SPPDForm = ({
             </div>
           </div>
         </div>
+
+        <ScheduleGenerateSection
+          scheduledAt={scheduledAt}
+          onScheduledAtChange={onScheduledAtChange}
+          onSchedule={() => onScheduleGenerate?.(document.getElementById("sppd-form"))}
+          scheduling={scheduling}
+          canSchedule={canSchedule && !isEditing}
+          loading={loading}
+        />
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
           <button

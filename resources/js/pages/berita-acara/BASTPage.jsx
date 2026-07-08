@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import { History, Plus } from "lucide-react";
 import { useBAST } from "./hooks/useBAST";
 import { BASTForm } from "./components/forms/BASTForm";
@@ -6,6 +7,7 @@ import { BASTHistory } from "./components/history/BASTHistory";
 import { useI18n } from "../../i18n";
 
 export default function BASTPage() {
+  const { projekId } = useParams();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const {
@@ -29,7 +31,12 @@ export default function BASTPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
-  } = useBAST();
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
+  } = useBAST(projekId);
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -85,6 +92,11 @@ export default function BASTPage() {
             onSubmit={handleSubmit}
             onReset={resetForm}
             loading={loading}
+            scheduledAt={scheduledAt}
+            onScheduledAtChange={setScheduledAt}
+            onScheduleGenerate={handleScheduleGenerate}
+            scheduling={scheduling}
+            canSchedule={canSchedule}
           />
         ) : (
           <BASTHistory

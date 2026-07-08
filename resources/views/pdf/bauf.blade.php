@@ -176,6 +176,8 @@
             opacity: 0.08;
             z-index: -1;
         }
+
+        @include('pdf.partials.footer_qr_copyright_styles')
     </style>
 </head>
 
@@ -391,6 +393,8 @@
         <p class="MsoNormal"><span lang="EN-ID">&nbsp;</span></p>
 
     </div>
+
+    @include('pdf.partials.footer_qr_copyright')
 
     <!-- FOOTER - Fixed at bottom with 5 logos -->
     <div class="footer">

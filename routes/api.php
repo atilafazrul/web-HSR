@@ -23,6 +23,7 @@ use App\Http\Controllers\BAUFController;
 use App\Http\Controllers\BAMController;
 use App\Http\Controllers\DashboardBiayaController;
 use App\Http\Controllers\SPPDController;
+use App\Http\Controllers\ScheduledBeritaAcaraController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\RfiController;
 use App\Http\Controllers\WorkChecklistController;
@@ -633,6 +634,27 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::delete('/sppd/{id}', [
         SPPDController::class,
         'destroy'
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | SCHEDULED BERITA ACARA (BAST, BAUF, SPPD)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/berita-acara/scheduled', [
+        ScheduledBeritaAcaraController::class,
+        'index',
+    ]);
+
+    Route::post('/berita-acara/scheduled', [
+        ScheduledBeritaAcaraController::class,
+        'store',
+    ]);
+
+    Route::delete('/berita-acara/scheduled/{id}', [
+        ScheduledBeritaAcaraController::class,
+        'destroy',
     ]);
 
     /*

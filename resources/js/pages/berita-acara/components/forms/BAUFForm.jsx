@@ -2,16 +2,22 @@ import React from "react";
 import { Plus, Download, Trash2, FileText, Calendar, PenLine } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import SignaturePad from "./SignaturePad";
+import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 
 export const BAUFForm = ({ 
   formData, onInputChange, onSignatureChange, onItemChange, onAddItem, onRemoveItem, 
-  onSubmit, onReset, loading
+  onSubmit, onReset, loading,
+  scheduledAt,
+  onScheduledAtChange,
+  onScheduleGenerate,
+  scheduling,
+  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   return (
     <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
-      <form onSubmit={onSubmit}>
+      <form id="bauf-form" onSubmit={onSubmit}>
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b flex items-center gap-2">
             <FileText size={20} className="text-blue-600" />
@@ -241,6 +247,15 @@ export const BAUFForm = ({
             </div>
           </div>
         </div>
+
+        <ScheduleGenerateSection
+          scheduledAt={scheduledAt}
+          onScheduledAtChange={onScheduledAtChange}
+          onSchedule={() => onScheduleGenerate?.(document.getElementById("bauf-form"))}
+          scheduling={scheduling}
+          canSchedule={canSchedule}
+          loading={loading}
+        />
 
         <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
           <button type="button" onClick={onReset} className="w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-xl font-medium text-gray-600 hover:bg-gray-50 transition">

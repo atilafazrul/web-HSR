@@ -2,6 +2,7 @@ import React from "react";
 import { Plus, Download, Trash2, FileText, Calendar, PenLine } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import SignaturePad from "./SignaturePad";
+import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 
 export const BAMForm = ({
   formData,
@@ -13,12 +14,17 @@ export const BAMForm = ({
   onSubmit,
   onReset,
   loading,
+  scheduledAt,
+  onScheduledAtChange,
+  onScheduleGenerate,
+  scheduling,
+  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   return (
     <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
-      <form onSubmit={onSubmit}>
+      <form id="bam-form" onSubmit={onSubmit}>
         {/* Informasi Utama */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b flex items-center gap-2">
@@ -279,6 +285,15 @@ export const BAMForm = ({
             </div>
           </div>
         </div>
+
+        <ScheduleGenerateSection
+          scheduledAt={scheduledAt}
+          onScheduledAtChange={onScheduledAtChange}
+          onSchedule={() => onScheduleGenerate?.(document.getElementById("bam-form"))}
+          scheduling={scheduling}
+          canSchedule={canSchedule}
+          loading={loading}
+        />
 
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">

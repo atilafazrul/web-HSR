@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import { History, Plus } from "lucide-react";
 import { useSPPD } from "./hooks/useSPPD";
 import { SPPDForm } from "./components/forms/SPPDForm";
@@ -6,6 +7,7 @@ import { SPPDHistory } from "./components/history/SPPDHistory";
 import { useI18n } from "../../i18n";
 
 export default function SPPDPage() {
+  const { projekId } = useParams();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const {
@@ -31,7 +33,12 @@ export default function SPPDPage() {
     handleDelete,
     handleEdit,
     cancelEdit,
-  } = useSPPD();
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
+  } = useSPPD(projekId);
 
   const handleTabChange = (tab) => {
     if (isEditing) {
@@ -86,6 +93,11 @@ export default function SPPDPage() {
             nextNomorSurat={nextNomorSurat}
             fetchingNomor={fetchingNomor}
             isEditing={isEditing}
+            scheduledAt={scheduledAt}
+            onScheduledAtChange={setScheduledAt}
+            onScheduleGenerate={handleScheduleGenerate}
+            scheduling={scheduling}
+            canSchedule={canSchedule}
           />
         ) : (
           <SPPDHistory

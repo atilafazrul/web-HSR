@@ -223,6 +223,8 @@
             font-weight: bold;
             text-decoration: underline;
         }
+
+        @include('pdf.partials.footer_qr_copyright_styles')
     </style>
 </head>
 
@@ -381,6 +383,8 @@
         </div>
 
     </div>
+
+    @include('pdf.partials.footer_qr_copyright')
 
     <div class="footer">
         <table class="footer-table">

@@ -7,6 +7,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Carbon\Carbon;
 use App\Models\SppdDocument;
+use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\SignatureStampMerger;
 
 class SPPDController extends Controller
@@ -328,92 +329,22 @@ class SPPDController extends Controller
 
         $dompdf = new Dompdf($options);
 
-        $hsrLogoPath = public_path('images/hsr logo.png');
-        $isoLogoPath = public_path('images/iso logo.png');
-        $medimageLogoPath = public_path('images/medimage logo.png');
-        $medhisLogoPath = public_path('images/medhis.png');
-        $mediserLogoPath = public_path('images/mediser logo.png');
-        $conexaLogoPath = public_path('images/conexa.png');
-        $mksLogoPath = public_path('images/mks logo.png');
-        $watermarkPath = public_path('images/LOGO HSR.png');
+        $data = app(BeritaAcaraPdfAssetService::class)->enrich($data);
+
         $capStampPath = public_path('images/Cap HSR.png');
-
-        $hsrLogoBase64 = '';
-        $isoLogoBase64 = '';
-        $medimageLogoBase64 = '';
-        $medhisLogoBase64 = '';
-        $mediserLogoBase64 = '';
-        $conexaLogoBase64 = '';
-        $mksLogoBase64 = '';
-        $watermarkBase64 = '';
-        $capStampBase64 = '';
-
-        if (file_exists($hsrLogoPath)) {
-            $hsrLogoData = base64_encode(file_get_contents($hsrLogoPath));
-            $hsrLogoBase64 = 'data:image/png;base64,' . $hsrLogoData;
-        }
-
-        if (file_exists($isoLogoPath)) {
-            $isoLogoData = base64_encode(file_get_contents($isoLogoPath));
-            $isoLogoBase64 = 'data:image/png;base64,' . $isoLogoData;
-        }
-
-        if (file_exists($medimageLogoPath)) {
-            $medimageLogoData = base64_encode(file_get_contents($medimageLogoPath));
-            $medimageLogoBase64 = 'data:image/png;base64,' . $medimageLogoData;
-        }
-
-        if (file_exists($medhisLogoPath)) {
-            $medhisLogoData = base64_encode(file_get_contents($medhisLogoPath));
-            $medhisLogoBase64 = 'data:image/png;base64,' . $medhisLogoData;
-        }
-
-        if (file_exists($mediserLogoPath)) {
-            $mediserLogoData = base64_encode(file_get_contents($mediserLogoPath));
-            $mediserLogoBase64 = 'data:image/png;base64,' . $mediserLogoData;
-        }
-
-        if (file_exists($conexaLogoPath)) {
-            $conexaLogoData = base64_encode(file_get_contents($conexaLogoPath));
-            $conexaLogoBase64 = 'data:image/png;base64,' . $conexaLogoData;
-        }
-
-        if (file_exists($mksLogoPath)) {
-            $mksLogoData = base64_encode(file_get_contents($mksLogoPath));
-            $mksLogoBase64 = 'data:image/png;base64,' . $mksLogoData;
-        }
-
-        if (file_exists($watermarkPath)) {
-            $watermarkData = base64_encode(file_get_contents($watermarkPath));
-            $watermarkBase64 = 'data:image/png;base64,' . $watermarkData;
-        }
-
         if (file_exists($capStampPath)) {
-            $capStampData = base64_encode(file_get_contents($capStampPath));
-            $capStampBase64 = 'data:image/png;base64,' . $capStampData;
-        }
+            $capStampBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($capStampPath));
 
-        if (!empty($capStampBase64)) {
             $merger = new SignatureStampMerger();
             $data['ttd_menyetujui'] = $merger->merge(
                 $data['ttd_menyetujui'] ?? null,
                 $capStampBase64
             );
-        }
 
-        if (!empty($data['ttd_dibuat_oleh'])) {
-            $merger = $merger ?? new SignatureStampMerger();
-            $data['ttd_dibuat_oleh'] = $merger->normalizeSignature($data['ttd_dibuat_oleh']);
+            if (!empty($data['ttd_dibuat_oleh'])) {
+                $data['ttd_dibuat_oleh'] = $merger->normalizeSignature($data['ttd_dibuat_oleh']);
+            }
         }
-
-        $data['hsrLogo'] = $hsrLogoBase64;
-        $data['isoLogo'] = $isoLogoBase64;
-        $data['medimageLogo'] = $medimageLogoBase64;
-        $data['medhisLogo'] = $medhisLogoBase64;
-        $data['mediserLogo'] = $mediserLogoBase64;
-        $data['conexaLogo'] = $conexaLogoBase64;
-        $data['mksLogo'] = $mksLogoBase64;
-        $data['watermark'] = $watermarkBase64;
 
         $html = view('pdf.sppd', $data)->render();
 

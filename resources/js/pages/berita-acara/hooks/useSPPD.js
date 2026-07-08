@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian } from "../utils/dateHelpers";
+import { useDocumentSchedule } from "./useDocumentSchedule";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
   return localStorage.getItem("app_language") === "en" ? en : id;
 };
 
-export const useSPPD = () => {
+export const useSPPD = (projekKerjaId = null) => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
   const [fetchingNomor, setFetchingNomor] = useState(false);
@@ -19,6 +20,14 @@ export const useSPPD = () => {
   const [nextNomorSurat, setNextNomorSurat] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+
+  const {
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleSchedule,
+    canSchedule,
+  } = useDocumentSchedule(projekKerjaId, "sppd");
 
   const [formData, setFormData] = useState({
     pejabat_perintah: "",
@@ -42,6 +51,27 @@ export const useSPPD = () => {
     approve_jabatan: "",
     ttd_dibuat_oleh: "",
     ttd_menyetujui: "",
+  });
+
+  const buildSubmitData = () => ({
+    pejabat_perintah: formData.pejabat_perintah,
+    nama_pegawai: formData.nama_pegawai,
+    jabatan: formData.jabatan,
+    tempat_berangkat: formData.tempat_berangkat,
+    tempat_tujuan: formData.tempat_tujuan,
+    transportasi: formData.transportasi,
+    tanggal_berangkat: formData.tanggal_berangkat_display || formatDateToIndonesian(formData.tanggal_berangkat),
+    tanggal_kembali: formData.tanggal_kembali_display || formatDateToIndonesian(formData.tanggal_kembali),
+    maksud: formData.maksud,
+    pengikut_nama: formData.pengikut_nama || null,
+    atas_beban: formData.atas_beban,
+    keterangan: formData.keterangan || null,
+    dibuat_oleh: formData.dibuat_oleh,
+    tanggal_tanda_tangan: formData.tanggal_tanda_tangan_display || formatDateToIndonesian(formData.tanggal_tanda_tangan),
+    approve_nama: formData.approve_nama,
+    approve_jabatan: formData.approve_jabatan,
+    ttd_dibuat_oleh: formData.ttd_dibuat_oleh || null,
+    ttd_menyetujui: formData.ttd_menyetujui || null,
   });
 
   useEffect(() => {
@@ -153,26 +183,7 @@ export const useSPPD = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const submitData = {
-        pejabat_perintah: formData.pejabat_perintah,
-        nama_pegawai: formData.nama_pegawai,
-        jabatan: formData.jabatan,
-        tempat_berangkat: formData.tempat_berangkat,
-        tempat_tujuan: formData.tempat_tujuan,
-        transportasi: formData.transportasi,
-        tanggal_berangkat: formData.tanggal_berangkat_display || formatDateToIndonesian(formData.tanggal_berangkat),
-        tanggal_kembali: formData.tanggal_kembali_display || formatDateToIndonesian(formData.tanggal_kembali),
-        maksud: formData.maksud,
-        pengikut_nama: formData.pengikut_nama || null,
-        atas_beban: formData.atas_beban,
-        keterangan: formData.keterangan || null,
-        dibuat_oleh: formData.dibuat_oleh,
-        tanggal_tanda_tangan: formData.tanggal_tanda_tangan_display || formatDateToIndonesian(formData.tanggal_tanda_tangan),
-        approve_nama: formData.approve_nama,
-        approve_jabatan: formData.approve_jabatan,
-        ttd_dibuat_oleh: formData.ttd_dibuat_oleh || null,
-        ttd_menyetujui: formData.ttd_menyetujui || null,
-      };
+      const submitData = buildSubmitData();
 
       let response;
       if (isEditing && editId) {
@@ -197,6 +208,14 @@ export const useSPPD = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleScheduleGenerate = (formElement) => {
+    if (isEditing) {
+      alert(tr("Batalkan mode edit terlebih dahulu untuk menjadwalkan generate.", "Cancel edit mode first to schedule generation."));
+      return;
+    }
+    handleSchedule(buildSubmitData(), formElement);
   };
 
   const handleView = (item) => {
@@ -355,5 +374,10 @@ export const useSPPD = () => {
     handleEdit,
     cancelEdit,
     fetchHistory,
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
   };
 };
