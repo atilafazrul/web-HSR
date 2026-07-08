@@ -14,6 +14,7 @@ class ScheduledBeritaAcaraDocument extends Model
     public const TYPE_BAST = 'bast';
     public const TYPE_BAUF = 'bauf';
     public const TYPE_BAM = 'bam';
+    public const TYPE_SPH = 'sph';
     public const TYPE_SPPD = 'sppd';
 
     protected $fillable = [

@@ -53,39 +53,14 @@
 
         @page WordSection1 {
             size: 595.3pt 841.9pt;
-            margin: 0.8in 20pt 1.4in 20pt;
+            margin: 0.8in 20pt 1.05in 20pt;
         }
 
         div.WordSection1 {
             page: WordSection1;
         }
 
-        .footer {
-            position: fixed;
-            bottom: 0;
-            left: 20pt;
-            right: 20pt;
-            text-align: center;
-            padding-top: 5px;
-        }
-
-        .footer-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .footer-logo {
-            height: 50px;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-        }
-
-        .footer-cell {
-            text-align: center;
-            vertical-align: middle;
-            padding: 0 3px;
-        }
+        @include('pdf.partials.footer_partner_logos_styles')
 
         ol {
             margin-bottom: 0in;

@@ -9,7 +9,7 @@ class ProcessScheduledBeritaAcaraCommand extends Command
 {
     protected $signature = 'berita-acara:process-scheduled';
 
-    protected $description = 'Proses jadwal generate dokumen berita acara (BAST, BAUF, BAM, SPPD) yang sudah jatuh tempo';
+    protected $description = 'Proses jadwal generate dokumen berita acara (BAST, BAUF, BAM, SPH, SPPD) yang sudah jatuh tempo';
 
     public function handle(ScheduledBeritaAcaraProcessor $processor): int
     {

@@ -23,6 +23,7 @@ use App\Http\Controllers\BAUFController;
 use App\Http\Controllers\BAMController;
 use App\Http\Controllers\DashboardBiayaController;
 use App\Http\Controllers\SPPDController;
+use App\Http\Controllers\SPHController;
 use App\Http\Controllers\ScheduledBeritaAcaraController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\RfiController;
@@ -638,7 +639,38 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | SCHEDULED BERITA ACARA (BAST, BAUF, SPPD)
+    | SPH PDF (Surat Penawaran Harga)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/sph/next-nomor', [
+        SPHController::class,
+        'getNextNomorSurat',
+    ]);
+
+    Route::get('/sph/history', [
+        SPHController::class,
+        'getHistory',
+    ]);
+
+    Route::post('/sph/pdf', [
+        SPHController::class,
+        'generatePDF',
+    ]);
+
+    Route::get('/sph/{id}/pdf', [
+        SPHController::class,
+        'regeneratePDF',
+    ]);
+
+    Route::delete('/sph/{id}', [
+        SPHController::class,
+        'destroy',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | SCHEDULED BERITA ACARA (BAST, BAUF, BAM, SPH, SPPD)
     |--------------------------------------------------------------------------
     */
 

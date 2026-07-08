@@ -73,6 +73,7 @@ import BAUFPage from "./berita-acara/BAUFPage";
 import BASTPage from "./berita-acara/BASTPage";
 import BAMPage from "./berita-acara/BAMPage";
 import SPPDPage from "./berita-acara/SPPDPage";
+import SPHPage from "./berita-acara/SPHPage";
 
 /* PEMBELIAN PURCHASING */
 import PembelianPage from "./PembelianPage";
@@ -183,6 +184,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="berita-acara/bauf" element={<BAUFPage />} />
             <Route path="berita-acara/bast" element={<BASTPage />} />
             <Route path="berita-acara/sppd" element={<SPPDPage />} />
+            <Route path="berita-acara/sph" element={<SPHPage />} />
 
             <Route path="it">
               <Route index element={<ITPage user={user} />} />
@@ -254,6 +256,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="projek-kerja/berita-acara/:projekId/bauf" element={<BAUFPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/bast" element={<BASTPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sppd" element={<SPPDPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/sph" element={<SPHPage />} />
 
             <Route
               path="profile"

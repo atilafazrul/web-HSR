@@ -5,6 +5,7 @@ namespace App\Services\BeritaAcara;
 use App\Models\BamDocument;
 use App\Models\BastDocument;
 use App\Models\BaufDocument;
+use App\Models\SphDocument;
 use App\Models\SppdDocument;
 use Carbon\Carbon;
 
@@ -38,6 +39,11 @@ class BeritaAcaraNomorGenerator
     public static function forSppd(): array
     {
         return self::generate(SppdDocument::class, 'SPPD-HSR', 'nomor_urut');
+    }
+
+    public static function forSph(): array
+    {
+        return self::generate(SphDocument::class, 'PH-HSR');
     }
 
     private static function generate(string $modelClass, string $prefix, string $urutColumn = 'nomor_urut'): array

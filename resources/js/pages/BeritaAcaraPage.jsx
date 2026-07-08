@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FileText, ClipboardCheck, Wrench, FileSignature, ArrowLeft } from "lucide-react";
+import { FileText, ClipboardCheck, Wrench, FileSignature, Receipt, ArrowLeft } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n";
 
@@ -126,6 +126,13 @@ export default function BeritaAcaraPage() {
           title="SPPD"
           subtitle={tr("Surat Perintah Perjalanan Dinas", "Official Travel Order")}
           onClick={() => navigate(`${beritaAcaraBase}/sppd`)}
+        />
+
+        <Card
+          icon={<Receipt size={24} className="text-indigo-600" />}
+          title="SPH"
+          subtitle={tr("Surat Penawaran Harga", "Price Quotation Letter")}
+          onClick={() => navigate(`${beritaAcaraBase}/sph`)}
         />
       </div>
     </div>

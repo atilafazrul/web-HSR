@@ -6,6 +6,7 @@ use App\Models\BamDocument;
 use App\Models\BastDocument;
 use App\Models\BaufDocument;
 use App\Models\ScheduledBeritaAcaraDocument;
+use App\Models\SphDocument;
 use App\Models\SppdDocument;
 use InvalidArgumentException;
 
@@ -19,6 +20,7 @@ class ScheduledBeritaAcaraGenerator
             ScheduledBeritaAcaraDocument::TYPE_BAST => $this->generateBast($payload),
             ScheduledBeritaAcaraDocument::TYPE_BAUF => $this->generateBauf($payload),
             ScheduledBeritaAcaraDocument::TYPE_BAM => $this->generateBam($payload),
+            ScheduledBeritaAcaraDocument::TYPE_SPH => $this->generateSph($payload),
             ScheduledBeritaAcaraDocument::TYPE_SPPD => $this->generateSppd($payload),
             default => throw new InvalidArgumentException('Tipe dokumen tidak dikenal.'),
         };
@@ -100,6 +102,25 @@ class ScheduledBeritaAcaraGenerator
             'bulan' => $nomorData['bulan'],
             'tahun' => $nomorData['tahun'],
         ]);
+
+        return [
+            'document_id' => $document->id,
+            'nomor_surat' => $document->nomor_surat,
+        ];
+    }
+
+    private function generateSph(array $payload): array
+    {
+        $nomorData = BeritaAcaraNomorGenerator::forSph();
+        $controller = app(\App\Http\Controllers\SPHController::class);
+        $attributes = $controller->buildDocumentAttributes($payload);
+
+        $document = SphDocument::create(array_merge($attributes, [
+            'nomor_surat' => $nomorData['nomor_surat'],
+            'nomor_urut' => $nomorData['nomor_urut'],
+            'bulan' => $nomorData['bulan'],
+            'tahun' => $nomorData['tahun'],
+        ]));
 
         return [
             'document_id' => $document->id,

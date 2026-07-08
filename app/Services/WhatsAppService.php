@@ -34,9 +34,9 @@ class WhatsAppService
 
         $typeLabel = strtoupper($schedule->document_type);
         $projectName = $schedule->projekKerja?->jenis_pekerjaan ?? 'projek';
-        $nomor = $schedule->nomor_surat ? " ({$schedule->nomor_surat})" : '';
+        $nomor = $schedule->nomor_surat ? " (*{$schedule->nomor_surat}*)" : '';
 
-        $message = "{$typeLabel} untuk projek {$projectName} sudah dibuat{$nomor}. Segera kirimkan ke client.";
+        $message = "{$typeLabel} untuk projek *{$projectName}* sudah dibuat{$nomor}. Segera kirimkan ke client.";
 
         return $this->sendToAdmin($message);
     }
