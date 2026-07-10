@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\WorkChecklistDraft;
+use App\Services\WorkChecklistStructureBuilder;
 use App\Support\ChecklistDompdfWriter;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -422,19 +423,27 @@ class WorkChecklistController extends Controller
     /**
      * GET /work-checklist/structure?type=planning|realisasi
      */
-    public function structure(Request $request)
+    public function structure(Request $request, WorkChecklistStructureBuilder $builder)
     {
         $type = $request->query('type', 'planning');
         if (!in_array($type, ['planning', 'realisasi'], true)) {
             return response()->json(['success' => false, 'message' => 'Tipe tidak valid.'], 422);
         }
 
-        $path = $this->structurePath($type);
-        if (!file_exists($path)) {
-            return response()->json(['success' => false, 'message' => 'Struktur checklist belum tersedia.'], 500);
-        }
+        $data = $builder->loadOrBuild($type);
+        if ($data === null) {
+            $template = $builder->templatePath($type);
 
-        $data = json_decode(file_get_contents($path), true);
+            return response()->json([
+                'success' => false,
+                'message' => 'Template work checklist belum tersedia di server. '
+                    . 'Letakkan file Excel di: storage/app/private/templates/work_checklist_'
+                    . $type
+                    . '.xlsx (saat ini: '
+                    . (file_exists($template) ? 'ada' : 'tidak ada')
+                    . ').',
+            ], 503);
+        }
 
         return response()->json([
             'success' => true,

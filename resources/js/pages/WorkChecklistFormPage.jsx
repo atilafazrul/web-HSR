@@ -206,10 +206,12 @@ export default function WorkChecklistFormPage() {
         if (draftParam) {
           await loadDraftById(draftParam);
         }
-      } catch {
+      } catch (err) {
         if (!cancelled) {
+          const apiMessage = err?.response?.data?.message;
           setErrorMsg(
-            tr("Gagal memuat struktur checklist", "Failed to load checklist structure")
+            apiMessage
+              || tr("Gagal memuat struktur checklist", "Failed to load checklist structure")
           );
         }
       } finally {
@@ -526,9 +528,7 @@ export default function WorkChecklistFormPage() {
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <button
           type="button"
-          onClick={() =>
-            navigate(role === "super_admin" ? basePath : `${basePath}/kontraktor`)
-          }
+          onClick={() => navigate(`${basePath}/kontraktor`)}
           className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50"
         >
           <ArrowLeft size={18} />

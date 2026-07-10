@@ -382,6 +382,20 @@ textarea::placeholder {
         border-color: var(--dk-border-strong) !important;
     }
 
+    /* Border pastel pada kartu berwarna */
+    [class*="border-indigo-200"], [class*="border-indigo-300"],
+    [class*="border-emerald-200"], [class*="border-emerald-300"],
+    [class*="border-violet-200"], [class*="border-violet-300"],
+    [class*="border-blue-200"], [class*="border-blue-300"],
+    [class*="border-amber-200"], [class*="border-amber-300"] {
+        border-color: var(--dk-border) !important;
+    }
+
+    /* Ring halus pada kartu (ring-slate-900/xx) */
+    [class*="ring-slate-900/"], [class*="ring-indigo-900/"] {
+        --tw-ring-color: rgba(148, 163, 184, 0.12) !important;
+    }
+
     /* divide-* (border antar anak) */
     .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
     .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
@@ -391,14 +405,82 @@ textarea::placeholder {
     }
 
     /* ================= GRADIENT STOPS (neutral) ================= */
+    .from-white {
+        --tw-gradient-from: var(--dk-surface) !important;
+    }
+    .via-white {
+        --tw-gradient-via: var(--dk-raised) !important;
+    }
+    .to-white {
+        --tw-gradient-to: var(--dk-surface) !important;
+    }
+
     .from-slate-50, .from-slate-100, .from-gray-50, .from-gray-100 {
         --tw-gradient-from: var(--dk-surface) !important;
     }
     .via-slate-50, .via-slate-100, .via-gray-50, .via-gray-100 {
-        --tw-gradient-via: var(--dk-surface) !important;
+        --tw-gradient-via: var(--dk-raised) !important;
     }
     .to-slate-50, .to-slate-100, .to-gray-50, .to-gray-100 {
         --tw-gradient-to: var(--dk-page) !important;
+    }
+
+    /* Varian opacity pada gradient (mis. from-slate-50/90, to-indigo-50/40) */
+    [class*="from-slate-50/"], [class*="from-slate-100/"],
+    [class*="from-gray-50/"], [class*="from-gray-100/"] {
+        --tw-gradient-from: var(--dk-surface) !important;
+    }
+    [class*="via-slate-50/"], [class*="via-slate-100/"],
+    [class*="via-gray-50/"], [class*="via-gray-100/"] {
+        --tw-gradient-via: var(--dk-raised) !important;
+    }
+    [class*="to-slate-50/"], [class*="to-slate-100/"],
+    [class*="to-gray-50/"], [class*="to-gray-100/"],
+    [class*="to-white"] {
+        --tw-gradient-to: var(--dk-page) !important;
+    }
+
+    /* Gradient pastel berwarna (kartu ringkasan, panel biaya, dll.) */
+    [class*="from-indigo-50"], [class*="via-indigo-50"] {
+        --tw-gradient-from: var(--dk-surface) !important;
+        --tw-gradient-via: var(--dk-raised) !important;
+    }
+    [class*="to-indigo-50"] {
+        --tw-gradient-to: var(--dk-page) !important;
+    }
+    [class*="from-violet-50"], [class*="via-violet-50"] {
+        --tw-gradient-from: var(--dk-surface) !important;
+        --tw-gradient-via: var(--dk-raised) !important;
+    }
+    [class*="to-violet-50"] {
+        --tw-gradient-to: var(--dk-page) !important;
+    }
+    [class*="from-emerald-50"], [class*="via-emerald-50"] {
+        --tw-gradient-from: var(--dk-surface) !important;
+        --tw-gradient-via: var(--dk-raised) !important;
+    }
+    [class*="to-emerald-50"] {
+        --tw-gradient-to: var(--dk-page) !important;
+    }
+    [class*="from-blue-50"], [class*="via-blue-50"] {
+        --tw-gradient-from: var(--dk-surface) !important;
+        --tw-gradient-via: var(--dk-raised) !important;
+    }
+    [class*="to-blue-50"] {
+        --tw-gradient-to: var(--dk-page) !important;
+    }
+    [class*="from-sky-50"], [class*="via-sky-50"] {
+        --tw-gradient-from: var(--dk-surface) !important;
+        --tw-gradient-via: var(--dk-raised) !important;
+    }
+    [class*="to-sky-50"] {
+        --tw-gradient-to: var(--dk-page) !important;
+    }
+
+    /* Latar shell dashboard (from-slate-100 via-slate-50 to-indigo-50/20) */
+    [class*="bg-gradient-to-br"][class*="from-slate-100"],
+    [class*="bg-gradient-to-br"][class*="via-slate-50"] {
+        background-color: var(--dk-page) !important;
     }
 
     /* ================= FORM CONTROLS ================= */
@@ -468,6 +550,24 @@ textarea::placeholder {
     .text-sky-600, .text-sky-700, .text-sky-800,
     .text-cyan-600, .text-cyan-700, .text-cyan-800 {
         color: #93c5fd !important;
+    }
+
+    /* Chip / tombol kecil indigo (Foto, lampiran, aksi sekunder) */
+    [class*="bg-indigo-50"][class*="text-indigo-700"],
+    [class*="bg-indigo-100"][class*="text-indigo-700"] {
+        background-color: rgba(99, 102, 241, 0.32) !important;
+        color: #e0e7ff !important;
+    }
+    [class*="border-indigo-200"][class*="bg-indigo-50"],
+    [class*="border-indigo-200"][class*="bg-indigo-100"],
+    [class*="border-indigo-200"][class*="text-indigo-700"] {
+        border-color: rgba(129, 140, 248, 0.65) !important;
+    }
+    .hover\:bg-indigo-100:hover {
+        background-color: rgba(99, 102, 241, 0.45) !important;
+    }
+    .hover\:bg-indigo-200:hover {
+        background-color: rgba(99, 102, 241, 0.45) !important;
     }
 
     /* Shadow lebih dalam agar elevasi tetap terasa di latar gelap */

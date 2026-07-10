@@ -1315,7 +1315,7 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
                                                 href={url}
                                                 target="_blank"
                                                 rel="noreferrer"
-                                                className="inline-flex items-center rounded-md bg-indigo-100 px-2 py-1 text-[11px] text-indigo-700 hover:bg-indigo-200"
+                                                className="inline-flex items-center rounded-md border border-indigo-200 bg-indigo-50 px-2 py-1 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100"
                                                 title={`${tr("Lihat foto", "View photo")} ${photoIdx + 1}`}
                                               >
                                                 {photoUrls.length === 1 ? tr("Lihat", "View") : `${tr("Foto", "Photo")} ${photoIdx + 1}`}
