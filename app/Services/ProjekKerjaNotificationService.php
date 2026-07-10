@@ -9,6 +9,10 @@ use Illuminate\Support\Str;
 
 class ProjekKerjaNotificationService
 {
+    public function __construct(
+        private readonly WhatsAppService $whatsAppService,
+    ) {}
+
     /**
      * @return array<int, int> User IDs yang menerima notifikasi divisi baru
      */
@@ -61,6 +65,30 @@ class ProjekKerjaNotificationService
         }
 
         return $notifiedIds;
+    }
+
+    public function notifyNewProjekWhatsApp(ProjekKerja $projek, ?User $creator = null): void
+    {
+        $creator = $creator ?? auth()->user();
+        $creatorName = trim((string) ($creator?->name ?? ''));
+        $fromDivisi = trim((string) ($projek->created_by_divisi ?? ''));
+        $fromLabel = $fromDivisi !== '' ? $fromDivisi : 'lain';
+        $divisi = trim((string) ($projek->divisi ?? ''));
+        $divisiPart = $divisi !== '' ? " (divisi {$divisi})" : '';
+
+        $message = sprintf(
+            '%s — %s%s (dari divisi %s)',
+            $projek->report_no,
+            $projek->jenis_pekerjaan,
+            $divisiPart,
+            $fromLabel
+        );
+
+        if ($creatorName !== '') {
+            $message = "{$creatorName} — {$message}";
+        }
+
+        $this->whatsAppService->notifyProjek('Proyek kerja baru', $message);
     }
 
     /**

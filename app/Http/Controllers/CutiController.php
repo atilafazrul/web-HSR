@@ -6,6 +6,7 @@ use App\Models\CutiRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Services\CutiNotificationService;
 
 class CutiController extends Controller
 {
@@ -135,6 +136,8 @@ class CutiController extends Controller
 
         $cuti->load(['user', 'approver']);
 
+        app(CutiNotificationService::class)->notifyNewSubmission($cuti);
+
         return response()->json([
             'success' => true,
             'message' => 'Pengajuan cuti berhasil dikirim',
@@ -240,6 +243,8 @@ class CutiController extends Controller
 
         $cuti->load(['user', 'approver']);
 
+        app(CutiNotificationService::class)->notifyApproved($cuti, $user);
+
         return response()->json([
             'success' => true,
             'message' => 'Cuti berhasil disetujui',
@@ -280,6 +285,8 @@ class CutiController extends Controller
         $cuti->save();
 
         $cuti->load(['user', 'approver']);
+
+        app(CutiNotificationService::class)->notifyRejected($cuti, $user);
 
         return response()->json([
             'success' => true,

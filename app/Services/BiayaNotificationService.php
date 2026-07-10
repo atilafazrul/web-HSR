@@ -16,6 +16,10 @@ class BiayaNotificationService
         'reimbursment' => 'Biaya Reimbursment',
     ];
 
+    public function __construct(
+        private readonly WhatsAppService $whatsAppService,
+    ) {}
+
     public function notifyDashboardBiaya(DashboardBiaya $row, ?User $creator = null): void
     {
         $creator = $creator ?? auth()->user();
@@ -26,23 +30,18 @@ class BiayaNotificationService
         $kategoriLabel = self::KATEGORI_LABELS[$row->kategori] ?? ucfirst((string) $row->kategori);
         $creatorName = trim((string) ($creator->name ?? 'Pengguna'));
         $divisi = trim((string) ($row->divisi ?? $creator->divisi ?? ''));
-        $divisiPart = $divisi !== '' ? " (divisi {$divisi})" : '';
+        $keterangan = trim((string) ($row->keterangan ?? ''));
         $period = $this->periodFromDate($row->created_at);
 
         $this->notifySuperAdmins(
             'biaya_diluar_projek',
             'Biaya baru di luar proyek',
-            sprintf(
-                '%s — %s %s%s',
-                $creatorName,
-                $kategoriLabel,
-                $this->formatNominal((float) $row->nominal),
-                $divisiPart
-            ),
+            $this->formatBiayaAddedMessage($creatorName, $kategoriLabel, (float) $row->nominal, $keterangan),
             [
                 'dashboard_biaya_id' => $row->id,
                 'kategori' => $row->kategori,
                 'nominal' => (float) $row->nominal,
+                'keterangan' => $keterangan !== '' ? $keterangan : null,
                 'created_by' => $creator->id,
                 'created_by_name' => $creatorName,
                 'nama_akun' => $creatorName,
@@ -80,7 +79,6 @@ class BiayaNotificationService
             $reportNo = 'Proyek #'.$projek->id;
         }
         $divisi = trim((string) ($projek->divisi ?? ''));
-        $divisiPart = $divisi !== '' ? " (divisi {$divisi})" : '';
 
         foreach ($creates as $change) {
             $kategori = (string) ($change['category'] ?? 'biaya');
@@ -91,19 +89,20 @@ class BiayaNotificationService
             }
 
             $oleh = trim((string) ($change['oleh'] ?? '')) ?: $creatorName;
+            $keterangan = trim((string) ($change['keterangan'] ?? ''));
             $period = $this->periodFromDate($change['created_at'] ?? now());
             $itemIndex = $this->findProjectItemIndex($projek, $kategori, $change);
 
             $this->notifySuperAdmins(
                 'biaya_projek',
                 'Biaya baru di proyek',
-                sprintf(
-                    '%s — %s %s — %s%s',
+                $this->formatBiayaAddedMessage(
                     $oleh,
                     $kategoriLabel,
-                    $this->formatNominal($nominal),
+                    $nominal,
+                    $keterangan,
                     $reportNo,
-                    $divisiPart
+                    $projek->jenis_pekerjaan
                 ),
                 [
                     'projek_kerja_id' => $projek->id,
@@ -111,6 +110,7 @@ class BiayaNotificationService
                     'divisi' => $divisi,
                     'kategori' => $kategori,
                     'nominal' => $nominal,
+                    'keterangan' => $keterangan !== '' ? $keterangan : null,
                     'oleh' => $oleh,
                     'nama_akun' => $oleh,
                     'scope' => 'dalam_projek',
@@ -150,6 +150,8 @@ class BiayaNotificationService
                 'data' => $data,
             ]);
         }
+
+        $this->whatsAppService->notifyBiaya($title, $message);
     }
 
     /**
@@ -219,5 +221,37 @@ class BiayaNotificationService
     protected function formatNominal(float $nominal): string
     {
         return 'Rp '.number_format($nominal, 0, ',', '.');
+    }
+
+    protected function formatBiayaAddedMessage(
+        string $actorName,
+        string $kategoriLabel,
+        float $nominal,
+        string $keterangan,
+        ?string $projekReportNo = null,
+        ?string $projekNama = null
+    ): string {
+        $message = sprintf(
+            '%s telah menambahkan %s sebesar %s',
+            $actorName,
+            $kategoriLabel,
+            $this->formatNominal($nominal)
+        );
+
+        $reportNo = trim((string) $projekReportNo);
+        if ($reportNo !== '') {
+            $projekPart = "pada proyek {$reportNo}";
+            $nama = trim((string) $projekNama);
+            if ($nama !== '') {
+                $projekPart .= " ({$nama})";
+            }
+            $message .= ' '.$projekPart;
+        }
+
+        $keterangan = trim($keterangan);
+        $keteranganText = $keterangan !== '' ? $keterangan : '-';
+        $message .= " dengan keterangan : {$keteranganText}";
+
+        return $message;
     }
 }

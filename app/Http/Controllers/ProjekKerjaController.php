@@ -442,7 +442,11 @@ class ProjekKerjaController extends Controller
         $normalizedRole = strtolower(trim((string) ($authUser->role ?? '')));
         $normalizedRole = str_replace([' ', '-'], '_', $normalizedRole);
         $archiveFlag = filter_var($request->query('archive', false), FILTER_VALIDATE_BOOLEAN);
-        $query->where('is_archived', $archiveFlag);
+        $includeArchived = filter_var($request->query('include_archived', false), FILTER_VALIDATE_BOOLEAN);
+
+        if (! $includeArchived) {
+            $query->where('is_archived', $archiveFlag);
+        }
 
         // Tamu (role user): hanya proyek yang di-invite.
         // Karyawan lain (admin/divisi): proyek sesuai divisi ATAU yang di-invite (lintas divisi).
@@ -660,6 +664,7 @@ class ProjekKerjaController extends Controller
                 auth()->user(),
                 $adminNotifiedIds
             );
+            $notifier->notifyNewProjekWhatsApp($projek, auth()->user());
 
             // Optional: buat folder awal saat create project (tanpa upload file/foto dulu).
             $initialFileFolder = $this->sanitizeFolderName($validated['file_folder_name'] ?? null);

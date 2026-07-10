@@ -10,7 +10,7 @@ use Throwable;
 
 class WhatsAppService
 {
-    public function sendToAdmin(string $message): bool
+    public function sendToAdmin(string $message, ?string $purpose = null): bool
     {
         if (!config('whatsapp.enabled')) {
             Log::info('WhatsApp disabled — pesan tidak dikirim.', ['message' => $message]);
@@ -18,14 +18,17 @@ class WhatsAppService
             return false;
         }
 
-        $phone = $this->resolveAdminPhone();
-        if ($phone === null) {
-            Log::warning('WhatsApp admin phone tidak dikonfigurasi.', ['message' => $message]);
+        $targets = $this->resolveTargets($purpose);
+        if ($targets === []) {
+            Log::warning('WhatsApp target tidak dikonfigurasi.', [
+                'purpose' => $purpose,
+                'message' => $message,
+            ]);
 
             return false;
         }
 
-        return $this->send($phone, $message);
+        return $this->send($this->formatTargetsForProvider($targets), $message);
     }
 
     public function notifyScheduledDocumentCreated(ScheduledBeritaAcaraDocument $schedule): bool
@@ -38,15 +41,56 @@ class WhatsAppService
 
         $message = "{$typeLabel} untuk projek *{$projectName}* sudah dibuat{$nomor}. Segera kirimkan ke client.";
 
-        return $this->sendToAdmin($message);
+        return $this->sendToAdmin($message, 'berita_acara');
     }
 
-    public function send(string $phone, string $message): bool
+    public function notifyBiaya(string $title, string $message): bool
+    {
+        if (!config('whatsapp.enabled') || !config('whatsapp.notify_biaya', true)) {
+            return false;
+        }
+
+        return $this->sendToAdmin("*{$title}*\n{$message}", 'biaya');
+    }
+
+    public function notifyCuti(string $title, string $message): bool
+    {
+        if (!config('whatsapp.enabled') || !config('whatsapp.notify_cuti', true)) {
+            return false;
+        }
+
+        return $this->sendToAdmin("*{$title}*\n{$message}", 'cuti');
+    }
+
+    public function notifyProjek(string $title, string $message): bool
+    {
+        if (!config('whatsapp.enabled') || !config('whatsapp.notify_projek', true)) {
+            return false;
+        }
+
+        return $this->sendToAdmin("*{$title}*\n{$message}", 'projek');
+    }
+
+    public function notifyCutiToUser(?User $user, string $message): bool
+    {
+        if (!config('whatsapp.enabled') || !config('whatsapp.notify_cuti', true)) {
+            return false;
+        }
+
+        $phone = trim((string) ($user?->no_telepon ?? ''));
+        if ($phone === '') {
+            return false;
+        }
+
+        return $this->send($this->normalizeTarget($phone), $message);
+    }
+
+    public function send(string $target, string $message): bool
     {
         $provider = config('whatsapp.provider', 'fonnte');
 
         if ($provider === 'fonnte') {
-            return $this->sendViaFonnte($phone, $message);
+            return $this->sendViaFonnte($target, $message);
         }
 
         Log::warning('WhatsApp provider tidak dikenal.', ['provider' => $provider]);
@@ -54,7 +98,7 @@ class WhatsAppService
         return false;
     }
 
-    private function sendViaFonnte(string $phone, string $message): bool
+    private function sendViaFonnte(string $target, string $message): bool
     {
         $token = config('whatsapp.fonnte.token');
         if (empty($token)) {
@@ -67,12 +111,13 @@ class WhatsAppService
             $response = Http::withHeaders([
                 'Authorization' => $token,
             ])->asForm()->post(config('whatsapp.fonnte.endpoint'), [
-                'target' => $this->normalizePhone($phone),
+                'target' => $target,
                 'message' => $message,
             ]);
 
             if (!$response->successful()) {
                 Log::error('Gagal kirim WhatsApp Fonnte.', [
+                    'target' => $target,
                     'status' => $response->status(),
                     'body' => $response->body(),
                 ]);
@@ -82,17 +127,49 @@ class WhatsAppService
 
             return true;
         } catch (Throwable $e) {
-            Log::error('Error kirim WhatsApp Fonnte.', ['error' => $e->getMessage()]);
+            Log::error('Error kirim WhatsApp Fonnte.', [
+                'target' => $target,
+                'error' => $e->getMessage(),
+            ]);
 
             return false;
         }
     }
 
-    private function resolveAdminPhone(): ?string
+    /**
+     * @return string[]
+     */
+    private function resolveTargets(?string $purpose = null): array
     {
-        $configured = trim((string) config('whatsapp.admin_phone'));
+        $purposeConfig = match ($purpose) {
+            'biaya' => 'whatsapp.biaya_targets',
+            'berita_acara' => 'whatsapp.berita_acara_targets',
+            'cuti' => 'whatsapp.cuti_targets',
+            'projek' => 'whatsapp.projek_targets',
+            default => null,
+        };
+
+        if ($purposeConfig !== null) {
+            $configured = trim((string) config($purposeConfig));
+            if ($configured !== '') {
+                return $this->parseTargets($configured);
+            }
+
+            if (in_array($purpose, ['cuti', 'projek'], true)) {
+                $biayaTargets = trim((string) config('whatsapp.biaya_targets'));
+                if ($biayaTargets !== '') {
+                    return $this->parseTargets($biayaTargets);
+                }
+            }
+        }
+
+        $configured = trim((string) config('whatsapp.targets'));
+        if ($configured === '') {
+            $configured = trim((string) config('whatsapp.admin_phone'));
+        }
+
         if ($configured !== '') {
-            return $configured;
+            return $this->parseTargets($configured);
         }
 
         $admin = User::query()
@@ -102,7 +179,37 @@ class WhatsAppService
             ->orderByRaw("CASE WHEN role = 'super_admin' THEN 0 ELSE 1 END")
             ->first();
 
-        return $admin?->no_telepon;
+        return $admin?->no_telepon ? [$admin->no_telepon] : [];
+    }
+
+    /**
+     * @return string[]
+     */
+    private function parseTargets(string $value): array
+    {
+        $parts = preg_split('/[\s,]+/', $value) ?: [];
+
+        return array_values(array_filter(array_map(
+            static fn (string $part) => trim($part),
+            $parts
+        )));
+    }
+
+    /**
+     * @param  string[]  $targets
+     */
+    private function formatTargetsForProvider(array $targets): string
+    {
+        return implode(',', array_map(fn (string $target) => $this->normalizeTarget($target), $targets));
+    }
+
+    private function normalizeTarget(string $target): string
+    {
+        if (str_contains($target, '@g.us')) {
+            return trim($target);
+        }
+
+        return $this->normalizePhone($target);
     }
 
     private function normalizePhone(string $phone): string

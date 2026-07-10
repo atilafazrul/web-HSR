@@ -100,7 +100,7 @@ export default function TargetPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get("/projek-kerja");
+      const res = await api.get("/projek-kerja", { params: { include_archived: 1 } });
       let data = res.data?.data || res.data || [];
       data = Array.isArray(data) ? data : [];
       setProjek(data);
@@ -637,6 +637,11 @@ const ProjectCard = ({
           {p.status ? (
             <span className="inline-flex max-w-full shrink-0 items-center rounded-md bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-sky-200/80">
               {p.status}
+            </span>
+          ) : null}
+          {p.is_archived ? (
+            <span className="inline-flex max-w-full shrink-0 items-center rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-200/80">
+              {tr("Arsip", "Archived")}
             </span>
           ) : null}
         </div>

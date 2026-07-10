@@ -77,6 +77,14 @@ export function resolveNotificationPath(notification, user) {
     return buildProjekListPath(base, role, data, user, query);
   }
 
+  if (type === "cuti_pengajuan_baru") {
+    return `${base}/cuti-approval`;
+  }
+
+  if (type === "cuti_disetujui" || type === "cuti_ditolak") {
+    return `${base}/cuti`;
+  }
+
   if (!projekId) {
     return `${base}/dashboard`;
   }
