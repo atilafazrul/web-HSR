@@ -278,6 +278,168 @@ class BiayaNotificationService
         );
     }
 
+    /**
+     * Gabungkan beberapa item yang dilunasi sekaligus jadi 1 notifikasi/WA per penerima.
+     *
+     * @param  array<int, array{
+     *   recipient: User,
+     *   kategori_label: string,
+     *   nominal: float,
+     *   keterangan: string,
+     *   report_no?: string|null,
+     *   projek_nama?: string|null,
+     *   meta?: array<string, mixed>
+     * }>  $entries
+     */
+    public function notifyBatchLunas(array $entries, ?User $approver = null): void
+    {
+        if ($entries === []) {
+            return;
+        }
+
+        $approver = $approver ?? auth()->user();
+        $approverName = trim((string) ($approver?->name ?? 'Super Admin')) ?: 'Super Admin';
+
+        $grouped = [];
+        foreach ($entries as $entry) {
+            $recipient = $entry['recipient'] ?? null;
+            if (! $recipient instanceof User) {
+                continue;
+            }
+            $grouped[$recipient->id]['recipient'] = $recipient;
+            $grouped[$recipient->id]['items'][] = $entry;
+        }
+
+        foreach ($grouped as $group) {
+            /** @var User $recipient */
+            $recipient = $group['recipient'];
+            $items = $group['items'];
+            $count = count($items);
+            $total = array_sum(array_map(fn ($item) => (float) ($item['nominal'] ?? 0), $items));
+
+            if ($count === 1) {
+                $only = $items[0];
+                $message = $this->formatBiayaLunasMessage(
+                    (string) $only['kategori_label'],
+                    (float) $only['nominal'],
+                    (string) ($only['keterangan'] ?? ''),
+                    $approverName,
+                    $only['report_no'] ?? null,
+                    $only['projek_nama'] ?? null
+                );
+            } else {
+                $lines = [];
+                foreach ($items as $idx => $item) {
+                    $line = sprintf(
+                        '%d. %s %s',
+                        $idx + 1,
+                        $item['kategori_label'],
+                        $this->formatNominal((float) $item['nominal'])
+                    );
+                    $reportNo = trim((string) ($item['report_no'] ?? ''));
+                    if ($reportNo !== '') {
+                        $line .= " pada proyek {$reportNo}";
+                        $nama = trim((string) ($item['projek_nama'] ?? ''));
+                        if ($nama !== '') {
+                            $line .= " ({$nama})";
+                        }
+                    }
+                    $ket = trim((string) ($item['keterangan'] ?? ''));
+                    $line .= ' dengan keterangan : '.($ket !== '' ? $ket : '-');
+                    $lines[] = $line;
+                }
+
+                $message = sprintf(
+                    "%d biaya telah dilunasi oleh %s:\n\n%s\n\nTotal: %s",
+                    $count,
+                    $approverName,
+                    implode("\n", $lines),
+                    $this->formatNominal($total)
+                );
+            }
+
+            $this->notifyRecipient(
+                $recipient,
+                'biaya_dilunasi',
+                'Pembayaran biaya dilunasi',
+                $message,
+                [
+                    'scope' => 'batch',
+                    'item_count' => $count,
+                    'total_nominal' => $total,
+                    'approved_by' => $approver?->id,
+                    'approved_by_nama' => $approverName,
+                    'items' => array_map(fn ($item) => $item['meta'] ?? [], $items),
+                ]
+            );
+        }
+    }
+
+    /**
+     * Bangun entry batch dari dashboard biaya (untuk digabung).
+     *
+     * @return array{recipient: User, kategori_label: string, nominal: float, keterangan: string, meta: array<string, mixed>}|null
+     */
+    public function buildDashboardLunasEntry(DashboardBiaya $row): ?array
+    {
+        $recipient = $row->created_by
+            ? User::query()->find($row->created_by)
+            : null;
+        if (! $recipient) {
+            return null;
+        }
+
+        $keterangan = trim((string) ($row->keterangan ?? ''));
+
+        return [
+            'recipient' => $recipient,
+            'kategori_label' => self::KATEGORI_LABELS[$row->kategori] ?? ucfirst((string) $row->kategori),
+            'nominal' => (float) $row->nominal,
+            'keterangan' => $keterangan,
+            'meta' => [
+                'dashboard_biaya_id' => $row->id,
+                'kategori' => $row->kategori,
+                'scope' => 'diluar_projek',
+            ],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     * @return array{recipient: User, kategori_label: string, nominal: float, keterangan: string, report_no: string, projek_nama: string|null, meta: array<string, mixed>}|null
+     */
+    public function buildProjectLunasEntry(
+        ProjekKerja $projek,
+        string $kategori,
+        array $item,
+        int $itemIndex
+    ): ?array {
+        $oleh = trim((string) ($item['oleh'] ?? ''));
+        $recipient = $this->resolveUserByName($oleh);
+        if (! $recipient) {
+            return null;
+        }
+
+        $keterangan = trim((string) ($item['keterangan'] ?? ''));
+        $reportNo = trim((string) ($projek->report_no ?? '')) ?: ('Proyek #'.$projek->id);
+
+        return [
+            'recipient' => $recipient,
+            'kategori_label' => self::KATEGORI_LABELS[$kategori] ?? ucfirst($kategori),
+            'nominal' => (float) ($item['nominal'] ?? 0),
+            'keterangan' => $keterangan,
+            'report_no' => $reportNo,
+            'projek_nama' => $projek->jenis_pekerjaan,
+            'meta' => [
+                'projek_kerja_id' => $projek->id,
+                'report_no' => $projek->report_no,
+                'kategori' => $kategori,
+                'item_index' => $itemIndex,
+                'scope' => 'dalam_projek',
+            ],
+        ];
+    }
+
     protected function resolveUserByName(string $name): ?User
     {
         $name = trim($name);

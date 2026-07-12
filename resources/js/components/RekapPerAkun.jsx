@@ -669,26 +669,33 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
   };
 
   const markItemsAsLunas = async (items, lunasGroupId) => {
-    await Promise.all(
-      items.map(async (item) => {
-        if (item?.source === "projek") {
-          if (item?.project_id == null || item?.item_index == null) {
-            throw new Error(tr("Data item projek tidak lengkap untuk update status lunas.", "Project item data is incomplete for paid-status update."));
-          }
-          await api.patch(`/projek-kerja/${item.project_id}/biaya-item-lunas`, {
-            kategori: item.kategori,
-            item_index: item.item_index,
-            is_lunas: true,
-            lunas_group_id: lunasGroupId,
-          });
-        } else {
-          await api.patch(`/dashboard-biaya/${item.id}`, {
-            is_lunas: true,
-            lunas_group_id: lunasGroupId,
-          });
+    const payloadItems = items.map((item) => {
+      if (item?.source === "projek") {
+        if (item?.project_id == null || item?.item_index == null) {
+          throw new Error(
+            tr(
+              "Data item projek tidak lengkap untuk update status lunas.",
+              "Project item data is incomplete for paid-status update."
+            )
+          );
         }
-      })
-    );
+        return {
+          source: "projek",
+          project_id: item.project_id,
+          kategori: item.kategori,
+          item_index: item.item_index,
+        };
+      }
+      return {
+        source: "dashboard",
+        id: item.id,
+      };
+    });
+
+    await api.post("/dashboard-biaya/batch-lunas", {
+      lunas_group_id: lunasGroupId,
+      items: payloadItems,
+    });
   };
 
   const executeBulkLunasi = async () => {

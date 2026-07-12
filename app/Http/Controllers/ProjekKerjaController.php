@@ -1866,7 +1866,7 @@ class ProjekKerjaController extends Controller
         $projek->{$field} = $items; // Gunakan items langsung tanpa array_values untuk menjaga index
         $projek->save();
 
-        if ($isLunas && ! $wasLunas) {
+        if ($isLunas && ! $wasLunas && ! $request->boolean('skip_notify')) {
             app(BiayaNotificationService::class)->notifyProjectBiayaItemLunas(
                 $projek,
                 $validated['kategori'],

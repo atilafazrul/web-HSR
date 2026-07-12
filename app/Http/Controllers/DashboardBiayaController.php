@@ -339,6 +339,7 @@ class DashboardBiayaController extends Controller
             && (bool) $request->boolean('is_lunas')
             && ! $wasLunas
             && ($user->role ?? null) === 'super_admin'
+            && ! $request->boolean('skip_notify')
         ) {
             app(BiayaNotificationService::class)->notifyDashboardBiayaLunas($fresh, $user);
         }
@@ -349,6 +350,118 @@ class DashboardBiayaController extends Controller
                 $row->creator_name = $row->creator?->name;
                 $row->updater_name = $row->updater?->name;
             }),
+        ]);
+    }
+
+    /**
+     * Melunasi banyak biaya sekaligus (dashboard + item proyek) dan kirim 1 WA digabung per penerima.
+     */
+    public function batchLunas(Request $request)
+    {
+        $user = $request->user();
+        if (($user->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang bisa melunasi biaya secara massal.',
+            ], 403);
+        }
+
+        $validated = $request->validate([
+            'lunas_group_id' => 'nullable|string|max:64',
+            'items' => 'required|array|min:1',
+            'items.*.source' => 'required|in:dashboard,projek',
+            'items.*.id' => 'nullable|integer',
+            'items.*.project_id' => 'nullable|integer',
+            'items.*.kategori' => 'nullable|in:jalan,pengeluaran,reimbursment',
+            'items.*.item_index' => 'nullable|integer|min:0',
+        ]);
+
+        $lunasGroupId = $validated['lunas_group_id'] ?? null;
+        $notifier = app(BiayaNotificationService::class);
+        $entries = [];
+        $updated = 0;
+        $errors = [];
+
+        foreach ($validated['items'] as $idx => $item) {
+            try {
+                if (($item['source'] ?? '') === 'dashboard') {
+                    $row = DashboardBiaya::query()->find($item['id'] ?? null);
+                    if (! $row) {
+                        $errors[] = "Item #{$idx}: dashboard biaya tidak ditemukan";
+                        continue;
+                    }
+                    if ($row->is_lunas) {
+                        continue;
+                    }
+
+                    $row->update([
+                        'is_lunas' => true,
+                        'lunas_at' => now(),
+                        'lunas_group_id' => $lunasGroupId,
+                        'updated_by' => $user->id,
+                    ]);
+
+                    $entry = $notifier->buildDashboardLunasEntry($row->fresh());
+                    if ($entry) {
+                        $entries[] = $entry;
+                    }
+                    $updated++;
+                    continue;
+                }
+
+                $projek = ProjekKerja::query()->find($item['project_id'] ?? null);
+                if (! $projek) {
+                    $errors[] = "Item #{$idx}: proyek tidak ditemukan";
+                    continue;
+                }
+
+                $fieldMap = [
+                    'jalan' => 'biaya_jalan_items',
+                    'pengeluaran' => 'biaya_pengeluaran_items',
+                    'reimbursment' => 'biaya_reimbursment_items',
+                ];
+                $kategori = (string) ($item['kategori'] ?? '');
+                $field = $fieldMap[$kategori] ?? null;
+                $index = (int) ($item['item_index'] ?? -1);
+                $items = $projek->{$field} ?? [];
+
+                if (! $field || ! isset($items[$index]) || ! is_array($items[$index])) {
+                    $errors[] = "Item #{$idx}: item biaya proyek tidak ditemukan";
+                    continue;
+                }
+
+                if (! empty($items[$index]['is_lunas'])) {
+                    continue;
+                }
+
+                $items[$index]['is_lunas'] = true;
+                $items[$index]['lunas_at'] = now()->toIso8601String();
+                if ($lunasGroupId) {
+                    $items[$index]['lunas_group_id'] = $lunasGroupId;
+                }
+                $projek->{$field} = $items;
+                $projek->save();
+
+                $entry = $notifier->buildProjectLunasEntry($projek, $kategori, $items[$index], $index);
+                if ($entry) {
+                    $entries[] = $entry;
+                }
+                $updated++;
+            } catch (\Throwable $e) {
+                $errors[] = "Item #{$idx}: ".$e->getMessage();
+            }
+        }
+
+        if ($entries !== []) {
+            $notifier->notifyBatchLunas($entries, $user);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Berhasil melunasi {$updated} biaya",
+            'updated' => $updated,
+            'notified' => count($entries),
+            'errors' => $errors,
         ]);
     }
 
