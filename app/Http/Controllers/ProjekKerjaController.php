@@ -1691,24 +1691,59 @@ class ProjekKerjaController extends Controller
 
             // Selaraskan kolom BELUM/SUDAH LUNAS di UI: jika project lunas, semua baris biaya ikut lunas.
             // Saat lunas dibatalkan, biaya tetap bisa punya is_lunas per baris seperti sebelumnya.
+            $newlyPaidItems = [];
             if ($isLunas) {
-                foreach (['biaya_jalan_items', 'biaya_pengeluaran_items', 'biaya_reimbursment_items'] as $field) {
+                $fieldMap = [
+                    'jalan' => 'biaya_jalan_items',
+                    'pengeluaran' => 'biaya_pengeluaran_items',
+                    'reimbursment' => 'biaya_reimbursment_items',
+                ];
+
+                foreach ($fieldMap as $kategori => $field) {
                     $items = $projek->{$field} ?? [];
                     if (! is_array($items) || $items === []) {
                         continue;
                     }
-                    $projek->{$field} = array_values(array_map(function ($row) {
-                        if (! is_array($row)) {
-                            return $row;
-                        }
-                        $row['is_lunas'] = true;
 
-                        return $row;
-                    }, $items));
+                    $updated = [];
+                    foreach ($items as $index => $row) {
+                        if (! is_array($row)) {
+                            $updated[$index] = $row;
+                            continue;
+                        }
+
+                        $wasPaid = $this->parseBiayaIsLunas($row['is_lunas'] ?? false);
+                        $row['is_lunas'] = true;
+                        if (! $wasPaid) {
+                            $row['lunas_at'] = now()->toIso8601String();
+                            $newlyPaidItems[] = [
+                                'kategori' => $kategori,
+                                'item' => $row,
+                                'index' => (int) $index,
+                            ];
+                        }
+                        $updated[$index] = $row;
+                    }
+
+                    $projek->{$field} = array_values($updated);
                 }
             }
 
             $projek->save();
+
+            if ($isLunas && $newlyPaidItems !== []) {
+                $notifier = app(BiayaNotificationService::class);
+                $approver = auth()->user();
+                foreach ($newlyPaidItems as $paid) {
+                    $notifier->notifyProjectBiayaItemLunas(
+                        $projek,
+                        $paid['kategori'],
+                        $paid['item'],
+                        $paid['index'],
+                        $approver
+                    );
+                }
+            }
 
             return response()->json([
                 'success' => true,
@@ -1817,6 +1852,7 @@ class ProjekKerjaController extends Controller
         }
 
         // Hanya update field lunas, semua field lain (oleh, nominal, keterangan, created_at) tetap sama.
+        $wasLunas = $this->parseBiayaIsLunas($items[$index]['is_lunas'] ?? false);
         $isLunas = (bool) $validated['is_lunas'];
         $items[$index]['is_lunas'] = $isLunas;
         if ($isLunas) {
@@ -1829,6 +1865,16 @@ class ProjekKerjaController extends Controller
         }
         $projek->{$field} = $items; // Gunakan items langsung tanpa array_values untuk menjaga index
         $projek->save();
+
+        if ($isLunas && ! $wasLunas) {
+            app(BiayaNotificationService::class)->notifyProjectBiayaItemLunas(
+                $projek,
+                $validated['kategori'],
+                $items[$index],
+                $index,
+                auth()->user()
+            );
+        }
 
         return response()->json([
             'success' => true,

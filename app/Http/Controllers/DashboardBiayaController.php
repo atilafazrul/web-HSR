@@ -330,13 +330,24 @@ class DashboardBiayaController extends Controller
             }
         }
 
+        $wasLunas = (bool) $row->is_lunas;
         $row->update($payload);
+        $fresh = $row->fresh(['creator:id,name,no_telepon', 'updater:id,name']);
+
+        if (
+            $request->has('is_lunas')
+            && (bool) $request->boolean('is_lunas')
+            && ! $wasLunas
+            && ($user->role ?? null) === 'super_admin'
+        ) {
+            app(BiayaNotificationService::class)->notifyDashboardBiayaLunas($fresh, $user);
+        }
 
         return response()->json([
             'success' => true,
-            'data' => tap($row->fresh(['creator:id,name', 'updater:id,name']), function ($fresh) {
-                $fresh->creator_name = $fresh->creator?->name;
-                $fresh->updater_name = $fresh->updater?->name;
+            'data' => tap($fresh, function ($row) {
+                $row->creator_name = $row->creator?->name;
+                $row->updater_name = $row->updater?->name;
             }),
         ]);
     }

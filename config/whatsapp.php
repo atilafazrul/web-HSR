@@ -27,6 +27,9 @@ return [
     // Kirim WA saat proyek kerja baru dibuat.
     'notify_projek' => env('WHATSAPP_NOTIFY_PROJEK', true),
 
+    // Kirim WA ke pemilik biaya saat Super Admin melunasi pembayaran.
+    'notify_lunas' => env('WHATSAPP_NOTIFY_LUNAS', true),
+
     'fonnte' => [
         'token' => env('WHATSAPP_FONNTE_TOKEN'),
         'endpoint' => env('WHATSAPP_FONNTE_ENDPOINT', 'https://api.fonnte.com/send'),

@@ -123,6 +123,108 @@ class BiayaNotificationService
         }
     }
 
+    public function notifyDashboardBiayaLunas(DashboardBiaya $row, ?User $approver = null): void
+    {
+        $recipient = $row->created_by
+            ? User::query()->find($row->created_by)
+            : null;
+
+        if (! $recipient) {
+            \Illuminate\Support\Facades\Log::warning('WA lunas dashboard: creator tidak ditemukan.', [
+                'dashboard_biaya_id' => $row->id,
+                'created_by' => $row->created_by,
+            ]);
+
+            return;
+        }
+
+        $approver = $approver ?? auth()->user();
+        $approverName = trim((string) ($approver?->name ?? 'Super Admin')) ?: 'Super Admin';
+        $kategoriLabel = self::KATEGORI_LABELS[$row->kategori] ?? ucfirst((string) $row->kategori);
+        $keterangan = trim((string) ($row->keterangan ?? ''));
+        $message = $this->formatBiayaLunasMessage(
+            $kategoriLabel,
+            (float) $row->nominal,
+            $keterangan,
+            $approverName
+        );
+
+        $this->notifyRecipient(
+            $recipient,
+            'biaya_dilunasi',
+            'Pembayaran biaya dilunasi',
+            $message,
+            [
+                'dashboard_biaya_id' => $row->id,
+                'kategori' => $row->kategori,
+                'nominal' => (float) $row->nominal,
+                'keterangan' => $keterangan !== '' ? $keterangan : null,
+                'scope' => 'diluar_projek',
+                'approved_by' => $approver?->id,
+                'approved_by_nama' => $approverName,
+            ]
+        );
+    }
+
+    /**
+     * @param  array<string, mixed>  $item
+     */
+    public function notifyProjectBiayaItemLunas(
+        ProjekKerja $projek,
+        string $kategori,
+        array $item,
+        int $itemIndex,
+        ?User $approver = null
+    ): void {
+        $oleh = trim((string) ($item['oleh'] ?? ''));
+        $recipient = $this->resolveUserByName($oleh);
+        if (! $recipient) {
+            \Illuminate\Support\Facades\Log::warning('WA lunas proyek: user tidak ditemukan dari nama oleh.', [
+                'projek_kerja_id' => $projek->id,
+                'oleh' => $oleh,
+                'kategori' => $kategori,
+                'item_index' => $itemIndex,
+            ]);
+
+            return;
+        }
+
+        $approver = $approver ?? auth()->user();
+        $approverName = trim((string) ($approver?->name ?? 'Super Admin')) ?: 'Super Admin';
+        $kategoriLabel = self::KATEGORI_LABELS[$kategori] ?? ucfirst($kategori);
+        $keterangan = trim((string) ($item['keterangan'] ?? ''));
+        $reportNo = trim((string) ($projek->report_no ?? '')) ?: ('Proyek #'.$projek->id);
+
+        $message = $this->formatBiayaLunasMessage(
+            $kategoriLabel,
+            (float) ($item['nominal'] ?? 0),
+            $keterangan,
+            $approverName,
+            $reportNo,
+            $projek->jenis_pekerjaan
+        );
+
+        $this->notifyRecipient(
+            $recipient,
+            'biaya_dilunasi',
+            'Pembayaran biaya dilunasi',
+            $message,
+            [
+                'projek_kerja_id' => $projek->id,
+                'report_no' => $projek->report_no,
+                'divisi' => $projek->divisi,
+                'kategori' => $kategori,
+                'nominal' => (float) ($item['nominal'] ?? 0),
+                'keterangan' => $keterangan !== '' ? $keterangan : null,
+                'oleh' => $oleh,
+                'scope' => 'dalam_projek',
+                'item_index' => $itemIndex,
+                'approved_by' => $approver?->id,
+                'approved_by_nama' => $approverName,
+            ]
+        );
+    }
+
     /**
      * @param  array<string, mixed>  $data
      */
@@ -150,8 +252,43 @@ class BiayaNotificationService
                 'data' => $data,
             ]);
         }
+    }
 
-        $this->whatsAppService->notifyBiaya($title, $message);
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    protected function notifyRecipient(
+        User $recipient,
+        string $type,
+        string $title,
+        string $message,
+        array $data
+    ): void {
+        Notification::create([
+            'user_id' => $recipient->id,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'data' => $data,
+        ]);
+
+        $this->whatsAppService->notifyLunasToUser(
+            $recipient,
+            "*{$title}*\n{$message}"
+        );
+    }
+
+    protected function resolveUserByName(string $name): ?User
+    {
+        $name = trim($name);
+        if ($name === '') {
+            return null;
+        }
+
+        return User::query()
+            ->whereRaw('LOWER(TRIM(COALESCE(name, \'\'))) = ?', [strtolower($name)])
+            ->orderByDesc('id')
+            ->first();
     }
 
     /**
@@ -251,6 +388,38 @@ class BiayaNotificationService
         $keterangan = trim($keterangan);
         $keteranganText = $keterangan !== '' ? $keterangan : '-';
         $message .= " dengan keterangan : {$keteranganText}";
+
+        return $message;
+    }
+
+    protected function formatBiayaLunasMessage(
+        string $kategoriLabel,
+        float $nominal,
+        string $keterangan,
+        string $approverName,
+        ?string $projekReportNo = null,
+        ?string $projekNama = null
+    ): string {
+        $message = sprintf(
+            '%s sebesar %s',
+            $kategoriLabel,
+            $this->formatNominal($nominal)
+        );
+
+        $reportNo = trim((string) $projekReportNo);
+        if ($reportNo !== '') {
+            $projekPart = "pada proyek {$reportNo}";
+            $nama = trim((string) $projekNama);
+            if ($nama !== '') {
+                $projekPart .= " ({$nama})";
+            }
+            $message .= ' '.$projekPart;
+        }
+
+        $keterangan = trim($keterangan);
+        $keteranganText = $keterangan !== '' ? $keterangan : '-';
+        $message .= " dengan keterangan : {$keteranganText}";
+        $message .= " telah dilunasi oleh {$approverName}.";
 
         return $message;
     }

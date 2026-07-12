@@ -44,15 +44,6 @@ class WhatsAppService
         return $this->sendToAdmin($message, 'berita_acara');
     }
 
-    public function notifyBiaya(string $title, string $message): bool
-    {
-        if (!config('whatsapp.enabled') || !config('whatsapp.notify_biaya', true)) {
-            return false;
-        }
-
-        return $this->sendToAdmin("*{$title}*\n{$message}", 'biaya');
-    }
-
     public function notifyCuti(string $title, string $message): bool
     {
         if (!config('whatsapp.enabled') || !config('whatsapp.notify_cuti', true)) {
@@ -77,8 +68,27 @@ class WhatsAppService
             return false;
         }
 
+        return $this->notifyToUser($user, $message);
+    }
+
+    public function notifyLunasToUser(?User $user, string $message): bool
+    {
+        if (!config('whatsapp.enabled') || !config('whatsapp.notify_lunas', true)) {
+            return false;
+        }
+
+        return $this->notifyToUser($user, $message);
+    }
+
+    public function notifyToUser(?User $user, string $message): bool
+    {
         $phone = trim((string) ($user?->no_telepon ?? ''));
         if ($phone === '') {
+            Log::info('WhatsApp user phone kosong — pesan tidak dikirim.', [
+                'user_id' => $user?->id,
+                'message' => $message,
+            ]);
+
             return false;
         }
 

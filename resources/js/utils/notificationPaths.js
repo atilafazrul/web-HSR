@@ -85,6 +85,24 @@ export function resolveNotificationPath(notification, user) {
     return `${base}/cuti`;
   }
 
+  if (type === "biaya_dilunasi") {
+    if (data.scope === "diluar_projek") {
+      const params = new URLSearchParams();
+      if (data.dashboard_biaya_id != null) {
+        params.set("biaya_diluar", String(data.dashboard_biaya_id));
+      }
+      const q = params.toString();
+      return `${base}/dashboard${q ? `?${q}` : ""}`;
+    }
+
+    if (projekId) {
+      const query = `open_biaya=${encodeURIComponent(String(projekId))}`;
+      return buildProjekListPath(base, role, data, user, query);
+    }
+
+    return `${base}/dashboard`;
+  }
+
   if (!projekId) {
     return `${base}/dashboard`;
   }
