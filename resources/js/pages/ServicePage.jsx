@@ -4,7 +4,6 @@ import { useI18n } from "../i18n/index.jsx";
 import {
   Package,
   ListTodo,
-  FileText,
   Archive
 } from "lucide-react";
 
@@ -67,17 +66,6 @@ const ServicePage = () => {
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/service/projek/archive`)}
-          />
-        )}
-
-
-        {/* BUAT PDF */}
-        {!isUserRole && (
-          <Card
-            icon={<FileText size={24} className="text-indigo-600" />}
-            title={language === "en" ? "Create PDF" : "Buat PDF"}
-            desc={language === "en" ? "Generate service work PDF" : "Buat PDF pekerjaan servis"}
-            onClick={() => navigate(`${basePath}/service/buat-pdf`)}
           />
         )}
 

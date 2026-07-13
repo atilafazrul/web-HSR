@@ -160,6 +160,8 @@ export default function AdminDashboard({ user, logout }) {
     if (path.includes("target")) return language === "en" ? "Sales Target" : "Target Penjualan";
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Project Photos" : "Foto Projek";
     if (path.includes("projek-kerja/berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
+    if (path.includes("berita-acara/service-report")) return "Service Report";
+    if (path.includes("berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("it")) return language === "en" ? "IT Division" : "Divisi IT";
     if (path.includes("service")) return language === "en" ? "Service Division" : "Divisi Service";
@@ -615,6 +617,7 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="projek-kerja/berita-acara/:projekId/bast" element={<BASTPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sppd" element={<SPPDPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sph" element={<SPHPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/service-report" element={<GeneratePDFPage user={user} />} />
 
             <Route path="karyawan" element={<KaryawanPage />} />
 
@@ -640,24 +643,18 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="it/projek" element={<ProjekKerjaPage />} />
             <Route path="it/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="sales/target" element={<TargetPage />} />
-            <Route path="it/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="service/projek" element={<ProjekKerjaPage />} />
             <Route path="service/projek/archive" element={<ProjekKerjaPage />} />
-            <Route path="service/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="sales/projek" element={<ProjekKerjaPage />} />
             <Route path="sales/projek/archive" element={<ProjekKerjaPage />} />
-            <Route path="sales/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="kontraktor/projek" element={<ProjekKerjaPage />} />
             <Route path="kontraktor/projek/archive" element={<ProjekKerjaPage />} />
-            <Route path="kontraktor/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="logistik" element={<LogistikPage user={user} />} />
             <Route path="purchasing" element={<PurchasingPage user={user} />} />
             <Route path="logistik/projek" element={<ProjekKerjaPage />} />
             <Route path="logistik/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="purchasing/projek" element={<ProjekKerjaPage />} />
             <Route path="purchasing/projek/archive" element={<ProjekKerjaPage />} />
-            <Route path="logistik/buat-pdf" element={<GeneratePDFPage user={user} />} />
-            <Route path="purchasing/buat-pdf" element={<GeneratePDFPage user={user} />} />
             <Route path="purchasing/pembelian" element={<PembelianPage />} />
             <Route path="purchasing/inventory" element={<InventoryPage />} />
             <Route path="purchasing/inventory/tambah" element={<FormBarangPage />} />
@@ -677,6 +674,15 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="berita-acara/bast" element={<BASTPage />} />
             <Route path="berita-acara/sppd" element={<SPPDPage />} />
             <Route path="berita-acara/sph" element={<SPHPage />} />
+            <Route path="berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
+
+            {/* Legacy buat-pdf → Service Report di Berita Acara */}
+            <Route path="it/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
+            <Route path="service/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
+            <Route path="sales/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
+            <Route path="kontraktor/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
+            <Route path="logistik/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
+            <Route path="purchasing/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
 
             {/* ================= PROFILE ================= */}
             <Route

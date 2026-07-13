@@ -16,6 +16,7 @@ class ScheduledBeritaAcaraDocument extends Model
     public const TYPE_BAM = 'bam';
     public const TYPE_SPH = 'sph';
     public const TYPE_SPPD = 'sppd';
+    public const TYPE_SERVICE_REPORT = 'service_report';
 
     protected $fillable = [
         'projek_kerja_id',

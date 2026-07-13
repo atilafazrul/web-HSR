@@ -7,6 +7,7 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use App\Models\BastDocument;
 use App\Services\BeritaAcaraPdfAssetService;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
 
 class BASTController extends Controller
@@ -132,6 +133,12 @@ class BASTController extends Controller
             'bulan' => $nomorData['bulan'],
             'tahun' => $nomorData['tahun'],
         ]);
+
+        app(WhatsAppService::class)->notifyDocumentCreated(
+            'BAST',
+            $validated['nama_klient'],
+            $nomorData['nomor_surat']
+        );
 
         $data = [
             'nomor_surat' => $nomorData['nomor_surat'],

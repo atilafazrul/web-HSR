@@ -1,18 +1,27 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axiosConfig";
+import { useDocumentSchedule } from "../berita-acara/hooks/useDocumentSchedule";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
   return localStorage.getItem("app_language") === "en" ? en : id;
 };
 
-export const usePdf = (user, currentDivisi = "IT") => {
+export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [fetchingHistory, setFetchingHistory] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editId, setEditId] = useState(null);
+
+  const {
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleSchedule,
+    canSchedule,
+  } = useDocumentSchedule(projekKerjaId, "service_report");
 
   // ================= FORM STATE =================
   const [formData, setFormData] = useState({
@@ -209,6 +218,58 @@ export const usePdf = (user, currentDivisi = "IT") => {
     fetchHistory();
   }, [user?.id, currentDivisi]);
 
+  const buildSubmitData = () => {
+    const selectedCheckboxes = Object.entries(checkboxes)
+      .filter(([key, value]) => value)
+      .map(([key]) => key);
+
+    const partsData = partsList.filter(part =>
+      part.name || part.part_no || part.in || part.out || part.qty
+    ).map(part => ({
+      name: part.name,
+      part_no: part.part_no,
+      in: part.in,
+      out: part.out,
+      qty: part.qty ? parseInt(part.qty) : null,
+    }));
+
+    let divisiToSend;
+    if (user.role === 'super_admin') {
+      divisiToSend = currentDivisi ? currentDivisi.toUpperCase() : 'SERVICE';
+    } else if (user.role === 'admin') {
+      divisiToSend = user.divisi ? user.divisi.toUpperCase() : 'SERVICE';
+    } else {
+      divisiToSend = user.divisi ? user.divisi.toUpperCase() : 'SERVICE';
+    }
+
+    return {
+      ...formData,
+      ttd_teknisi: formData.ttd_teknisi || null,
+      ttd_klien: formData.ttd_klien || null,
+      checkboxes: selectedCheckboxes,
+      partsList: partsData,
+      divisi: divisiToSend,
+      user_id: user?.id,
+    };
+  };
+
+  const handleScheduleGenerate = (formElement) => {
+    if (isEditing) {
+      alert(tr(
+        "Jadwalkan generate hanya untuk dokumen baru.",
+        "Scheduled generate is only available for new documents."
+      ));
+      return;
+    }
+
+    if (!formData.customer || !formData.nama_teknisi) {
+      alert(tr("Harap lengkapi field wajib (Customer, Nama Teknisi)!", "Please fill required fields (Customer, Technician Name)!"));
+      return;
+    }
+
+    handleSchedule(buildSubmitData(), formElement);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -223,46 +284,7 @@ export const usePdf = (user, currentDivisi = "IT") => {
     setLoading(true);
 
     try {
-      // Prepare data for submission - convert checkboxes to array of true values
-      const selectedCheckboxes = Object.entries(checkboxes)
-        .filter(([key, value]) => value)
-        .map(([key]) => key);
-
-      // Prepare parts list
-      const partsData = partsList.filter(part =>
-        part.name || part.part_no || part.in || part.out || part.qty
-      ).map(part => ({
-        name: part.name,
-        part_no: part.part_no,
-        in: part.in,
-        out: part.out,
-        qty: part.qty ? parseInt(part.qty) : null,
-      }));
-
-      // Role-based divisi selection:
-      // - super_admin: gunakan currentDivisi (bisa pilih divisi apa saja)
-      // - admin: gunakan divisi milik user (user.divisi)
-      // - user biasa (it/service/sales/kontraktor): gunakan divisi milik user
-      let divisiToSend;
-      if (user.role === 'super_admin') {
-        divisiToSend = currentDivisi.toUpperCase();
-      } else if (user.role === 'admin') {
-        // Admin menggunakan divisi miliknya
-        divisiToSend = user.divisi ? user.divisi.toUpperCase() : 'SERVICE';
-      } else {
-        // User biasa, gunakan divisi milik user
-        divisiToSend = user.divisi ? user.divisi.toUpperCase() : 'SERVICE';
-      }
-
-      const submitData = {
-        ...formData,
-        ttd_teknisi: formData.ttd_teknisi || null,
-        ttd_klien: formData.ttd_klien || null,
-        checkboxes: selectedCheckboxes,
-        partsList: partsData,
-        divisi: divisiToSend,
-        user_id: user?.id,
-      };
+      const submitData = buildSubmitData();
 
       let response;
       if (isEditing && editId) {
@@ -478,5 +500,10 @@ export const usePdf = (user, currentDivisi = "IT") => {
     handleEdit,
     cancelEdit,
     fetchHistory,
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
   };
 };

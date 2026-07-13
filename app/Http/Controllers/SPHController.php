@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\SphDocument;
 use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\SignatureStampMerger;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -88,6 +89,12 @@ class SPHController extends Controller
             'bulan' => $nomorData['bulan'],
             'tahun' => $nomorData['tahun'],
         ]);
+
+        app(WhatsAppService::class)->notifyDocumentCreated(
+            'SPH',
+            $validated['penerima_nama'],
+            $nomorData['nomor_surat']
+        );
 
         return $this->generatePDFResponse($this->documentToPdfData($document));
     }

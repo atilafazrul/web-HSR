@@ -261,8 +261,8 @@ export default function Sidebar({
               </button>
             )}
 
-            {/* ================= BERITA ACARA (SUPER ADMIN & ADMIN) — disembunyikan sementara ================= */}
-            {false && (isSuperAdmin || isAdmin) && (
+            {/* ================= BERITA ACARA (SUPER ADMIN & ADMIN) ================= */}
+            {(isSuperAdmin || isAdmin) && (
               <button
                 type="button"
                 className="w-full text-left"

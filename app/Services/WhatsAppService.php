@@ -31,17 +31,27 @@ class WhatsAppService
         return $this->send($this->formatTargetsForProvider($targets), $message);
     }
 
+    public function notifyDocumentCreated(string $typeLabel, ?string $contextName = null, ?string $nomor = null): bool
+    {
+        $context = trim((string) $contextName);
+        if ($context === '') {
+            $context = 'dokumen';
+        }
+
+        $nomorPart = $nomor ? " (*{$nomor}*)" : '';
+        $message = "{$typeLabel} untuk *{$context}* sudah dibuat{$nomorPart}. Segera kirimkan ke client.";
+
+        return $this->sendToAdmin($message, 'berita_acara');
+    }
+
     public function notifyScheduledDocumentCreated(ScheduledBeritaAcaraDocument $schedule): bool
     {
         $schedule->loadMissing('projekKerja');
 
-        $typeLabel = strtoupper($schedule->document_type);
+        $typeLabel = strtoupper(str_replace('_', ' ', $schedule->document_type));
         $projectName = $schedule->projekKerja?->jenis_pekerjaan ?? 'projek';
-        $nomor = $schedule->nomor_surat ? " (*{$schedule->nomor_surat}*)" : '';
 
-        $message = "{$typeLabel} untuk projek *{$projectName}* sudah dibuat{$nomor}. Segera kirimkan ke client.";
-
-        return $this->sendToAdmin($message, 'berita_acara');
+        return $this->notifyDocumentCreated($typeLabel, $projectName, $schedule->nomor_surat);
     }
 
     public function notifyCuti(string $title, string $message): bool

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import {
   Package,
   ListTodo,
-  FileText,
   Archive,
   FilePlus2,
   ClipboardList,
@@ -78,16 +77,6 @@ const KontraktorPage = () => {
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/kontraktor/projek/archive`)}
-          />
-        )}
-
-        {/* BUAT PDF */}
-        {!isUserRole && (
-          <Card
-            icon={<FileText size={24} className="text-indigo-600" />}
-            title={language === "en" ? "Create PDF" : "Buat PDF"}
-            desc={language === "en" ? "Generate contractor work PDF" : "Buat PDF pekerjaan kontraktor"}
-            onClick={() => navigate(`${basePath}/kontraktor/buat-pdf`)}
           />
         )}
 

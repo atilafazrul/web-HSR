@@ -33,8 +33,8 @@ export const ScheduleGenerateSection = ({
       </h3>
       <p className="mb-4 text-sm text-amber-800">
         {tr(
-          "Isi form sekarang, dokumen akan otomatis dibuat pada waktu yang Anda pilih. Setelah generate, admin akan menerima notifikasi WhatsApp.",
-          "Fill in the form now; the document will be created automatically at your chosen time. After generation, the admin will receive a WhatsApp notification."
+          "Isi form sekarang, dokumen akan otomatis dibuat pada waktu yang Anda pilih. Notifikasi WhatsApp dikirim ke admin baik saat generate langsung maupun setelah jadwal berjalan.",
+          "Fill in the form now; the document will be created automatically at your chosen time. WhatsApp notifications are sent to admin both on immediate generate and after the schedule runs."
         )}
       </p>
 

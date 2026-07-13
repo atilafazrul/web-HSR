@@ -116,12 +116,10 @@ export default function SuperAdminDashboard({ user, logout }) {
 
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Manage Photos & Documents" : "Kelola Foto & dokumen";
     if (path.includes("projek-kerja/berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
+    if (path.includes("berita-acara/service-report")) return "Service Report";
+    if (path.includes("berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("projek-kerja")) return language === "en" ? "Project Work" : "Projek Kerja";
-    if (path.includes("/it/buat-pdf")) return language === "en" ? "Create PDF - IT" : "Buat PDF - IT";
-    if (path.includes("/service/buat-pdf")) return language === "en" ? "Create PDF - Service" : "Buat PDF - Service";
-    if (path.includes("/sales/buat-pdf")) return language === "en" ? "Create PDF - Sales" : "Buat PDF - Sales";
     if (path.includes("/sales/target")) return language === "en" ? "Sales Target" : "Target Penjualan";
-    if (path.includes("/kontraktor/buat-pdf")) return language === "en" ? "Create PDF - Kontraktor" : "Buat PDF - Kontraktor";
     if (path.includes("/it")) return "Divisi IT";
     if (path.includes("service")) return "Divisi Service";
     if (path.includes("sales")) return "Divisi Sales";
@@ -185,6 +183,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="berita-acara/bast" element={<BASTPage />} />
             <Route path="berita-acara/sppd" element={<SPPDPage />} />
             <Route path="berita-acara/sph" element={<SPHPage />} />
+            <Route path="berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
 
             <Route path="it">
               <Route index element={<ITPage user={user} />} />
@@ -193,7 +192,7 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
-              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
             </Route>
 
             <Route path="service">
@@ -203,7 +202,7 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
-              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
             </Route>
 
             <Route path="sales">
@@ -211,7 +210,7 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="target" element={<TargetPage />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
               <Route path="projek/archive" element={<ProjekKerjaPage />} />
-              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
             </Route>
 
             <Route path="kontraktor">
@@ -221,7 +220,7 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
-              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
               <Route path="rfi" element={<RfiFormPage />} />
               <Route path="work-checklist/:type" element={<WorkChecklistFormPage />} />
               <Route path="daily-report" element={<DailyReportFormPage />} />
@@ -231,7 +230,7 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route index element={<LogistikPage user={user} />} />
               <Route path="projek" element={<ProjekKerjaPage />} />
               <Route path="projek/archive" element={<ProjekKerjaPage />} />
-              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
               <Route path="inventory" element={<LogistikInventoryPage />} />
               <Route path="inventory/tambah" element={<LogistikFormBarangPage />} />
               <Route path="inventory/edit/:id" element={<LogistikEditBarangPage />} />
@@ -244,7 +243,7 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
-              <Route path="buat-pdf" element={<GeneratePDFPage user={user} />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
               <Route path="pembelian" element={<PembelianPage />} />
             </Route>
 
@@ -257,6 +256,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="projek-kerja/berita-acara/:projekId/bast" element={<BASTPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sppd" element={<SPPDPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sph" element={<SPHPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/service-report" element={<GeneratePDFPage user={user} />} />
 
             <Route
               path="profile"

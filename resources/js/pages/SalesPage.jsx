@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Archive, BarChart3, FileText, ListTodo } from "lucide-react";
+import { Archive, BarChart3, ListTodo } from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
 
 const SalesPage = () => {
@@ -69,16 +69,6 @@ const SalesPage = () => {
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
             onClick={() => navigate(`${basePath}/sales/projek/archive`)}
-          />
-        )}
-
-        {/* BUAT PDF */}
-        {!isUserRole && (
-          <Card
-            icon={<FileText size={24} className="text-indigo-600" />}
-            title={language === "en" ? "Create PDF" : "Buat PDF"}
-            desc={language === "en" ? "Generate sales work PDF" : "Buat PDF pekerjaan sales"}
-            onClick={() => navigate(`${basePath}/sales/buat-pdf`)}
           />
         )}
 

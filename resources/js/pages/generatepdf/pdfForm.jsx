@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "../../i18n";
 import SignaturePad from "../berita-acara/components/forms/SignaturePad";
+import { ScheduleGenerateSection } from "../berita-acara/components/forms/ScheduleGenerateSection";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -39,10 +40,15 @@ export default function pdfForm({
   loading,
   user,
   isEditing,
+  scheduledAt = "",
+  onScheduledAtChange,
+  onSchedule,
+  scheduling = false,
+  canSchedule = false,
 }) {
   useI18n();
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form id="service-report-form" onSubmit={onSubmit} className="space-y-6">
       {/* HEADER FORM CARD */}
       <div className="bg-white rounded-3xl shadow-md p-8">
 
@@ -127,6 +133,15 @@ export default function pdfForm({
         <SignatureSection
           formData={formData}
           onSignatureChange={onSignatureChange}
+        />
+
+        <ScheduleGenerateSection
+          scheduledAt={scheduledAt}
+          onScheduledAtChange={onScheduledAtChange}
+          onSchedule={() => onSchedule?.(document.getElementById("service-report-form"))}
+          scheduling={scheduling}
+          canSchedule={canSchedule && !isEditing}
+          loading={loading}
         />
 
       </div>

@@ -8,6 +8,7 @@ use App\Models\ServiceReport;
 use App\Models\ServiceType;
 use App\Models\ServiceReportPart;
 use App\Models\User;
+use App\Services\WhatsAppService;
 use Illuminate\Support\Facades\DB;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -194,6 +195,12 @@ class ServiceReportController extends Controller
             }
 
             DB::commit();
+
+            app(WhatsAppService::class)->notifyDocumentCreated(
+                'SERVICE REPORT',
+                $report->customer,
+                $report->report_no
+            );
 
             return response()->json([
                 'success' => true,

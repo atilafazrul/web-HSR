@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { ArrowLeft, FileText, History, Plus } from "lucide-react";
 import { usePdf } from "./generatepdf/usePdf";
 import pdfForm from "./generatepdf/pdfform";
@@ -11,15 +11,25 @@ export default function GeneratePDFPage({ user }) {
   const tr = (id, en) => (language === "en" ? en : id);
   const navigate = useNavigate();
   const location = useLocation();
+  const { projekId } = useParams();
 
-  // Extract divisi from URL pathname
-  // Path format: /super_admin/it/buat-pdf, /admin/service/buat-pdf, etc.
-  const pathSegments = location.pathname.split('/');
-  // Find the segment before 'buat-pdf' which should be the divisi
-  const buatPdfIndex = pathSegments.findIndex(seg => seg === 'buat-pdf');
-  const currentDivisi = buatPdfIndex > 0
-    ? pathSegments[buatPdfIndex - 1].toUpperCase()
-    : "IT";
+  // Divisi from URL:
+  // - Legacy: /{role}/{divisi}/buat-pdf
+  // - Berita Acara: /{role}/berita-acara/service-report (use user.divisi, or none for super_admin)
+  const pathSegments = location.pathname.split("/").filter(Boolean);
+  const buatPdfIndex = pathSegments.findIndex((seg) => seg === "buat-pdf");
+  const isUnderBeritaAcara = pathSegments.includes("service-report");
+
+  let currentDivisi = "";
+  if (buatPdfIndex > 0) {
+    currentDivisi = pathSegments[buatPdfIndex - 1].toUpperCase();
+  } else if (isUnderBeritaAcara) {
+    currentDivisi = user?.role === "super_admin"
+      ? ""
+      : (user?.divisi || "SERVICE").toUpperCase();
+  } else {
+    currentDivisi = (user?.divisi || "SERVICE").toUpperCase();
+  }
 
   // Use the custom hook
   const {
@@ -51,7 +61,12 @@ export default function GeneratePDFPage({ user }) {
     cancelEdit,
     isEditing,
     fetchHistory,
-  } = usePdf(user, currentDivisi);
+    scheduledAt,
+    setScheduledAt,
+    scheduling,
+    handleScheduleGenerate,
+    canSchedule,
+  } = usePdf(user, currentDivisi, projekId);
 
   return (
     <div>
@@ -63,7 +78,12 @@ export default function GeneratePDFPage({ user }) {
               {isEditing ? "Edit Service Report" : "Generate Service Report"}
             </h2>
             <p className="text-gray-500">
-              {tr("Divisi", "Division")} {currentDivisi} - {isEditing ? tr("Edit dokumen", "Edit document") : tr("Buat dan kelola dokumen Service Report", "Create and manage Service Report documents")}
+              {currentDivisi
+                ? `${tr("Divisi", "Division")} ${currentDivisi} - `
+                : ""}
+              {isEditing
+                ? tr("Edit dokumen", "Edit document")
+                : tr("Buat dan kelola dokumen Service Report", "Create and manage Service Report documents")}
             </p>
           </div>
         </div>
@@ -130,6 +150,11 @@ export default function GeneratePDFPage({ user }) {
             loading,
             user,
             isEditing,
+            scheduledAt,
+            onScheduledAtChange: setScheduledAt,
+            onSchedule: handleScheduleGenerate,
+            scheduling,
+            canSchedule,
           })}
         </div>
       ) : (

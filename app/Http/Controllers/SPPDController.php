@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use App\Models\SppdDocument;
 use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\SignatureStampMerger;
+use App\Services\WhatsAppService;
 
 class SPPDController extends Controller
 {
@@ -139,6 +140,12 @@ class SPPDController extends Controller
             'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
         ]);
 
+        app(WhatsAppService::class)->notifyDocumentCreated(
+            'SPPD',
+            $validated['nama_pegawai'],
+            $nomorData['nomor_surat']
+        );
+
         return response()->json([
             'success' => true,
             'message' => 'Dokumen SPPD berhasil disimpan',
@@ -195,6 +202,12 @@ class SPPDController extends Controller
             'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
             'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
         ]);
+
+        app(WhatsAppService::class)->notifyDocumentCreated(
+            'SPPD',
+            $validated['nama_pegawai'],
+            $nomorData['nomor_surat']
+        );
 
         $data = [
             'nomor_surat' => $nomorData['nomor_surat'],
