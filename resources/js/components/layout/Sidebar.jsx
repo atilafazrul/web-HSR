@@ -261,23 +261,6 @@ export default function Sidebar({
               </button>
             )}
 
-            {/* ================= BERITA ACARA (SUPER ADMIN & ADMIN) ================= */}
-            {(isSuperAdmin || isAdmin) && (
-              <button
-                type="button"
-                className="w-full text-left"
-                onClick={() => go(`${basePath}/berita-acara`)}
-              >
-                <SidebarItem
-                  icon={<FileText size={18} />}
-                  text={t("minutesReport", "Berita Acara")}
-                  active={isActive(`${basePath}/berita-acara`)}
-                  expanded={expanded}
-                  isMobile={isMobile}
-                />
-              </button>
-            )}
-
             {/* ================= APPROVAL CUTI (SUPER ADMIN) ================= */}
             {isSuperAdmin && (
               <button
