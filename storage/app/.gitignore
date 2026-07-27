@@ -2,3 +2,6 @@
 !private/
 !public/
 !.gitignore
+!templates/
+!templates/kas-hsr-template.xlsx
+!templates/form-servis.pdf
