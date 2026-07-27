@@ -44,7 +44,16 @@ class ScheduledBeritaAcaraController extends Controller
                 ScheduledBeritaAcaraDocument::TYPE_SPPD,
                 ScheduledBeritaAcaraDocument::TYPE_SERVICE_REPORT,
             ])],
-            'scheduled_at' => 'required|date|after:now',
+            'scheduled_at' => 'nullable|date|after:now|required_without:scheduled_dates',
+            'scheduled_dates' => 'nullable|array|min:1|required_without:scheduled_at',
+            'scheduled_dates.*' => 'date|after:now',
+            'recurrence_type' => ['nullable', Rule::in([
+                ScheduledBeritaAcaraDocument::RECURRENCE_ONCE,
+                ScheduledBeritaAcaraDocument::RECURRENCE_DAILY,
+                ScheduledBeritaAcaraDocument::RECURRENCE_WEEKLY,
+                ScheduledBeritaAcaraDocument::RECURRENCE_MONTHLY,
+            ])],
+            'recurrence_end_at' => 'nullable|date|after:now',
             'form_payload' => 'required|array',
         ]);
 
@@ -52,20 +61,53 @@ class ScheduledBeritaAcaraController extends Controller
 
         ProjekKerja::findOrFail($validated['projek_kerja_id']);
 
-        $schedule = ScheduledBeritaAcaraDocument::create([
-            'projek_kerja_id' => $validated['projek_kerja_id'],
-            'created_by' => $request->user()?->id,
-            'document_type' => $validated['document_type'],
-            'form_payload' => $validated['form_payload'],
-            'scheduled_at' => $validated['scheduled_at'],
-            'status' => ScheduledBeritaAcaraDocument::STATUS_PENDING,
-        ]);
+        $recurrenceType = $validated['recurrence_type']
+            ?? ScheduledBeritaAcaraDocument::RECURRENCE_ONCE;
+        $recurrenceEndAt = $validated['recurrence_end_at'] ?? null;
 
-        $schedule->load(['projekKerja:id,jenis_pekerjaan', 'creator:id,name']);
+        $dates = collect($validated['scheduled_dates'] ?? [])
+            ->when($validated['scheduled_at'] ?? null, fn ($c) => $c->push($validated['scheduled_at']))
+            ->unique()
+            ->sort()
+            ->values();
+
+        if ($dates->isEmpty()) {
+            return response()->json([
+                'message' => 'Minimal satu tanggal jadwal harus diisi.',
+            ], 422);
+        }
+
+        $created = [];
+
+        foreach ($dates as $scheduledAt) {
+            $schedule = ScheduledBeritaAcaraDocument::create([
+                'projek_kerja_id' => $validated['projek_kerja_id'],
+                'created_by' => $request->user()?->id,
+                'document_type' => $validated['document_type'],
+                'form_payload' => $validated['form_payload'],
+                'scheduled_at' => $scheduledAt,
+                'recurrence_type' => $recurrenceType,
+                'recurrence_end_at' => $recurrenceEndAt,
+                'status' => ScheduledBeritaAcaraDocument::STATUS_PENDING,
+            ]);
+
+            $schedule->load(['projekKerja:id,jenis_pekerjaan', 'creator:id,name']);
+            $created[] = $schedule;
+        }
+
+        $count = count($created);
+        $recurrenceLabel = match ($recurrenceType) {
+            ScheduledBeritaAcaraDocument::RECURRENCE_DAILY => 'harian',
+            ScheduledBeritaAcaraDocument::RECURRENCE_WEEKLY => 'mingguan',
+            ScheduledBeritaAcaraDocument::RECURRENCE_MONTHLY => 'bulanan',
+            default => 'sekali',
+        };
 
         return response()->json([
-            'message' => 'Jadwal generate berhasil disimpan.',
-            'data' => $schedule,
+            'message' => $count > 1
+                ? "{$count} jadwal generate berhasil disimpan (ulang {$recurrenceLabel})."
+                : "Jadwal generate berhasil disimpan (ulang {$recurrenceLabel}).",
+            'data' => $created,
         ], 201);
     }
 

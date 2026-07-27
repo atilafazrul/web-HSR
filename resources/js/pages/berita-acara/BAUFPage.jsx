@@ -31,11 +31,8 @@ export default function BAUFPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   } = useBAUF(projekId);
 
   return (
@@ -84,11 +81,8 @@ export default function BAUFPage() {
             onSubmit={handleSubmit}
             onReset={resetForm}
             loading={loading}
-            scheduledAt={scheduledAt}
-            onScheduledAtChange={setScheduledAt}
+            scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}
-            scheduling={scheduling}
-            canSchedule={canSchedule}
           />
         ) : (
           <BAUFHistory

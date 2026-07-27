@@ -7,11 +7,8 @@ import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 export const BAUFForm = ({ 
   formData, onInputChange, onSignatureChange, onItemChange, onAddItem, onRemoveItem, 
   onSubmit, onReset, loading,
-  scheduledAt,
-  onScheduledAtChange,
+  scheduleSectionProps,
   onScheduleGenerate,
-  scheduling,
-  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -249,11 +246,8 @@ export const BAUFForm = ({
         </div>
 
         <ScheduleGenerateSection
-          scheduledAt={scheduledAt}
-          onScheduledAtChange={onScheduledAtChange}
+          {...scheduleSectionProps}
           onSchedule={() => onScheduleGenerate?.(document.getElementById("bauf-form"))}
-          scheduling={scheduling}
-          canSchedule={canSchedule}
           loading={loading}
         />
 

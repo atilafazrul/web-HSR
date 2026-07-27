@@ -449,75 +449,76 @@ export default function Profile({ user, logout, onProfileUpdate }) {
 
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {/* Cover & Profile Header */}
-          <div className="relative">
-            <div className="h-32 bg-gradient-to-r from-purple-600 via-purple-500 to-indigo-600"></div>
-            <div className="relative md:absolute md:-bottom-16 left-0 right-0 px-4 sm:px-6 md:px-8 mt-4 md:mt-0">
-              <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
-                <div className="relative">
-                  <div className="relative">
-                    {photoUrl ? (
-                      <img src={photoUrl} alt={profileData.name} className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-white shadow-xl bg-white" />
+          {/* Cover & Profile Header — gaya card divisi (tanpa gambar) */}
+          <div className="relative overflow-hidden">
+            <div className="relative bg-gradient-to-br from-slate-800 via-slate-900 to-black px-4 pb-8 pt-6 sm:px-6 md:px-8">
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+
+              <div className="relative flex flex-col items-center gap-4 md:flex-row md:items-end">
+                <div className="relative shrink-0">
+                  {photoUrl ? (
+                    <img src={photoUrl} alt={profileData.name} className="h-24 w-24 rounded-full border-4 border-white/90 object-cover shadow-xl md:h-28 md:w-28" />
+                  ) : (
+                    <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-white/90 bg-white/15 text-3xl font-bold text-white shadow-xl backdrop-blur-sm md:h-28 md:w-28">
+                      {initial}
+                    </div>
+                  )}
+                  <button
+                    onClick={handlePhotoClick}
+                    disabled={uploadingPhoto}
+                    className="absolute bottom-0 right-0 rounded-full bg-white/20 p-1.5 shadow-md backdrop-blur-md transition hover:bg-white/30"
+                  >
+                    {uploadingPhoto ? (
+                      <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
                     ) : (
-                      <div className="w-24 h-24 md:w-28 md:h-28 bg-gradient-to-br from-purple-500 to-purple-700 rounded-full flex items-center justify-center text-white text-3xl font-bold border-4 border-white shadow-xl">
-                        {initial}
-                      </div>
+                      <Camera size={14} className="text-white" />
                     )}
+                  </button>
+                  {photoUrl && !uploadingPhoto && (
                     <button
-                      onClick={handlePhotoClick}
-                      disabled={uploadingPhoto}
-                      className="absolute bottom-0 right-0 bg-white rounded-full p-1.5 shadow-md hover:shadow-lg transition"
+                      onClick={handleDeletePhoto}
+                      className="absolute bottom-0 left-0 rounded-full bg-white/20 p-1.5 shadow-md backdrop-blur-md transition hover:bg-white/30"
                     >
-                      {uploadingPhoto ? (
-                        <div className="w-3.5 h-3.5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Camera size={14} className="text-purple-600" />
-                      )}
+                      <Trash2 size={14} className="text-white" />
                     </button>
-                    {photoUrl && !uploadingPhoto && (
-                      <button
-                        onClick={handleDeletePhoto}
-                        className="absolute bottom-0 left-0 bg-white rounded-full p-1.5 shadow-md hover:shadow-lg transition"
-                      >
-                        <Trash2 size={14} className="text-red-500" />
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
-                <div className="flex-1 text-center md:text-left w-full min-w-0">
-                  <h2 className="text-2xl font-bold text-gray-900">{profileData.name || user?.name}</h2>
-                  <div className="flex flex-wrap gap-2 mt-2 justify-center md:justify-start">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
+
+                <div className="w-full min-w-0 flex-1 text-center md:text-left">
+                  <h2 className="text-2xl font-bold text-white">{profileData.name || user?.name}</h2>
+                  <div className="mt-2 flex flex-wrap justify-center gap-2 md:justify-start">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
                       <Briefcase size={12} />
                       {user?.role?.replace("_", " ") || "Employee"}
                     </span>
                     {user?.divisi && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
                         <Building2 size={12} />
                         {user.divisi}
                       </span>
                     )}
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white backdrop-blur-md">
                       <FileText size={12} />
                       {totalDocuments} {tr("Dokumen", "Documents")}
                     </span>
                   </div>
                 </div>
+
                 <div className="w-full md:w-auto">
                   {!isEditing ? (
                     <button
                       onClick={handleEdit}
-                      className="w-full md:w-auto px-5 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition flex items-center justify-center gap-2 shadow-md text-sm font-medium"
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white/20 px-6 py-3 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/30 md:w-auto"
                     >
                       <Edit2 size={16} />
                       {tr("Edit Profile", "Edit Profile")}
                     </button>
                   ) : (
-                    <div className="grid grid-cols-2 md:flex gap-2">
-                      <button onClick={handleCancel} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition text-sm font-medium flex items-center justify-center gap-2">
+                    <div className="grid grid-cols-2 gap-2 md:flex">
+                      <button onClick={handleCancel} className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/20">
                         <X size={16} /> {tr("Batal", "Cancel")}
                       </button>
-                      <button onClick={handleSave} disabled={loading} className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition text-sm font-medium flex items-center justify-center gap-2">
+                      <button onClick={handleSave} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-full bg-white/25 px-4 py-2.5 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/35 disabled:opacity-60">
                         <Save size={16} /> {loading ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
                       </button>
                     </div>
@@ -528,7 +529,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
           </div>
 
           {/* Tab Navigation */}
-          <div className="mt-24 md:mt-20 px-4 md:px-8 border-b border-gray-200">
+          <div className="border-b border-gray-200 px-4 md:px-8">
             <div className="flex gap-6 overflow-x-auto">
               {tabs.map(tab => (
                 <button

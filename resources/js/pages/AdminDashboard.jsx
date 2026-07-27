@@ -36,6 +36,7 @@ import FotoProjekPage from "./FotoProjekPage";
 import EditProjekKerjaPage from "./EditProjekKerjaPage";
 import KaryawanPage from "./KaryawanPage";
 import Profile from "./Profile";
+import SettingsPage from "./SettingsPage";
 import FormPekerjaanPage from "./FormPekerjaanPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import TargetPage from "./TargetPage";
@@ -170,6 +171,7 @@ export default function AdminDashboard({ user, logout }) {
     if (path.includes("logistik")) return language === "en" ? "Logistics Division" : "Divisi Logistik";
     if (path.includes("purchasing")) return language === "en" ? "Purchasing Division" : "Divisi Purchasing";
     if (path.includes("profile")) return language === "en" ? "Profile" : "Profil";
+    if (path.includes("settings")) return language === "en" ? "Settings" : "Pengaturan";
 
     return "Admin";
   };
@@ -689,6 +691,8 @@ export default function AdminDashboard({ user, logout }) {
               path="profile"
               element={<Profile user={currentUser} logout={logout} />}
             />
+
+            <Route path="settings" element={<SettingsPage />} />
 
             {/* Fallback harus absolute biar tidak jadi /.../dashboard/dashboard */}
             <Route path="*" element={<Navigate to={`${basePath}/dashboard`} replace />} />

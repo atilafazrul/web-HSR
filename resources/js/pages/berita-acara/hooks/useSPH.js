@@ -29,11 +29,8 @@ export const useSPH = (projekKerjaId = null) => {
   const [nextNomorSurat, setNextNomorSurat] = useState("");
 
   const {
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleSchedule,
-    canSchedule,
   } = useDocumentSchedule(projekKerjaId, "sph");
 
   const [formData, setFormData] = useState({
@@ -298,11 +295,8 @@ export const useSPH = (projekKerjaId = null) => {
     handleGeneratePDF,
     handleDelete,
     fetchHistory,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
     formatRupiah,
     estimatedTotal,
   };

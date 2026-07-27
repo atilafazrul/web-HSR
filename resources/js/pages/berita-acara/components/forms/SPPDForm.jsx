@@ -6,11 +6,8 @@ import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 
 export const SPPDForm = ({
   formData, onInputChange, onSignatureChange, onSubmit, onReset, loading, nextNomorSurat, fetchingNomor, isEditing,
-  scheduledAt,
-  onScheduledAtChange,
+  scheduleSectionProps,
   onScheduleGenerate,
-  scheduling,
-  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -307,11 +304,9 @@ export const SPPDForm = ({
         </div>
 
         <ScheduleGenerateSection
-          scheduledAt={scheduledAt}
-          onScheduledAtChange={onScheduledAtChange}
+          {...scheduleSectionProps}
+          canSchedule={scheduleSectionProps?.canSchedule && !isEditing}
           onSchedule={() => onScheduleGenerate?.(document.getElementById("sppd-form"))}
-          scheduling={scheduling}
-          canSchedule={canSchedule && !isEditing}
           loading={loading}
         />
 

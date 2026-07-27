@@ -33,11 +33,8 @@ export default function SPPDPage() {
     handleDelete,
     handleEdit,
     cancelEdit,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   } = useSPPD(projekId);
 
   const handleTabChange = (tab) => {
@@ -93,11 +90,8 @@ export default function SPPDPage() {
             nextNomorSurat={nextNomorSurat}
             fetchingNomor={fetchingNomor}
             isEditing={isEditing}
-            scheduledAt={scheduledAt}
-            onScheduledAtChange={setScheduledAt}
+            scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}
-            scheduling={scheduling}
-            canSchedule={canSchedule}
           />
         ) : (
           <SPPDHistory

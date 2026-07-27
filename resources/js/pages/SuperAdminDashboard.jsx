@@ -33,6 +33,7 @@ import RekapPerAkun from "../components/RekapPerAkun";
 
 /* PAGES */
 import Profile from "./Profile.jsx";
+import SettingsPage from "./SettingsPage.jsx";
 import Sidebar from "../components/layout/Sidebar";
 import Header from "../components/layout/Header";
 import BiayaDashboardPanel from "../components/BiayaDashboardPanel";
@@ -127,6 +128,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     if (path.includes("logistik")) return "Divisi Logistik";
     if (path.includes("purchasing")) return "Divisi Purchasing";
     if (path.includes("profile")) return language === "en" ? "Profile" : "Profil";
+    if (path.includes("settings")) return language === "en" ? "Settings" : "Pengaturan";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("karyawan")) return "Profil Karyawan";
     if (path.includes("cuti-approval")) return language === "en" ? "Leave Approval" : "Approval Cuti";
@@ -262,6 +264,8 @@ export default function SuperAdminDashboard({ user, logout }) {
               path="profile"
               element={<Profile user={user} logout={logout} />}
             />
+
+            <Route path="settings" element={<SettingsPage />} />
 
             {/* Fallback harus absolute biar tidak jadi /.../dashboard/dashboard */}
             <Route path="*" element={<Navigate to="/super_admin/dashboard" replace />} />

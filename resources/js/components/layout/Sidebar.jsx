@@ -20,6 +20,7 @@ import {
   CalendarCheck,
   ClipboardCheck,
   History as HistoryIcon,
+  Settings,
 } from "lucide-react";
 
 import { useLocation } from "react-router-dom";
@@ -375,8 +376,22 @@ export default function Sidebar({
           </nav>
         </div>
 
-        {/* ================= LOGOUT ================= */}
-        <div className="px-3 py-4 border-t border-slate-800">
+        {/* ================= BAWAH: PENGATURAN & LOGOUT ================= */}
+        <div className="shrink-0 border-t border-slate-800 px-3 py-3 space-y-2">
+          <button
+            type="button"
+            className="w-full text-left"
+            onClick={() => go(`${basePath}/settings`)}
+          >
+            <SidebarItem
+              icon={<Settings size={18} />}
+              text={t("settings", "Pengaturan")}
+              active={isActive(`${basePath}/settings`)}
+              expanded={expanded}
+              isMobile={isMobile}
+            />
+          </button>
+
           <button
             onClick={() => {
               setShowLogoutConfirm(true);
@@ -384,7 +399,7 @@ export default function Sidebar({
             className="w-full bg-slate-700 hover:bg-slate-600 py-2.5 rounded-xl font-medium shadow transition-colors flex items-center justify-center gap-2"
           >
             <LogOut size={18} />
-            {expanded && <span>{t("logout", "Logout")}</span>}
+            {(expanded || isMobile) && <span>{t("logout", "Logout")}</span>}
           </button>
         </div>
       </aside>

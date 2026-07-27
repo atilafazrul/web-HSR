@@ -31,11 +31,8 @@ export default function BASTPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   } = useBAST(projekId);
 
   return (
@@ -92,11 +89,8 @@ export default function BASTPage() {
             onSubmit={handleSubmit}
             onReset={resetForm}
             loading={loading}
-            scheduledAt={scheduledAt}
-            onScheduledAtChange={setScheduledAt}
+            scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}
-            scheduling={scheduling}
-            canSchedule={canSchedule}
           />
         ) : (
           <BASTHistory

@@ -18,11 +18,8 @@ export const SPHForm = ({
   loading,
   formatRupiah,
   estimatedTotal,
-  scheduledAt,
-  onScheduledAtChange,
+  scheduleSectionProps,
   onScheduleGenerate,
-  scheduling,
-  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -165,11 +162,8 @@ export const SPHForm = ({
         </div>
 
         <ScheduleGenerateSection
-          scheduledAt={scheduledAt}
-          onScheduledAtChange={onScheduledAtChange}
+          {...scheduleSectionProps}
           onSchedule={() => onScheduleGenerate?.(document.getElementById("sph-form"))}
-          scheduling={scheduling}
-          canSchedule={canSchedule}
           loading={loading}
         />
 

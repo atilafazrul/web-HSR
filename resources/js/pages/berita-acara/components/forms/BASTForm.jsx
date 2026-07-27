@@ -14,11 +14,8 @@ export const BASTForm = ({
   onSubmit, 
   onReset, 
   loading,
-  scheduledAt,
-  onScheduledAtChange,
+  scheduleSectionProps,
   onScheduleGenerate,
-  scheduling,
-  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -294,11 +291,8 @@ export const BASTForm = ({
         </div>
 
         <ScheduleGenerateSection
-          scheduledAt={scheduledAt}
-          onScheduledAtChange={onScheduledAtChange}
+          {...scheduleSectionProps}
           onSchedule={() => onScheduleGenerate?.(document.getElementById("bast-form"))}
-          scheduling={scheduling}
-          canSchedule={canSchedule}
           loading={loading}
         />
 

@@ -452,56 +452,98 @@ const StatCard = ({ title, value, icon, color }) => {
 
 // ================= EMPLOYEE CARD =================
 const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
-  const getInitials = (name) => {
-    return name?.charAt(0)?.toUpperCase() || "U";
-  };
+  const getInitials = (name) => name?.charAt(0)?.toUpperCase() || "U";
+
+  const roleLabel = String(employee.role || "-").replace(/_/g, " ");
+  const isAdmin = String(employee.role || "").toLowerCase().includes("admin");
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden group">
-      <div className="relative h-24 bg-gradient-to-r from-indigo-500 to-indigo-700">
-        <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2">
-          {employee.profile_photo ? (
-            <img
-              src={`/storage/${employee.profile_photo}`}
-              className="w-24 h-24 rounded-full border-4 border-white object-cover bg-white shadow-lg"
-              alt={employee.name}
-            />
-          ) : (
-            <div className="w-24 h-24 rounded-full border-4 border-white bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-              {getInitials(employee.name)}
-            </div>
-          )}
+    <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:-translate-y-1.5 hover:border-slate-300/90 hover:shadow-xl hover:shadow-slate-900/10">
+      {/* Header gelap — avatar di tengah (seperti mockup) */}
+      <div className="relative px-4 pb-16 pt-8">
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-indigo-500/10" />
+
+        <div className="relative flex justify-center">
+          <div className="relative w-fit">
+            {employee.profile_photo ? (
+              <img
+                src={`/storage/${employee.profile_photo}`}
+                className="relative h-24 w-24 rounded-full border-[3px] border-white object-cover shadow-lg transition duration-300 group-hover:scale-[1.02]"
+                alt={employee.name}
+              />
+            ) : (
+              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-[3px] border-white bg-white/15 text-3xl font-bold text-white backdrop-blur-sm">
+                {getInitials(employee.name)}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="pt-14 pb-5 px-4 text-center">
-        <h4 className="font-bold text-gray-800 text-lg truncate">{employee.name}</h4>
-        <p className="text-indigo-600 text-sm font-medium mt-1">{employee.divisi || "-"}</p>
-        <p className="text-xs text-gray-500 uppercase mt-0.5">{employee.role || "-"}</p>
-        <p className="text-gray-400 text-xs mt-1 truncate">{employee.email}</p>
+      {/* Lembar putih — lengkung atas overlap header gelap */}
+      <div className="relative -mt-10 rounded-t-[1.75rem] bg-white px-4 pb-6 pt-9 text-center sm:rounded-t-[2rem]">
+        <h4 className="mx-auto max-w-full truncate text-xl font-bold leading-snug text-slate-900" title={employee.name}>
+          {employee.name}
+        </h4>
 
-        <div className="flex justify-center gap-2 mt-4">
-          <ActionButton icon={<Eye size={16} />} onClick={onView} color="blue" tooltip={trText("Lihat Detail", "View Detail")} />
-          <ActionButton icon={<Pencil size={16} />} onClick={onEdit} color="purple" tooltip="Edit" />
-          <ActionButton icon={<Trash2 size={16} />} onClick={onDelete} color="red" tooltip={trText("Hapus", "Delete")} />
+        <div className="mx-auto mt-4 flex w-full max-w-[200px] flex-col items-center gap-2">
+          <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm">
+            <Building2 size={12} />
+            {employee.divisi || "-"}
+          </span>
+          <span
+            className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide ${
+              isAdmin
+                ? "bg-amber-400/20 text-amber-800 ring-1 ring-amber-300/60"
+                : "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200/70"
+            }`}
+          >
+            <Briefcase size={12} />
+            {roleLabel}
+          </span>
+        </div>
+
+        <div className="mx-auto mt-4 flex max-w-full items-center justify-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/90 px-3 py-1.5 text-xs text-slate-500">
+          <Mail size={12} className="shrink-0 text-slate-400" />
+          <span className="truncate">{employee.email || "-"}</span>
+        </div>
+
+        <div className="mx-auto mt-5 flex max-w-[220px] items-center justify-center gap-1 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white to-slate-50/90 p-1.5 shadow-inner">
+          <ActionButton icon={<Eye size={15} />} onClick={onView} variant="card-view" tooltip={trText("Lihat Detail", "View Detail")} />
+          <ActionButton icon={<Pencil size={15} />} onClick={onEdit} variant="card-edit" tooltip="Edit" />
+          <ActionButton icon={<Trash2 size={15} />} onClick={onDelete} variant="card-delete" tooltip={trText("Hapus", "Delete")} />
         </div>
       </div>
     </div>
   );
 };
 
-const ActionButton = ({ icon, onClick, color, tooltip }) => {
+const ActionButton = ({ icon, onClick, color, variant = "default", tooltip }) => {
   const colors = {
     blue: "bg-slate-100 hover:bg-slate-200 text-slate-600",
     emerald: "bg-emerald-50 hover:bg-emerald-100 text-emerald-600",
     purple: "bg-indigo-50 hover:bg-indigo-100 text-indigo-600",
-    red: "bg-red-50 hover:bg-red-100 text-red-600"
+    red: "bg-red-50 hover:bg-red-100 text-red-600",
   };
+
+  const variants = {
+    glass: "border border-slate-200/80 bg-slate-900/5 text-slate-700 backdrop-blur-sm hover:bg-slate-900/10",
+    "glass-danger": "border border-red-200/80 bg-red-500/10 text-red-600 backdrop-blur-sm hover:bg-red-500/15",
+    "card-view": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700",
+    "card-edit": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-violet-100 hover:text-violet-700",
+    "card-delete": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-red-100 hover:text-red-600",
+  };
+
+  const className = variant !== "default" ? variants[variant] : colors[color];
+  const isCardVariant = variant.startsWith("card-");
 
   return (
     <button
       onClick={onClick}
-      className={`w-9 h-9 flex items-center justify-center rounded-full transition ${colors[color]}`}
+      className={`flex items-center justify-center transition-all duration-200 active:scale-95 ${
+        isCardVariant ? `h-9 ${className}` : `h-9 w-9 rounded-full ${className}`
+      }`}
       title={tooltip}
     >
       {icon}
@@ -551,18 +593,23 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
   return (
     <div className="space-y-4">
       {/* Profile Header */}
-      <div className="text-center pb-4 border-b">
-        <img
-          src={
-            employee.profile_photo
-              ? `/storage/${employee.profile_photo}`
-              : `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name || "User")}&background=8B5CF6&color=fff&size=128`
-          }
-          className="w-28 h-28 mx-auto rounded-full border-4 border-purple-200 object-cover mb-3"
-          alt={employee.name}
-        />
-        <h3 className="text-xl font-bold text-gray-800">{employee.name}</h3>
-        <p className="text-purple-600 font-medium">{employee.divisi || "-"}</p>
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-black px-4 py-6 text-center">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+        <div className="relative">
+          <img
+            src={
+              employee.profile_photo
+                ? `/storage/${employee.profile_photo}`
+                : `https://ui-avatars.com/api/?name=${encodeURIComponent(employee.name || "User")}&background=334155&color=fff&size=128`
+            }
+            className="mx-auto mb-3 h-24 w-24 rounded-full border-4 border-white/90 object-cover shadow-lg"
+            alt={employee.name}
+          />
+          <h3 className="text-xl font-bold text-white">{employee.name}</h3>
+          <span className="mt-2 inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white backdrop-blur-md">
+            {employee.divisi || "-"}
+          </span>
+        </div>
       </div>
 
       {/* Accordion Sections */}

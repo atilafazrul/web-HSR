@@ -14,11 +14,8 @@ export const BAMForm = ({
   onSubmit,
   onReset,
   loading,
-  scheduledAt,
-  onScheduledAtChange,
+  scheduleSectionProps,
   onScheduleGenerate,
-  scheduling,
-  canSchedule,
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -287,11 +284,8 @@ export const BAMForm = ({
         </div>
 
         <ScheduleGenerateSection
-          scheduledAt={scheduledAt}
-          onScheduledAtChange={onScheduledAtChange}
+          {...scheduleSectionProps}
           onSchedule={() => onScheduleGenerate?.(document.getElementById("bam-form"))}
-          scheduling={scheduling}
-          canSchedule={canSchedule}
           loading={loading}
         />
 

@@ -34,6 +34,7 @@ import PurchasingPage from "./PurchasingPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import Profile from "./Profile";
+import SettingsPage from "./SettingsPage";
 import { useI18n } from "../i18n/index.jsx";
 
 const DIVISI_TO_PATH = {
@@ -86,6 +87,7 @@ export default function UserDashboard({ user, logout }) {
 
   const pageTitle = useMemo(() => {
     if (location.pathname.includes("/profile")) return language === "en" ? "Profile" : "Profil";
+    if (location.pathname.includes("/settings")) return language === "en" ? "Settings" : "Pengaturan";
     if (location.pathname.includes("/projek-kerja/foto/")) return language === "en" ? "Project Photos" : "Foto Projek";
     if (location.pathname.includes("/dashboard")) return language === "en" ? "User Dashboard" : "Dashboard User";
     return "User";
@@ -373,6 +375,7 @@ export default function UserDashboard({ user, logout }) {
             <Route path={`${divisiPath}/projek/archive`} element={<ProjekKerjaPage />} />
             <Route path="projek-kerja/foto/:id/*" element={<FotoProjekPage />} />
             <Route path="profile" element={<Profile user={user} logout={logout} />} />
+            <Route path="settings" element={<SettingsPage />} />
             <Route path="*" element={<Navigate to="/user/dashboard" replace />} />
           </Routes>
         </div>

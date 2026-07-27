@@ -16,11 +16,8 @@ export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
   const [editId, setEditId] = useState(null);
 
   const {
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleSchedule,
-    canSchedule,
   } = useDocumentSchedule(projekKerjaId, "service_report");
 
   // ================= FORM STATE =================
@@ -500,10 +497,7 @@ export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
     handleEdit,
     cancelEdit,
     fetchHistory,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   };
 };

@@ -20,11 +20,8 @@ export const useBAST = (projekKerjaId = null) => {
   const [nextNomorSurat, setNextNomorSurat] = useState("");
 
   const {
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleSchedule,
-    canSchedule,
   } = useDocumentSchedule(projekKerjaId, "bast");
 
   const [formData, setFormData] = useState({
@@ -299,10 +296,7 @@ export const useBAST = (projekKerjaId = null) => {
     handleGeneratePDF,
     handleDelete,
     fetchHistory,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   };
 };

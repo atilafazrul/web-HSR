@@ -61,11 +61,8 @@ export default function GeneratePDFPage({ user }) {
     cancelEdit,
     isEditing,
     fetchHistory,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   } = usePdf(user, currentDivisi, projekId);
 
   return (
@@ -150,11 +147,8 @@ export default function GeneratePDFPage({ user }) {
             loading,
             user,
             isEditing,
-            scheduledAt,
-            onScheduledAtChange: setScheduledAt,
+            scheduleSectionProps,
             onSchedule: handleScheduleGenerate,
-            scheduling,
-            canSchedule,
           })}
         </div>
       ) : (

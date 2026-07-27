@@ -36,13 +36,32 @@ class ScheduledBeritaAcaraProcessor
         try {
             $result = $this->generator->generate($schedule);
 
-            $schedule->update([
-                'status' => ScheduledBeritaAcaraDocument::STATUS_COMPLETED,
-                'nomor_surat' => $result['nomor_surat'],
-                'generated_document_id' => $result['document_id'],
-                'processed_at' => now(),
-                'error_message' => null,
-            ]);
+            $nextRun = \App\Support\ScheduleRecurrence::nextRunAt(
+                $schedule->scheduled_at,
+                $schedule->recurrence_type ?? ScheduledBeritaAcaraDocument::RECURRENCE_ONCE,
+                $schedule->recurrence_end_at
+            );
+
+            if ($nextRun !== null) {
+                $schedule->update([
+                    'status' => ScheduledBeritaAcaraDocument::STATUS_PENDING,
+                    'scheduled_at' => $nextRun,
+                    'nomor_surat' => $result['nomor_surat'],
+                    'generated_document_id' => $result['document_id'],
+                    'processed_at' => now(),
+                    'error_message' => null,
+                    'run_count' => ($schedule->run_count ?? 0) + 1,
+                ]);
+            } else {
+                $schedule->update([
+                    'status' => ScheduledBeritaAcaraDocument::STATUS_COMPLETED,
+                    'nomor_surat' => $result['nomor_surat'],
+                    'generated_document_id' => $result['document_id'],
+                    'processed_at' => now(),
+                    'error_message' => null,
+                    'run_count' => ($schedule->run_count ?? 0) + 1,
+                ]);
+            }
 
             $this->whatsAppService->notifyScheduledDocumentCreated($schedule->fresh(['projekKerja']));
         } catch (Throwable $e) {

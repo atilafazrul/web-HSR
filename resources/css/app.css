@@ -263,9 +263,7 @@ textarea::placeholder {
 
 /* =================================================================
    DARK MODE
-   Mengikuti setelan tema browser / sistem operasi secara otomatis
-   (prefers-color-scheme). Tidak perlu tombol — saat browser dalam
-   mode gelap, seluruh aplikasi ikut gelap.
+   Diatur lewat halaman Pengaturan (data-theme pada html).
 
    Catatan teknis: aturan di bawah sengaja TIDAK dibungkus @layer
    agar selalu menang melawan utility class Tailwind. Beberapa class
@@ -273,21 +271,17 @@ textarea::placeholder {
    ratusan komponen.
    ================================================================= */
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-app: var(--dk-page);
-        --bg-surface: var(--dk-surface);
-        --border-soft: var(--dk-border);
-        --text-main: var(--dk-text);
-        --text-muted: var(--dk-text-muted);
-        /* brand sedikit dicerahkan agar kontras di latar gelap */
-        --brand-primary: #6366f1;
-        --brand-primary-hover: #818cf8;
-    }
+html[data-theme="dark"] {
+    --bg-app: var(--dk-page);
+    --bg-surface: var(--dk-surface);
+    --border-soft: var(--dk-border);
+    --text-main: var(--dk-text);
+    --text-muted: var(--dk-text-muted);
+    /* brand sedikit dicerahkan agar kontras di latar gelap */
+    --brand-primary: #6366f1;
+    --brand-primary-hover: #818cf8;
 
-    html {
-        color-scheme: dark;
-    }
+    color-scheme: dark;
 
     body {
         background-color: var(--dk-page);

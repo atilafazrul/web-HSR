@@ -31,11 +31,8 @@ export default function BAMPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   } = useBAM(projekId);
 
   return (
@@ -92,11 +89,8 @@ export default function BAMPage() {
             onSubmit={handleSubmit}
             onReset={resetForm}
             loading={loading}
-            scheduledAt={scheduledAt}
-            onScheduledAtChange={setScheduledAt}
+            scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}
-            scheduling={scheduling}
-            canSchedule={canSchedule}
           />
         ) : (
           <BAMHistory

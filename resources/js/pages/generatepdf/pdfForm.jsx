@@ -40,11 +40,8 @@ export default function pdfForm({
   loading,
   user,
   isEditing,
-  scheduledAt = "",
-  onScheduledAtChange,
+  scheduleSectionProps,
   onSchedule,
-  scheduling = false,
-  canSchedule = false,
 }) {
   useI18n();
   return (
@@ -136,11 +133,9 @@ export default function pdfForm({
         />
 
         <ScheduleGenerateSection
-          scheduledAt={scheduledAt}
-          onScheduledAtChange={onScheduledAtChange}
+          {...scheduleSectionProps}
+          canSchedule={scheduleSectionProps?.canSchedule && !isEditing}
           onSchedule={() => onSchedule?.(document.getElementById("service-report-form"))}
-          scheduling={scheduling}
-          canSchedule={canSchedule && !isEditing}
           loading={loading}
         />
 

@@ -33,11 +33,8 @@ export default function SPHPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
     formatRupiah,
     estimatedTotal,
   } = useSPH(projekId);
@@ -78,11 +75,8 @@ export default function SPHPage() {
             loading={loading}
             formatRupiah={formatRupiah}
             estimatedTotal={estimatedTotal}
-            scheduledAt={scheduledAt}
-            onScheduledAtChange={setScheduledAt}
+            scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}
-            scheduling={scheduling}
-            canSchedule={canSchedule}
           />
         ) : (
           <SPHHistory

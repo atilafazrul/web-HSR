@@ -18,12 +18,20 @@ class ScheduledBeritaAcaraDocument extends Model
     public const TYPE_SPPD = 'sppd';
     public const TYPE_SERVICE_REPORT = 'service_report';
 
+    public const RECURRENCE_ONCE = 'once';
+    public const RECURRENCE_DAILY = 'daily';
+    public const RECURRENCE_WEEKLY = 'weekly';
+    public const RECURRENCE_MONTHLY = 'monthly';
+
     protected $fillable = [
         'projek_kerja_id',
         'created_by',
         'document_type',
         'form_payload',
         'scheduled_at',
+        'recurrence_type',
+        'recurrence_end_at',
+        'run_count',
         'status',
         'nomor_surat',
         'generated_document_id',
@@ -34,7 +42,9 @@ class ScheduledBeritaAcaraDocument extends Model
     protected $casts = [
         'form_payload' => 'array',
         'scheduled_at' => 'datetime',
+        'recurrence_end_at' => 'datetime',
         'processed_at' => 'datetime',
+        'run_count' => 'integer',
     ];
 
     public function projekKerja(): BelongsTo

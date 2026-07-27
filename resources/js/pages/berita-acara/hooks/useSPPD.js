@@ -22,11 +22,8 @@ export const useSPPD = (projekKerjaId = null) => {
   const [editId, setEditId] = useState(null);
 
   const {
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleSchedule,
-    canSchedule,
   } = useDocumentSchedule(projekKerjaId, "sppd");
 
   const [formData, setFormData] = useState({
@@ -374,10 +371,7 @@ export const useSPPD = (projekKerjaId = null) => {
     handleEdit,
     cancelEdit,
     fetchHistory,
-    scheduledAt,
-    setScheduledAt,
-    scheduling,
+    scheduleSectionProps,
     handleScheduleGenerate,
-    canSchedule,
   };
 };
