@@ -5,8 +5,7 @@ return [
 
     'provider' => env('WHATSAPP_PROVIDER', 'fonnte'),
 
-    // Satu nomor (legacy) atau beberapa nomor/grup, pisahkan dengan koma.
-    // Grup WA: gunakan ID grup Fonnte, contoh 120363379743282885@g.us
+    // Meta Cloud API: hanya nomor individu (62...), bukan grup @g.us
     'admin_phone' => env('WHATSAPP_ADMIN_PHONE'),
 
     // Fallback umum jika target khusus belum diisi.
@@ -33,5 +32,12 @@ return [
     'fonnte' => [
         'token' => env('WHATSAPP_FONNTE_TOKEN'),
         'endpoint' => env('WHATSAPP_FONNTE_ENDPOINT', 'https://api.fonnte.com/send'),
+    ],
+
+    'meta' => [
+        'token' => env('WHATSAPP_META_TOKEN'),
+        'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'),
+        'business_account_id' => env('WHATSAPP_BUSINESS_ACCOUNT_ID'),
+        'api_version' => env('WHATSAPP_META_API_VERSION', 'v21.0'),
     ],
 ];

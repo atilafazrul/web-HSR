@@ -107,10 +107,14 @@ class WhatsAppService
 
     public function send(string $target, string $message): bool
     {
-        $provider = config('whatsapp.provider', 'fonnte');
+        $provider = strtolower((string) config('whatsapp.provider', 'fonnte'));
 
         if ($provider === 'fonnte') {
             return $this->sendViaFonnte($target, $message);
+        }
+
+        if (in_array($provider, ['meta', 'meta_cloud'], true)) {
+            return $this->sendViaMetaCloud($target, $message);
         }
 
         Log::warning('WhatsApp provider tidak dikenal.', ['provider' => $provider]);
@@ -154,6 +158,90 @@ class WhatsAppService
 
             return false;
         }
+    }
+
+    private function sendViaMetaCloud(string $target, string $message): bool
+    {
+        $token = trim((string) config('whatsapp.meta.token'));
+        $phoneNumberId = trim((string) config('whatsapp.meta.phone_number_id'));
+
+        if ($token === '') {
+            Log::warning('WHATSAPP_META_TOKEN belum diisi.');
+
+            return false;
+        }
+
+        if ($phoneNumberId === '') {
+            Log::warning('WHATSAPP_PHONE_NUMBER_ID belum diisi.');
+
+            return false;
+        }
+
+        $apiVersion = trim((string) config('whatsapp.meta.api_version', 'v21.0'));
+        $url = "https://graph.facebook.com/{$apiVersion}/{$phoneNumberId}/messages";
+        $bodyText = $this->formatMessageForMeta($message);
+
+        $recipients = array_values(array_filter(array_map(
+            static fn (string $part) => trim($part),
+            preg_split('/[\s,]+/', $target) ?: []
+        )));
+
+        if ($recipients === []) {
+            return false;
+        }
+
+        $allOk = true;
+
+        foreach ($recipients as $recipient) {
+            if (str_contains($recipient, '@g.us')) {
+                Log::warning('Meta Cloud API tidak mendukung grup WA — lewati target.', [
+                    'target' => $recipient,
+                ]);
+                $allOk = false;
+
+                continue;
+            }
+
+            $to = $this->normalizePhone($recipient);
+
+            try {
+                $response = Http::withToken($token)
+                    ->acceptJson()
+                    ->post($url, [
+                        'messaging_product' => 'whatsapp',
+                        'recipient_type' => 'individual',
+                        'to' => $to,
+                        'type' => 'text',
+                        'text' => [
+                            'preview_url' => false,
+                            'body' => $bodyText,
+                        ],
+                    ]);
+
+                if (!$response->successful()) {
+                    Log::error('Gagal kirim WhatsApp Meta Cloud API.', [
+                        'target' => $to,
+                        'status' => $response->status(),
+                        'body' => $response->body(),
+                    ]);
+                    $allOk = false;
+                }
+            } catch (Throwable $e) {
+                Log::error('Error kirim WhatsApp Meta Cloud API.', [
+                    'target' => $to,
+                    'error' => $e->getMessage(),
+                ]);
+                $allOk = false;
+            }
+        }
+
+        return $allOk;
+    }
+
+    private function formatMessageForMeta(string $message): string
+    {
+        // Fonnte memakai *teks* untuk bold; Meta plain text — tetap kirim, asterisk opsional dibuang
+        return preg_replace('/\*([^*]+)\*/', '$1', $message) ?? $message;
     }
 
     /**
