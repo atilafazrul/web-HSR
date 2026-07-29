@@ -272,10 +272,20 @@ class BiayaNotificationService
             'data' => $data,
         ]);
 
-        $this->whatsAppService->notifyLunasToUser(
+        $recipient->refresh();
+        $waOk = $this->whatsAppService->notifyLunasToUser(
             $recipient,
             "*{$title}*\n{$message}"
         );
+
+        if (! $waOk) {
+            \Illuminate\Support\Facades\Log::warning('WA lunas/cuti ke user gagal atau dilewati.', [
+                'user_id' => $recipient->id,
+                'user_name' => $recipient->name,
+                'no_telepon' => $recipient->no_telepon,
+                'type' => $type,
+            ]);
+        }
     }
 
     /**

@@ -52,6 +52,7 @@ export const useBAST = (projekKerjaId = null) => {
     nama_ttd_klien: (formData.nama_ttd_klien || "").trim() || null,
     hasil: formData.hasil,
     items: formData.items,
+    ...(projekKerjaId ? { projek_kerja_id: Number(projekKerjaId) } : {}),
   });
 
   useEffect(() => {

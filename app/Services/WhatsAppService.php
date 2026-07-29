@@ -4,13 +4,18 @@ namespace App\Services;
 
 use App\Models\ScheduledBeritaAcaraDocument;
 use App\Models\User;
+use App\Support\WhatsAppRecipientResolver;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class WhatsAppService
 {
-    public function sendToAdmin(string $message, ?string $purpose = null): bool
+    public function __construct(
+        private readonly WhatsAppRecipientResolver $recipientResolver,
+    ) {}
+
+    public function sendToAdmin(string $message, ?string $purpose = null, ?string $divisi = null): bool
     {
         if (!config('whatsapp.enabled')) {
             Log::info('WhatsApp disabled — pesan tidak dikirim.', ['message' => $message]);
@@ -18,21 +23,33 @@ class WhatsAppService
             return false;
         }
 
-        $targets = $this->resolveTargets($purpose);
+        $targets = $this->resolveTargets($purpose, $divisi);
         if ($targets === []) {
             Log::warning('WhatsApp target tidak dikonfigurasi.', [
                 'purpose' => $purpose,
+                'divisi' => $divisi,
                 'message' => $message,
             ]);
 
             return false;
         }
 
+        if ($purpose === 'projek') {
+            Log::info('WhatsApp proyek — target nomor.', [
+                'divisi' => $divisi,
+                'targets' => $targets,
+            ]);
+        }
+
         return $this->send($this->formatTargetsForProvider($targets), $message);
     }
 
-    public function notifyDocumentCreated(string $typeLabel, ?string $contextName = null, ?string $nomor = null): bool
-    {
+    public function notifyDocumentCreated(
+        string $typeLabel,
+        ?string $contextName = null,
+        ?string $nomor = null,
+        ?string $divisi = null
+    ): bool {
         $context = trim((string) $contextName);
         if ($context === '') {
             $context = 'dokumen';
@@ -41,7 +58,7 @@ class WhatsAppService
         $nomorPart = $nomor ? " (*{$nomor}*)" : '';
         $message = "{$typeLabel} untuk *{$context}* sudah dibuat{$nomorPart}. Segera kirimkan ke client.";
 
-        return $this->sendToAdmin($message, 'berita_acara');
+        return $this->sendToAdmin($message, 'berita_acara', $divisi);
     }
 
     public function notifyScheduledDocumentCreated(ScheduledBeritaAcaraDocument $schedule): bool
@@ -50,8 +67,9 @@ class WhatsAppService
 
         $typeLabel = strtoupper(str_replace('_', ' ', $schedule->document_type));
         $projectName = $schedule->projekKerja?->jenis_pekerjaan ?? 'projek';
+        $divisi = $schedule->projekKerja?->divisi;
 
-        return $this->notifyDocumentCreated($typeLabel, $projectName, $schedule->nomor_surat);
+        return $this->notifyDocumentCreated($typeLabel, $projectName, $schedule->nomor_surat, $divisi);
     }
 
     public function notifyCuti(string $title, string $message): bool
@@ -63,13 +81,13 @@ class WhatsAppService
         return $this->sendToAdmin("*{$title}*\n{$message}", 'cuti');
     }
 
-    public function notifyProjek(string $title, string $message): bool
+    public function notifyProjek(string $title, string $message, ?string $divisi = null): bool
     {
         if (!config('whatsapp.enabled') || !config('whatsapp.notify_projek', true)) {
             return false;
         }
 
-        return $this->sendToAdmin("*{$title}*\n{$message}", 'projek');
+        return $this->sendToAdmin("*{$title}*\n{$message}", 'projek', $divisi);
     }
 
     public function notifyCutiToUser(?User $user, string $message): bool
@@ -225,6 +243,12 @@ class WhatsAppService
                         'body' => $response->body(),
                     ]);
                     $allOk = false;
+                } else {
+                    $payload = $response->json();
+                    Log::info('WhatsApp Meta API accepted.', [
+                        'target' => $to,
+                        'message_id' => $payload['messages'][0]['id'] ?? null,
+                    ]);
                 }
             } catch (Throwable $e) {
                 Log::error('Error kirim WhatsApp Meta Cloud API.', [
@@ -247,8 +271,28 @@ class WhatsAppService
     /**
      * @return string[]
      */
-    private function resolveTargets(?string $purpose = null): array
+    private function resolveTargets(?string $purpose = null, ?string $divisi = null): array
     {
+        $routeByDivisi = config('whatsapp.route_projek_berita_acara_by_divisi', true);
+
+        if ($routeByDivisi && in_array($purpose, ['projek', 'berita_acara'], true)) {
+            $phones = $this->recipientResolver->phonesForProjekAndBeritaAcara($divisi);
+            if ($phones !== []) {
+                return $phones;
+            }
+        }
+
+        if ($purpose === 'cuti') {
+            $cuti = trim((string) config('whatsapp.cuti_targets'));
+            if ($cuti !== '') {
+                return $this->parseTargets($cuti);
+            }
+            $always = trim((string) config('whatsapp.always_recipient_phones'));
+            if ($always !== '') {
+                return $this->parseTargets($always);
+            }
+        }
+
         $purposeConfig = match ($purpose) {
             'biaya' => 'whatsapp.biaya_targets',
             'berita_acara' => 'whatsapp.berita_acara_targets',

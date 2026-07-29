@@ -199,7 +199,8 @@ class ServiceReportController extends Controller
             app(WhatsAppService::class)->notifyDocumentCreated(
                 'SERVICE REPORT',
                 $report->customer,
-                $report->report_no
+                $report->report_no,
+                $validated['divisi']
             );
 
             return response()->json([

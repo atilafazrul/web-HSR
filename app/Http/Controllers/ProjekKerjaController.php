@@ -664,7 +664,6 @@ class ProjekKerjaController extends Controller
                 auth()->user(),
                 $adminNotifiedIds
             );
-            $notifier->notifyNewProjekWhatsApp($projek, auth()->user());
 
             // Optional: buat folder awal saat create project (tanpa upload file/foto dulu).
             $initialFileFolder = $this->sanitizeFolderName($validated['file_folder_name'] ?? null);
@@ -706,6 +705,8 @@ class ProjekKerjaController extends Controller
             }
 
             DB::commit();
+
+            $notifier->notifyNewProjekWhatsApp($projek->fresh(), auth()->user());
 
             return response()->json([
                 'success' => true,

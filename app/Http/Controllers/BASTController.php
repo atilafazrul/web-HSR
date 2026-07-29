@@ -9,9 +9,12 @@ use App\Models\BastDocument;
 use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\WhatsAppService;
 use Carbon\Carbon;
+use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
 
 class BASTController extends Controller
 {
+    use ResolvesWhatsAppDivisi;
+
     /**
      * Convert angka bulan ke romawi
      */
@@ -112,6 +115,7 @@ class BASTController extends Controller
             'items.*.nama_alat' => 'required|string',
             'items.*.merk' => 'required|string',
             'items.*.jumlah' => 'required|string',
+            'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
 
         $nomorData = $this->generateNomorSurat();
@@ -137,7 +141,8 @@ class BASTController extends Controller
         app(WhatsAppService::class)->notifyDocumentCreated(
             'BAST',
             $validated['nama_klient'],
-            $nomorData['nomor_surat']
+            $nomorData['nomor_surat'],
+            $this->whatsAppDivisiFromRequest($request)
         );
 
         $data = [

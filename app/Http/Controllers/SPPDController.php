@@ -10,9 +10,12 @@ use App\Models\SppdDocument;
 use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\SignatureStampMerger;
 use App\Services\WhatsAppService;
+use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
 
 class SPPDController extends Controller
 {
+    use ResolvesWhatsAppDivisi;
+
     private function bulanToRomawi($bulan)
     {
         $romawi = [
@@ -111,6 +114,7 @@ class SPPDController extends Controller
             'approve_jabatan' => 'nullable|string',
             'ttd_dibuat_oleh' => 'nullable|string|max:500000',
             'ttd_menyetujui' => 'nullable|string|max:500000',
+            'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
 
         $nomorData = $this->generateNomorSurat();
@@ -143,7 +147,8 @@ class SPPDController extends Controller
         app(WhatsAppService::class)->notifyDocumentCreated(
             'SPPD',
             $validated['nama_pegawai'],
-            $nomorData['nomor_surat']
+            $nomorData['nomor_surat'],
+            $this->whatsAppDivisiFromRequest($request)
         );
 
         return response()->json([
@@ -174,6 +179,7 @@ class SPPDController extends Controller
             'approve_jabatan' => 'nullable|string',
             'ttd_dibuat_oleh' => 'nullable|string|max:500000',
             'ttd_menyetujui' => 'nullable|string|max:500000',
+            'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
 
         $nomorData = $this->generateNomorSurat();
@@ -206,7 +212,8 @@ class SPPDController extends Controller
         app(WhatsAppService::class)->notifyDocumentCreated(
             'SPPD',
             $validated['nama_pegawai'],
-            $nomorData['nomor_surat']
+            $nomorData['nomor_surat'],
+            $this->whatsAppDivisiFromRequest($request)
         );
 
         $data = [

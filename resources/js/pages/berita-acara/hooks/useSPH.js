@@ -67,6 +67,7 @@ export const useSPH = (projekKerjaId = null) => {
     jabatan_penandatangan: (formData.jabatan_penandatangan || "").trim() || "Direktur",
     syarat_ketentuan: formData.syarat_ketentuan,
     paragraf_penutup: formData.paragraf_penutup,
+    ...(projekKerjaId ? { projek_kerja_id: Number(projekKerjaId) } : {}),
   });
 
   useEffect(() => {

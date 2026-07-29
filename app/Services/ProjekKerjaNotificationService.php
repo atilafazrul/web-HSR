@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Notification;
 use App\Models\ProjekKerja;
 use App\Models\User;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ProjekKerjaNotificationService
@@ -88,7 +89,15 @@ class ProjekKerjaNotificationService
             $message = "{$creatorName} — {$message}";
         }
 
-        $this->whatsAppService->notifyProjek('Proyek kerja baru', $message);
+        $ok = $this->whatsAppService->notifyProjek('Proyek kerja baru', $message, $projek->divisi);
+
+        Log::info('WhatsApp notifikasi proyek baru.', [
+            'projek_id' => $projek->id,
+            'report_no' => $projek->report_no,
+            'divisi_tujuan' => $projek->divisi,
+            'dari_divisi' => $fromLabel,
+            'sent' => $ok,
+        ]);
     }
 
     /**

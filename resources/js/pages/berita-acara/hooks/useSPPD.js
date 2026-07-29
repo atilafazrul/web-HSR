@@ -69,6 +69,7 @@ export const useSPPD = (projekKerjaId = null) => {
     approve_jabatan: formData.approve_jabatan,
     ttd_dibuat_oleh: formData.ttd_dibuat_oleh || null,
     ttd_menyetujui: formData.ttd_menyetujui || null,
+    ...(projekKerjaId ? { projek_kerja_id: Number(projekKerjaId) } : {}),
   });
 
   useEffect(() => {

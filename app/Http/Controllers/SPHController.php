@@ -10,9 +10,12 @@ use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
 
 class SPHController extends Controller
 {
+    use ResolvesWhatsAppDivisi;
+
     private function bulanToRomawi(int $bulan): string
     {
         $romawi = [
@@ -93,7 +96,8 @@ class SPHController extends Controller
         app(WhatsAppService::class)->notifyDocumentCreated(
             'SPH',
             $validated['penerima_nama'],
-            $nomorData['nomor_surat']
+            $nomorData['nomor_surat'],
+            $this->whatsAppDivisiFromRequest($request)
         );
 
         return $this->generatePDFResponse($this->documentToPdfData($document));
@@ -141,6 +145,7 @@ class SPHController extends Controller
             'jabatan_penandatangan' => 'nullable|string|max:150',
             'syarat_ketentuan' => 'nullable|string|max:50000',
             'paragraf_penutup' => 'nullable|string|max:50000',
+            'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
     }
 
