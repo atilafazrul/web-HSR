@@ -213,6 +213,7 @@ export const useBAUF = (projekKerjaId = null) => {
       alert(tr("PDF BAUF berhasil di-generate!", "BAUF PDF generated successfully!"));
       resetForm();
       fetchNextNomorSurat();
+      fetchHistory();
     } catch (error) {
       console.error("Error generating PDF:", error);
       alert(tr("Gagal generate PDF. Silakan coba lagi.", "Failed to generate PDF. Please try again."));

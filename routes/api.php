@@ -551,6 +551,11 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
         'getNextNomorSurat'
     ]);
 
+    Route::get('/bauf/history', [
+        BAUFController::class,
+        'getHistory'
+    ]);
+
     Route::post('/bauf/pdf', [
         BAUFController::class,
         'generatePDF'
@@ -564,11 +569,6 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::put('/bauf/{id}', [
         BAUFController::class,
         'update'
-    ]);
-
-    Route::get('/bauf/history', [
-        BAUFController::class,
-        'getHistory'
     ]);
 
     Route::get('/bauf/{id}/pdf', [
