@@ -6,7 +6,7 @@
     <style>
         @page {
             size: 595.3pt 841.9pt;
-            margin: 0.75in 20pt 1.0in 20pt;
+            margin: 0.35in 20pt 1.0in 20pt;
         }
 
         body {
@@ -24,24 +24,14 @@
 
         .header-table {
             border-bottom: 2px solid #000;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
+            margin-top: 0;
+            margin-bottom: 6px;
+            padding-bottom: 6px;
             width: 100%;
             border-collapse: collapse;
         }
 
         @include('pdf.partials.header_logo_styles')
-
-        .company-name {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-
-        .address-info {
-            font-size: 10px;
-            line-height: 1.3;
-        }
 
         .meta-table {
             width: 100%;
@@ -175,29 +165,8 @@
         <img src="{{ $watermark }}" class="watermark" alt="">
     @endif
 
-    <table class="header-table">
-        <tr>
-            <td class="logo-left">
-                @if(!empty($hsrLogo))
-                    <img src="{{ $hsrLogo }}" class="header-logo-hsr" width="135" height="51" alt="HSR">
-                @endif
-            </td>
-            <td class="company-info">
-                <div class="company-name">PT. HAYATI SEMESTA RAHARJA</div>
-                <div class="address-info">
-                    Jl. Raya Pasar Kemis, Kp. Picung RT 004/005, Pasar Kemis<br>
-                    Kabupaten Tangerang, Banten 15560<br>
-                    Telp. 021-38962963 | HP. 08999-222-69<br>
-                    Website: www.pthsr.id | Email: halo@pthsr.id
-                </div>
-            </td>
-            <td class="logo-right">
-                @if(!empty($isoLogo))
-                    <img src="{{ $isoLogo }}" class="header-logo-iso" width="58" height="58" alt="ISO">
-                @endif
-            </td>
-        </tr>
-    </table>
+        @include('pdf.partials.header_company_block')
+
 
     <table class="meta-table">
         <tr>

@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <style>
         @page {
-            margin: 40mm 28mm 25mm 28mm;
+            margin: 12mm 20mm 25mm 20mm;
         }
 
         * {
@@ -42,25 +42,13 @@
         /* HEADER SECTION */
         .header-table {
             width: 100%;
-            margin-top: 15px;
+            margin-top: 0;
             border-bottom: 2px solid #000;
             margin-bottom: 5px;
             padding-bottom: 5px;
         }
 
         @include('pdf.partials.header_logo_styles')
-
-        .company-name {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 2px;
-            letter-spacing: 1px;
-        }
-
-        .address-info {
-            font-size: 10px;
-            line-height: 1.3;
-        }
 
         /* SERVICE REPORT TITLE */
         .report-title-container {
@@ -245,31 +233,8 @@
             <img src="{{ $watermark }}" class="watermark">
         @endif
 
-        <table class="header-table">
-            <tr>
-                <td width="24%" class="logo-left">
-                    @if(isset($hsrLogo) && $hsrLogo != '')
-                        <img src="{{ $hsrLogo }}" class="header-logo-hsr" width="135" height="51" alt="HSR">
-                    @endif
-                </td>
+        @include('pdf.partials.header_company_block')
 
-                <td width="60%" class="company-info">
-                    <div class="company-name">PT. HAYATI SEMESTA RAHARJA</div>
-                    <div class="address-info">
-                        Jl. Raya Pasar Kemis, Kp. Picung RT 004/005, Pasar Kemis<br>
-                        Kabupaten Tangerang, Banten 15560<br>
-                        Telp. 021-38962963 | HP. 08999-222-69<br>
-                        Website: www.pthsr.id | Email: halo@pthsr.id
-                    </div>
-                </td>
-
-                <td width="16%" class="logo-right">
-                    @if(isset($isoLogo) && $isoLogo != '')
-                        <img src="{{ $isoLogo }}" class="header-logo-iso" width="58" height="58" alt="ISO">
-                    @endif
-                </td>
-            </tr>
-        </table>
 
         <div class="report-title-container">
             <div class="report-title">SERVICE REPORT</div>

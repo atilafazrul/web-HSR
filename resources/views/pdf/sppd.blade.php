@@ -53,7 +53,7 @@
 
         @page WordSection1 {
             size: 595.3pt 841.9pt;
-            margin: 0.8in 20pt 1.05in 20pt;
+            margin: 0.35in 20pt 1.05in 20pt;
         }
 
         div.WordSection1 {
@@ -90,25 +90,14 @@
 
         .header-table {
             border-bottom: 2px solid #000;
-            margin-bottom: 5px;
-            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 6px;
+            padding-bottom: 6px;
             width: 100%;
             border-collapse: collapse;
         }
 
         @include('pdf.partials.header_logo_styles')
-
-        .company-name {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 4px;
-            letter-spacing: 1px;
-        }
-
-        .address-info {
-            font-size: 11px;
-            line-height: 1.4;
-        }
 
         .watermark {
             position: absolute;
@@ -187,31 +176,8 @@
 
     <div class="WordSection1">
 
-        <table class="header-table">
-            <tr>
-                <td class="logo-left">
-                    @if(isset($hsrLogo) && $hsrLogo != '')
-                        <img src="{{ $hsrLogo }}" class="header-logo-hsr" width="135" height="51" alt="HSR">
-                    @endif
-                </td>
+        @include('pdf.partials.header_company_block')
 
-                <td class="company-info">
-                    <div class="company-name">PT. HAYATI SEMESTA RAHARJA</div>
-                    <div class="address-info">
-                        Jl. Raya Pasar Kemis, Kp. Picung RT 004/005, Pasar Kemis<br>
-                        Kabupaten Tangerang, Banten 15560<br>
-                        Telp. 021-38962963 | HP. 08999-222-69<br>
-                        Website: www.pthsr.id | Email: halo@pthsr.id
-                    </div>
-                </td>
-
-                <td class="logo-right">
-                    @if(isset($isoLogo) && $isoLogo != '')
-                        <img src="{{ $isoLogo }}" class="header-logo-iso" width="58" height="58" alt="ISO">
-                    @endif
-                </td>
-            </tr>
-        </table>
 
         <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center">
             <b><u><span lang="EN-ID" style="font-size: 16.0pt; line-height: 107%">SURAT PERINTAH PERJALANAN DINAS</span></u></b>
