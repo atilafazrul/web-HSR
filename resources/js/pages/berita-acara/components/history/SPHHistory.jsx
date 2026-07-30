@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Download, Eye, Trash2, FileText } from "lucide-react";
+import { Search, Download, Eye, Trash2, FileText, Edit } from "lucide-react";
 import { formatDate } from "../../utils/dateHelpers";
 import { useI18n } from "../../../../i18n";
 
@@ -10,6 +10,7 @@ export const SPHHistory = ({
   onView,
   onGeneratePDF,
   onDelete,
+  onEdit,
   selectedItem,
   showViewModal,
   onCloseViewModal,
@@ -53,6 +54,9 @@ export const SPHHistory = ({
                 <div className="flex w-full gap-2 sm:w-auto">
                   <button onClick={() => onView(item)} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-blue-100 px-3 py-2 text-blue-600 hover:bg-blue-200 sm:flex-none">
                     <Eye size={16} />
+                  </button>
+                  <button onClick={() => onEdit?.(item)} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-amber-100 px-3 py-2 text-amber-700 hover:bg-amber-200 sm:flex-none" title={tr("Edit", "Edit")}>
+                    <Edit size={16} />
                   </button>
                   <button onClick={() => onGeneratePDF(item)} className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-green-100 px-3 py-2 text-green-600 hover:bg-green-200 sm:flex-none">
                     <Download size={16} />

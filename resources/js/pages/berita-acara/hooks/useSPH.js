@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian } from "../utils/dateHelpers";
 import { useDocumentSchedule } from "./useDocumentSchedule";
+import { mapSphDocToForm } from "./pdfDocEditHelpers";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -27,6 +28,9 @@ export const useSPH = (projekKerjaId = null) => {
   const [selectedItem, setSelectedItem] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);
   const [nextNomorSurat, setNextNomorSurat] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editNomorSurat, setEditNomorSurat] = useState("");
 
   const {
     scheduleSectionProps,
@@ -173,6 +177,19 @@ export const useSPH = (projekKerjaId = null) => {
     setLoading(true);
     try {
       const submitData = buildSubmitData();
+
+      if (isEditing && editId) {
+        await api.put(`/sph/${editId}`, submitData);
+        alert(tr("Dokumen SPH berhasil diperbarui!", "SPH document updated successfully!"));
+        setIsEditing(false);
+        setEditId(null);
+        setEditNomorSurat("");
+        resetForm();
+        setActiveTab("history");
+        fetchHistory();
+        return;
+      }
+
       const response = await api.post("/sph/pdf", submitData, {
         responseType: "blob",
         headers: {
@@ -203,6 +220,10 @@ export const useSPH = (projekKerjaId = null) => {
   };
 
   const handleScheduleGenerate = (formElement) => {
+    if (isEditing) {
+      alert(tr("Batalkan mode edit terlebih dahulu untuk menjadwalkan generate.", "Cancel edit mode first to schedule generation."));
+      return;
+    }
     handleSchedule(buildSubmitData(), formElement);
   };
 
@@ -251,6 +272,38 @@ export const useSPH = (projekKerjaId = null) => {
     }
   };
 
+  const handleEdit = async (item) => {
+    try {
+      const response = await api.get(`/sph/${item.id}`);
+      const data = response.data.data;
+      setFormData(
+        mapSphDocToForm(data, {
+          paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
+          syarat_ketentuan: DEFAULT_SYARAT,
+          paragraf_penutup: DEFAULT_PENUTUP,
+          nama_penandatangan: "Syahrul Roji",
+          jabatan_penandatangan: "Direktur",
+        })
+      );
+      setEditId(item.id);
+      setEditNomorSurat(data.nomor_surat || item.nomor_surat || "");
+      setIsEditing(true);
+      setActiveTab("form");
+      setShowViewModal(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("Error fetching document detail:", error);
+      alert(tr("Gagal memuat data untuk diedit", "Failed to load data for editing"));
+    }
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditId(null);
+    setEditNomorSurat("");
+    resetForm();
+  };
+
   const filteredHistory = historyData.filter(
     (item) =>
       item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -284,6 +337,8 @@ export const useSPH = (projekKerjaId = null) => {
     fetchingHistory,
     selectedItem,
     showViewModal,
+    isEditing,
+    editNomorSurat,
     handleInputChange,
     handleRichTextChange,
     handleItemChange,
@@ -295,6 +350,8 @@ export const useSPH = (projekKerjaId = null) => {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
+    handleEdit,
+    cancelEdit,
     fetchHistory,
     scheduleSectionProps,
     handleScheduleGenerate,

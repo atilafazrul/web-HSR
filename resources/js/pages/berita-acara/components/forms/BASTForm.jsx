@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, Download, Trash2, FileText, Calendar, PenLine } from "lucide-react";
+import { Plus, Download, Trash2, FileText, Calendar, PenLine, Edit, X, Save } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import SignaturePad from "./SignaturePad";
 import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
@@ -14,6 +14,8 @@ export const BASTForm = ({
   onSubmit, 
   onReset, 
   loading,
+  isEditing = false,
+  editNomorSurat = "",
   scheduleSectionProps,
   onScheduleGenerate,
 }) => {
@@ -22,11 +24,25 @@ export const BASTForm = ({
   return (
     <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
       <form id="bast-form" onSubmit={onSubmit}>
+        {isEditing && (
+          <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
+            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+              <Edit size={20} className="text-orange-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-orange-800">{tr("Mode Edit", "Edit Mode")}</p>
+              <p className="text-sm text-orange-600">
+                {tr("Nomor surat", "Letter number")}: {editNomorSurat}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Informasi Utama */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-700 mb-4 pb-2 border-b flex items-center gap-2">
             <FileText size={20} className="text-blue-600" />
-            {tr("Informasi Dokumen", "Document Information")}
+            {isEditing ? tr("Edit Dokumen BAST", "Edit BAST Document") : tr("Informasi Dokumen", "Document Information")}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
@@ -292,6 +308,7 @@ export const BASTForm = ({
 
         <ScheduleGenerateSection
           {...scheduleSectionProps}
+          canSchedule={scheduleSectionProps?.canSchedule && !isEditing}
           onSchedule={() => onScheduleGenerate?.(document.getElementById("bast-form"))}
           loading={loading}
         />
@@ -301,9 +318,20 @@ export const BASTForm = ({
           <button
             type="button"
             onClick={onReset}
-            className="w-full sm:w-auto px-6 py-3 border border-gray-300 rounded-xl font-medium text-gray-600 hover:bg-gray-50 transition"
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition ${
+              isEditing
+                ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
+                : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+            }`}
           >
-            {tr("Reset", "Reset")}
+            {isEditing ? (
+              <span className="flex items-center justify-center gap-2">
+                <X size={18} />
+                {tr("Batal Edit", "Cancel Edit")}
+              </span>
+            ) : (
+              tr("Reset", "Reset")
+            )}
           </button>
           <button
             type="submit"
@@ -323,7 +351,12 @@ export const BASTForm = ({
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Generating...
+                {isEditing ? tr("Menyimpan...", "Saving...") : "Generating..."}
+              </>
+            ) : isEditing ? (
+              <>
+                <Save size={20} />
+                {tr("Simpan Perubahan", "Save Changes")}
               </>
             ) : (
               <>

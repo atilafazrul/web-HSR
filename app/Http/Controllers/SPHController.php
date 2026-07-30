@@ -103,6 +103,29 @@ class SPHController extends Controller
         return $this->generatePDFResponse($this->documentToPdfData($document));
     }
 
+    public function show($id)
+    {
+        $document = SphDocument::findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $document,
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $this->validatePayload($request);
+        $document = SphDocument::findOrFail($id);
+        $document->update($this->buildDocumentAttributes($validated));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dokumen SPH berhasil diperbarui',
+            'data' => $document->fresh(),
+        ]);
+    }
+
     public function regeneratePDF($id)
     {
         $document = SphDocument::findOrFail($id);

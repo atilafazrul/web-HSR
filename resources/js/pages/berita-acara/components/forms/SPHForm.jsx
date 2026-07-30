@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, Download, Trash2, Calendar, Receipt } from "lucide-react";
+import { Plus, Download, Trash2, Calendar, Receipt, Edit, X, Save } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import { RichTextEditor } from "./RichTextEditor";
 import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
@@ -16,6 +16,8 @@ export const SPHForm = ({
   onSubmit,
   onReset,
   loading,
+  isEditing = false,
+  editNomorSurat = "",
   formatRupiah,
   estimatedTotal,
   scheduleSectionProps,
@@ -27,6 +29,18 @@ export const SPHForm = ({
   return (
     <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
       <form id="sph-form" onSubmit={onSubmit}>
+        {isEditing && (
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+              <Edit size={20} className="text-orange-600" />
+            </div>
+            <div>
+              <p className="font-semibold text-orange-800">{tr("Mode Edit", "Edit Mode")}</p>
+              <p className="text-sm text-orange-600">{tr("Nomor surat", "Letter number")}: {editNomorSurat}</p>
+            </div>
+          </div>
+        )}
+        {!isEditing && (
         <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3">
           <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
             {tr("Preview Nomor Surat", "Letter Number Preview")}
@@ -35,6 +49,7 @@ export const SPHForm = ({
             {fetchingNomor ? tr("Memuat...", "Loading...") : nextNomorSurat}
           </p>
         </div>
+        )}
 
         <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -163,16 +178,17 @@ export const SPHForm = ({
 
         <ScheduleGenerateSection
           {...scheduleSectionProps}
+          canSchedule={scheduleSectionProps?.canSchedule && !isEditing}
           onSchedule={() => onScheduleGenerate?.(document.getElementById("sph-form"))}
           loading={loading}
         />
 
         <div className="flex flex-col sm:flex-row justify-end gap-3">
-          <button type="button" onClick={onReset} className="rounded-xl border border-gray-300 px-6 py-3 font-medium text-gray-600 hover:bg-gray-50">
-            {tr("Reset", "Reset")}
+          <button type="button" onClick={onReset} className={`rounded-xl px-6 py-3 font-medium ${isEditing ? "bg-orange-100 text-orange-700 hover:bg-orange-200" : "border border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+            {isEditing ? <span className="flex items-center justify-center gap-2"><X size={18} />{tr("Batal Edit", "Cancel Edit")}</span> : tr("Reset", "Reset")}
           </button>
           <button type="submit" disabled={loading} className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-medium text-white ${loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}>
-            {loading ? tr("Generating...", "Generating...") : <><Download size={20} />{tr("Generate PDF", "Generate PDF")}</>}
+            {loading ? (isEditing ? tr("Menyimpan...", "Saving...") : tr("Generating...", "Generating...")) : isEditing ? <><Save size={20} />{tr("Simpan Perubahan", "Save Changes")}</> : <><Download size={20} />{tr("Generate PDF", "Generate PDF")}</>}
           </button>
         </div>
       </form>

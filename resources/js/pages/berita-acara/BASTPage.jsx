@@ -20,6 +20,8 @@ export default function BASTPage() {
     filteredHistory,
     selectedItem,
     showViewModal,
+    isEditing,
+    editNomorSurat,
     handleInputChange,
     handleSignatureChange,
     handleItemChange,
@@ -31,29 +33,39 @@ export default function BASTPage() {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
+    handleEdit,
+    cancelEdit,
     scheduleSectionProps,
     handleScheduleGenerate,
   } = useBAST(projekId);
 
+  const handleTabChange = (tab) => {
+    if (isEditing) {
+      if (window.confirm(tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan?", "You are editing a document. Are you sure you want to cancel?"))) {
+        cancelEdit();
+        setActiveTab(tab);
+      }
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h2 className="text-3xl font-bold">Generate BAST</h2>
+          <h2 className="text-3xl font-bold">{isEditing ? "Edit BAST" : "Generate BAST"}</h2>
           <p className="text-gray-500">
-            {tr(
-              "Buat dan kelola dokumen Berita Acara Serah Terima",
-              "Create and manage Handover Minutes documents"
-            )}
+            {isEditing
+              ? tr("Perbarui data dokumen BAST", "Update BAST document data")
+              : tr("Buat dan kelola dokumen Berita Acara Serah Terima", "Create and manage Handover Minutes documents")}
           </p>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 mb-6">
         <button
-          onClick={() => setActiveTab("form")}
+          onClick={() => handleTabChange("form")}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ${
             activeTab === "form"
               ? "bg-blue-600 text-white"
@@ -61,10 +73,10 @@ export default function BASTPage() {
           }`}
         >
           <Plus size={18} />
-          {tr("Buat Baru", "Create New")}
+          {isEditing ? tr("Edit Dokumen", "Edit Document") : tr("Buat Baru", "Create New")}
         </button>
         <button
-          onClick={() => setActiveTab("history")}
+          onClick={() => handleTabChange("history")}
           className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ${
             activeTab === "history"
               ? "bg-blue-600 text-white"
@@ -76,7 +88,6 @@ export default function BASTPage() {
         </button>
       </div>
 
-      {/* Content */}
       <div className="animate-fadeIn">
         {activeTab === "form" ? (
           <BASTForm
@@ -87,8 +98,10 @@ export default function BASTPage() {
             onAddItem={addItem}
             onRemoveItem={removeItem}
             onSubmit={handleSubmit}
-            onReset={resetForm}
+            onReset={isEditing ? cancelEdit : resetForm}
             loading={loading}
+            isEditing={isEditing}
+            editNomorSurat={editNomorSurat}
             scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}
           />
@@ -98,6 +111,7 @@ export default function BASTPage() {
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             onView={handleView}
+            onEdit={handleEdit}
             onGeneratePDF={handleGeneratePDF}
             onDelete={handleDelete}
             selectedItem={selectedItem}

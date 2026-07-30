@@ -163,6 +163,57 @@ class BAUFController extends Controller
         return $this->generatePDFResponse($data);
     }
 
+    public function show($id)
+    {
+        $document = BaufDocument::findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $document,
+        ]);
+    }
+
+    public function update(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'nama_hari' => 'required|string',
+            'tanggal_bauf' => 'required|string',
+            'nama_klient' => 'required|string',
+            'tanggal_tanda_tangan' => 'required|string',
+            'kota_tanda_tangan' => 'nullable|string|max:100',
+            'ttd_hsr' => 'nullable|string|max:500000',
+            'ttd_klien' => 'nullable|string|max:500000',
+            'nama_ttd_hsr' => 'nullable|string|max:150',
+            'nama_ttd_klien' => 'nullable|string|max:150',
+            'hasil' => 'required|string',
+            'items' => 'required|array|min:1',
+            'items.*.nama_alat' => 'required|string',
+            'items.*.merk' => 'required|string',
+            'items.*.jumlah' => 'required|string',
+        ]);
+
+        $document = BaufDocument::findOrFail($id);
+        $document->update([
+            'nama_hari' => $validated['nama_hari'],
+            'tanggal_bauf' => $validated['tanggal_bauf'],
+            'nama_klient' => $validated['nama_klient'],
+            'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
+            'kota_tanda_tangan' => trim((string) ($validated['kota_tanda_tangan'] ?? '')) ?: 'Tangerang',
+            'ttd_hsr' => $validated['ttd_hsr'] ?? null,
+            'ttd_klien' => $validated['ttd_klien'] ?? null,
+            'nama_ttd_hsr' => trim((string) ($validated['nama_ttd_hsr'] ?? '')) ?: null,
+            'nama_ttd_klien' => trim((string) ($validated['nama_ttd_klien'] ?? '')) ?: null,
+            'hasil' => $validated['hasil'],
+            'items' => $validated['items'],
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dokumen BAUF berhasil diperbarui',
+            'data' => $document->fresh(),
+        ]);
+    }
+
     /**
      * Regenerate PDF dari history
      */

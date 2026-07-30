@@ -1,5 +1,5 @@
 import React from "react";
-import { Search, Download, Eye, Trash2, FileText } from "lucide-react";
+import { Search, Download, Eye, Trash2, FileText, Edit } from "lucide-react";
 import { formatDate } from "../../utils/dateHelpers";
 import { useI18n } from "../../../../i18n";
 
@@ -10,6 +10,7 @@ export const BAUFHistory = ({
   onView,
   onGeneratePDF,
   onDelete,
+  onEdit,
   selectedItem,
   showViewModal,
   onCloseViewModal
@@ -68,6 +69,14 @@ export const BAUFHistory = ({
                   >
                     <Eye size={16} />
                     <span className="sm:hidden text-sm">{tr("Lihat", "View")}</span>
+                  </button>
+                  <button
+                    onClick={() => onEdit?.(item)}
+                    className="flex-1 sm:flex-none px-3 py-2 bg-amber-100 text-amber-700 rounded-lg hover:bg-amber-200 transition flex items-center justify-center gap-1"
+                    title={tr("Edit", "Edit")}
+                  >
+                    <Edit size={16} />
+                    <span className="sm:hidden text-sm">{tr("Edit", "Edit")}</span>
                   </button>
                   <button
                     onClick={() => onGeneratePDF(item)}

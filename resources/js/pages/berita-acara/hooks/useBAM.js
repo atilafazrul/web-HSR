@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian, getDayName } from "../utils/dateHelpers";
 import { useDocumentSchedule } from "./useDocumentSchedule";
+import { mapKlientDocToForm } from "./pdfDocEditHelpers";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -21,6 +22,9 @@ export const useBAM = (projekKerjaId = null) => {
   const [showViewModal, setShowViewModal] = useState(false);
 
   const [nextNomorSurat, setNextNomorSurat] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+  const [editNomorSurat, setEditNomorSurat] = useState("");
 
   const {
     scheduleSectionProps,
@@ -179,6 +183,18 @@ export const useBAM = (projekKerjaId = null) => {
     try {
       const submitData = buildSubmitData();
 
+      if (isEditing && editId) {
+        await api.put(`/bam/${editId}`, submitData);
+        alert(tr("Dokumen BAM berhasil diperbarui!", "BAM document updated successfully!"));
+        setIsEditing(false);
+        setEditId(null);
+        setEditNomorSurat("");
+        resetForm();
+        setActiveTab("history");
+        fetchHistory();
+        return;
+      }
+
       const response = await api.post("/bam/pdf", submitData, {
         responseType: "blob",
         headers: {
@@ -213,6 +229,10 @@ export const useBAM = (projekKerjaId = null) => {
   };
 
   const handleScheduleGenerate = (formElement) => {
+    if (isEditing) {
+      alert(tr("Batalkan mode edit terlebih dahulu untuk menjadwalkan generate.", "Cancel edit mode first to schedule generation."));
+      return;
+    }
     handleSchedule(buildSubmitData(), formElement);
   };
 
@@ -271,6 +291,30 @@ export const useBAM = (projekKerjaId = null) => {
     }
   };
 
+  const handleEdit = async (item) => {
+    try {
+      const response = await api.get(`/bam/${item.id}`);
+      const data = response.data.data;
+      setFormData(mapKlientDocToForm(data, "tanggal_bam", false));
+      setEditId(item.id);
+      setEditNomorSurat(data.nomor_surat || item.nomor_surat || "");
+      setIsEditing(true);
+      setActiveTab("form");
+      setShowViewModal(false);
+      setSelectedItem(null);
+    } catch (error) {
+      console.error("Error fetching document detail:", error);
+      alert(tr("Gagal memuat data untuk diedit", "Failed to load data for editing"));
+    }
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditId(null);
+    setEditNomorSurat("");
+    resetForm();
+  };
+
   const filteredHistory = historyData.filter(
     (item) =>
       item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -291,6 +335,8 @@ export const useBAM = (projekKerjaId = null) => {
     fetchingHistory,
     selectedItem,
     showViewModal,
+    isEditing,
+    editNomorSurat,
     handleInputChange,
     handleSignatureChange,
     handleItemChange,
@@ -302,6 +348,8 @@ export const useBAM = (projekKerjaId = null) => {
     closeViewModal,
     handleGeneratePDF,
     handleDelete,
+    handleEdit,
+    cancelEdit,
     fetchHistory,
     scheduleSectionProps,
     handleScheduleGenerate,

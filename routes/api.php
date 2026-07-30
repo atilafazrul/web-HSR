@@ -519,6 +519,16 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
         'generatePDF'
     ]);
 
+    Route::get('/bast/{id}', [
+        BASTController::class,
+        'show'
+    ]);
+
+    Route::put('/bast/{id}', [
+        BASTController::class,
+        'update'
+    ]);
+
     Route::get('/bast/{id}/pdf', [
         BASTController::class,
         'regeneratePDF'
@@ -544,6 +554,16 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::post('/bauf/pdf', [
         BAUFController::class,
         'generatePDF'
+    ]);
+
+    Route::get('/bauf/{id}', [
+        BAUFController::class,
+        'show'
+    ]);
+
+    Route::put('/bauf/{id}', [
+        BAUFController::class,
+        'update'
     ]);
 
     Route::get('/bauf/history', [
@@ -580,6 +600,16 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::post('/bam/pdf', [
         BAMController::class,
         'generatePDF'
+    ]);
+
+    Route::get('/bam/{id}', [
+        BAMController::class,
+        'show'
+    ]);
+
+    Route::put('/bam/{id}', [
+        BAMController::class,
+        'update'
     ]);
 
     Route::get('/bam/{id}/pdf', [
@@ -657,6 +687,16 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::post('/sph/pdf', [
         SPHController::class,
         'generatePDF',
+    ]);
+
+    Route::get('/sph/{id}', [
+        SPHController::class,
+        'show',
+    ]);
+
+    Route::put('/sph/{id}', [
+        SPHController::class,
+        'update',
     ]);
 
     Route::get('/sph/{id}/pdf', [
