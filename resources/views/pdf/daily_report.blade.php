@@ -22,10 +22,21 @@
             width: 18%;
             text-align: center;
         }
-        .header-logo {
-            height: 50px;
-            width: auto;
-            max-width: 100%;
+        .header-logo-hsr {
+            width: 120px;
+            height: 45px;
+            max-width: none;
+            border: 0;
+            display: block;
+            margin: 0 auto;
+        }
+        .header-logo-hse {
+            width: 90px;
+            height: 45px;
+            max-width: none;
+            border: 0;
+            display: block;
+            margin: 0 auto;
         }
         .project-cell { text-align: center; font-size: 8pt; line-height: 1.35; padding: 8px 10px; vertical-align: middle; }
         .meta-label { font-weight: bold; font-size: 7pt; }
@@ -56,7 +67,7 @@
     <tr class="header-logo-row">
         <td class="logo-cell">
             @if(!empty($logo_base64))
-                <img src="{{ $logo_base64 }}" alt="HSR" class="header-logo">
+                <img src="{{ $logo_base64 }}" alt="HSR" class="header-logo-hsr" width="120" height="45">
             @else
                 <strong>HSR</strong><br><span class="small">HAYATI SEMESTA RAHARJA</span>
             @endif
@@ -67,7 +78,7 @@
         </td>
         <td class="hse-logo-cell">
             @if(!empty($logo_hse_base64))
-                <img src="{{ $logo_hse_base64 }}" alt="HSE K3" class="header-logo">
+                <img src="{{ $logo_hse_base64 }}" alt="HSE K3" class="header-logo-hse" width="90" height="45">
             @endif
         </td>
     </tr>

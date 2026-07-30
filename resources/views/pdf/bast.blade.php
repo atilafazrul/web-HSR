@@ -102,31 +102,7 @@
             border-collapse: collapse;
         }
 
-        .header-logo {
-            height: 75px;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-        }
-
-        .logo-left {
-            text-align: left;
-            vertical-align: middle;
-            padding-right: 15px;
-            width: 15%;
-        }
-
-        .logo-right {
-            text-align: right;
-            vertical-align: middle;
-            width: 15%;
-        }
-
-        .company-info {
-            text-align: center;
-            vertical-align: middle;
-            width: 70%;
-        }
+        @include('pdf.partials.header_logo_styles')
 
         .company-name {
             font-size: 20px;
@@ -168,7 +144,7 @@
             <tr>
                 <td class="logo-left">
                     @if(isset($hsrLogo) && $hsrLogo != '')
-                        <img src="{{ $hsrLogo }}" class="header-logo">
+                        <img src="{{ $hsrLogo }}" class="header-logo-hsr" width="135" height="51" alt="HSR">
                     @endif
                 </td>
 
@@ -184,24 +160,22 @@
 
                 <td class="logo-right">
                     @if(isset($isoLogo) && $isoLogo != '')
-                        <img src="{{ $isoLogo }}" class="header-logo">
+                        <img src="{{ $isoLogo }}" class="header-logo-iso" width="58" height="58" alt="ISO">
                     @endif
                 </td>
             </tr>
         </table>
 
-        <p class="MsoNormal"><span lang="EN-ID">&nbsp;</span></p>
-
-        <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center">
+        <p class="MsoNormal" align="center" style="margin-top: 6px; margin-bottom: 0in; text-align: center">
             <b><u><span lang="EN-ID" style="font-size: 18.0pt; line-height: 107%">BERITA ACARA SERAH
                         TERIMA</span></u></b>
         </p>
 
-        <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center">
-            <span lang="EN-ID">Nomor : {{ $nomor_surat ?? '(NOMER URUT SURAT)/BAST-HSR/BULAN ROMAWI/2026' }}</span>
-        </p>
-
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
+
+        <p class="MsoNormal" align="center" style="margin-bottom: 0in; text-align: center">
+            <span lang="EN-ID">Nomor: {{ $nomor_surat ?? '(NOMER URUT SURAT)/BAST-HSR/BULAN ROMAWI/2026' }}</span>
+        </p>
 
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
 
@@ -210,112 +184,14 @@
         <p class="MsoNormal" style="margin-bottom: 0in">
             <span lang="EN-ID">Pada hari ini <b>{{ $nama_hari ?? '(NAMA HARI)' }}</b> Tanggal
                 <b>{{ $tanggal_bast ?? '(TANGGAL-BULAN-TAHUN)' }}</b> Telah dilaksanakan pemasangan dan uji fungsi/uji
-                coba, untuk peralatan di bawah ini :</span>
+                coba, untuk peralatan di bawah ini:</span>
         </p>
 
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
 
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
 
-        <table class="MsoTableGrid" border="1" cellspacing="0" cellpadding="0"
-            style="width: 100%; border-collapse: collapse;">
-            <tr style="height: 3.55pt">
-                <td width="56" valign="top"
-                    style="width: 41.85pt; border: solid windowtext 1.0pt; padding: 0in 5.4pt 0in 5.4pt; height: 3.55pt">
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal">
-                        <span lang="EN-ID">NO</span>
-                    </p>
-                </td>
-                <td width="327" valign="top"
-                    style="width: 244.9pt; border: solid windowtext 1.0pt; border-left: none; padding: 0in 5.4pt 0in 5.4pt; height: 3.55pt">
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal">
-                        <span lang="EN-ID">NAMA ALAT</span>
-                    </p>
-                </td>
-                <td width="135" valign="top"
-                    style="width: 101.25pt; border: solid windowtext 1.0pt; border-left: none; padding: 0in 5.4pt 0in 5.4pt; height: 3.55pt">
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal">
-                        <span lang="EN-ID">MERK</span>
-                    </p>
-                </td>
-                <td width="135" valign="top"
-                    style="width: 101.25pt; border: solid windowtext 1.0pt; border-left: none; padding: 0in 5.4pt 0in 5.4pt; height: 3.55pt">
-                    <p class="MsoNormal" align="center"
-                        style="margin-bottom: 0in; text-align: center; line-height: normal">
-                        <span lang="EN-ID">JUMLAH</span>
-                    </p>
-                </td>
-            </tr>
-
-            @if(isset($items) && count($items) > 0)
-                @foreach($items as $index => $item)
-                    <tr style="height: 28.45pt">
-                        <td width="56" valign="top"
-                            style="width: 41.85pt; border: solid windowtext 1.0pt; border-top: none; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                            <p class="MsoNormal" align="center"
-                                style="margin-bottom: 0in; text-align: center; line-height: normal">
-                                <span lang="EN-ID">{{ $index + 1 }}</span>
-                            </p>
-                        </td>
-                        <td width="327" valign="top"
-                            style="width: 244.9pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                            <p class="MsoNormal" align="center"
-                                style="margin-bottom: 0in; text-align: center; line-height: normal">
-                                <span lang="EN-ID">{{ $item['nama_alat'] ?? '-' }}</span>
-                            </p>
-                        </td>
-                        <td width="135" valign="top"
-                            style="width: 101.25pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                            <p class="MsoNormal" align="center"
-                                style="margin-bottom: 0in; text-align: center; line-height: normal">
-                                <span lang="EN-ID">{{ $item['merk'] ?? '-' }}</span>
-                            </p>
-                        </td>
-                        <td width="135" valign="top"
-                            style="width: 101.25pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                            <p class="MsoNormal" align="center"
-                                style="margin-bottom: 0in; text-align: center; line-height: normal">
-                                <span lang="EN-ID">{{ $item['jumlah'] ?? '-' }}</span>
-                            </p>
-                        </td>
-                    </tr>
-                @endforeach
-            @else
-                <tr style="height: 28.45pt">
-                    <td width="56" valign="top"
-                        style="width: 41.85pt; border: solid windowtext 1.0pt; border-top: none; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                        <p class="MsoNormal" align="center"
-                            style="margin-bottom: 0in; text-align: center; line-height: normal">
-                            <span lang="EN-ID">1</span>
-                        </p>
-                    </td>
-                    <td width="327" valign="top"
-                        style="width: 244.9pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                        <p class="MsoNormal" align="center"
-                            style="margin-bottom: 0in; text-align: center; line-height: normal">
-                            <span lang="EN-ID">C - ARM</span>
-                        </p>
-                    </td>
-                    <td width="135" valign="top"
-                        style="width: 101.25pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                        <p class="MsoNormal" align="center"
-                            style="margin-bottom: 0in; text-align: center; line-height: normal">
-                            <span lang="EN-ID">Siemens</span>
-                        </p>
-                    </td>
-                    <td width="135" valign="top"
-                        style="width: 101.25pt; border-top: none; border-left: none; border-bottom: solid windowtext 1.0pt; border-right: solid windowtext 1.0pt; padding: 0in 5.4pt 0in 5.4pt; height: 28.45pt">
-                        <p class="MsoNormal" align="center"
-                            style="margin-bottom: 0in; text-align: center; line-height: normal">
-                            <span lang="EN-ID">1</span>
-                        </p>
-                    </td>
-                </tr>
-            @endif
-        </table>
+        @include('pdf.partials.berita_acara_items_table')
 
         <p class="MsoNormal" style="margin-bottom: 0in"><span lang="EN-ID">&nbsp;</span></p>
 

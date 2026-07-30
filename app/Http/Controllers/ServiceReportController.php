@@ -388,7 +388,7 @@ class ServiceReportController extends Controller
         $dompdf = new Dompdf($options);
 
         // Encode logos to base64 for dompdf
-        $hsrLogoPath = public_path('images/hsr logo.png');
+        $hsrLogoPath = public_path('images/LOGO HSR.png');
         $isoLogoPath = public_path('images/iso logo.png');
         $medimageLogoPath = public_path('images/medimage logo.png');
         $mediserLogoPath = public_path('images/mediser logo.png');

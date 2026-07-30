@@ -194,7 +194,7 @@ export const BASTForm = ({
               <div className="col-span-1 sm:col-span-5">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   <span className="sm:hidden">{index + 1}. </span>
-                  {tr("Nama Alat", "Equipment Name")} <span className="text-red-500">*</span>
+                  {tr("Item", "Item")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
@@ -209,7 +209,7 @@ export const BASTForm = ({
               {/* Merk */}
               <div className="col-span-1 sm:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {tr("Merk", "Brand")} <span className="text-red-500">*</span>
+                  {tr("Merek", "Brand")} <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"

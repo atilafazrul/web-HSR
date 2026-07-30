@@ -96,31 +96,7 @@
             border-collapse: collapse;
         }
 
-        .header-logo {
-            height: 75px;
-            width: auto;
-            max-width: 100%;
-            object-fit: contain;
-        }
-
-        .logo-left {
-            text-align: left;
-            vertical-align: middle;
-            padding-right: 15px;
-            width: 15%;
-        }
-
-        .logo-right {
-            text-align: right;
-            vertical-align: middle;
-            width: 15%;
-        }
-
-        .company-info {
-            text-align: center;
-            vertical-align: middle;
-            width: 70%;
-        }
+        @include('pdf.partials.header_logo_styles')
 
         .company-name {
             font-size: 20px;
@@ -215,7 +191,7 @@
             <tr>
                 <td class="logo-left">
                     @if(isset($hsrLogo) && $hsrLogo != '')
-                        <img src="{{ $hsrLogo }}" class="header-logo">
+                        <img src="{{ $hsrLogo }}" class="header-logo-hsr" width="135" height="51" alt="HSR">
                     @endif
                 </td>
 
@@ -231,7 +207,7 @@
 
                 <td class="logo-right">
                     @if(isset($isoLogo) && $isoLogo != '')
-                        <img src="{{ $isoLogo }}" class="header-logo">
+                        <img src="{{ $isoLogo }}" class="header-logo-iso" width="58" height="58" alt="ISO">
                     @endif
                 </td>
             </tr>

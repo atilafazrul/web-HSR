@@ -202,9 +202,9 @@ export const BAMHistory = ({
                     <thead className="bg-gray-100">
                       <tr>
                         <th className="p-2 text-left border">{tr("No", "No")}</th>
-                        <th className="p-2 text-left border">{tr("Nama Alat", "Equipment Name")}</th>
-                        <th className="p-2 text-left border">{tr("Merk", "Brand")}</th>
-                        <th className="p-2 text-left border">{tr("Jumlah", "Quantity")}</th>
+                        <th className="p-2 text-left border">{tr("Item", "Item")}</th>
+                        <th className="p-2 text-center border">{tr("Merek", "Brand")}</th>
+                        <th className="p-2 text-center border">{tr("Jumlah", "Quantity")}</th>
                       </tr>
                     </thead>
                     <tbody>

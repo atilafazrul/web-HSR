@@ -12,7 +12,7 @@ class BeritaAcaraPdfAssetService
     public function enrich(array $data): array
     {
         $assets = [
-            'hsrLogo' => public_path('images/hsr logo.png'),
+            'hsrLogo' => public_path('images/LOGO HSR.png'),
             'isoLogo' => public_path('images/iso logo.png'),
             'medimageLogo' => public_path('images/medimage logo.png'),
             'medhisLogo' => public_path('images/medhis.png'),
