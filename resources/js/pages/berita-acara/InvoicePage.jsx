@@ -1,13 +1,11 @@
 import React from "react";
-import { useParams } from "react-router-dom";
 import { History, Plus } from "lucide-react";
-import { usePO } from "./hooks/usePO";
-import { POForm } from "./components/forms/POForm";
-import { POHistory } from "./components/history/POHistory";
+import { useInvoice } from "./hooks/useInvoice";
+import { InvoiceForm } from "./components/forms/InvoiceForm";
+import { InvoiceHistory } from "./components/history/InvoiceHistory";
 import { useI18n } from "../../i18n";
 
-export default function POPage() {
-  const { projekId } = useParams();
+export default function InvoicePage() {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const {
@@ -42,7 +40,7 @@ export default function POPage() {
     estimatedDiskon,
     estimatedPpn,
     estimatedTotal,
-  } = usePO(projekId);
+  } = useInvoice();
 
   const handleTabChange = (tab) => {
     if (isEditing) {
@@ -58,11 +56,11 @@ export default function POPage() {
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
-        <h2 className="text-3xl font-bold">{isEditing ? "Edit PO" : "Generate PO"}</h2>
+        <h2 className="text-3xl font-bold">{isEditing ? "Edit Invoice" : "Generate Invoice"}</h2>
         <p className="text-gray-500">
           {isEditing
-            ? tr("Perbarui data Purchase Order", "Update purchase order data")
-            : tr("Buat dan kelola Purchase Order (PO)", "Create and manage Purchase Orders (PO)")}
+            ? tr("Perbarui data Invoice", "Update invoice data")
+            : tr("Buat dan kelola Invoice (Super Admin)", "Create and manage Invoices (Super Admin)")}
         </p>
       </div>
 
@@ -79,7 +77,7 @@ export default function POPage() {
 
       <div className="animate-fadeIn">
         {activeTab === "form" ? (
-          <POForm
+          <InvoiceForm
             formData={formData}
             nextNomorSurat={nextNomorSurat}
             fetchingNomor={fetchingNomor}
@@ -100,7 +98,7 @@ export default function POPage() {
             estimatedTotal={estimatedTotal}
           />
         ) : (
-          <POHistory
+          <InvoiceHistory
             filteredHistory={filteredHistory}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}

@@ -25,6 +25,7 @@ use App\Http\Controllers\DashboardBiayaController;
 use App\Http\Controllers\SPPDController;
 use App\Http\Controllers\SPHController;
 use App\Http\Controllers\POController;
+use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ScheduledBeritaAcaraController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\RfiController;
@@ -748,6 +749,47 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
 
     Route::delete('/po/{id}', [
         POController::class,
+        'destroy',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Invoice PDF (Super Admin only)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/invoice/next-nomor', [
+        InvoiceController::class,
+        'getNextNomorSurat',
+    ]);
+
+    Route::get('/invoice/history', [
+        InvoiceController::class,
+        'getHistory',
+    ]);
+
+    Route::post('/invoice/pdf', [
+        InvoiceController::class,
+        'generatePDF',
+    ]);
+
+    Route::get('/invoice/{id}', [
+        InvoiceController::class,
+        'show',
+    ]);
+
+    Route::put('/invoice/{id}', [
+        InvoiceController::class,
+        'update',
+    ]);
+
+    Route::get('/invoice/{id}/pdf', [
+        InvoiceController::class,
+        'regeneratePDF',
+    ]);
+
+    Route::delete('/invoice/{id}', [
+        InvoiceController::class,
         'destroy',
     ]);
 

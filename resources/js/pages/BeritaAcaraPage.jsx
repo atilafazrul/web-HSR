@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FileText, ClipboardCheck, Wrench, FileSignature, Receipt, ArrowLeft, ClipboardList, ShoppingCart } from "lucide-react";
+import { FileText, ClipboardCheck, Wrench, FileSignature, Receipt, ArrowLeft, ClipboardList, ShoppingCart, FileSpreadsheet } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n";
 
@@ -141,6 +141,15 @@ export default function BeritaAcaraPage() {
           subtitle={tr("Purchase Order", "Purchase Order")}
           onClick={() => navigate(`${beritaAcaraBase}/po`)}
         />
+
+        {role === "super_admin" && (
+          <Card
+            icon={<FileSpreadsheet size={24} className="text-indigo-600" />}
+            title="Invoice"
+            subtitle={tr("Invoice (Super Admin)", "Invoice (Super Admin)")}
+            onClick={() => navigate(`${beritaAcaraBase}/invoice`)}
+          />
+        )}
 
         <Card
           icon={<ClipboardList size={24} className="text-indigo-600" />}

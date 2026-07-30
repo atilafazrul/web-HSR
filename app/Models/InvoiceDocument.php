@@ -5,20 +5,17 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PoDocument extends Model
+class InvoiceDocument extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'nomor_surat',
-        'tanggal_po',
-        'to_nama',
-        'to_alamat',
-        'ship_to_nama',
-        'ship_to_alamat',
-        'fob',
-        'shipped_via',
-        'payment_term',
+        'tanggal_invoice',
+        'tanggal_jatuh_tempo',
+        'bill_to_nama',
+        'bill_to_alamat',
+        'bill_to_telepon',
         'items',
         'subtotal',
         'diskon_persen',
@@ -26,11 +23,11 @@ class PoDocument extends Model
         'ppn_persen',
         'ppn_nominal',
         'total_harga',
-        'kota_tanda_tangan',
+        'catatan',
+        'terms',
         'nama_penandatangan',
         'jabatan_penandatangan',
         'nomor_urut',
-        'bulan',
         'tahun',
     ];
 

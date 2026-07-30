@@ -184,12 +184,12 @@
             <td>
                 <div class="party-label">To :</div>
                 <div><strong>{{ $to_nama }}</strong></div>
-                <div>{!! nl2br(e($to_alamat ?? '')) !!}</div>
+                <div>{!! $to_alamat ?? '' !!}</div>
             </td>
             <td>
                 <div class="party-label">Ship To / Location Project :</div>
                 <div><strong>{{ $ship_to_nama }}</strong></div>
-                <div>{!! nl2br(e($ship_to_alamat ?? '')) !!}</div>
+                <div>{!! $ship_to_alamat ?? '' !!}</div>
             </td>
         </tr>
     </table>
@@ -235,8 +235,14 @@
                 <td colspan="4" class="summary-label">Sub Total</td>
                 <td class="summary-value">{{ $subtotal_formatted ?? '' }}</td>
             </tr>
+            @if(!empty($diskon_nominal))
+                <tr>
+                    <td colspan="4" class="summary-label">Diskon</td>
+                    <td class="summary-value">- {{ $diskon_formatted ?? '' }}</td>
+                </tr>
+            @endif
             <tr>
-                <td colspan="4" class="summary-label">PPN</td>
+                <td colspan="4" class="summary-label">PPN ({{ rtrim(rtrim(number_format((float) ($ppn_persen ?? 11), 2, ',', '.'), '0'), ',') }}%)</td>
                 <td class="summary-value">{{ $ppn_formatted ?? '' }}</td>
             </tr>
             <tr>

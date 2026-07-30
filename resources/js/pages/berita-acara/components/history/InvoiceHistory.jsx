@@ -3,7 +3,7 @@ import { Search, Download, Eye, Trash2, FileText, Edit } from "lucide-react";
 import { formatDate } from "../../utils/dateHelpers";
 import { useI18n } from "../../../../i18n";
 
-export const POHistory = ({
+export const InvoiceHistory = ({
   filteredHistory,
   searchTerm,
   onSearchChange,
@@ -26,7 +26,7 @@ export const POHistory = ({
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input
             type="text"
-            placeholder={tr("Cari nomor PO atau vendor...", "Search PO number or vendor...")}
+            placeholder={tr("Cari nomor invoice atau klien...", "Search invoice number or client...")}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4 focus:border-transparent focus:ring-2 focus:ring-blue-500"
@@ -37,7 +37,7 @@ export const POHistory = ({
       {filteredHistory.length === 0 ? (
         <div className="py-12 text-center">
           <FileText size={48} className="mx-auto mb-4 text-gray-300" />
-          <p className="text-gray-500">{tr("Belum ada dokumen PO yang dibuat", "No PO documents have been created yet")}</p>
+          <p className="text-gray-500">{tr("Belum ada dokumen Invoice yang dibuat", "No invoice documents have been created yet")}</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -46,8 +46,11 @@ export const POHistory = ({
               <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                 <div className="flex-1">
                   <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{item.nomor_surat}</span>
-                  <h4 className="mt-2 text-lg font-semibold text-gray-800">{item.to_nama}</h4>
-                  <p className="mt-1 text-sm text-gray-500">PO Date: {item.tanggal_po}</p>
+                  <h4 className="mt-2 text-lg font-semibold text-gray-800">{item.bill_to_nama}</h4>
+                  <p className="mt-1 text-sm text-gray-500">Date: {item.tanggal_invoice}</p>
+                  {item.tanggal_jatuh_tempo && (
+                    <p className="mt-1 text-sm text-gray-500">Due: {item.tanggal_jatuh_tempo}</p>
+                  )}
                   <p className="mt-2 text-sm font-medium text-green-700">{formatRupiah(item.total_harga)}</p>
                   <p className="mt-1 text-xs text-gray-400">{tr("Dibuat", "Created")}: {formatDate(item.created_at)}</p>
                 </div>
@@ -76,9 +79,9 @@ export const POHistory = ({
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="mb-4 text-xl font-bold">{selectedItem.nomor_surat}</h3>
             <div className="space-y-2 text-sm text-gray-700">
-              <p><strong>To:</strong> {selectedItem.to_nama}</p>
-              <p><strong>PO Date:</strong> {selectedItem.tanggal_po}</p>
-              <p><strong>Payment Term:</strong> {selectedItem.payment_term}</p>
+              <p><strong>Bill To:</strong> {selectedItem.bill_to_nama}</p>
+              <p><strong>Date:</strong> {selectedItem.tanggal_invoice}</p>
+              <p><strong>Due Date:</strong> {selectedItem.tanggal_jatuh_tempo || "-"}</p>
               <p><strong>Sub Total:</strong> {formatRupiah(selectedItem.subtotal)}</p>
               {Number(selectedItem.diskon_nominal || 0) > 0 && (
                 <p><strong>{tr("Diskon", "Discount")}:</strong> - {formatRupiah(selectedItem.diskon_nominal)}</p>
