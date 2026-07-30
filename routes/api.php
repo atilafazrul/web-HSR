@@ -24,6 +24,7 @@ use App\Http\Controllers\BAMController;
 use App\Http\Controllers\DashboardBiayaController;
 use App\Http\Controllers\SPPDController;
 use App\Http\Controllers\SPHController;
+use App\Http\Controllers\POController;
 use App\Http\Controllers\ScheduledBeritaAcaraController;
 use App\Http\Controllers\CutiController;
 use App\Http\Controllers\RfiController;
@@ -706,6 +707,47 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
 
     Route::delete('/sph/{id}', [
         SPHController::class,
+        'destroy',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | PO PDF (Purchase Order)
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/po/next-nomor', [
+        POController::class,
+        'getNextNomorSurat',
+    ]);
+
+    Route::get('/po/history', [
+        POController::class,
+        'getHistory',
+    ]);
+
+    Route::post('/po/pdf', [
+        POController::class,
+        'generatePDF',
+    ]);
+
+    Route::get('/po/{id}', [
+        POController::class,
+        'show',
+    ]);
+
+    Route::put('/po/{id}', [
+        POController::class,
+        'update',
+    ]);
+
+    Route::get('/po/{id}/pdf', [
+        POController::class,
+        'regeneratePDF',
+    ]);
+
+    Route::delete('/po/{id}', [
+        POController::class,
         'destroy',
     ]);
 

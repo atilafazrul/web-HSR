@@ -52,6 +52,7 @@ import BASTPage from "./berita-acara/BASTPage";
 import BAMPage from "./berita-acara/BAMPage";
 import SPPDPage from "./berita-acara/SPPDPage";
 import SPHPage from "./berita-acara/SPHPage";
+import POPage from "./berita-acara/POPage";
 
 /* INVENTORY */
 import InventoryPage from "./InventoryPage";
@@ -162,6 +163,7 @@ export default function AdminDashboard({ user, logout }) {
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Project Photos" : "Foto Projek";
     if (path.includes("projek-kerja/berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("berita-acara/service-report")) return "Service Report";
+    if (path.includes("berita-acara/po")) return "Purchase Order";
     if (path.includes("berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("dashboard")) return "Dashboard";
     if (path.includes("it")) return language === "en" ? "IT Division" : "Divisi IT";
@@ -619,6 +621,7 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="projek-kerja/berita-acara/:projekId/bast" element={<BASTPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sppd" element={<SPPDPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sph" element={<SPHPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/po" element={<POPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/service-report" element={<GeneratePDFPage user={user} />} />
 
             <Route path="karyawan" element={<KaryawanPage />} />
@@ -676,6 +679,7 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="berita-acara/bast" element={<BASTPage />} />
             <Route path="berita-acara/sppd" element={<SPPDPage />} />
             <Route path="berita-acara/sph" element={<SPHPage />} />
+            <Route path="berita-acara/po" element={<POPage />} />
             <Route path="berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
 
             {/* Legacy buat-pdf → Service Report di Berita Acara */}

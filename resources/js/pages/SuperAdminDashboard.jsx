@@ -75,6 +75,7 @@ import BASTPage from "./berita-acara/BASTPage";
 import BAMPage from "./berita-acara/BAMPage";
 import SPPDPage from "./berita-acara/SPPDPage";
 import SPHPage from "./berita-acara/SPHPage";
+import POPage from "./berita-acara/POPage";
 
 /* PEMBELIAN PURCHASING */
 import PembelianPage from "./PembelianPage";
@@ -118,6 +119,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     if (path.includes("projek-kerja/foto")) return language === "en" ? "Manage Photos & Documents" : "Kelola Foto & dokumen";
     if (path.includes("projek-kerja/berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("berita-acara/service-report")) return "Service Report";
+    if (path.includes("berita-acara/po")) return "Purchase Order";
     if (path.includes("berita-acara")) return language === "en" ? "Minutes Report" : "Berita Acara";
     if (path.includes("projek-kerja")) return language === "en" ? "Project Work" : "Projek Kerja";
     if (path.includes("/sales/target")) return language === "en" ? "Sales Target" : "Target Penjualan";
@@ -185,6 +187,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="berita-acara/bast" element={<BASTPage />} />
             <Route path="berita-acara/sppd" element={<SPPDPage />} />
             <Route path="berita-acara/sph" element={<SPHPage />} />
+            <Route path="berita-acara/po" element={<POPage />} />
             <Route path="berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
 
             <Route path="it">
@@ -258,6 +261,7 @@ export default function SuperAdminDashboard({ user, logout }) {
             <Route path="projek-kerja/berita-acara/:projekId/bast" element={<BASTPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sppd" element={<SPPDPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/sph" element={<SPHPage />} />
+            <Route path="projek-kerja/berita-acara/:projekId/po" element={<POPage />} />
             <Route path="projek-kerja/berita-acara/:projekId/service-report" element={<GeneratePDFPage user={user} />} />
 
             <Route

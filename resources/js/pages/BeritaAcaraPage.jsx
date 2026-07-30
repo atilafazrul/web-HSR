@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FileText, ClipboardCheck, Wrench, FileSignature, Receipt, ArrowLeft, ClipboardList } from "lucide-react";
+import { FileText, ClipboardCheck, Wrench, FileSignature, Receipt, ArrowLeft, ClipboardList, ShoppingCart } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n";
 
@@ -133,6 +133,13 @@ export default function BeritaAcaraPage() {
           title="SPH"
           subtitle={tr("Surat Penawaran Harga", "Price Quotation Letter")}
           onClick={() => navigate(`${beritaAcaraBase}/sph`)}
+        />
+
+        <Card
+          icon={<ShoppingCart size={24} className="text-indigo-600" />}
+          title="PO"
+          subtitle={tr("Purchase Order", "Purchase Order")}
+          onClick={() => navigate(`${beritaAcaraBase}/po`)}
         />
 
         <Card
