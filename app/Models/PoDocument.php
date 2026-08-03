@@ -20,6 +20,7 @@ class PoDocument extends Model
         'shipped_via',
         'payment_term',
         'items',
+        'catatan',
         'subtotal',
         'diskon_persen',
         'diskon_nominal',

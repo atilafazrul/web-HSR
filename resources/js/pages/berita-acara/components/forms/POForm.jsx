@@ -193,6 +193,17 @@ export const POForm = ({
             </div>
           ))}
 
+          <div className="mb-6">
+            <RichTextEditor
+              label={tr("Catatan Tambahan", "Additional Note")}
+              value={formData.catatan}
+              onChange={(value) => onRichTextChange("catatan", value)}
+              minHeight={100}
+              editorKey="po-catatan"
+            />
+            <p className="mt-1 text-xs text-gray-400">{tr("Opsional. Akan ditampilkan di bawah tabel item pada PDF.", "Optional. Will be shown below the item table on the PDF.")}</p>
+          </div>
+
           <div className="ml-auto w-full max-w-md space-y-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
             <div className="flex items-start justify-between gap-4 text-sm">
               <span className="shrink-0 text-gray-600">{tr("Sub Total", "Sub Total")}</span>

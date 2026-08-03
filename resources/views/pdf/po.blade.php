@@ -115,6 +115,26 @@
             vertical-align: middle;
         }
 
+        .catatan-block {
+            margin-top: 4px;
+            margin-bottom: 10px;
+        }
+
+        .catatan-label {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .catatan-content ul,
+        .catatan-content ol {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .catatan-content p {
+            margin: 0 0 4pt 0;
+        }
+
         .signature-block {
             width: 42%;
             margin-left: auto;
@@ -250,6 +270,15 @@
             </tr>
         </tbody>
     </table>
+
+    @if(!empty($catatan))
+        <div class="catatan-block">
+            <div class="catatan-label">Catatan:</div>
+            <div class="catatan-content">
+                {!! $catatan !!}
+            </div>
+        </div>
+    @endif
 
     <div class="signature-block">
         <div class="sign-date">{{ $kota_tanda_tangan ?? 'Tangerang' }}, {{ $tanggal_po }}</div>

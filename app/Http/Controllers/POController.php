@@ -147,6 +147,7 @@ class POController extends Controller
             'items.*.deskripsi' => 'required|string',
             'items.*.qty' => 'required|numeric|min:1',
             'items.*.harga' => 'required|numeric|min:0',
+            'catatan' => 'nullable|string|max:20000',
             'diskon_nominal' => 'nullable|numeric|min:0',
             'ppn_persen' => 'nullable|numeric|min:0|max:100',
             'kota_tanda_tangan' => 'nullable|string|max:100',
@@ -176,6 +177,7 @@ class POController extends Controller
             'shipped_via' => trim((string) ($validated['shipped_via'] ?? '')) ?: null,
             'payment_term' => trim((string) ($validated['payment_term'] ?? '')) ?: 'Cash On Delivery',
             'items' => $items,
+            'catatan' => $this->sanitizeHtml($validated['catatan'] ?? null),
             'subtotal' => $subtotal,
             'diskon_persen' => $diskonPersen,
             'diskon_nominal' => $diskonNominal,
@@ -215,6 +217,7 @@ class POController extends Controller
             'shipped_via' => $document->shipped_via,
             'payment_term' => $document->payment_term,
             'items' => $items,
+            'catatan' => $document->catatan,
             'subtotal' => $document->subtotal,
             'subtotal_formatted' => $this->formatRupiah((int) $document->subtotal),
             'diskon_persen' => $document->diskon_persen,
@@ -295,6 +298,15 @@ class POController extends Controller
     private function calculateSubtotal(array $items): int
     {
         return (int) collect($items)->sum('total_harga');
+    }
+
+    private function sanitizeHtml(?string $html): ?string
+    {
+        if ($html === null || trim($html) === '') {
+            return null;
+        }
+
+        return strip_tags($html, '<p><br><strong><b><em><i><u><ol><ul><li><span>');
     }
 
     private function deskripsiToHtml(string $deskripsi): string
