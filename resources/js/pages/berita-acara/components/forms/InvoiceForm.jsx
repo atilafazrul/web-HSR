@@ -81,6 +81,7 @@ export const InvoiceForm = ({
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Diskon (Rp)", "Discount (Rp)")}</label>
             <input type="text" inputMode="numeric" name="diskon" value={formData.diskon} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 tabular-nums" placeholder="0" />
+            <p className="mt-1 text-xs text-gray-400">{tr("Nominal potongan langsung, bukan persentase", "Flat discount amount, not a percentage")}</p>
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">PPN (%)</label>
