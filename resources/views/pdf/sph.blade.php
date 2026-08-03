@@ -146,17 +146,23 @@
             z-index: -1;
         }
 
+        .items-table td ul,
+        .items-table td ol {
+            margin: 0;
+            padding-left: 16px;
+        }
+
         .rich-content ul,
         .rich-content ol {
             margin: 0;
             padding-left: 18px;
         }
 
-        @include('pdf.partials.footer_qr_copyright_styles')
-        /* SPH: move QR block slightly lower */
-        .pdf-qr-copyright {
-            bottom: 46px !important;
+        .rich-content p {
+            text-align: justify;
         }
+
+        @include('pdf.partials.footer_qr_copyright_styles')
     </style>
 </head>
 
@@ -204,9 +210,11 @@
             <tr>
                 <th class="col-no">No</th>
                 <th class="col-item">Nama Item</th>
-                <th class="col-desc">Deskripsi</th>
+                @if(!empty($show_deskripsi_column))
+                    <th class="col-desc">Deskripsi</th>
+                @endif
                 <th class="col-qty">QTY</th>
-                <th class="col-price">Harga</th>
+                <th class="col-price">Harga Satuan</th>
                 <th class="col-total">Total Harga</th>
             </tr>
         </thead>
@@ -215,32 +223,28 @@
                 <tr>
                     <td class="col-no">{{ $item['no'] ?? $loop->iteration }}</td>
                     <td>{{ $item['nama_item'] ?? '-' }}</td>
-                    <td>{!! $item['deskripsi_html'] ?? '' !!}</td>
+                    @if(!empty($show_deskripsi_column))
+                        <td>{!! $item['deskripsi_html'] ?? '' !!}</td>
+                    @endif
                     <td class="col-qty">{{ $item['qty'] ?? '1' }}</td>
                     <td class="col-price">{{ $item['harga_formatted'] ?? '' }}</td>
                     <td class="col-total">{{ $item['total_harga_formatted'] ?? '' }}</td>
                 </tr>
             @endforeach
             <tr class="total-row">
-                <td colspan="5" style="text-align:right;">Total</td>
+                <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
                 <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
             </tr>
         </tbody>
     </table>
 
     <div class="closing-section">
-        <p><strong>Syarat dan Ketentuan:</strong></p>
-        <div class="rich-content">
-            @if(!empty($syarat_ketentuan))
+        @if(!empty($syarat_ketentuan))
+            <p><strong>Syarat dan Ketentuan:</strong></p>
+            <div class="rich-content">
                 {!! $syarat_ketentuan !!}
-            @else
-                <ol>
-                    <li>Harga belum termasuk PPN 11%.</li>
-                    <li>Pembayaran dilakukan 100% setelah barang diterima.</li>
-                    <li>Penawaran ini berlaku selama 30 (tiga puluh) hari dari tanggal penerbitan penawaran.</li>
-                </ol>
-            @endif
-        </div>
+            </div>
+        @endif
 
         <div class="rich-content" style="margin-top:12px;">
             @if(!empty($paragraf_penutup))
@@ -260,24 +264,23 @@
         </div>
     </div>
 
-    @include('pdf.partials.footer_qr_copyright')
-
     <div class="footer">
         <table class="footer-table">
             <tr>
-                <td class="footer-cell" width="20%">
+                @include('pdf.partials.footer_qr_copyright')
+                <td class="footer-cell">
                     @if(!empty($medimageLogo))<img src="{{ $medimageLogo }}" class="footer-logo" alt="">@endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(!empty($medhisLogo))<img src="{{ $medhisLogo }}" class="footer-logo" alt="">@endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(!empty($mediserLogo))<img src="{{ $mediserLogo }}" class="footer-logo" alt="">@endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(!empty($conexaLogo))<img src="{{ $conexaLogo }}" class="footer-logo" alt="">@endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(!empty($mksLogo))<img src="{{ $mksLogo }}" class="footer-logo" alt="">@endif
                 </td>
             </tr>

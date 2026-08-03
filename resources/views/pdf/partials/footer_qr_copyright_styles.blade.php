@@ -1,25 +1,21 @@
-        /* QR + Copyright — pojok kiri bawah */
-        .pdf-qr-copyright {
-            position: fixed;
-            /* Place QR + text ABOVE partner logos */
-            bottom: 58px;
-            /* Slightly more to the right (all letters) */
-            left: 30pt;
-            text-align: left;
-            z-index: 10;
-            line-height: 1.2;
+        /* QR + Copyright — kini menyatu di baris footer bareng logo partner */
+        .footer-qr-cell {
+            /* Sedikit lebih kecil dari kolom logo agar logo partner tidak kurus */
+            width: 11%;
+            text-align: center;
+            vertical-align: middle;
         }
 
-        .pdf-qr-copyright img {
-            /* Slightly smaller QR so signature fits on page 1 */
-            width: 52px;
-            height: 52px;
+        .footer-qr {
+            height: 34px;
+            width: 34px;
             display: block;
-            margin-bottom: 2px;
+            margin: 0 auto 2px auto;
         }
 
-        .pdf-copyright-text {
-            font-size: 7.5pt;
+        .footer-copyright-text {
+            font-size: 6pt;
             font-family: "Calibri", sans-serif;
             color: #333;
+            white-space: nowrap;
         }

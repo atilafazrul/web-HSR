@@ -3,6 +3,7 @@ import { Plus, Download, Trash2, Calendar, FileSpreadsheet, Edit, X, Save } from
 import { useI18n } from "../../../../i18n";
 import { parseRibuanId } from "../../../../utils/formatRupiahInput";
 import { RichTextEditor } from "./RichTextEditor";
+import { RupiahInput } from "./RupiahInput";
 
 export const InvoiceForm = ({
   formData,
@@ -80,7 +81,13 @@ export const InvoiceForm = ({
           </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Diskon (Rp)", "Discount (Rp)")}</label>
-            <input type="text" inputMode="numeric" name="diskon" value={formData.diskon} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 tabular-nums" placeholder="0" />
+            <RupiahInput
+              name="diskon"
+              value={formData.diskon}
+              onChange={(val) => onInputChange({ target: { name: "diskon", value: val } })}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
+              placeholder="0"
+            />
             <p className="mt-1 text-xs text-gray-400">{tr("Nominal potongan langsung, bukan persentase", "Flat discount amount, not a percentage")}</p>
           </div>
           <div>
@@ -139,7 +146,13 @@ export const InvoiceForm = ({
                 </div>
                 <div className="md:col-span-2">
                   <label className="mb-1 block text-sm font-medium text-gray-700">{tr("Harga (Rp)", "Price (Rp)")} *</label>
-                  <input type="text" inputMode="numeric" value={item.harga} onChange={(e) => onItemChange(index, "harga", e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 tabular-nums" placeholder="245.000" required />
+                  <RupiahInput
+                    value={item.harga}
+                    onChange={(val) => onItemChange(index, "harga", val)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5"
+                    placeholder="245.000"
+                    required
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="mb-1 block text-sm font-medium text-gray-700">Amount</label>

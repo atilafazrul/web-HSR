@@ -209,33 +209,32 @@
 
     </div>
 
-    @include('pdf.partials.footer_qr_copyright')
-
-    <!-- FOOTER - Fixed at bottom with 5 logos -->
+    <!-- FOOTER - Fixed at bottom: QR + 5 logos, satu baris -->
     <div class="footer">
         <table class="footer-table">
             <tr>
-                <td class="footer-cell" width="20%">
+                @include('pdf.partials.footer_qr_copyright')
+                <td class="footer-cell">
                     @if(isset($medimageLogo) && $medimageLogo != '')
                         <img src="{{ $medimageLogo }}" class="footer-logo">
                     @endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(isset($medhisLogo) && $medhisLogo != '')
                         <img src="{{ $medhisLogo }}" class="footer-logo">
                     @endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(isset($mediserLogo) && $mediserLogo != '')
                         <img src="{{ $mediserLogo }}" class="footer-logo">
                     @endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(isset($conexaLogo) && $conexaLogo != '')
                         <img src="{{ $conexaLogo }}" class="footer-logo">
                     @endif
                 </td>
-                <td class="footer-cell" width="20%">
+                <td class="footer-cell">
                     @if(isset($mksLogo) && $mksLogo != '')
                         <img src="{{ $mksLogo }}" class="footer-logo">
                     @endif

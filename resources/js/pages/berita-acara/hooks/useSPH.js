@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian } from "../utils/dateHelpers";
+import { parseRibuanId } from "../../../utils/formatRupiahInput";
 import { useDocumentSchedule } from "./useDocumentSchedule";
 import { mapSphDocToForm } from "./pdfDocEditHelpers";
 
@@ -10,7 +11,7 @@ const tr = (id, en) => {
 };
 
 const DEFAULT_PARAGRAF_PEMBUKA =
-  "<p>Sehubungan dengan kebutuhan infrastruktur TI di perusahaan bapak/ibu, bersama ini kami dari PT. Hayati Semesta Raharja mengajukan penawaran sesuai dengan kebutuhan sistem di perusahaan bapak/ibu.</p><p>Berikut kami sampaikan rincian penawarannya:</p>";
+  "<p>\u00A0\u00A0\u00A0\u00A0Sehubungan dengan kebutuhan infrastruktur TI di perusahaan bapak/ibu, bersama ini kami dari PT. Hayati Semesta Raharja mengajukan penawaran sesuai dengan kebutuhan sistem di perusahaan bapak/ibu.</p><p>Berikut kami sampaikan rincian penawarannya:</p>";
 
 const DEFAULT_SYARAT =
   "<ol><li>Harga belum termasuk PPN 11%.</li><li>Pembayaran dilakukan 100% setelah barang diterima.</li><li>Penawaran ini berlaku selama 30 (tiga puluh) hari dari tanggal penerbitan penawaran.</li></ol>";
@@ -61,7 +62,7 @@ export const useSPH = (projekKerjaId = null) => {
       nama_item: item.nama_item,
       deskripsi: item.deskripsi,
       qty: item.qty,
-      harga: Number(item.harga || 0),
+      harga: parseRibuanId(item.harga),
     })),
     kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
     tanggal_tanda_tangan:
@@ -134,7 +135,11 @@ export const useSPH = (projekKerjaId = null) => {
 
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
-    newItems[index][field] = value;
+    if (field === "harga") {
+      newItems[index][field] = value;
+    } else {
+      newItems[index][field] = value;
+    }
     setFormData((prev) => ({ ...prev, items: newItems }));
   };
 
@@ -318,7 +323,7 @@ export const useSPH = (projekKerjaId = null) => {
     }).format(Number(value || 0));
 
   const estimatedTotal = formData.items.reduce((sum, item) => {
-    const harga = Number(item.harga || 0);
+    const harga = parseRibuanId(item.harga);
     const qty = Math.max(1, Number(String(item.qty || "1").replace(/\D/g, "")) || 1);
     return sum + harga * qty;
   }, 0);

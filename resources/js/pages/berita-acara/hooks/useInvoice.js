@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
-import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../../../utils/formatRupiahInput";
+import { nominalApiToInput, parseRibuanId } from "../../../utils/formatRupiahInput";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -120,7 +120,7 @@ export const useInvoice = () => {
         tanggal_jatuh_tempo_display: formatDateEnglish(value),
       }));
     } else if (name === "diskon") {
-      setFormData((prev) => ({ ...prev, diskon: formatRibuanId(digitsOnly(value)) }));
+      setFormData((prev) => ({ ...prev, diskon: value }));
     } else if (name === "ppn_persen") {
       setFormData((prev) => {
         const isNonPpn = Number(value || 0) <= 0;
@@ -147,7 +147,7 @@ export const useInvoice = () => {
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
     if (field === "harga") {
-      newItems[index][field] = formatRibuanId(digitsOnly(value));
+      newItems[index][field] = value;
     } else {
       newItems[index][field] = value;
     }

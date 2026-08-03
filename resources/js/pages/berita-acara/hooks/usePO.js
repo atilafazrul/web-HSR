@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian } from "../utils/dateHelpers";
-import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../../../utils/formatRupiahInput";
+import { nominalApiToInput, parseRibuanId } from "../../../utils/formatRupiahInput";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -115,7 +115,7 @@ export const usePO = (projekKerjaId = null) => {
         tanggal_po_display: formatDateToIndonesian(value),
       }));
     } else if (name === "diskon") {
-      setFormData((prev) => ({ ...prev, diskon: formatRibuanId(digitsOnly(value)) }));
+      setFormData((prev) => ({ ...prev, diskon: value }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -128,7 +128,7 @@ export const usePO = (projekKerjaId = null) => {
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
     if (field === "harga") {
-      newItems[index][field] = formatRibuanId(digitsOnly(value));
+      newItems[index][field] = value;
     } else {
       newItems[index][field] = value;
     }

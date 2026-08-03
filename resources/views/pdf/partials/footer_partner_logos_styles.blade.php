@@ -1,4 +1,4 @@
-        /* FOOTER - Partner logos at very bottom */
+        /* FOOTER - QR + Partner logos, satu baris rapi di bagian bawah */
         .footer {
             position: fixed;
             /* Slightly lower so it sits closer to page edge */
@@ -12,13 +12,18 @@
         .footer-table {
             width: 100%;
             border-collapse: collapse;
+            /* Kolom otomatis terbagi rata, baik 5 kolom (logo saja) atau 6 (QR + logo) */
+            table-layout: fixed;
         }
 
         .footer-logo {
-            height: 45px;
-            width: auto;
+            /* Skala proporsional: batasi tinggi & lebar, jangan pernah gepeng/kurus */
+            max-height: 42px;
             max-width: 100%;
-            object-fit: contain;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: 0 auto;
         }
 
         .footer-cell {

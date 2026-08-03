@@ -1,4 +1,24 @@
 import { parseDateToInput } from "../utils/dateHelpers";
+import { nominalApiToInput } from "../../../utils/formatRupiahInput";
+
+/** Plain text / baris baru → HTML editor (bullet list jika multi-baris). */
+export function deskripsiToEditorHtml(text) {
+  const raw = (text || "").trim();
+  if (!raw) return "";
+  if (raw.includes("<")) return raw;
+
+  const escape = (s) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+  const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length <= 1) return `<p>${escape(raw)}</p>`;
+
+  const lis = lines
+    .map((line) => `<li>${escape(line.replace(/^[•\-\t ]+/, ""))}</li>`)
+    .join("");
+
+  return `<ul>${lis}</ul>`;
+}
 
 /** Map BAST / BAUF / BAM document API response to form state */
 export function mapKlientDocToForm(data, tanggalField, includeKota = false) {
@@ -37,9 +57,9 @@ export function mapSphDocToForm(data, defaults = {}) {
       Array.isArray(data.items) && data.items.length > 0
         ? data.items.map((item) => ({
             nama_item: item.nama_item || "",
-            deskripsi: item.deskripsi || "",
+            deskripsi: deskripsiToEditorHtml(item.deskripsi),
             qty: item.qty || "1",
-            harga: item.harga ?? "",
+            harga: nominalApiToInput(item.harga),
           }))
         : [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
     kota_tanda_tangan: data.kota_tanda_tangan || "Tangerang",

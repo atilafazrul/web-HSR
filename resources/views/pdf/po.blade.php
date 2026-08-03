@@ -154,7 +154,6 @@
         .footer { bottom: -28px !important; }
 
         @include('pdf.partials.footer_qr_copyright_styles')
-        .pdf-qr-copyright { bottom: 42px !important; }
     </style>
 </head>
 <body>
@@ -263,16 +262,15 @@
         <div><strong><u>{{ $nama_penandatangan ?? 'Syahrul Roji' }}</u></strong></div>
     </div>
 
-    @include('pdf.partials.footer_qr_copyright')
-
     <div class="footer">
         <table class="footer-table">
             <tr>
-                <td class="footer-cell" width="20%">@if(!empty($medimageLogo))<img src="{{ $medimageLogo }}" class="footer-logo" alt="">@endif</td>
-                <td class="footer-cell" width="20%">@if(!empty($medhisLogo))<img src="{{ $medhisLogo }}" class="footer-logo" alt="">@endif</td>
-                <td class="footer-cell" width="20%">@if(!empty($mediserLogo))<img src="{{ $mediserLogo }}" class="footer-logo" alt="">@endif</td>
-                <td class="footer-cell" width="20%">@if(!empty($conexaLogo))<img src="{{ $conexaLogo }}" class="footer-logo" alt="">@endif</td>
-                <td class="footer-cell" width="20%">@if(!empty($mksLogo))<img src="{{ $mksLogo }}" class="footer-logo" alt="">@endif</td>
+                @include('pdf.partials.footer_qr_copyright')
+                <td class="footer-cell">@if(!empty($medimageLogo))<img src="{{ $medimageLogo }}" class="footer-logo" alt="">@endif</td>
+                <td class="footer-cell">@if(!empty($medhisLogo))<img src="{{ $medhisLogo }}" class="footer-logo" alt="">@endif</td>
+                <td class="footer-cell">@if(!empty($mediserLogo))<img src="{{ $mediserLogo }}" class="footer-logo" alt="">@endif</td>
+                <td class="footer-cell">@if(!empty($conexaLogo))<img src="{{ $conexaLogo }}" class="footer-logo" alt="">@endif</td>
+                <td class="footer-cell">@if(!empty($mksLogo))<img src="{{ $mksLogo }}" class="footer-logo" alt="">@endif</td>
             </tr>
         </table>
     </div>

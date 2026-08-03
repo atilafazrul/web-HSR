@@ -3,6 +3,7 @@ import { Plus, Download, Trash2, Calendar, Receipt, Edit, X, Save } from "lucide
 import { useI18n } from "../../../../i18n";
 import { RichTextEditor } from "./RichTextEditor";
 import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
+import { RupiahInput } from "./RupiahInput";
 
 export const SPHForm = ({
   formData,
@@ -100,8 +101,14 @@ export const SPHForm = ({
                   <input type="text" value={item.qty} onChange={(e) => onItemChange(index, "qty", e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5" required />
                 </div>
                 <div className="md:col-span-3">
-                  <label className="mb-1 block text-sm font-medium text-gray-700">{tr("Harga", "Price")} *</label>
-                  <input type="number" min="0" value={item.harga} onChange={(e) => onItemChange(index, "harga", e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5" required />
+                  <label className="mb-1 block text-sm font-medium text-gray-700">{tr("Harga Satuan", "Unit Price")} *</label>
+                  <RupiahInput
+                    value={item.harga}
+                    onChange={(val) => onItemChange(index, "harga", val)}
+                    className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5"
+                    placeholder="10.000"
+                    required
+                  />
                 </div>
                 <div className="md:col-span-3 flex items-end">
                   {formData.items.length > 1 && (
@@ -113,13 +120,12 @@ export const SPHForm = ({
                 </div>
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">{tr("Deskripsi", "Description")}</label>
-                <textarea
+                <RichTextEditor
+                  label={tr("Deskripsi", "Description")}
                   value={item.deskripsi}
-                  onChange={(e) => onItemChange(index, "deskripsi", e.target.value)}
-                  rows={4}
-                  placeholder={tr("Satu baris per poin. Gunakan bullet jika perlu.", "One line per point. Use bullets if needed.")}
-                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5"
+                  onChange={(value) => onItemChange(index, "deskripsi", value)}
+                  minHeight={120}
+                  editorKey={`sph-deskripsi-${index}`}
                 />
               </div>
             </div>
