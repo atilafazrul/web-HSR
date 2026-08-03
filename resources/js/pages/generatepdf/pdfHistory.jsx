@@ -64,6 +64,7 @@ export default function pdfHistory({
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Contact</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Phone</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Brand/Model</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">{tr("Divisi", "Division")}</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">{tr("Teknisi", "Technician")}</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">Status</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold text-gray-700">{tr("Aksi", "Actions")}</th>
@@ -72,7 +73,7 @@ export default function pdfHistory({
             <tbody className="divide-y divide-gray-100">
               {filteredHistory.length === 0 ? (
                 <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan="8" className="px-6 py-12 text-center text-gray-500">
                     <FileText size={48} className="mx-auto mb-4 text-gray-300" />
                     <p className="text-lg font-medium">{tr("Tidak ada data ditemukan", "No data found")}</p>
                     <p className="text-sm">{tr("Coba kata kunci lain atau buat dokumen baru", "Try another keyword or create a new document")}</p>
@@ -99,6 +100,7 @@ export default function pdfHistory({
                       <div className="text-gray-900">{item.brand}</div>
                       <div className="text-sm text-gray-500">{item.model}</div>
                     </td>
+                    <td className="px-6 py-4 text-gray-600">{item.divisi || "-"}</td>
                     <td className="px-6 py-4 text-gray-600">{item.nama_teknisi}</td>
                     <td className="px-6 py-4 text-center">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${item.status === "Selesai"

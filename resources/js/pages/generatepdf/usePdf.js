@@ -7,7 +7,7 @@ const tr = (id, en) => {
   return localStorage.getItem("app_language") === "en" ? en : id;
 };
 
-export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
+export const usePdf = (user, projekKerjaId = null) => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -151,25 +151,7 @@ export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
 
     setFetchingHistory(true);
     try {
-      // Build URL parameters
-      const params = new URLSearchParams();
-      params.append('user_id', user.id);
-      params.append('user_role', user.role);
-
-      // Role-based divisi filter:
-      // - super_admin: kirim parameter divisi untuk filter (opsional)
-      // - admin: kirim user_divisi agar backend filter sesuai divisi admin
-      // - user biasa (it/service/sales/kontraktor): otomatis filter by user_id di backend
-      if (user.role === 'super_admin' && currentDivisi) {
-        // Super admin bisa filter by divisi yang sedang dilihat
-        params.append('divisi', currentDivisi.toUpperCase());
-      } else if (user.role === 'admin' && user.divisi) {
-        // Admin: kirim divisi miliknya agar backend filter sesuai divisi
-        params.append('user_divisi', user.divisi);
-      }
-      // Untuk role lain (it/service/sales/kontraktor), backend otomatis filter by user_id
-
-      const response = await api.get(`/service-reports?${params.toString()}`);
+      const response = await api.get("/service-reports");
       const result = response.data;
 
       if (result.success) {
@@ -213,7 +195,7 @@ export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
   // Load history when component mount
   useEffect(() => {
     fetchHistory();
-  }, [user?.id, currentDivisi]);
+  }, [user?.id]);
 
   const buildSubmitData = () => {
     const selectedCheckboxes = Object.entries(checkboxes)
@@ -230,14 +212,9 @@ export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
       qty: part.qty ? parseInt(part.qty) : null,
     }));
 
-    let divisiToSend;
-    if (user.role === 'super_admin') {
-      divisiToSend = currentDivisi ? currentDivisi.toUpperCase() : 'SERVICE';
-    } else if (user.role === 'admin') {
-      divisiToSend = user.divisi ? user.divisi.toUpperCase() : 'SERVICE';
-    } else {
-      divisiToSend = user.divisi ? user.divisi.toUpperCase() : 'SERVICE';
-    }
+    const divisiToSend = user?.divisi
+      ? String(user.divisi).toUpperCase()
+      : "SERVICE";
 
     return {
       ...formData,
@@ -445,7 +422,8 @@ export const usePdf = (user, currentDivisi = "IT", projekKerjaId = null) => {
     item.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.nama_teknisi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.brand?.toLowerCase().includes(searchTerm.toLowerCase())
+    item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    item.divisi?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // ================= SERVICE TYPE OPTIONS =================

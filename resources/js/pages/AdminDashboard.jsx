@@ -37,7 +37,6 @@ import EditProjekKerjaPage from "./EditProjekKerjaPage";
 import KaryawanPage from "./KaryawanPage";
 import Profile from "./Profile";
 import SettingsPage from "./SettingsPage";
-import FormPekerjaanPage from "./FormPekerjaanPage";
 import GeneratePDFPage from "./GeneratePDFPage";
 import TargetPage from "./TargetPage";
 import CutiPage from "./CutiPage";
@@ -637,7 +636,7 @@ export default function AdminDashboard({ user, logout }) {
             {/* ================= DIVISI ================= */}
             <Route path="it" element={<ITPage user={user} />} />
             <Route path="service" element={<ServicePage user={user} />} />
-            <Route path="service/form-pekerjaan" element={<FormPekerjaanPage />} />
+            <Route path="service/form-pekerjaan" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
             <Route path="sales" element={<SalesPage user={user} />} />
             <Route path="kontraktor" element={<KontraktorPage user={user} />} />
             <Route path="kontraktor/rfi" element={<RfiFormPage />} />

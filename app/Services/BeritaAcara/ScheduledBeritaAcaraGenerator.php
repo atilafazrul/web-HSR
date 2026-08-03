@@ -204,7 +204,7 @@ class ScheduledBeritaAcaraGenerator
                 'kota' => $payload['kota'] ?? null,
                 'tanggal' => $payload['tanggal'],
                 'divisi' => $divisi,
-                'status' => 'Selesai',
+                'status' => ServiceReport::resolveStatus($payload['completed_date'] ?? null),
                 'user_id' => $userId,
             ]);
 

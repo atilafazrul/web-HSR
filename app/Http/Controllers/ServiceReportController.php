@@ -16,45 +16,13 @@ use Dompdf\Options;
 class ServiceReportController extends Controller
 {
     /**
-     * Get all service reports with filtering by user/divisi
-     *
-     * Role Access:
-     * - super_admin: Bisa lihat semua, atau filter by divisi (jika parameter divisi dikirim)
-     * - admin: Hanya lihat divisi sesuai user.divisi miliknya
-     * - it/service/sales/kontraktor: Hanya lihat data miliknya sendiri (by user_id)
+     * Get all service reports (unified across divisions, same as other Berita Acara docs).
      */
     public function index(Request $request)
     {
-        $query = ServiceReport::with(['serviceTypes', 'parts', 'user']);
-
-        $userId = $request->query('user_id');
-        $userRole = $request->query('user_role');
-        $userDivisi = $request->query('user_divisi'); // Divisi dari user yang login
-        $divisiFilter = $request->query('divisi'); // Filter divisi untuk superadmin
-
-        // Role-based filtering
-        if ($userRole === 'super_admin') {
-            // Super admin: bisa lihat semua, atau filter by divisi
-            if ($divisiFilter) {
-                $query->where('divisi', $divisiFilter);
-            }
-            // Jika tidak ada divisiFilter, superadmin lihat semua (tanpa where)
-        } elseif ($userRole === 'admin') {
-            // Admin: hanya lihat divisi miliknya sendiri (dari user.divisi)
-            if ($userDivisi) {
-                $query->where('divisi', strtoupper($userDivisi));
-            } else {
-                // Fallback jika admin tidak punya divisi
-                $query->where('user_id', $userId);
-            }
-        } else {
-            // Regular user (it/service/sales/kontraktor): hanya lihat data miliknya sendiri
-            if ($userId) {
-                $query->where('user_id', $userId);
-            }
-        }
-
-        $reports = $query->latest()->get();
+        $reports = ServiceReport::with(['serviceTypes', 'parts', 'user'])
+            ->latest()
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -160,7 +128,7 @@ class ServiceReportController extends Controller
                 'kota' => $validated['kota'] ?? null,
                 'tanggal' => $validated['tanggal'],
                 'divisi' => $validated['divisi'],
-                'status' => 'Selesai',
+                'status' => ServiceReport::resolveStatus($validated['completed_date'] ?? null),
                 'user_id' => $validated['user_id'],
             ]);
 
@@ -283,6 +251,7 @@ class ServiceReportController extends Controller
                 'ttd_klien' => $validated['ttd_klien'] ?? null,
                 'kota' => $validated['kota'] ?? null,
                 'tanggal' => $validated['tanggal'],
+                'status' => ServiceReport::resolveStatus($validated['completed_date'] ?? null),
             ]);
 
             // Update Service Types - delete existing and create new
@@ -365,20 +334,7 @@ class ServiceReportController extends Controller
             return response()->json(['success' => false, 'message' => 'User tidak ditemukan'], 404);
         }
 
-        // Role-based access check
-        if ($userRole === 'super_admin') {
-            // Super admin can access all
-        } elseif ($userRole === 'admin') {
-            // Admin can only access their own divisi
-            if ($report->divisi !== strtoupper($user->divisi)) {
-                return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-            }
-        } else {
-            // Regular user can only access their own
-            if ($report->user_id != $userId) {
-                return response()->json(['success' => false, 'message' => 'Akses ditolak'], 403);
-            }
-        }
+        // All authenticated roles can access any service report (unified list).
 
         // Generate PDF
         $options = new Options();

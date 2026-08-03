@@ -65,4 +65,9 @@ class ServiceReport extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public static function resolveStatus(?string $completedDate): string
+    {
+        return filled($completedDate) ? 'Selesai' : 'Proses';
+    }
 }
