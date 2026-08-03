@@ -49,7 +49,6 @@ class BASTController extends Controller
         $bulanRomawi = $this->bulanToRomawi($bulan);
         
         $lastDocument = BastDocument::where('tahun', $tahun)
-            ->where('bulan', $bulan)
             ->orderBy('nomor_urut', 'desc')
             ->first();
         

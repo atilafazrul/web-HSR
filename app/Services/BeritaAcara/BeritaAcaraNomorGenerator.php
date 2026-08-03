@@ -54,7 +54,6 @@ class BeritaAcaraNomorGenerator
         $bulanRomawi = self::bulanToRomawi($bulan);
 
         $lastDocument = $modelClass::where('tahun', $tahun)
-            ->where('bulan', $bulan)
             ->orderBy($urutColumn, 'desc')
             ->first();
 

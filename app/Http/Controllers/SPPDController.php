@@ -44,7 +44,6 @@ class SPPDController extends Controller
         $bulanRomawi = $this->bulanToRomawi($bulan);
         
         $lastDocument = SppdDocument::where('tahun', $tahun)
-            ->where('bulan', $bulan)
             ->orderBy('nomor_urut', 'desc')
             ->first();
         

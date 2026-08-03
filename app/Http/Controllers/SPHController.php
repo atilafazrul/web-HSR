@@ -34,7 +34,6 @@ class SPHController extends Controller
         $bulanRomawi = $this->bulanToRomawi($bulan);
 
         $lastDocument = SphDocument::where('tahun', $tahun)
-            ->where('bulan', $bulan)
             ->orderBy('nomor_urut', 'desc')
             ->first();
 

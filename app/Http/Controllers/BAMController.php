@@ -48,7 +48,6 @@ class BAMController extends Controller
         $bulanRomawi = $this->bulanToRomawi($bulan);
 
         $lastDocument = BamDocument::where('tahun', $tahun)
-            ->where('bulan', $bulan)
             ->orderBy('nomor_urut', 'desc')
             ->first();
 
