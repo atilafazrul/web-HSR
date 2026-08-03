@@ -147,9 +147,23 @@
             margin-bottom: 10px;
             padding-right: 6px;
         }
+
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 380px;
+            opacity: 0.2;
+            z-index: -1;
+        }
     </style>
 </head>
 <body>
+    @if(!empty($watermark))
+        <img src="{{ $watermark }}" class="watermark" alt="">
+    @endif
+
     <div class="bar-top">
         <table class="bar-top-inner">
             <tr>

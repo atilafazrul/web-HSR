@@ -146,7 +146,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             width: 420px;
-            opacity: 0.06;
+            opacity: 0.2;
             z-index: -1;
         }
 
