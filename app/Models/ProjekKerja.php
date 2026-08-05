@@ -129,7 +129,7 @@ class ProjekKerja extends Model
 
     public function biayas()
     {
-        return $this->hasMany(ProjekKerjaBiaya::class, 'projek_kerja_id')->orderBy('sort_order');
+        return $this->hasMany(ProjekKerjaBiaya::class, 'projek_kerja_id')->with('photos')->orderBy('sort_order');
     }
 
     /**
@@ -180,18 +180,18 @@ class ProjekKerja extends Model
         }
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($kategori, $items) {
+            // Hapus dulu baris kategori ini; foto ikut terhapus lewat cascadeOnDelete
+            // pada tabel projek_kerja_biaya_photos.
             ProjekKerjaBiaya::where('projek_kerja_id', $this->getKey())
                 ->where('kategori', $kategori)
                 ->delete();
 
-            $rows = [];
-            $now = now();
             foreach (array_values($items) as $index => $item) {
                 if (!is_array($item)) {
                     continue;
                 }
 
-                $rows[] = [
+                $biaya = ProjekKerjaBiaya::create([
                     'projek_kerja_id' => $this->getKey(),
                     'kategori' => $kategori,
                     'nominal' => round((float) ($item['nominal'] ?? 0), 2),
@@ -200,18 +200,23 @@ class ProjekKerja extends Model
                     'is_lunas' => !empty($item['is_lunas']) ? 1 : 0,
                     'lunas_at' => $item['lunas_at'] ?? null,
                     'lunas_group_id' => $item['lunas_group_id'] ?? null,
-                    'photo_paths' => isset($item['photo_paths']) && is_array($item['photo_paths'])
-                        ? json_encode(array_values($item['photo_paths']))
-                        : null,
                     'item_created_at' => $item['created_at'] ?? null,
                     'sort_order' => $index,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
+                ]);
 
-            if ($rows !== []) {
-                ProjekKerjaBiaya::insert($rows);
+                $photoPaths = isset($item['photo_paths']) && is_array($item['photo_paths'])
+                    ? array_values(array_filter($item['photo_paths'], fn ($p) => is_string($p) && $p !== ''))
+                    : [];
+
+                if ($photoPaths !== []) {
+                    $biaya->photos()->createMany(
+                        array_map(
+                            fn ($path, $pIndex) => ['path' => $path, 'sort_order' => $pIndex],
+                            $photoPaths,
+                            array_keys($photoPaths)
+                        )
+                    );
+                }
             }
         });
 
