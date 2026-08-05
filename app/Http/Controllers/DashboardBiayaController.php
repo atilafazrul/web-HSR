@@ -1028,7 +1028,7 @@ class DashboardBiayaController extends Controller
     }
 
     /**
-     * @return array<int, array{date: \Carbon\Carbon, keterangan: string, debit: float, kredit: float, staff: string}>
+     * @return array<int, array{date: \Carbon\Carbon, keterangan: string, debit: float, kredit: float, staff: string, projek: string}>
      */
     protected function collectKasTransactionLines(int $bulan, int $tahun, User $authUser, ?string $namaAkunFilter = null): array
     {
@@ -1076,11 +1076,12 @@ class DashboardBiayaController extends Controller
                 'debit' => 0.0,
                 'kredit' => $nominal,
                 'staff' => $staff,
+                'projek' => 'Di Luar Projek',
             ];
         }
 
         // Biaya dari proyek kerja (biaya_*_items dihitung dari relasi `biayas`, bukan kolom mentah)
-        $projekKerjas = ProjekKerja::query()->with('biayas')->get(['id', 'created_at']);
+        $projekKerjas = ProjekKerja::query()->with('biayas')->get(['id', 'created_at', 'report_no', 'jenis_pekerjaan']);
 
         $kategoriLabels = [
             'jalan' => 'UANG JALAN',
@@ -1089,6 +1090,18 @@ class DashboardBiayaController extends Controller
         ];
 
         foreach ($projekKerjas as $projek) {
+            $reportNo = trim((string) ($projek->report_no ?? ''));
+            $jenisPekerjaan = trim((string) ($projek->jenis_pekerjaan ?? ''));
+            if ($reportNo !== '' && $jenisPekerjaan !== '') {
+                $projekLabel = $reportNo.' - '.$jenisPekerjaan;
+            } elseif ($reportNo !== '') {
+                $projekLabel = $reportNo;
+            } elseif ($jenisPekerjaan !== '') {
+                $projekLabel = $jenisPekerjaan;
+            } else {
+                $projekLabel = 'Projek #'.$projek->id;
+            }
+
             foreach ($kategoriLabels as $kategori => $defaultLabel) {
                 $items = $projek->{"biaya_{$kategori}_items"} ?? [];
                 foreach ($items as $item) {
@@ -1122,6 +1135,7 @@ class DashboardBiayaController extends Controller
                         'debit' => 0.0,
                         'kredit' => $nominal,
                         'staff' => $oleh,
+                        'projek' => $projekLabel,
                     ];
                 }
             }
@@ -1191,6 +1205,10 @@ class DashboardBiayaController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(substr($monthLabel.' '.$tahun, 0, 31));
         $sheet->setCellValue('A1', $title);
+        $sheet->getColumnDimension('B')->setWidth(22);
+        $sheet->getColumnDimension('H')->setWidth(32);
+        $sheet->setCellValue('H2', 'PROJEK');
+        $sheet->duplicateStyle($sheet->getStyle('G2'), 'H2');
 
         $dataStyleRow = 3;
         $highest = (int) $sheet->getHighestRow();
@@ -1215,7 +1233,7 @@ class DashboardBiayaController extends Controller
 
             $sheet->setCellValue("A{$row}", $no);
             $sheet->setCellValue("B{$row}", ExcelDate::PHPToExcel($line['date']));
-            $sheet->getStyle("B{$row}")->getNumberFormat()->setFormatCode('m/d/yyyy');
+            $sheet->getStyle("B{$row}")->getNumberFormat()->setFormatCode('m/d/yyyy hh:mm:ss.000');
             $sheet->setCellValue("C{$row}", $line['keterangan']);
             if ($debit > 0) {
                 $sheet->setCellValue("D{$row}", $debit);
@@ -1238,6 +1256,9 @@ class DashboardBiayaController extends Controller
 
             $sheet->setCellValue("G{$row}", $line['staff']);
 
+            $sheet->duplicateStyle($sheet->getStyle("G{$row}"), "H{$row}");
+            $sheet->setCellValue("H{$row}", $line['projek'] ?? '-');
+
             $no++;
             $row++;
         }
@@ -1245,6 +1266,7 @@ class DashboardBiayaController extends Controller
         $lastDataRow = $row - 1;
         $totalRow = $row;
         $sheet->duplicateStyle($footerTotalStyle, "A{$totalRow}:G{$totalRow}");
+        $sheet->duplicateStyle($sheet->getStyle("G{$totalRow}"), "H{$totalRow}");
 
         $sheet->setCellValue("C{$totalRow}", 'TOTAL');
         $sheet->setCellValue("D{$totalRow}", "=SUM(D{$firstDataRow}:D{$lastDataRow})");
@@ -1253,6 +1275,7 @@ class DashboardBiayaController extends Controller
 
         $sisaRow = $totalRow + 1;
         $sheet->duplicateStyle($footerSisaStyle, "A{$sisaRow}:G{$sisaRow}");
+        $sheet->duplicateStyle($sheet->getStyle("G{$sisaRow}"), "H{$sisaRow}");
         $sheet->setCellValue("C{$sisaRow}", 'SISA SALDO');
         $sheet->setCellValue("F{$sisaRow}", "=D{$totalRow}-E{$totalRow}");
         $sheet->getStyle("F{$sisaRow}")->getNumberFormat()->setFormatCode($rpSaldoFormat);
