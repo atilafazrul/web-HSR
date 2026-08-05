@@ -518,13 +518,8 @@ class DashboardBiayaController extends Controller
                 ];
             })->filter(); // Hapus nilai null
 
-        // Ambil biaya dari projek_kerjas
-        $projekKerjas = \App\Models\ProjekKerja::get([
-            'created_at',
-            'biaya_jalan_items',
-            'biaya_pengeluaran_items',
-            'biaya_reimbursment_items',
-        ]);
+        // Ambil biaya dari projek_kerjas (biaya_*_items dihitung dari relasi `biayas`, bukan kolom mentah)
+        $projekKerjas = \App\Models\ProjekKerja::with('biayas')->get(['id', 'created_at']);
 
         // Ambil semua user yang masih aktif untuk validasi
         $activeUserNames = \App\Models\User::pluck('name')
@@ -754,12 +749,7 @@ class DashboardBiayaController extends Controller
             $users = $users->concat($usersFromDashboard);
 
             // Cari user dari projek_kerjas yang memiliki biaya di periode ini
-            $projekKerjas = \App\Models\ProjekKerja::get([
-                'created_at',
-                'biaya_jalan_items',
-                'biaya_pengeluaran_items',
-                'biaya_reimbursment_items',
-            ]);
+            $projekKerjas = \App\Models\ProjekKerja::with('biayas')->get(['id', 'created_at']);
 
             $olehNames = collect();
             foreach ($projekKerjas as $projek) {
@@ -882,15 +872,8 @@ class DashboardBiayaController extends Controller
             ->map(fn ($name) => strtolower(trim($name)))
             ->flip(); // Untuk O(1) lookup
 
-        // Ambil biaya dari projek_kerjas
-        $projekKerjas = \App\Models\ProjekKerja::get([
-            'id',
-            'biaya_jalan_items',
-            'biaya_pengeluaran_items',
-            'biaya_reimbursment_items',
-            'created_at',
-            'updated_at',
-        ]);
+        // Ambil biaya dari projek_kerjas (biaya_*_items dihitung dari relasi `biayas`, bukan kolom mentah)
+        $projekKerjas = \App\Models\ProjekKerja::with('biayas')->get(['id', 'created_at', 'updated_at']);
 
         foreach ($projekKerjas as $projek) {
             // Proses biaya jalan
@@ -1096,14 +1079,8 @@ class DashboardBiayaController extends Controller
             ];
         }
 
-        // Biaya dari proyek kerja
-        $projekKerjas = ProjekKerja::query()->get([
-            'id',
-            'biaya_jalan_items',
-            'biaya_pengeluaran_items',
-            'biaya_reimbursment_items',
-            'created_at',
-        ]);
+        // Biaya dari proyek kerja (biaya_*_items dihitung dari relasi `biayas`, bukan kolom mentah)
+        $projekKerjas = ProjekKerja::query()->with('biayas')->get(['id', 'created_at']);
 
         $kategoriLabels = [
             'jalan' => 'UANG JALAN',

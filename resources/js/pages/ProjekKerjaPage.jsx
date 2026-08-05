@@ -338,6 +338,7 @@ export default function ProjekKerjaPage() {
   // Modal biaya (jalan, pengeluaran, reimbursment) — banyak baris per kategori
   const [showUangModal, setShowUangModal] = useState(false);
   const [editUang, setEditUang] = useState(false);
+  const [isSavingBiaya, setIsSavingBiaya] = useState(false);
 
   // State untuk modal konfirmasi status lunas
   const [showLunasConfirmModal, setShowLunasConfirmModal] = useState(false);
@@ -1200,6 +1201,7 @@ export default function ProjekKerjaPage() {
 
   const handleUpdateUang = async () => {
     if (!currentId) return;
+    if (isSavingBiaya) return; // Cegah submit ganda (double-click) yang bisa menyimpan data dobel.
     const item = dataList.find(i => i.id === currentId);
     if (!item) return;
     if (!canEditCurrentBiayaProject) {
@@ -1209,6 +1211,7 @@ export default function ProjekKerjaPage() {
 
     const payloadBiaya = buildBiayaPayloadForSave(item);
 
+    setIsSavingBiaya(true);
     try {
       let savedProjek = null;
       // Cek apakah ada foto yang perlu diupload
@@ -1288,6 +1291,8 @@ export default function ProjekKerjaPage() {
           : null) ||
         "Gagal menyimpan data biaya";
       alert(msg);
+    } finally {
+      setIsSavingBiaya(false);
     }
   };
 
@@ -2715,13 +2720,21 @@ export default function ProjekKerjaPage() {
                   <button
                     type="button"
                     onClick={handleUpdateUang}
-                    disabled={!canEditCurrentBiayaProject}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!canEditCurrentBiayaProject || isSavingBiaya}
+                    className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {tr("Simpan", "Save")}
+                    {isSavingBiaya ? (
+                      <>
+                        <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                        {tr("Menyimpan...", "Saving...")}
+                      </>
+                    ) : (
+                      tr("Simpan", "Save")
+                    )}
                   </button>
                   <button
                     type="button"
+                    disabled={isSavingBiaya}
                     onClick={() => {
                       setEditUang(false);
                       const item = dataList.find((i) => i.id === currentId);
@@ -2733,7 +2746,7 @@ export default function ProjekKerjaPage() {
                         });
                       }
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
+                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {tr("Batal", "Cancel")}
                   </button>

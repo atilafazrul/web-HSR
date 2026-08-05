@@ -54,9 +54,6 @@ class ProjekKerja extends Model
         'divisi_flow' => 'array',
         'karyawan_terlibat' => 'array',
         'invited_user_ids' => 'array',
-        'biaya_jalan_items' => 'array',
-        'biaya_pengeluaran_items' => 'array',
-        'biaya_reimbursment_items' => 'array',
         'biaya_edit_meta' => 'array',
         'status_history' => 'array',
         'nominal_po' => 'decimal:2',
@@ -70,8 +67,18 @@ class ProjekKerja extends Model
 
     /* =============================
        APPEND COMPUTED ATTRIBUTES
+       NOTE: biaya_*_items are no longer real JSON columns. They are
+       computed on the fly from the `projek_kerja_biayas` table (see
+       relation + accessors/mutators below) so existing controllers,
+       services, and the frontend keep working against the same shape.
     ============================== */
-    protected $appends = ['total_biaya', 'profit'];
+    protected $appends = [
+        'total_biaya',
+        'profit',
+        'biaya_jalan_items',
+        'biaya_pengeluaran_items',
+        'biaya_reimbursment_items',
+    ];
 
 
     /* =============================
@@ -114,6 +121,133 @@ class ProjekKerja extends Model
         'photos',
         'files'
     ];
+
+
+    /* =============================
+       RELATION BIAYA (jalan/pengeluaran/reimbursment)
+    ============================== */
+
+    public function biayas()
+    {
+        return $this->hasMany(ProjekKerjaBiaya::class, 'projek_kerja_id')->orderBy('sort_order');
+    }
+
+    /**
+     * Rebuild the legacy array shape (nominal/keterangan/is_lunas/oleh/created_at/...)
+     * from the normalized `projek_kerja_biayas` rows for a given kategori.
+     */
+    protected function buildBiayaItemsArray(string $kategori): array
+    {
+        return $this->biayas
+            ->where('kategori', $kategori)
+            ->sortBy('sort_order')
+            ->values()
+            ->map(function (ProjekKerjaBiaya $row) {
+                $item = [
+                    'nominal' => (float) $row->nominal,
+                    'keterangan' => (string) ($row->keterangan ?? ''),
+                    'is_lunas' => (bool) $row->is_lunas,
+                    'oleh' => (string) ($row->oleh ?? ''),
+                ];
+
+                if (!empty($row->item_created_at)) {
+                    $item['created_at'] = $row->item_created_at;
+                }
+                if (!empty($row->photo_paths)) {
+                    $item['photo_paths'] = $row->photo_paths;
+                }
+                if (!empty($row->lunas_group_id)) {
+                    $item['lunas_group_id'] = $row->lunas_group_id;
+                }
+                if (!empty($row->lunas_at)) {
+                    $item['lunas_at'] = $row->lunas_at;
+                }
+
+                return $item;
+            })
+            ->all();
+    }
+
+    /**
+     * Replace all rows of a kategori in `projek_kerja_biayas` with the given items,
+     * preserving array order via `sort_order` (mirrors the old "overwrite whole
+     * JSON array on save" behaviour used throughout the app).
+     */
+    protected function syncBiayaCategory(string $kategori, array $items): void
+    {
+        if (!$this->exists || !$this->getKey()) {
+            return;
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($kategori, $items) {
+            ProjekKerjaBiaya::where('projek_kerja_id', $this->getKey())
+                ->where('kategori', $kategori)
+                ->delete();
+
+            $rows = [];
+            $now = now();
+            foreach (array_values($items) as $index => $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'projek_kerja_id' => $this->getKey(),
+                    'kategori' => $kategori,
+                    'nominal' => round((float) ($item['nominal'] ?? 0), 2),
+                    'keterangan' => (string) ($item['keterangan'] ?? ''),
+                    'oleh' => (string) ($item['oleh'] ?? ''),
+                    'is_lunas' => !empty($item['is_lunas']) ? 1 : 0,
+                    'lunas_at' => $item['lunas_at'] ?? null,
+                    'lunas_group_id' => $item['lunas_group_id'] ?? null,
+                    'photo_paths' => isset($item['photo_paths']) && is_array($item['photo_paths'])
+                        ? json_encode(array_values($item['photo_paths']))
+                        : null,
+                    'item_created_at' => $item['created_at'] ?? null,
+                    'sort_order' => $index,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            if ($rows !== []) {
+                ProjekKerjaBiaya::insert($rows);
+            }
+        });
+
+        // Force the next read to hit the database again so getters reflect the change.
+        $this->unsetRelation('biayas');
+    }
+
+    public function getBiayaJalanItemsAttribute()
+    {
+        return $this->buildBiayaItemsArray('jalan');
+    }
+
+    public function setBiayaJalanItemsAttribute($items): void
+    {
+        $this->syncBiayaCategory('jalan', is_array($items) ? $items : []);
+    }
+
+    public function getBiayaPengeluaranItemsAttribute()
+    {
+        return $this->buildBiayaItemsArray('pengeluaran');
+    }
+
+    public function setBiayaPengeluaranItemsAttribute($items): void
+    {
+        $this->syncBiayaCategory('pengeluaran', is_array($items) ? $items : []);
+    }
+
+    public function getBiayaReimbursmentItemsAttribute()
+    {
+        return $this->buildBiayaItemsArray('reimbursment');
+    }
+
+    public function setBiayaReimbursmentItemsAttribute($items): void
+    {
+        $this->syncBiayaCategory('reimbursment', is_array($items) ? $items : []);
+    }
 
 
     /* =============================

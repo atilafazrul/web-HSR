@@ -60,6 +60,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [compressingKey, setCompressingKey] = useState(null);
+  const [submittingKategori, setSubmittingKategori] = useState(null);
 
   const [form, setForm] = useState({
     jalan: { nominal: "", keterangan: "", photoFiles: [] },
@@ -213,7 +214,10 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
     };
   }, [items]);
 
+  const isSubmittingKategori = (key) => submittingKategori === key;
+
   const submitKategori = async (kategori) => {
+    if (isSubmittingKategori(kategori)) return; // Cegah submit ganda (double-click) yang bisa menyimpan data dobel.
     const row = form[kategori];
     const nominal = parseRibuanId(row.nominal);
     if (!nominal || nominal <= 0) {
@@ -224,6 +228,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       alert(tr("Foto masih dikompres. Tunggu sebentar lalu coba simpan lagi.", "Photos are still being compressed. Please wait and try saving again."));
       return;
     }
+    setSubmittingKategori(kategori);
     try {
       if (kategoriWithPhotos(kategori)) {
         const fd = new FormData();
@@ -256,6 +261,8 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       fetchAll();
     } catch (err) {
       alert(err.response?.data?.message || tr("Gagal simpan biaya", "Failed to save costs"));
+    } finally {
+      setSubmittingKategori((current) => (current === kategori ? null : current));
     }
   };
 
@@ -604,12 +611,19 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
               <button
                 type="button"
                 onClick={() => submitKategori(k.key)}
-                disabled={isCompressingKategori(k.key)}
-                className="w-full rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-900/10 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
+                disabled={isCompressingKategori(k.key) || isSubmittingKategori(k.key)}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-900/10 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
               >
-                {isCompressingKategori(k.key)
-                  ? tr("Mengompres foto...", "Compressing photos...")
-                  : `${tr("Simpan", "Save")} ${tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}`}
+                {isCompressingKategori(k.key) ? (
+                  tr("Mengompres foto...", "Compressing photos...")
+                ) : isSubmittingKategori(k.key) ? (
+                  <>
+                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    {tr("Menyimpan...", "Saving...")}
+                  </>
+                ) : (
+                  `${tr("Simpan", "Save")} ${tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}`
+                )}
               </button>
             </div>
           ))}

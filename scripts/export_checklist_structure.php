@@ -1,8 +1,17 @@
 <?php
 
+/**
+ * Manually rebuild work checklist structures from the Excel templates and
+ * persist them into the work_checklist_structures database table
+ * (previously written to flat checklist_{type}.json files).
+ */
+
 require __DIR__ . '/../vendor/autoload.php';
 
 use PhpOffice\PhpSpreadsheet\IOFactory;
+
+$app = require __DIR__ . '/../bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 $base = dirname(__DIR__) . '/storage/app/private/templates';
 $types = [
@@ -118,8 +127,10 @@ foreach ($types as $type => $path) {
         ];
     }
 
-    $jsonPath = $base . "/checklist_{$type}.json";
-    file_put_contents($jsonPath, json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+    App\Models\WorkChecklistStructure::updateOrCreate(
+        ['type' => $type],
+        ['payload' => $out]
+    );
     $count = $type === 'realisasi' ? count($out['groups']) : count($out['items']);
-    echo "{$type}: {$count} -> {$jsonPath}\n";
+    echo "{$type}: {$count} -> saved to work_checklist_structures table\n";
 }

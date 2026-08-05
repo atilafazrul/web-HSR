@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\WorkChecklistStructure;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class WorkChecklistStructureBuilder
@@ -11,22 +12,15 @@ class WorkChecklistStructureBuilder
         return storage_path("app/private/templates/work_checklist_{$type}.xlsx");
     }
 
-    public function jsonPath(string $type): string
-    {
-        return storage_path("app/private/templates/checklist_{$type}.json");
-    }
-
     public function loadOrBuild(string $type): ?array
     {
-        if (!file_exists($this->templatePath($type)) && app()->environment('local')) {
-            app(WorkChecklistDevTemplateBootstrap::class)->bootstrapMissing();
+        $existing = WorkChecklistStructure::where('type', $type)->first();
+        if ($existing) {
+            return is_array($existing->payload) ? $existing->payload : null;
         }
 
-        $jsonPath = $this->jsonPath($type);
-        if (file_exists($jsonPath)) {
-            $data = json_decode(file_get_contents($jsonPath), true);
-
-            return is_array($data) ? $data : null;
+        if (!file_exists($this->templatePath($type)) && app()->environment('local')) {
+            app(WorkChecklistDevTemplateBootstrap::class)->bootstrapMissing();
         }
 
         $built = $this->buildFromTemplate($type);
@@ -39,14 +33,9 @@ class WorkChecklistStructureBuilder
             return null;
         }
 
-        $dir = dirname($jsonPath);
-        if (!is_dir($dir)) {
-            mkdir($dir, 0755, true);
-        }
-
-        file_put_contents(
-            $jsonPath,
-            json_encode($built, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
+        WorkChecklistStructure::updateOrCreate(
+            ['type' => $type],
+            ['payload' => $built]
         );
 
         return $built;

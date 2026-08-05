@@ -20,7 +20,7 @@ foreach (['planning', 'realisasi'] as $type) {
     $count = $type === 'realisasi'
         ? count($data['groups'] ?? [])
         : count($data['items'] ?? []);
-    echo "{$type} structure: {$count} entries -> " . $builder->jsonPath($type) . "\n";
+    echo "{$type} structure: {$count} entries -> saved to work_checklist_structures table\n";
 }
 
 echo "Done.\n";

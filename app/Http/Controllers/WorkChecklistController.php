@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\WorkChecklistDraft;
+use App\Models\WorkChecklistStructure;
 use App\Services\WorkChecklistStructureBuilder;
 use App\Support\ChecklistDompdfWriter;
 use Carbon\Carbon;
@@ -35,9 +36,11 @@ class WorkChecklistController extends Controller
         return storage_path("app/private/templates/work_checklist_{$type}.xlsx");
     }
 
-    protected function structurePath(string $type): string
+    protected function structureData(string $type): ?array
     {
-        return storage_path("app/private/templates/checklist_{$type}.json");
+        $structure = WorkChecklistStructure::where('type', $type)->first();
+
+        return $structure && is_array($structure->payload) ? $structure->payload : null;
     }
 
     /**
@@ -47,14 +50,13 @@ class WorkChecklistController extends Controller
      */
     protected function collectClearableRows(string $type): array
     {
-        $path = $this->structurePath($type);
-        if (!file_exists($path)) {
+        $data = $this->structureData($type);
+        if ($data === null) {
             $max = $type === 'planning' ? 146 : 94;
 
             return range(36, $max);
         }
 
-        $data = json_decode(file_get_contents($path), true);
         $rows = [];
 
         if ($type === 'realisasi') {
@@ -80,11 +82,10 @@ class WorkChecklistController extends Controller
      */
     protected function collectSectionRows(string $type): array
     {
-        $path = $this->structurePath($type);
-        if (!file_exists($path)) {
+        $data = $this->structureData($type);
+        if ($data === null) {
             return [];
         }
-        $data = json_decode(file_get_contents($path), true);
         $rows = [];
         foreach ($data['items'] ?? [] as $item) {
             if (!empty($item['is_section'])) {
