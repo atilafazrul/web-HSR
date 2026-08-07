@@ -10,10 +10,12 @@ use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\WhatsAppService;
 use Carbon\Carbon;
 use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
+use App\Http\Controllers\Concerns\SavesDocumentToProjectFolder;
 
 class BASTController extends Controller
 {
     use ResolvesWhatsAppDivisi;
+    use SavesDocumentToProjectFolder;
 
     /**
      * Convert angka bulan ke romawi
@@ -159,7 +161,7 @@ class BASTController extends Controller
             'items' => $validated['items'],
         ];
 
-        return $this->generatePDFResponse($data);
+        return $this->generatePDFResponse($data, $validated['projek_kerja_id'] ?? null);
     }
 
     public function show($id)
@@ -241,7 +243,7 @@ class BASTController extends Controller
     /**
      * Helper untuk generate PDF response
      */
-    private function generatePDFResponse($data)
+    private function generatePDFResponse($data, ?int $projekKerjaId = null)
     {
         // Setup Dompdf
         $options = new Options();
@@ -260,8 +262,11 @@ class BASTController extends Controller
         $dompdf->render();
         
         $filename = 'BAST-' . $data['nomor_surat'] . '.pdf';
-        
-        return response()->make($dompdf->output(), 200, [
+        $pdfOutput = $dompdf->output();
+
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+
+        return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"'
         ]);

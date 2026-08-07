@@ -11,10 +11,12 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
+use App\Http\Controllers\Concerns\SavesDocumentToProjectFolder;
 
 class POController extends Controller
 {
     use ResolvesWhatsAppDivisi;
+    use SavesDocumentToProjectFolder;
 
     private const DEFAULT_SHIP_TO_NAMA = 'PT. HAYATI SEMESTA RAHARJA';
     private const DEFAULT_SHIP_TO_ALAMAT = "Jl Raya Pasar Kemis Kp Picung RT 04/05 No. 86\nDs Pasar Kemis Kec Pasar Kemis Kab Tangerang\nBanten 15560";
@@ -84,7 +86,7 @@ class POController extends Controller
             $this->whatsAppDivisiFromRequest($request)
         );
 
-        return $this->generatePDFResponse($this->documentToPdfData($document));
+        return $this->generatePDFResponse($this->documentToPdfData($document), $validated['projek_kerja_id'] ?? null);
     }
 
     public function show($id)
@@ -233,7 +235,7 @@ class POController extends Controller
         ];
     }
 
-    private function generatePDFResponse(array $data)
+    private function generatePDFResponse(array $data, ?int $projekKerjaId = null)
     {
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -249,8 +251,11 @@ class POController extends Controller
         $dompdf->render();
 
         $filename = 'PO-' . str_replace('/', '-', $data['nomor_surat']) . '.pdf';
+        $pdfOutput = $dompdf->output();
 
-        return response()->make($dompdf->output(), 200, [
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+
+        return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);

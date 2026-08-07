@@ -1,4 +1,5 @@
 import React from "react";
+import { useParams } from "react-router-dom";
 import { History, Plus } from "lucide-react";
 import { useInvoice } from "./hooks/useInvoice";
 import { InvoiceForm } from "./components/forms/InvoiceForm";
@@ -6,6 +7,7 @@ import { InvoiceHistory } from "./components/history/InvoiceHistory";
 import { useI18n } from "../../i18n";
 
 export default function InvoicePage() {
+  const { projekId } = useParams();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   const {
@@ -40,7 +42,7 @@ export default function InvoicePage() {
     estimatedDiskon,
     estimatedPpn,
     estimatedTotal,
-  } = useInvoice();
+  } = useInvoice(projekId);
 
   const handleTabChange = (tab) => {
     if (isEditing) {

@@ -20,7 +20,7 @@ const formatDateEnglish = (dateString) => {
 
 const emptyItem = () => ({ nama_item: "", unit: "pcs", qty: "1", harga: "" });
 
-export const useInvoice = () => {
+export const useInvoice = (projekKerjaId = null) => {
   const [activeTab, setActiveTab] = useState("form");
   const [loading, setLoading] = useState(false);
   const [fetchingNomor, setFetchingNomor] = useState(false);
@@ -68,6 +68,7 @@ export const useInvoice = () => {
     terms: (formData.terms || "").trim() || null,
     nama_penandatangan: (formData.nama_penandatangan || "").trim() || "SYAHRUL ROJI",
     jabatan_penandatangan: (formData.jabatan_penandatangan || "").trim() || "DIREKTUR",
+    ...(projekKerjaId ? { projek_kerja_id: Number(projekKerjaId) } : {}),
   });
 
   useEffect(() => {

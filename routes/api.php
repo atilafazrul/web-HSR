@@ -437,6 +437,11 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
         'addFile'
     ]);
 
+    Route::patch('/projek-kerja/file/{id}', [
+        ProjekKerjaController::class,
+        'renameFile'
+    ]);
+
     Route::delete('/projek-kerja/file/{id}', [
         ProjekKerjaController::class,
         'deleteFile'

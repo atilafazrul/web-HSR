@@ -68,7 +68,8 @@ class ProjekKerjaPhoto extends Model
     public function getUrlAttribute()
     {
         if ($this->photo) {
-            return asset('storage/' . $this->photo);
+            $encodedPath = implode('/', array_map('rawurlencode', explode('/', $this->photo)));
+            return asset('storage/' . $encodedPath);
         }
 
         return null;

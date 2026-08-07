@@ -10,10 +10,12 @@ use App\Models\BamDocument;
 use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\WhatsAppService;
 use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
+use App\Http\Controllers\Concerns\SavesDocumentToProjectFolder;
 
 class BAMController extends Controller
 {
     use ResolvesWhatsAppDivisi;
+    use SavesDocumentToProjectFolder;
     /**
      * Convert angka bulan ke romawi.
      */
@@ -155,7 +157,7 @@ class BAMController extends Controller
             'items' => $validated['items'],
         ];
 
-        return $this->generatePDFResponse($data);
+        return $this->generatePDFResponse($data, $validated['projek_kerja_id'] ?? null);
     }
 
     public function show($id)
@@ -234,7 +236,7 @@ class BAMController extends Controller
     /**
      * Helper untuk generate PDF response.
      */
-    private function generatePDFResponse($data)
+    private function generatePDFResponse($data, ?int $projekKerjaId = null)
     {
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -252,8 +254,11 @@ class BAMController extends Controller
         $dompdf->render();
 
         $filename = 'BAM-' . $data['nomor_surat'] . '.pdf';
+        $pdfOutput = $dompdf->output();
 
-        return response()->make($dompdf->output(), 200, [
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+
+        return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"'
         ]);

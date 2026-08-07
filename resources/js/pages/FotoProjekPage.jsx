@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { AlertTriangle, Pencil } from "lucide-react";
+import { AlertTriangle, Download, Pencil, Search, Trash2 } from "lucide-react";
 import axios from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
 import { useI18n } from "../i18n/index.jsx";
@@ -35,8 +35,13 @@ export default function FotoProjekPage() {
   const [editFolderTarget, setEditFolderTarget] = useState(null);
   const [editFolderName, setEditFolderName] = useState("");
   const [savingFolder, setSavingFolder] = useState(false);
+  const [fileSearchQuery, setFileSearchQuery] = useState("");
+  const [renameFileTarget, setRenameFileTarget] = useState(null);
+  const [renameFileValue, setRenameFileValue] = useState("");
+  const [renamingFile, setRenamingFile] = useState(false);
   const deleteFolderModalRef = useRef(null);
   const editFolderModalRef = useRef(null);
+  const renameFileModalRef = useRef(null);
 
   const fetchPhotos = async () => {
     try {
@@ -148,6 +153,26 @@ export default function FotoProjekPage() {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [editFolderTarget, savingFolder]);
+
+  useEffect(() => {
+    if (!renameFileTarget) return;
+
+    const onOutside = (e) => {
+      if (renameFileModalRef.current && !renameFileModalRef.current.contains(e.target)) {
+        if (!renamingFile) setRenameFileTarget(null);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === "Escape" && !renamingFile) setRenameFileTarget(null);
+    };
+
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [renameFileTarget, renamingFile]);
 
   const getFolderFromUrl = (url, mediaRoot) => {
     const marker = `/storage/${mediaRoot}/${id}/`;
@@ -361,6 +386,37 @@ export default function FotoProjekPage() {
     }
   };
 
+  const requestRenameFile = (file) => {
+    if (!file) return;
+    const currentName = decodeURIComponent(String(file.url || "").split("/").pop() || "");
+    setRenameFileTarget({ id: file.id, name: currentName });
+    setRenameFileValue(currentName);
+  };
+
+  const confirmRenameFile = async () => {
+    if (!renameFileTarget || renamingFile) return;
+
+    const newName = String(renameFileValue || "").trim();
+    if (!newName) {
+      alert(tr("Nama file tidak boleh kosong.", "File name cannot be empty."));
+      return;
+    }
+
+    setRenamingFile(true);
+    try {
+      await axios.patch(`${import.meta.env.VITE_API_URL}/projek-kerja/file/${renameFileTarget.id}`, {
+        new_name: newName,
+      });
+      await fetchFiles();
+      setRenameFileTarget(null);
+      setRenameFileValue("");
+    } catch (err) {
+      alert(err?.response?.data?.message || tr("Gagal mengubah nama file", "Failed to rename file"));
+    } finally {
+      setRenamingFile(false);
+    }
+  };
+
   const requestDeleteFolder = (type, folderName) => {
     if (!folderName) return;
     setDeleteFolderTarget({ type, folderName });
@@ -449,6 +505,12 @@ export default function FotoProjekPage() {
   const folderPhotos = photos.filter(
     (p) => getFolderFromUrl(p.url, "projek-kerja-photos") === currentFolder
   );
+  const fileSearchTerm = fileSearchQuery.trim().toLowerCase();
+  const visibleFolderFiles = fileSearchTerm
+    ? folderFiles.filter((f) =>
+        decodeURIComponent(String(f.url || "").split("/").pop() || "").toLowerCase().includes(fileSearchTerm)
+      )
+    : folderFiles;
 
   return (
     <div className="relative min-h-screen bg-slate-50">
@@ -622,16 +684,18 @@ export default function FotoProjekPage() {
               <button
                 type="button"
                 onClick={() => requestEditFolder(folderRouteState.type, currentFolder)}
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                title={tr("Edit Folder", "Edit Folder")}
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700"
               >
-                {tr("Edit Folder", "Edit Folder")}
+                <Pencil size={18} />
               </button>
               <button
                 type="button"
                 onClick={() => requestDeleteFolder(folderRouteState.type, currentFolder)}
-                className="rounded-lg bg-rose-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-rose-700"
+                title={tr("Hapus Folder", "Delete Folder")}
+                className="flex h-10 w-10 items-center justify-center rounded-lg bg-rose-600 text-white transition hover:bg-rose-700"
               >
-                {tr("Hapus Folder", "Delete Folder")}
+                <Trash2 size={18} />
               </button>
             </div>
           </div>
@@ -639,12 +703,24 @@ export default function FotoProjekPage() {
           {folderRouteState.type === "file" ? (
             <>
               <h2 className="mb-4 text-xl font-semibold text-slate-800">{tr("Dokumen Projek", "Project Documents")}</h2>
+              <div className="mb-4 relative">
+                <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={fileSearchQuery}
+                  onChange={(e) => setFileSearchQuery(e.target.value)}
+                  placeholder={tr("Cari nama file...", "Search file name...")}
+                  className="w-full rounded-lg border border-slate-300 bg-white px-9 py-2 text-sm outline-none ring-indigo-200 placeholder:text-slate-400 focus:ring-2"
+                />
+              </div>
               <div className="space-y-4">
-                {folderFiles.length === 0 ? (
+                {visibleFolderFiles.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-                    {tr("Belum ada dokumen di folder ini.", "No documents in this folder yet.")}
+                    {folderFiles.length === 0
+                      ? tr("Belum ada dokumen di folder ini.", "No documents in this folder yet.")
+                      : tr("Tidak ada file yang cocok dengan pencarian.", "No files match your search.")}
                   </div>
-                ) : folderFiles.map((file) => (
+                ) : visibleFolderFiles.map((file) => (
                   <div
                     key={file.id}
                     className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"
@@ -652,24 +728,34 @@ export default function FotoProjekPage() {
                     <div className="flex items-center gap-4">
                       <div className="bg-blue-100 text-blue-600 p-3 rounded-lg text-xl">📄</div>
                       <div>
-                        <p className="font-medium text-gray-800 break-all">{file.url.split("/").pop()}</p>
+                        <p className="font-medium text-gray-800 break-all">{decodeURIComponent(file.url.split("/").pop() || "")}</p>
                         <p className="text-sm text-gray-400">{tr("File dokumentasi projek", "Project documentation file")}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
                       <a
                         href={file.url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-sm"
+                        download
+                        title={tr("Download", "Download")}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white transition hover:bg-blue-700"
                       >
-                        {tr("Buka", "Open")}
+                        <Download size={16} />
                       </a>
                       <button
-                        onClick={() => handleDeleteFile(file.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
+                        type="button"
+                        onClick={() => requestRenameFile(file)}
+                        title={tr("Edit Nama", "Rename")}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500 text-white transition hover:bg-amber-600"
                       >
-                        {tr("Hapus", "Delete")}
+                        <Pencil size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteFile(file.id)}
+                        title={tr("Hapus", "Delete")}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500 text-white transition hover:bg-red-600"
+                      >
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
@@ -811,6 +897,65 @@ export default function FotoProjekPage() {
                 className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-blue-500/25 transition hover:from-blue-700 hover:to-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {savingFolder ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {renameFileTarget && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
+          onClick={() => !renamingFile && setRenameFileTarget(null)}
+        >
+          <div
+            ref={renameFileModalRef}
+            className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-yellow-400" />
+
+            <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
+              <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-50 to-orange-100 shadow-inner ring-1 ring-amber-100">
+                <Pencil size={28} className="text-amber-600" strokeWidth={2} />
+              </div>
+
+              <h3 className="text-lg font-bold text-slate-800">
+                {tr("Edit Nama File", "Edit File Name")}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                {tr("Ubah nama dokumen ini.", "Rename this document.")}
+              </p>
+
+              <input
+                type="text"
+                value={renameFileValue}
+                onChange={(e) => setRenameFileValue(e.target.value)}
+                placeholder={tr("Nama file baru", "New file name")}
+                className="mt-4 w-full rounded-xl border border-slate-300 px-3 py-2.5 text-sm outline-none ring-amber-200 focus:ring-2"
+                disabled={renamingFile}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") confirmRenameFile();
+                }}
+              />
+            </div>
+
+            <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setRenameFileTarget(null)}
+                disabled={renamingFile}
+                className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {tr("Batal", "Cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmRenameFile}
+                disabled={renamingFile}
+                className="flex-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-amber-500/25 transition hover:from-amber-600 hover:to-orange-600 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {renamingFile ? tr("Menyimpan...", "Saving...") : tr("Simpan", "Save")}
               </button>
             </div>
           </div>

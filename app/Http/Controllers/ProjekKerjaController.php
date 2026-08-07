@@ -2364,6 +2364,83 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Rename a file (keeps the same folder, only changes the file name).
+     */
+    public function renameFile(Request $request, $id)
+    {
+        $file = ProjekKerjaFile::find($id);
+
+        if (!$file) {
+            return response()->json([
+                'success' => false,
+                'message' => 'File tidak ditemukan'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'new_name' => 'required|string|max:255',
+        ]);
+
+        $oldPath = (string) $file->file;
+        $directory = pathinfo($oldPath, PATHINFO_DIRNAME);
+        if ($directory === '.' || $directory === false) {
+            $directory = '';
+        }
+
+        $oldExt = trim((string) pathinfo($oldPath, PATHINFO_EXTENSION));
+        $requestedName = $this->sanitizeUploadedFileName($validated['new_name']);
+        $requestedExt = trim((string) pathinfo($requestedName, PATHINFO_EXTENSION));
+
+        // Pertahankan ekstensi asli kalau nama baru tidak menyertakan ekstensi.
+        if ($requestedExt === '' && $oldExt !== '') {
+            $requestedName .= '.' . $oldExt;
+        }
+
+        if ($requestedName === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama file tidak valid',
+            ], 422);
+        }
+
+        $newPath = ($directory !== '' ? $directory . '/' : '') . $requestedName;
+
+        if ($newPath === $oldPath) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Nama file tidak berubah',
+                'data' => $file,
+            ]);
+        }
+
+        if (Storage::disk('public')->exists($newPath)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nama file sudah digunakan di folder ini',
+            ], 422);
+        }
+
+        try {
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->move($oldPath, $newPath);
+            }
+
+            $file->update(['file' => $newPath]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nama file berhasil diubah',
+                'data' => $file,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengubah nama file: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Delete a file
      */
     public function deleteFile($id)

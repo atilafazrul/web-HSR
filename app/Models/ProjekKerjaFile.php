@@ -22,7 +22,8 @@ class ProjekKerjaFile extends Model
     public function getUrlAttribute()
     {
         if ($this->file) {
-            return asset('storage/' . $this->file);
+            $encodedPath = implode('/', array_map('rawurlencode', explode('/', $this->file)));
+            return asset('storage/' . $encodedPath);
         }
         return null;
     }

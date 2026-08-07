@@ -11,10 +11,12 @@ use App\Services\BeritaAcaraPdfAssetService;
 use App\Services\SignatureStampMerger;
 use App\Services\WhatsAppService;
 use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
+use App\Http\Controllers\Concerns\SavesDocumentToProjectFolder;
 
 class SPPDController extends Controller
 {
     use ResolvesWhatsAppDivisi;
+    use SavesDocumentToProjectFolder;
 
     private function bulanToRomawi($bulan)
     {
@@ -237,7 +239,7 @@ class SPPDController extends Controller
             'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
         ];
 
-        return $this->generatePDFResponse($data);
+        return $this->generatePDFResponse($data, $validated['projek_kerja_id'] ?? null);
     }
 
     public function regeneratePDF($id)
@@ -340,7 +342,7 @@ class SPPDController extends Controller
         ]);
     }
 
-    private function generatePDFResponse($data)
+    private function generatePDFResponse($data, ?int $projekKerjaId = null)
     {
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -372,8 +374,11 @@ class SPPDController extends Controller
         $dompdf->render();
 
         $filename = 'SPPD-' . $data['nomor_surat'] . '.pdf';
+        $pdfOutput = $dompdf->output();
 
-        return response()->make($dompdf->output(), 200, [
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+
+        return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"'
         ]);

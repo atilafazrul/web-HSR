@@ -11,10 +11,12 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
+use App\Http\Controllers\Concerns\SavesDocumentToProjectFolder;
 
 class SPHController extends Controller
 {
     use ResolvesWhatsAppDivisi;
+    use SavesDocumentToProjectFolder;
 
     private function bulanToRomawi(int $bulan): string
     {
@@ -99,7 +101,7 @@ class SPHController extends Controller
             $this->whatsAppDivisiFromRequest($request)
         );
 
-        return $this->generatePDFResponse($this->documentToPdfData($document));
+        return $this->generatePDFResponse($this->documentToPdfData($document), $validated['projek_kerja_id'] ?? null);
     }
 
     public function show($id)
@@ -232,7 +234,7 @@ class SPHController extends Controller
         ];
     }
 
-    private function generatePDFResponse(array $data)
+    private function generatePDFResponse(array $data, ?int $projekKerjaId = null)
     {
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -248,8 +250,11 @@ class SPHController extends Controller
         $dompdf->render();
 
         $filename = 'SPH-' . str_replace('/', '-', $data['nomor_surat']) . '.pdf';
+        $pdfOutput = $dompdf->output();
 
-        return response()->make($dompdf->output(), 200, [
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+
+        return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);

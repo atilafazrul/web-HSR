@@ -11,10 +11,12 @@ use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
+use App\Http\Controllers\Concerns\SavesDocumentToProjectFolder;
 
 class InvoiceController extends Controller
 {
     use ResolvesWhatsAppDivisi;
+    use SavesDocumentToProjectFolder;
 
     private const DEFAULT_CATATAN = "Pembayaran : 7641749137\nBANK BCA a/n PT. HAYATI\nSEMESTA RAHARJA";
     private const DEFAULT_CATATAN_NON_PPN = "Non PPN\nPembayaran : 8880253302\nBANK BCA an SYAHRUL ROJI";
@@ -81,7 +83,7 @@ class InvoiceController extends Controller
             $this->whatsAppDivisiFromRequest($request)
         );
 
-        return $this->generatePDFResponse($this->documentToPdfData($document));
+        return $this->generatePDFResponse($this->documentToPdfData($document), $validated['projek_kerja_id'] ?? null);
     }
 
     public function show(Request $request, $id)
@@ -153,6 +155,7 @@ class InvoiceController extends Controller
             'terms' => 'nullable|string|max:20000',
             'nama_penandatangan' => 'nullable|string|max:255',
             'jabatan_penandatangan' => 'nullable|string|max:255',
+            'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
     }
 
@@ -227,7 +230,7 @@ class InvoiceController extends Controller
         ];
     }
 
-    private function generatePDFResponse(array $data)
+    private function generatePDFResponse(array $data, ?int $projekKerjaId = null)
     {
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
@@ -243,8 +246,11 @@ class InvoiceController extends Controller
         $dompdf->render();
 
         $filename = 'INVOICE-' . str_replace('/', '-', $data['nomor_surat']) . '.pdf';
+        $pdfOutput = $dompdf->output();
 
-        return response()->make($dompdf->output(), 200, [
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+
+        return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'attachment; filename="' . $filename . '"',
         ]);
