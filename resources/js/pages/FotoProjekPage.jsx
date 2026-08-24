@@ -5,6 +5,24 @@ import axios from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
 import { useI18n } from "../i18n/index.jsx";
 
+const formatUploadDateTime = (value, language) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  const locale = language === "en" ? "en-US" : "id-ID";
+  const datePart = date.toLocaleDateString(locale, {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+  const timePart = date.toLocaleTimeString(locale, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  return `${datePart}, ${timePart}`;
+};
+
 export default function FotoProjekPage() {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -729,7 +747,9 @@ export default function FotoProjekPage() {
                       <div className="bg-blue-100 text-blue-600 p-3 rounded-lg text-xl">📄</div>
                       <div>
                         <p className="font-medium text-gray-800 break-all">{decodeURIComponent(file.url.split("/").pop() || "")}</p>
-                        <p className="text-sm text-gray-400">{tr("File dokumentasi projek", "Project documentation file")}</p>
+                        <p className="text-sm text-gray-400">
+                          {tr("Diupload", "Uploaded")}: {formatUploadDateTime(file.created_at, language)}
+                        </p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -796,19 +816,25 @@ export default function FotoProjekPage() {
                     className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition hover:shadow-md"
                   >
                     <img src={photo.url} className="w-full h-48 object-cover" alt="projek" />
-                    <div className="p-4 flex justify-between">
+                    <div className="border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
+                      {tr("Diupload", "Uploaded")}: {formatUploadDateTime(photo.created_at, language)}
+                    </div>
+                    <div className="flex justify-end gap-2 px-4 pb-4">
                       <a
                         href={photo.url}
                         download
-                        className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-sm"
+                        title={tr("Download", "Download")}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600 text-white transition hover:bg-green-700"
                       >
-                        Download
+                        <Download size={16} />
                       </a>
                       <button
+                        type="button"
                         onClick={() => handleDeletePhoto(photo.id)}
-                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm"
+                        title={tr("Hapus", "Delete")}
+                        className="flex h-9 w-9 items-center justify-center rounded-lg bg-red-500 text-white transition hover:bg-red-600"
                       >
-                        {tr("Hapus", "Delete")}
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>

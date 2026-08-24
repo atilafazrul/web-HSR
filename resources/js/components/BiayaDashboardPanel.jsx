@@ -4,6 +4,7 @@ import api from "../api/axiosConfig";
 import { DollarSign, Eye, Pencil, Trash2, Clock, CheckCircle, AlertCircle, X } from "lucide-react";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
+import { assertNoDuplicateDashboardBiaya } from "../utils/biayaDuplicateValidation";
 import { useI18n } from "../i18n/index.jsx";
 import { DashboardSurface } from "./dashboard/DashboardPrimitives.jsx";
 
@@ -61,6 +62,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const [loading, setLoading] = useState(false);
   const [compressingKey, setCompressingKey] = useState(null);
   const [submittingKategori, setSubmittingKategori] = useState(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const [form, setForm] = useState({
     jalan: { nominal: "", keterangan: "", photoFiles: [] },
@@ -76,6 +78,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
   const [confirmProcessing, setConfirmProcessing] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState(null);
 
   const kategoriWithPhotos = (key) => key === "jalan" || key === "pengeluaran" || key === "reimbursment";
   const isCompressingKategori = (key) => compressingKey === key;
@@ -230,6 +233,13 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
     }
     setSubmittingKategori(kategori);
     try {
+      assertNoDuplicateDashboardBiaya(items, {
+        kategori,
+        nominal,
+        keterangan: row.keterangan || "",
+        createdAt: new Date().toISOString(),
+        formatRupiah: (n) => formatRibuanId(String(Math.round(Number(n) || 0))),
+      });
       if (kategoriWithPhotos(kategori)) {
         const fd = new FormData();
         fd.append("kategori", kategori);
@@ -260,7 +270,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       }
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || tr("Gagal simpan biaya", "Failed to save costs"));
+      alert(err.response?.data?.message || err.message || tr("Gagal simpan biaya", "Failed to save costs"));
     } finally {
       setSubmittingKategori((current) => (current === kategori ? null : current));
     }
@@ -355,13 +365,22 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
 
   const saveEdit = async () => {
     const row = items.find((i) => i.id === editingId);
-    if (!row) return;
+    if (!row || savingEdit) return;
     const nominal = parseRibuanId(editForm.nominal);
     if (!row.is_lunas && (!nominal || nominal <= 0)) {
       alert(tr("Nominal harus lebih dari 0", "Amount must be greater than 0"));
       return;
     }
+    setSavingEdit(true);
     try {
+      assertNoDuplicateDashboardBiaya(items, {
+        kategori: row.kategori,
+        nominal,
+        keterangan: editForm.keterangan || "",
+        createdAt: row.created_at,
+        excludeId: row.id,
+        formatRupiah: (n) => formatRibuanId(String(Math.round(Number(n) || 0))),
+      });
       const payload = {
         keterangan: editForm.keterangan || "",
       };
@@ -372,7 +391,9 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
       cancelEdit();
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || tr("Gagal menyimpan perubahan", "Failed to save changes"));
+      alert(err.response?.data?.message || err.message || tr("Gagal menyimpan perubahan", "Failed to save changes"));
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -475,11 +496,15 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                     </span>
                   )}
                   {(row.photo_urls || []).map((url, idx) => (
-                    <a
+                    <button
                       key={`${row.id}-ph-${idx}`}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                      type="button"
+                      onClick={() =>
+                        setPhotoPreview({
+                          url,
+                          uploadedAt: row.created_at,
+                        })
+                      }
                       title={`${tr("Lihat lampiran", "View attachment")} ${idx + 1}`}
                       className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-2 py-1 text-slate-700 shadow-sm transition hover:bg-slate-50"
                     >
@@ -487,7 +512,7 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
                       {(row.photo_urls || []).length > 1 ? (
                         <span className="ml-0.5 text-[10px] font-medium tabular-nums">{idx + 1}</span>
                       ) : null}
-                    </a>
+                    </button>
                   ))}
                   {canEditRow(row) ? (
                     <button
@@ -818,6 +843,40 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
         </div>
       </div>
     )}
+
+    {photoPreview ? (
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+        onClick={() => setPhotoPreview(null)}
+      >
+        <div
+          className="relative max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            type="button"
+            onClick={() => setPhotoPreview(null)}
+            className="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white transition hover:bg-black/70"
+            aria-label={tr("Tutup", "Close")}
+          >
+            <X size={18} />
+          </button>
+          <img
+            src={photoPreview.url}
+            alt={tr("Lampiran biaya", "Expense attachment")}
+            className="max-h-[70vh] w-full object-contain bg-slate-100"
+          />
+          <div className="border-t border-slate-100 px-4 py-3 text-center">
+            <p className="text-xs text-slate-500">
+              {tr("Diupload", "Uploaded")}:{" "}
+              <span className="font-medium text-slate-700">
+                {formatDateTime(photoPreview.uploadedAt)}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    ) : null}
     </>
   );
 }

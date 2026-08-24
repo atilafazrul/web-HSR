@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\DashboardBiaya;
 use App\Models\ProjekKerja;
 use App\Models\User;
+use App\Services\BiayaDuplicateValidator;
 use App\Services\BiayaNotificationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\IOFactory;
@@ -220,43 +222,62 @@ class DashboardBiayaController extends Controller
             'photo' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
         ]);
 
-        $hasAnyPhoto = $request->hasFile('photos') || $request->hasFile('photo');
-        if ($hasAnyPhoto && ! $this->kategoriAllowsPhotos($request->input('kategori'))) {
+        try {
+            $hasAnyPhoto = $request->hasFile('photos') || $request->hasFile('photo');
+            if ($hasAnyPhoto && ! $this->kategoriAllowsPhotos($request->input('kategori'))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Foto hanya untuk kategori Pengeluaran dan Reimbursment.',
+                ], 422);
+            }
+
+            $photoPaths = $this->storeUploadedPhotos($request, 'photos');
+            if ($request->hasFile('photo')) {
+                $photoPaths[] = $request->file('photo')->store('dashboard-biaya-photos', 'public');
+            }
+
+            $divisi = ($user->role ?? null) === 'super_admin'
+                ? ($request->input('divisi') ?: $user->divisi)
+                : $user->divisi;
+
+            $row = DB::transaction(function () use ($request, $user, $divisi, $photoPaths) {
+                BiayaDuplicateValidator::assertNoDuplicateDashboardRow(
+                    (string) $request->input('kategori'),
+                    round((float) $request->input('nominal'), 2),
+                    $request->input('keterangan'),
+                    (int) ($user->id ?? 0),
+                    now(),
+                    null,
+                    true
+                );
+
+                return DashboardBiaya::create([
+                    'divisi' => $divisi,
+                    'kategori' => $request->input('kategori'),
+                    'nominal' => $request->input('nominal'),
+                    'keterangan' => $request->input('keterangan'),
+                    'photo_paths' => $photoPaths === [] ? null : $photoPaths,
+                    'is_lunas' => false,
+                    'created_by' => $user->id ?? null,
+                    'updated_by' => $user->id ?? null,
+                ]);
+            });
+
+            app(BiayaNotificationService::class)->notifyDashboardBiaya($row, $user);
+
+            return response()->json([
+                'success' => true,
+                'data' => tap($row->fresh(['creator:id,name', 'updater:id,name']), function ($fresh) {
+                    $fresh->creator_name = $fresh->creator?->name;
+                    $fresh->updater_name = $fresh->updater?->name;
+                }),
+            ], 201);
+        } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Foto hanya untuk kategori Pengeluaran dan Reimbursment.',
+                'message' => $e->getMessage(),
             ], 422);
         }
-
-        $photoPaths = $this->storeUploadedPhotos($request, 'photos');
-        if ($request->hasFile('photo')) {
-            $photoPaths[] = $request->file('photo')->store('dashboard-biaya-photos', 'public');
-        }
-
-        $divisi = ($user->role ?? null) === 'super_admin'
-            ? ($request->input('divisi') ?: $user->divisi)
-            : $user->divisi;
-
-        $row = DashboardBiaya::create([
-            'divisi' => $divisi,
-            'kategori' => $request->input('kategori'),
-            'nominal' => $request->input('nominal'),
-            'keterangan' => $request->input('keterangan'),
-            'photo_paths' => $photoPaths === [] ? null : $photoPaths,
-            'is_lunas' => false,
-            'created_by' => $user->id ?? null,
-            'updated_by' => $user->id ?? null,
-        ]);
-
-        app(BiayaNotificationService::class)->notifyDashboardBiaya($row, $user);
-
-        return response()->json([
-            'success' => true,
-            'data' => tap($row->fresh(['creator:id,name', 'updater:id,name']), function ($fresh) {
-                $fresh->creator_name = $fresh->creator?->name;
-                $fresh->updater_name = $fresh->updater?->name;
-            }),
-        ], 201);
     }
 
     public function update(Request $request, $id)
@@ -299,6 +320,13 @@ class DashboardBiayaController extends Controller
             // no-op: explicitly allowed
         }
 
+        $nextNominal = $request->has('nominal')
+            ? round((float) $request->input('nominal'), 2)
+            : round((float) ($row->nominal ?? 0), 2);
+        $nextKeterangan = $request->has('keterangan')
+            ? $request->input('keterangan')
+            : ($row->keterangan ?? '');
+
         $payload = ['updated_by' => $user->id ?? null];
         if ($request->has('keterangan')) {
             $payload['keterangan'] = $request->input('keterangan');
@@ -331,7 +359,31 @@ class DashboardBiayaController extends Controller
         }
 
         $wasLunas = (bool) $row->is_lunas;
-        $row->update($payload);
+
+        try {
+            if ($request->has('nominal') || $request->has('keterangan')) {
+                DB::transaction(function () use ($row, $nextNominal, $nextKeterangan, $user, $payload) {
+                    BiayaDuplicateValidator::assertNoDuplicateDashboardRow(
+                        (string) $row->kategori,
+                        $nextNominal,
+                        $nextKeterangan,
+                        (int) ($row->created_by ?? $user->id ?? 0),
+                        $row->created_at ?? now(),
+                        (int) $row->id,
+                        true
+                    );
+                    $row->update($payload);
+                });
+            } else {
+                $row->update($payload);
+            }
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
         $fresh = $row->fresh(['creator:id,name,no_telepon', 'updater:id,name']);
 
         if (

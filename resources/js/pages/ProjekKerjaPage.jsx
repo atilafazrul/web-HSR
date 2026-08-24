@@ -20,6 +20,7 @@ function readRestoredProjekKerjaPage(pathname) {
 import api from "../api/axiosConfig";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
+import { assertNoDuplicateBiayaItems } from "../utils/biayaDuplicateValidation";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useI18n } from "../i18n/index.jsx";
 import { DashboardSurface, DashboardSectionHeading } from "../components/dashboard/DashboardPrimitives.jsx";
@@ -47,12 +48,56 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 
+function parseBiayaDateTime(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+
+  // Legacy meta.at dari PHP toDateTimeString() (UTC tanpa suffix Z).
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw) && !raw.includes("T") && !/[Zz]|[+-]\d{2}:?\d{2}$/.test(raw)) {
+    const d = new Date(`${raw.replace(" ", "T")}Z`);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function formatBiayaDateTimeLabel(value) {
+  const d = parseBiayaDateTime(value);
+  if (!d) return "-";
+  return d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
+}
+
+function storagePhotoUrl(path) {
+  if (!path) return "";
+  const encoded = String(path)
+    .split("/")
+    .map((part) => encodeURIComponent(part))
+    .join("/");
+  return `/storage/${encoded}`;
+}
+
+function buildPhotoItemsFromApi(row) {
+  if (Array.isArray(row?.photo_items) && row.photo_items.length > 0) {
+    return row.photo_items.map((p) => ({
+      path: p.path || "",
+      uploadedAt: p.uploaded_at || row.created_at || null,
+    }));
+  }
+  const paths = row?.photo_paths ?? row?.photoPaths ?? [];
+  return paths.map((path) => ({
+    path,
+    uploadedAt: row?.created_at ?? null,
+  }));
+}
+
 function BiayaMetaFooter({ meta }) {
   if (!meta?.by) return null;
-  const d = meta.at ? new Date(meta.at) : null;
+  const d = parseBiayaDateTime(meta.at);
   const dateStr =
-    d && !Number.isNaN(d.getTime())
-      ? d.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })
+    d
+      ? d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })
       : "";
   return (
     <p className="text-[11px] text-gray-500 mt-2 pt-2 border-t border-gray-200/80 flex items-start gap-1.5">
@@ -339,10 +384,12 @@ export default function ProjekKerjaPage() {
   const [showUangModal, setShowUangModal] = useState(false);
   const [editUang, setEditUang] = useState(false);
   const [isSavingBiaya, setIsSavingBiaya] = useState(false);
+  const [biayaPhotoPreview, setBiayaPhotoPreview] = useState(null);
 
   // State untuk modal konfirmasi status lunas
   const [showLunasConfirmModal, setShowLunasConfirmModal] = useState(false);
   const [lunasConfirmAction, setLunasConfirmAction] = useState(null);
+  const [lunasConfirmProcessing, setLunasConfirmProcessing] = useState(false);
 
   // State untuk modal konfirmasi hapus baris biaya
   const [showDeleteBiayaRowModal, setShowDeleteBiayaRowModal] = useState(false);
@@ -825,8 +872,11 @@ export default function ProjekKerjaPage() {
       is_lunas: Boolean(r.is_lunas),
       oleh: r.oleh ?? "",
       created_at: r.created_at ?? new Date().toISOString(),
+      lunas_at: r.lunas_at ?? null,
+      lunas_group_id: r.lunas_group_id ?? null,
       photoFiles: [],
       photoPaths: r.photo_paths ?? [],
+      photoItems: buildPhotoItemsFromApi(r),
     }));
     return result;
   };
@@ -882,6 +932,11 @@ export default function ProjekKerjaPage() {
       const serverCa = String(serverRow.created_at || "").trim();
       if (serverCa) usedCreatedAt.add(serverCa);
 
+      const lunasMeta = {
+        lunas_at: serverRow.lunas_at ?? rep.lunas_at ?? null,
+        lunas_group_id: serverRow.lunas_group_id ?? rep.lunas_group_id ?? null,
+      };
+
       if (Boolean(serverRow.is_lunas)) {
         out.push({
           ...rep,
@@ -889,6 +944,7 @@ export default function ProjekKerjaPage() {
           is_lunas: true,
           oleh: serverRow.oleh || rep.oleh || user?.name || "",
           created_at: serverRow.created_at || rep.created_at,
+          ...lunasMeta,
           photoPaths: serverRow.photoPaths ?? rep.photoPaths ?? [],
           photoFiles: rep.photoFiles || [],
         });
@@ -900,16 +956,28 @@ export default function ProjekKerjaPage() {
         is_lunas: Boolean(rep.is_lunas),
         oleh: serverRow.oleh || rep.oleh || user?.name || "",
         created_at: serverRow.created_at || rep.created_at,
+        ...(Boolean(rep.is_lunas) ? lunasMeta : { lunas_at: null, lunas_group_id: null }),
         photoPaths: rep.photoPaths ?? serverRow.photoPaths ?? [],
         photoFiles: rep.photoFiles || [],
       });
     };
 
+    const reserveCreatedAt = (createdAt) => {
+      const ca = String(createdAt || "").trim();
+      if (!ca || usedCreatedAt.has(ca)) return false;
+      usedCreatedAt.add(ca);
+      return true;
+    };
+
     for (const row of serverRows) {
       if (!isSuperAdmin && biayaOlehLower(row) !== me) {
+        if (!reserveCreatedAt(row.created_at)) continue;
         out.push(row);
         continue;
       }
+
+      const serverCa = String(row.created_at || "").trim();
+      if (serverCa && usedCreatedAt.has(serverCa)) continue;
 
       const rep = findEditMatch(row);
       if (rep) {
@@ -919,6 +987,7 @@ export default function ProjekKerjaPage() {
 
       // Baris server yang tidak ada di form tetap dipertahankan (hindari hilang saat simpan).
       if (isSuperAdmin || Boolean(row.is_lunas)) {
+        if (!reserveCreatedAt(row.created_at)) continue;
         out.push(row);
       }
     }
@@ -966,6 +1035,11 @@ export default function ProjekKerjaPage() {
     reimbursment: mergeBiayaCategoryForSave(baseItem, biayaEdit, "reimbursment", "biaya_reimbursment_items"),
   });
 
+  const biayaDuplicateOpts = {
+    parseNominal: (v) => Number(v) || parseRibuanId(v) || 0,
+    formatRupiah,
+  };
+
   const sumBiayaRows = (rows) =>
     rows.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
 
@@ -985,15 +1059,26 @@ export default function ProjekKerjaPage() {
     rowsWithIdx.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
 
   const biayaToPayload = (rows) => {
-    const result = rows.map((r) => ({
-      nominal: parseRibuanId(r.nominal),
-      keterangan: (r.keterangan || "").trim(),
-      is_lunas: Boolean(r.is_lunas),
-      oleh: (r.oleh || user?.name || "").trim(),
-      created_at: r.created_at || new Date().toISOString(),
-      photo_paths: r.photoPaths || [],
-    }));
+    const result = rows.map((r) => {
+      const payload = {
+        nominal: parseRibuanId(r.nominal),
+        keterangan: (r.keterangan || "").trim(),
+        is_lunas: Boolean(r.is_lunas),
+        oleh: (r.oleh || user?.name || "").trim(),
+        created_at: r.created_at || new Date().toISOString(),
+        photo_paths: r.photoPaths || [],
+      };
+      if (r.lunas_at) payload.lunas_at = r.lunas_at;
+      if (r.lunas_group_id) payload.lunas_group_id = r.lunas_group_id;
+      return payload;
+    });
     return result;
+  };
+
+  const validateBiayaPayloadForDuplicates = (payloadBiaya) => {
+    assertNoDuplicateBiayaItems(biayaToPayload(payloadBiaya.jalan || []), "Biaya Jalan", biayaDuplicateOpts);
+    assertNoDuplicateBiayaItems(biayaToPayload(payloadBiaya.pengeluaran || []), "Biaya Pengeluaran", biayaDuplicateOpts);
+    assertNoDuplicateBiayaItems(biayaToPayload(payloadBiaya.reimbursment || []), "Biaya Reimbursment", biayaDuplicateOpts);
   };
 
   const openUangModal = (item) => {
@@ -1211,6 +1296,13 @@ export default function ProjekKerjaPage() {
 
     const payloadBiaya = buildBiayaPayloadForSave(item);
 
+    try {
+      validateBiayaPayloadForDuplicates(payloadBiaya);
+    } catch (err) {
+      alert(err?.message || "Terdapat biaya duplikat. Periksa nominal dan keterangan.");
+      return;
+    }
+
     setIsSavingBiaya(true);
     try {
       let savedProjek = null;
@@ -1382,69 +1474,78 @@ export default function ProjekKerjaPage() {
     const item = dataList.find((i) => i.id === currentId);
     if (!item) return;
 
-    const toRows = (rows) =>
-      (Array.isArray(rows) ? rows : []).map((r) => ({
-        nominal: Number.isFinite(Number(r?.nominal)) ? Number(r.nominal) : 0,
-        keterangan: String(r?.keterangan || ""),
-        is_lunas: Boolean(r?.is_lunas),
-        oleh: r?.oleh || "",
-        created_at: r?.created_at || "",
-      }));
-
-    const payload = {
-      biaya_jalan_items: toRows(item.biaya_jalan_items),
-      biaya_pengeluaran_items: toRows(item.biaya_pengeluaran_items),
-      biaya_reimbursment_items: toRows(item.biaya_reimbursment_items),
-    };
-
     const mapKey = {
       jalan: "biaya_jalan_items",
       pengeluaran: "biaya_pengeluaran_items",
       reimbursment: "biaya_reimbursment_items",
     };
     const field = mapKey[kategoriKey];
-    if (!field || !payload[field]?.[index]) return;
+    const serverRows = item[field];
+    if (!field || !Array.isArray(serverRows) || !serverRows[index]) return;
 
-    const currentLunas = payload[field][index].is_lunas;
-    const newStatus = !currentLunas;
+    const row = serverRows[index];
+    const newStatus = !Boolean(row.is_lunas);
     const statusText = newStatus ? "Lunas" : "Belum Lunas";
 
     setLunasConfirmAction({
       type: "item",
       kategoriKey,
       index,
-      payload,
-      field,
       newStatus,
       statusText,
-      nominal: payload[field][index].nominal,
-      keterangan: payload[field][index].keterangan,
+      nominal: Number(row.nominal) || 0,
+      keterangan: String(row.keterangan || ""),
     });
     setShowLunasConfirmModal(true);
   };
 
+  const createLunasGroupId = () => {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+    return `grp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  };
+
   const handleConfirmItemLunas = async () => {
-    if (!lunasConfirmAction) return;
-    const { kategoriKey, index, payload, field, newStatus } = lunasConfirmAction;
+    if (!lunasConfirmAction || lunasConfirmProcessing) return;
+    const { kategoriKey, index, newStatus } = lunasConfirmAction;
 
-    payload[field][index].is_lunas = newStatus;
-
+    setLunasConfirmProcessing(true);
+    const lunasGroupId = newStatus ? createLunasGroupId() : null;
     setBiayaEdit((prev) => ({
       ...prev,
       [kategoriKey]: (prev[kategoriKey] || []).map((r, i) =>
-        i === index ? { ...r, is_lunas: newStatus } : r
+        i === index
+          ? {
+              ...r,
+              is_lunas: newStatus,
+              ...(newStatus
+                ? { lunas_at: new Date().toISOString(), lunas_group_id: lunasGroupId }
+                : { lunas_at: null, lunas_group_id: null }),
+            }
+          : r
       ),
     }));
 
     try {
-      await api.patch(`/projek-kerja/${currentId}/uang`, payload);
-      fetchData();
+      await api.patch(`/projek-kerja/${currentId}/biaya-item-lunas`, {
+        kategori: kategoriKey,
+        item_index: index,
+        is_lunas: newStatus,
+        ...(lunasGroupId ? { lunas_group_id: lunasGroupId } : {}),
+      });
+      const freshList = await fetchData();
+      const updated = (Array.isArray(freshList) ? freshList : []).find((i) => i.id === currentId);
+      if (updated) applyProjekBiayaToModal(updated);
     } catch (err) {
-      const msg = err.response?.data?.message || "Gagal update lunas per item";
+      const msg = err?.response?.data?.message || err?.message || "Gagal update lunas per item";
       alert(msg);
+      const item = dataList.find((i) => i.id === currentId);
+      if (item) applyProjekBiayaToModal(item);
     } finally {
       setShowLunasConfirmModal(false);
       setLunasConfirmAction(null);
+      setLunasConfirmProcessing(false);
     }
   };
 
@@ -2402,12 +2503,16 @@ export default function ProjekKerjaPage() {
                       {r.keterangan ? <p className="mt-1 text-gray-600 whitespace-pre-wrap break-words">{r.keterangan}</p> : null}
                       {r.photoPaths && r.photoPaths.length > 0 ? (
                         <div className="mt-2 flex flex-wrap gap-1">
-                          {r.photoPaths.map((photoPath, photoIdx) => (
-                            <a
+                          {(r.photoItems?.length ? r.photoItems : r.photoPaths.map((path) => ({ path, uploadedAt: r.created_at }))).map((photo, photoIdx) => (
+                            <button
                               key={photoIdx}
-                              href={`/storage/${photoPath}`}
-                              target="_blank"
-                              rel="noreferrer"
+                              type="button"
+                              onClick={() =>
+                                setBiayaPhotoPreview({
+                                  url: storagePhotoUrl(photo.path),
+                                  uploadedAt: photo.uploadedAt || r.created_at,
+                                })
+                              }
                               className="inline-flex items-center gap-0.5 px-2 py-1 bg-slate-100 text-slate-700 rounded text-[10px] border border-slate-300 hover:bg-slate-200"
                               title={tr("Klik untuk lihat foto", "Click to view photo")}
                             >
@@ -2415,7 +2520,7 @@ export default function ProjekKerjaPage() {
                               {r.photoPaths.length > 1 ? (
                                 <span className="font-medium tabular-nums">{photoIdx + 1}</span>
                               ) : null}
-                            </a>
+                            </button>
                           ))}
                         </div>
                       ) : null}
@@ -2677,18 +2782,22 @@ export default function ProjekKerjaPage() {
                                     {row.photoPaths && row.photoPaths.length > 0 && (
                                       <div className="mt-2 flex flex-wrap gap-1">
                                         <span className="text-[11px] text-gray-500 w-full">{tr("Foto tersimpan:", "Saved photos:")}</span>
-                                        {row.photoPaths.map((photoPath, photoIdx) => (
-                                          <a
+                                        {(row.photoItems?.length ? row.photoItems : row.photoPaths.map((path) => ({ path, uploadedAt: row.created_at }))).map((photo, photoIdx) => (
+                                          <button
                                             key={photoIdx}
-                                            href={`/storage/${photoPath}`}
-                                            target="_blank"
-                                            rel="noreferrer"
+                                            type="button"
+                                            onClick={() =>
+                                              setBiayaPhotoPreview({
+                                                url: storagePhotoUrl(photo.path),
+                                                uploadedAt: photo.uploadedAt || row.created_at,
+                                              })
+                                            }
                                             className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-[10px] border border-green-200 hover:bg-green-100"
                                             title={tr("Klik untuk lihat foto", "Click to view photo")}
                                           >
                                             {tr("Foto", "Photo")} {photoIdx + 1}
                                             <Eye size={10} />
-                                          </a>
+                                          </button>
                                         ))}
                                       </div>
                                     )}
@@ -2952,6 +3061,40 @@ export default function ProjekKerjaPage() {
           </div>
         </div>
       )}
+
+      {biayaPhotoPreview ? (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setBiayaPhotoPreview(null)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setBiayaPhotoPreview(null)}
+              className="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white transition hover:bg-black/70"
+              aria-label={tr("Tutup", "Close")}
+            >
+              <X size={18} />
+            </button>
+            <img
+              src={biayaPhotoPreview.url}
+              alt={tr("Lampiran biaya", "Expense attachment")}
+              className="max-h-[70vh] w-full object-contain bg-slate-100"
+            />
+            <div className="border-t border-slate-100 px-4 py-3 text-center">
+              <p className="text-xs text-slate-500">
+                {tr("Diupload", "Uploaded")}:{" "}
+                <span className="font-medium text-slate-700">
+                  {formatBiayaDateTimeLabel(biayaPhotoPreview.uploadedAt)}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

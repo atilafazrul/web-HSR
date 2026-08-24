@@ -156,6 +156,14 @@ class ProjekKerja extends Model
                 if (!empty($row->photo_paths)) {
                     $item['photo_paths'] = $row->photo_paths;
                 }
+                if ($row->relationLoaded('photos') && $row->photos->isNotEmpty()) {
+                    $item['photo_items'] = $row->photos->map(function ($photo) {
+                        return [
+                            'path' => $photo->path,
+                            'uploaded_at' => $photo->created_at?->toIso8601String(),
+                        ];
+                    })->values()->all();
+                }
                 if (!empty($row->lunas_group_id)) {
                     $item['lunas_group_id'] = $row->lunas_group_id;
                 }

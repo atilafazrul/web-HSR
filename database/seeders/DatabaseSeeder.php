@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use App\Models\User;
 
 use App\Models\ProjekKerja;
@@ -17,17 +18,20 @@ class DatabaseSeeder extends Seeder
         |--------------------------------------------------------------------------
         | USERS
         |--------------------------------------------------------------------------
+        | Email & password diambil dari .env (SEED_*), bukan hardcoded, supaya
+        | file ini aman untuk masuk git. Kalau env belum diisi, password akan
+        | di-generate random (bukan default lama yang sudah pernah bocor).
         */
 
         // Super Admin
         User::updateOrCreate(
-            ['email' => 'super@admin.com'],
+            ['email' => env('SEED_SUPERADMIN_EMAIL', 'super@admin.com')],
             [
                 'name' => 'Super Admin',
                 'phone' => null,
                 'address' => null,
                 'profile_photo' => null,
-                'password' => Hash::make('pthsr2021'),
+                'password' => Hash::make(env('SEED_SUPERADMIN_PASSWORD', Str::random(16))),
                 'role' => 'super_admin',
                 'divisi' => null,
             ]
@@ -35,13 +39,13 @@ class DatabaseSeeder extends Seeder
 
         // Admin Utama
         User::updateOrCreate(
-            ['email' => 'admin@admin.com'],
+            ['email' => env('SEED_ADMIN_EMAIL', 'admin@admin.com')],
             [
                 'name' => 'Admin',
                 'phone' => null,
                 'address' => null,
                 'profile_photo' => null,
-                'password' => Hash::make('123456'),
+                'password' => Hash::make(env('SEED_ADMIN_PASSWORD', Str::random(16))),
                 'role' => 'admin',
                 'divisi' => null,
             ]
@@ -49,13 +53,13 @@ class DatabaseSeeder extends Seeder
 
         // Admin Service
         User::updateOrCreate(
-            ['email' => 'atila@admin.com'],
+            ['email' => env('SEED_ATILA_EMAIL', 'atila@admin.com')],
             [
                 'name' => 'ATILA',
                 'phone' => null,
                 'address' => null,
                 'profile_photo' => null,
-                'password' => Hash::make('123456'),
+                'password' => Hash::make(env('SEED_ATILA_PASSWORD', Str::random(16))),
                 'role' => 'admin',
                 'divisi' => 'Service',
             ]
@@ -63,13 +67,13 @@ class DatabaseSeeder extends Seeder
 
         // Admin IT
         User::updateOrCreate(
-            ['email' => 'aqila@admin.com'],
+            ['email' => env('SEED_AQILA_EMAIL', 'aqila@admin.com')],
             [
                 'name' => 'Aqila',
                 'phone' => null,
                 'address' => null,
                 'profile_photo' => null,
-                'password' => Hash::make('123456'),
+                'password' => Hash::make(env('SEED_AQILA_PASSWORD', Str::random(16))),
                 'role' => 'admin',
                 'divisi' => 'IT',
             ]
@@ -77,13 +81,13 @@ class DatabaseSeeder extends Seeder
 
         // Admin Sales
         User::updateOrCreate(
-            ['email' => 'yuda@sales.com'],
+            ['email' => env('SEED_YUDA_EMAIL', 'yuda@sales.com')],
             [
                 'name' => 'Yuda',
                 'phone' => null,
                 'address' => null,
                 'profile_photo' => null,
-                'password' => Hash::make('123456'),
+                'password' => Hash::make(env('SEED_YUDA_PASSWORD', Str::random(16))),
                 'role' => 'admin',
                 'divisi' => 'Sales',
             ]
@@ -91,13 +95,13 @@ class DatabaseSeeder extends Seeder
 
         // Admin Kontraktor
         User::updateOrCreate(
-            ['email' => 'daffa@kontraktor.com'],
+            ['email' => env('SEED_DAFFA_EMAIL', 'daffa@kontraktor.com')],
             [
                 'name' => 'Daffa',
                 'phone' => null,
                 'address' => null,
                 'profile_photo' => null,
-                'password' => Hash::make('123456'),
+                'password' => Hash::make(env('SEED_DAFFA_PASSWORD', Str::random(16))),
                 'role' => 'admin',
                 'divisi' => 'Kontraktor',
             ]

@@ -7,6 +7,7 @@ use App\Models\ProjekKerjaPhoto;
 use App\Models\ProjekKerjaFile;
 use App\Models\User;
 use App\Services\ActivityLogService;
+use App\Services\BiayaDuplicateValidator;
 use App\Services\BiayaNotificationService;
 use App\Services\ProjekKerjaNotificationService;
 use Illuminate\Http\Request;
@@ -1118,6 +1119,57 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Fingerprint baris biaya untuk deteksi perubahan per kategori (meta edit terpisah).
+     */
+    protected function fingerprintBiayaItems(?array $items): string
+    {
+        $items = is_array($items) ? $items : [];
+        $normalized = [];
+
+        foreach ($items as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $nominal = round((float) ($row['nominal'] ?? 0), 2);
+            $keterangan = trim((string) ($row['keterangan'] ?? ''));
+            $photos = isset($row['photo_paths']) && is_array($row['photo_paths'])
+                ? array_values(array_filter($row['photo_paths']))
+                : [];
+            sort($photos);
+
+            if ($nominal <= 0 && $keterangan === '' && $photos === []) {
+                continue;
+            }
+
+            $normalized[] = [
+                'nominal' => $nominal,
+                'keterangan' => $keterangan,
+                'is_lunas' => $this->parseBiayaIsLunas($row['is_lunas'] ?? false),
+                'oleh' => trim((string) ($row['oleh'] ?? '')),
+                'created_at' => trim((string) ($row['created_at'] ?? '')),
+                'photo_paths' => $photos,
+            ];
+        }
+
+        usort($normalized, function (array $a, array $b) {
+            $cmp = strcmp($a['created_at'], $b['created_at']);
+            if ($cmp !== 0) {
+                return $cmp;
+            }
+
+            return strcmp($a['keterangan'], $b['keterangan']);
+        });
+
+        return json_encode($normalized);
+    }
+
+    protected function biayaCategoryItemsChanged(?array $before, ?array $after): bool
+    {
+        return $this->fingerprintBiayaItems($before) !== $this->fingerprintBiayaItems($after);
+    }
+
+    /**
      * Pertahankan baris milik karyawan lain yang tidak ikut dalam payload (safety net).
      */
     protected function preserveOtherUsersBiayaRows(array $result, array $existing, string $userName): array
@@ -1191,6 +1243,203 @@ class ProjekKerjaController extends Controller
         }
 
         return $result;
+    }
+
+    /**
+     * Cari baris biaya existing berdasarkan created_at (item_created_at).
+     */
+    protected function lookupExistingBiayaRowByCreatedAt(array $existing, string $createdAt): ?array
+    {
+        $createdAt = trim($createdAt);
+        if ($createdAt === '') {
+            return null;
+        }
+
+        foreach ($existing as $existRow) {
+            if (! is_array($existRow)) {
+                continue;
+            }
+            if (trim((string) ($existRow['created_at'] ?? '')) === $createdAt) {
+                return $existRow;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Isi lunas_at / lunas_group_id dari payload atau data existing agar tidak hilang saat re-save.
+     */
+    protected function enrichBiayaItemWithLunasMeta(array $item, array $incoming, array $existing): array
+    {
+        $createdAt = trim((string) ($item['created_at'] ?? ''));
+        $existingRow = $createdAt !== '' ? $this->lookupExistingBiayaRowByCreatedAt($existing, $createdAt) : null;
+
+        foreach (['lunas_at', 'lunas_group_id'] as $field) {
+            $incomingVal = trim((string) ($incoming[$field] ?? ''));
+            $existingVal = $existingRow !== null ? trim((string) ($existingRow[$field] ?? '')) : '';
+
+            if ($incomingVal !== '') {
+                $item[$field] = $incoming[$field];
+            } elseif ($existingVal !== '' && $existingRow !== null) {
+                $item[$field] = $existingRow[$field];
+            }
+        }
+
+        if ($this->parseBiayaIsLunas($item['is_lunas'] ?? false)) {
+            if (empty($item['lunas_at']) && $existingRow !== null && ! empty($existingRow['lunas_at'])) {
+                $item['lunas_at'] = $existingRow['lunas_at'];
+            }
+            if (empty($item['lunas_group_id']) && $existingRow !== null && ! empty($existingRow['lunas_group_id'])) {
+                $item['lunas_group_id'] = $existingRow['lunas_group_id'];
+            }
+        } else {
+            unset($item['lunas_at'], $item['lunas_group_id']);
+        }
+
+        return $item;
+    }
+
+    /**
+     * Gabungkan dua baris duplikat (created_at sama); prioritaskan metadata pelunasan yang lengkap.
+     */
+    protected function mergeDuplicateBiayaRows(array $primary, array $duplicate): array
+    {
+        if ($this->parseBiayaIsLunas($duplicate['is_lunas'] ?? false)) {
+            $primary['is_lunas'] = true;
+        }
+
+        foreach (['lunas_at', 'lunas_group_id'] as $field) {
+            $primaryVal = trim((string) ($primary[$field] ?? ''));
+            $duplicateVal = trim((string) ($duplicate[$field] ?? ''));
+            if ($primaryVal === '' && $duplicateVal !== '') {
+                $primary[$field] = $duplicate[$field];
+            }
+        }
+
+        return $primary;
+    }
+
+    /**
+     * Isi created_at dari existing / cocokkan legacy row / buat baru agar validasi duplikat konsisten.
+     */
+    protected function resolveBiayaItemCreatedAt(array $item, array $existing, int $idx): array
+    {
+        $createdAt = trim((string) ($item['created_at'] ?? ''));
+        if ($createdAt !== '') {
+            return $item;
+        }
+
+        if (isset($existing[$idx]['created_at']) && trim((string) $existing[$idx]['created_at']) !== '') {
+            $item['created_at'] = trim((string) $existing[$idx]['created_at']);
+
+            return $item;
+        }
+
+        $key = BiayaDuplicateValidator::businessKeyForRow($item);
+        if ($key !== null) {
+            foreach ($existing as $existRow) {
+                if (! is_array($existRow)) {
+                    continue;
+                }
+                if (BiayaDuplicateValidator::businessKeyForRow($existRow) !== $key) {
+                    continue;
+                }
+                $existCa = trim((string) ($existRow['created_at'] ?? ''));
+                if ($existCa !== '') {
+                    $item['created_at'] = $existCa;
+
+                    return $item;
+                }
+            }
+        }
+
+        $item['created_at'] = now()->toIso8601String();
+
+        return $item;
+    }
+
+    /**
+     * Gabung baris duplikat (tanggal + nominal + keterangan sama) sebelum sync DB.
+     */
+    protected function deduplicateBiayaItemsByBusinessKey(array $items): array
+    {
+        $byKey = [];
+        $withoutKey = [];
+        $fallback = BiayaDuplicateValidator::nowInAppTimezone();
+
+        foreach ($items as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $key = BiayaDuplicateValidator::businessKeyForRow($row, $fallback);
+            if ($key === null) {
+                $withoutKey[] = $row;
+
+                continue;
+            }
+
+            if (! isset($byKey[$key])) {
+                $byKey[$key] = $row;
+
+                continue;
+            }
+
+            $byKey[$key] = $this->mergeDuplicateBiayaRows($byKey[$key], $row);
+        }
+
+        return array_merge(array_values($byKey), $withoutKey);
+    }
+
+    /**
+     * Buang baris dengan created_at duplikat sebelum disimpan ke DB.
+     */
+    protected function deduplicateBiayaItemsByCreatedAt(array $items): array
+    {
+        $byCreatedAt = [];
+        $withoutCreatedAt = [];
+
+        foreach ($items as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $createdAt = trim((string) ($row['created_at'] ?? ''));
+            if ($createdAt === '') {
+                $withoutCreatedAt[] = $row;
+
+                continue;
+            }
+
+            if (! isset($byCreatedAt[$createdAt])) {
+                $byCreatedAt[$createdAt] = $row;
+
+                continue;
+            }
+
+            $byCreatedAt[$createdAt] = $this->mergeDuplicateBiayaRows($byCreatedAt[$createdAt], $row);
+        }
+
+        return array_merge(array_values($byCreatedAt), $withoutCreatedAt);
+    }
+
+    /**
+     * Enrich metadata pelunasan + deduplikasi berdasarkan created_at (safety net sebelum sync DB).
+     */
+    protected function finalizeBiayaItemsForSave(array $items, array $existing): array
+    {
+        $enriched = [];
+        foreach ($items as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $enriched[] = $this->enrichBiayaItemWithLunasMeta($row, $row, $existing);
+        }
+
+        return $this->deduplicateBiayaItemsByBusinessKey(
+            $this->deduplicateBiayaItemsByCreatedAt($enriched)
+        );
     }
 
     /**
@@ -1268,12 +1517,16 @@ class ProjekKerjaController extends Controller
             'biaya_jalan_items.*.is_lunas' => 'nullable|boolean',
             'biaya_jalan_items.*.oleh' => 'nullable|string',
             'biaya_jalan_items.*.created_at' => 'nullable|string',
+            'biaya_jalan_items.*.lunas_at' => 'nullable|string',
+            'biaya_jalan_items.*.lunas_group_id' => 'nullable|string|max:64',
             'biaya_pengeluaran_items' => 'nullable|array',
             'biaya_pengeluaran_items.*.nominal' => 'nullable|numeric|min:0',
             'biaya_pengeluaran_items.*.keterangan' => 'nullable|string',
             'biaya_pengeluaran_items.*.is_lunas' => 'nullable|boolean',
             'biaya_pengeluaran_items.*.oleh' => 'nullable|string',
             'biaya_pengeluaran_items.*.created_at' => 'nullable|string',
+            'biaya_pengeluaran_items.*.lunas_at' => 'nullable|string',
+            'biaya_pengeluaran_items.*.lunas_group_id' => 'nullable|string|max:64',
             'biaya_pengeluaran_items.*.photo_paths' => 'nullable|array',
             'biaya_pengeluaran_items.*.photo_paths.*' => 'nullable|string',
             'biaya_reimbursment_items' => 'nullable|array',
@@ -1282,6 +1535,8 @@ class ProjekKerjaController extends Controller
             'biaya_reimbursment_items.*.is_lunas' => 'nullable|boolean',
             'biaya_reimbursment_items.*.oleh' => 'nullable|string',
             'biaya_reimbursment_items.*.created_at' => 'nullable|string',
+            'biaya_reimbursment_items.*.lunas_at' => 'nullable|string',
+            'biaya_reimbursment_items.*.lunas_group_id' => 'nullable|string|max:64',
             'biaya_reimbursment_items.*.photo_paths' => 'nullable|array',
             'biaya_reimbursment_items.*.photo_paths.*' => 'nullable|string',
             // Foto untuk pengeluaran dan reimbursment
@@ -1358,6 +1613,7 @@ class ProjekKerjaController extends Controller
 
                 if ($isSuperAdmin) {
                     $result = [];
+                    $seenIncomingCreatedAts = [];
                     foreach ($incoming as $idx => $row) {
                         if (! is_array($row)) {
                             continue;
@@ -1385,7 +1641,7 @@ class ProjekKerjaController extends Controller
                         // Get atau buat 'created_at' field
                         $createdAt = trim((string) ($row['created_at'] ?? ''));
                         if ($createdAt === '' && isset($existing[$idx]['created_at'])) {
-                            $createdAt = $existing[$idx]['created_at'];
+                            $createdAt = trim((string) $existing[$idx]['created_at']);
                         }
 
                         $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths'])
@@ -1412,11 +1668,22 @@ class ProjekKerjaController extends Controller
                             } elseif (! empty($existingPhotos)) {
                                 $item['photo_paths'] = $existingPhotos;
                             }
+                            $item = $this->resolveBiayaItemCreatedAt($item, $existing, $idx);
+                            $createdAt = trim((string) ($item['created_at'] ?? ''));
+                            if ($createdAt !== '' && isset($seenIncomingCreatedAts[$createdAt])) {
+                                continue;
+                            }
+                            if ($createdAt !== '') {
+                                $seenIncomingCreatedAts[$createdAt] = true;
+                            }
                             $result[] = $item;
                         }
                     }
 
-                    return $this->preserveMissingBiayaRowsByCreatedAt($result, $existing);
+                    return $this->finalizeBiayaItemsForSave(
+                        $this->preserveMissingBiayaRowsByCreatedAt($result, $existing),
+                        $existing
+                    );
                 }
 
                 // Non–super admin: baris is_lunas tidak boleh diubah nominal / dihapus; keterangan masih boleh diubah.
@@ -1485,6 +1752,12 @@ class ProjekKerjaController extends Controller
                     if (isset($lun['created_at'])) {
                         $item['created_at'] = $lun['created_at'];
                     }
+                    if (isset($lun['lunas_at']) && $lun['lunas_at'] !== '') {
+                        $item['lunas_at'] = $lun['lunas_at'];
+                    }
+                    if (isset($lun['lunas_group_id']) && $lun['lunas_group_id'] !== '') {
+                        $item['lunas_group_id'] = $lun['lunas_group_id'];
+                    }
                     if (isset($lun['photo_paths'])) {
                         $item['photo_paths'] = $lun['photo_paths'];
                     }
@@ -1492,8 +1765,14 @@ class ProjekKerjaController extends Controller
                     return $item;
                 };
 
+                $seenIncomingCreatedAts = [];
                 foreach ($incoming as $idx => $row) {
                     if (! is_array($row)) {
+                        continue;
+                    }
+
+                    $createdAtIncoming = trim((string) ($row['created_at'] ?? ''));
+                    if ($createdAtIncoming !== '' && isset($seenIncomingCreatedAts[$createdAtIncoming])) {
                         continue;
                     }
 
@@ -1519,11 +1798,20 @@ class ProjekKerjaController extends Controller
                         if (isset($lun['created_at'])) {
                             $item['created_at'] = $lun['created_at'];
                         }
+                        if (isset($lun['lunas_at']) && $lun['lunas_at'] !== '') {
+                            $item['lunas_at'] = $lun['lunas_at'];
+                        }
+                        if (isset($lun['lunas_group_id']) && $lun['lunas_group_id'] !== '') {
+                            $item['lunas_group_id'] = $lun['lunas_group_id'];
+                        }
                         // Pertahankan photo_paths untuk baris yang sudah lunas
                         if (isset($lun['photo_paths'])) {
                             $item['photo_paths'] = $lun['photo_paths'];
                         }
                         $result[] = $item;
+                        if ($createdAtIncoming !== '') {
+                            $seenIncomingCreatedAts[$createdAtIncoming] = true;
+                        }
 
                         continue;
                     }
@@ -1541,6 +1829,9 @@ class ProjekKerjaController extends Controller
                     }
 
                     $createdAt = trim((string) ($row['created_at'] ?? ''));
+                    if ($createdAt === '' && isset($existing[$idx]['created_at'])) {
+                        $createdAt = trim((string) $existing[$idx]['created_at']);
+                    }
 
                     $existingPhotos = isset($row['photo_paths']) && is_array($row['photo_paths'])
                         ? array_values(array_filter($row['photo_paths']))
@@ -1566,7 +1857,15 @@ class ProjekKerjaController extends Controller
                         } elseif (! empty($existingPhotos)) {
                             $item['photo_paths'] = $existingPhotos;
                         }
+                        $item = $this->resolveBiayaItemCreatedAt($item, $existing, $idx);
+                        $createdAt = trim((string) ($item['created_at'] ?? ''));
+                        if ($createdAt !== '' && isset($seenIncomingCreatedAts[$createdAt])) {
+                            continue;
+                        }
                         $result[] = $item;
+                        if ($createdAt !== '') {
+                            $seenIncomingCreatedAts[$createdAt] = true;
+                        }
                     }
                 }
 
@@ -1575,46 +1874,73 @@ class ProjekKerjaController extends Controller
                     if (! is_array($remainingLunas)) {
                         continue;
                     }
+                    $remainingCreatedAt = trim((string) ($remainingLunas['created_at'] ?? ''));
+                    if ($remainingCreatedAt !== '' && isset($seenIncomingCreatedAts[$remainingCreatedAt])) {
+                        continue;
+                    }
                     $result[] = $buildPreservedLunasItem($remainingLunas, $remainingLunas);
+                    if ($remainingCreatedAt !== '') {
+                        $seenIncomingCreatedAts[$remainingCreatedAt] = true;
+                    }
                 }
 
-                return $this->preserveOtherUsersBiayaRows($result, $existing, $userName);
+                return $this->finalizeBiayaItemsForSave(
+                    $this->preserveOtherUsersBiayaRows($result, $existing, $userName),
+                    $existing
+                );
             };
 
             if (isset($validated['biaya_jalan_items'])) {
-                $updateData['biaya_jalan_items'] = $normalizeItems(
+                $newJalan = $normalizeItems(
                     $validated['biaya_jalan_items'],
                     $projek->biaya_jalan_items ?? [],
                     [] // tidak ada foto
                 );
-                $meta['jalan'] = [
-                    'by' => $userName,
-                    'at' => now()->toDateTimeString(),
-                ];
+                $updateData['biaya_jalan_items'] = $newJalan;
+                if ($this->biayaCategoryItemsChanged($projek->biaya_jalan_items ?? [], $newJalan)) {
+                    $meta['jalan'] = [
+                        'by' => $userName,
+                        'at' => now()->toIso8601String(),
+                    ];
+                }
             }
 
             if (isset($validated['biaya_pengeluaran_items'])) {
-                $updateData['biaya_pengeluaran_items'] = $normalizeItems(
+                $newPengeluaran = $normalizeItems(
                     $validated['biaya_pengeluaran_items'],
                     $projek->biaya_pengeluaran_items ?? [],
                     $storedPhotos['pengeluaran'] ?? []
                 );
-                $meta['pengeluaran'] = [
-                    'by' => $userName,
-                    'at' => now()->toDateTimeString(),
-                ];
+                $updateData['biaya_pengeluaran_items'] = $newPengeluaran;
+                $pengeluaranPhotosAdded = ! empty(array_filter($storedPhotos['pengeluaran'] ?? []));
+                if (
+                    $pengeluaranPhotosAdded
+                    || $this->biayaCategoryItemsChanged($projek->biaya_pengeluaran_items ?? [], $newPengeluaran)
+                ) {
+                    $meta['pengeluaran'] = [
+                        'by' => $userName,
+                        'at' => now()->toIso8601String(),
+                    ];
+                }
             }
 
             if (isset($validated['biaya_reimbursment_items'])) {
-                $updateData['biaya_reimbursment_items'] = $normalizeItems(
+                $newReimbursment = $normalizeItems(
                     $validated['biaya_reimbursment_items'],
                     $projek->biaya_reimbursment_items ?? [],
                     $storedPhotos['reimbursment'] ?? []
                 );
-                $meta['reimbursment'] = [
-                    'by' => $userName,
-                    'at' => now()->toDateTimeString(),
-                ];
+                $updateData['biaya_reimbursment_items'] = $newReimbursment;
+                $reimbursmentPhotosAdded = ! empty(array_filter($storedPhotos['reimbursment'] ?? []));
+                if (
+                    $reimbursmentPhotosAdded
+                    || $this->biayaCategoryItemsChanged($projek->biaya_reimbursment_items ?? [], $newReimbursment)
+                ) {
+                    $meta['reimbursment'] = [
+                        'by' => $userName,
+                        'at' => now()->toIso8601String(),
+                    ];
+                }
             }
 
             if (!empty($meta)) {
@@ -1622,12 +1948,11 @@ class ProjekKerjaController extends Controller
                 $updateData['biaya_edit_meta'] = array_merge($existingMeta, $meta);
             }
 
-            // Log data yang akan disimpan
-            \Log::info('Data yang akan disimpan:', [
-                'pengeluaran_items' => $updateData['biaya_pengeluaran_items'] ?? null,
-                'reimbursment_items' => $updateData['biaya_reimbursment_items'] ?? null,
-            ]);
-
+            $duplicateCategoryLabels = [
+                'biaya_jalan_items' => 'Biaya Jalan',
+                'biaya_pengeluaran_items' => 'Biaya Pengeluaran',
+                'biaya_reimbursment_items' => 'Biaya Reimbursment',
+            ];
             $biayaSummary = app(ActivityLogService::class)->buildBiayaChangeSummary(
                 $validated,
                 $projek,
@@ -1636,7 +1961,17 @@ class ProjekKerjaController extends Controller
             );
             $request->attributes->set('activity_log_biaya_summary', $biayaSummary);
 
-            $projek->update($updateData);
+            DB::transaction(function () use ($projek, $updateData, $duplicateCategoryLabels) {
+                ProjekKerja::where('id', $projek->id)->lockForUpdate()->first();
+
+                foreach ($duplicateCategoryLabels as $field => $label) {
+                    if (isset($updateData[$field]) && is_array($updateData[$field])) {
+                        BiayaDuplicateValidator::assertNoDuplicatesInItemArray($updateData[$field], $label);
+                    }
+                }
+
+                $projek->update($updateData);
+            });
 
             app(BiayaNotificationService::class)->notifyProjectBiayaCreates(
                 $projek->fresh(),
