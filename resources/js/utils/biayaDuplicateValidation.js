@@ -1,4 +1,12 @@
 const APP_TIMEZONE = "Asia/Jakarta";
+/** Validasi duplikat hanya berlaku mulai tanggal ini (Asia/Jakarta). Data sebelumnya tetap boleh sama. */
+const ENFORCE_FROM_DATE = "2026-08-24";
+
+const isOnOrAfterEnforceDate = (value, fallbackDate = null) => {
+  const dateKey = normalizeBiayaDateKey(value, fallbackDate);
+  if (!dateKey || !/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return true;
+  return dateKey >= ENFORCE_FROM_DATE;
+};
 
 const normalizeBiayaDateKey = (value, fallbackDate = null) => {
   const raw = String(value || "").trim();
@@ -34,8 +42,9 @@ const kategoriLabelMap = {
 };
 
 const buildDuplicateMessage = (categoryLabel, tanggalDisplay, nominal, keterangan, formatRupiah) => {
-  const nominalText =
+  let nominalText =
     typeof formatRupiah === "function" ? formatRupiah(nominal) : String(nominal);
+  nominalText = String(nominalText).replace(/^\s*Rp\s*/i, "").trim();
   return `Duplikat ${categoryLabel}: tanggal ${tanggalDisplay}, nominal Rp ${nominalText}, keterangan "${keterangan}" sudah ada. Ubah tanggal, nominal, atau keterangan.`;
 };
 
@@ -63,11 +72,13 @@ export const assertNoDuplicateBiayaItems = (rows, categoryLabel, { parseNominal,
   const fallbackDate = new Date();
 
   for (const row of rows || []) {
+    const createdAtRaw = String(row?.created_at || "").trim();
+    if (!isOnOrAfterEnforceDate(createdAtRaw, createdAtRaw ? null : fallbackDate)) continue;
+
     const key = businessKeyForRow(row, toNominal, fallbackDate);
     if (!key) continue;
 
     if (seen.has(key)) {
-      const createdAtRaw = String(row?.created_at || "").trim();
       throw new Error(
         buildDuplicateMessage(
           categoryLabel,
@@ -94,6 +105,9 @@ export const assertNoDuplicateDashboardBiaya = (
   const ket = String(keterangan || "").trim().toLowerCase();
   const refDate = createdAt ? new Date(createdAt) : new Date();
   const dateKey = normalizeBiayaDateKey(createdAt, createdAt ? null : refDate);
+  if (!isOnOrAfterEnforceDate(createdAt, createdAt ? null : refDate)) {
+    return;
+  }
 
   const duplicate = (items || []).find((row) => {
     if (excludeId != null && String(row.id) === String(excludeId)) return false;

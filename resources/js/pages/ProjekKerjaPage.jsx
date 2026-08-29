@@ -410,12 +410,22 @@ export default function ProjekKerjaPage() {
     oleh: user?.name || "",
     created_at: new Date().toISOString(),
     photoFiles: [],
+    _isNew: true,
   });
-  const [biayaEdit, setBiayaEdit] = useState({
-    jalan: [emptyBiayaRow()],
-    pengeluaran: [emptyBiayaRow()],
-    reimbursment: [emptyBiayaRow()],
+
+  const emptyBiayaCategoryBucket = () => ({ existing: [], new: [] });
+  const emptyBiayaBuckets = () => ({
+    jalan: emptyBiayaCategoryBucket(),
+    pengeluaran: emptyBiayaCategoryBucket(),
+    reimbursment: emptyBiayaCategoryBucket(),
   });
+
+  const flattenBiayaCategory = (bucket) => [
+    ...(bucket?.existing || []),
+    ...(bucket?.new || []),
+  ];
+
+  const [biayaBuckets, setBiayaBuckets] = useState(emptyBiayaBuckets());
   const hasHandledOpenBiayaFromQueryRef = useRef(false);
   const hasHandledProjekIdFromQueryRef = useRef(false);
   const pendingProjekIdFromQueryRef = useRef(null);
@@ -864,8 +874,10 @@ export default function ProjekKerjaPage() {
     }).format(value);
   };
 
-  const normalizeBiayaRows = (arr) => {
-    if (!Array.isArray(arr) || arr.length === 0) return [emptyBiayaRow()];
+  const normalizeBiayaRows = (arr, { placeholderIfEmpty = true } = {}) => {
+    if (!Array.isArray(arr) || arr.length === 0) {
+      return placeholderIfEmpty ? [emptyBiayaRow()] : [];
+    }
     const result = arr.map((r) => ({
       nominal: nominalApiToInput(r.nominal),
       keterangan: r.keterangan ?? "",
@@ -877,6 +889,7 @@ export default function ProjekKerjaPage() {
       photoFiles: [],
       photoPaths: r.photo_paths ?? [],
       photoItems: buildPhotoItemsFromApi(r),
+      _isNew: false,
     }));
     return result;
   };
@@ -899,30 +912,38 @@ export default function ProjekKerjaPage() {
 
   /** State modal: super admin = semua baris; lainnya = hanya baris atas nama user. */
   const normalizeBiayaRowsForModalOpen = (arr) => {
-    if (role === "super_admin") return normalizeBiayaRows(arr);
+    if (role === "super_admin") return normalizeBiayaRows(arr, { placeholderIfEmpty: false });
     const mine = filterBiayaRowsForCurrentUserOnly(Array.isArray(arr) ? arr : []);
-    return mine.length ? normalizeBiayaRows(mine) : normalizeBiayaRows([]);
+    return mine.length ? normalizeBiayaRows(mine, { placeholderIfEmpty: false }) : [];
   };
 
+  const loadBiayaBucketsFromProjek = (projek) => ({
+    jalan: { existing: normalizeBiayaRowsForModalOpen(projek?.biaya_jalan_items), new: [] },
+    pengeluaran: { existing: normalizeBiayaRowsForModalOpen(projek?.biaya_pengeluaran_items), new: [] },
+    reimbursment: { existing: normalizeBiayaRowsForModalOpen(projek?.biaya_reimbursment_items), new: [] },
+  });
+
   /**
-   * Gabungkan edit (hanya baris milik user di UI) dengan baris karyawan lain dari server.
-   * Cocokkan baris form ↔ server lewat `created_at` (bukan urutan array) agar tidak hilang saat simpan.
+   * Gabungkan baris existing (edit) + baris baru (+) dengan data server.
+   * Baris di bucket `new` selalu dianggap entri baru; bucket `existing` dicocokkan lewat created_at.
    */
-  const mergeBiayaCategoryForSave = (baseItem, edit, key, fieldName) => {
+  const mergeBiayaCategoryForSave = (baseItem, buckets, key, fieldName) => {
     const raw = baseItem?.[fieldName];
     const serverRows =
-      Array.isArray(raw) && raw.length > 0 ? normalizeBiayaRows(raw) : [];
-    const editRows = (edit[key] || []).filter(isMeaningfulBiayaRow);
+      Array.isArray(raw) && raw.length > 0 ? normalizeBiayaRows(raw, { placeholderIfEmpty: false }) : [];
+    const bucket = buckets[key] || emptyBiayaCategoryBucket();
+    const existingEditRows = (bucket.existing || []).filter(isMeaningfulBiayaRow);
+    const newEditRows = (bucket.new || []).filter(isMeaningfulBiayaRow);
     const isSuperAdmin = role === "super_admin";
     const me = currentUserOlehLower();
     const usedCreatedAt = new Set();
     const out = [];
 
-    const findEditMatch = (serverRow) => {
+    const findExistingEditMatch = (serverRow) => {
       const serverCa = String(serverRow.created_at || "").trim();
       if (!serverCa) return null;
       return (
-        editRows.find(
+        existingEditRows.find(
           (e) => String(e.created_at || "").trim() === serverCa && !usedCreatedAt.has(serverCa),
         ) || null
       );
@@ -979,7 +1000,7 @@ export default function ProjekKerjaPage() {
       const serverCa = String(row.created_at || "").trim();
       if (serverCa && usedCreatedAt.has(serverCa)) continue;
 
-      const rep = findEditMatch(row);
+      const rep = findExistingEditMatch(row);
       if (rep) {
         pushMergedRow(row, rep);
         continue;
@@ -992,24 +1013,16 @@ export default function ProjekKerjaPage() {
       }
     }
 
-    for (const rep of editRows) {
+    for (const rep of newEditRows) {
       const ca = String(rep.created_at || "").trim();
       if (ca && usedCreatedAt.has(ca)) continue;
-
-      const existsOnServer = serverRows.some((r) => {
-        const serverCa = String(r.created_at || "").trim();
-        if (!serverCa || serverCa !== ca) return false;
-        if (isSuperAdmin) return true;
-        return biayaOlehLower(r) === me;
+      if (ca) usedCreatedAt.add(ca);
+      out.push({
+        ...rep,
+        oleh: rep.oleh || user?.name || "",
+        photoFiles: rep.photoFiles || [],
+        _isNew: true,
       });
-
-      if (!existsOnServer) {
-        out.push({
-          ...rep,
-          oleh: rep.oleh || user?.name || "",
-          photoFiles: rep.photoFiles || [],
-        });
-      }
     }
 
     return out;
@@ -1022,17 +1035,13 @@ export default function ProjekKerjaPage() {
         p.id === projek.id ? { ...p, ...projek } : p,
       ),
     );
-    setBiayaEdit({
-      jalan: normalizeBiayaRowsForModalOpen(projek.biaya_jalan_items),
-      pengeluaran: normalizeBiayaRowsForModalOpen(projek.biaya_pengeluaran_items),
-      reimbursment: normalizeBiayaRowsForModalOpen(projek.biaya_reimbursment_items),
-    });
+    setBiayaBuckets(loadBiayaBucketsFromProjek(projek));
   };
 
   const buildBiayaPayloadForSave = (baseItem) => ({
-    jalan: mergeBiayaCategoryForSave(baseItem, biayaEdit, "jalan", "biaya_jalan_items"),
-    pengeluaran: mergeBiayaCategoryForSave(baseItem, biayaEdit, "pengeluaran", "biaya_pengeluaran_items"),
-    reimbursment: mergeBiayaCategoryForSave(baseItem, biayaEdit, "reimbursment", "biaya_reimbursment_items"),
+    jalan: mergeBiayaCategoryForSave(baseItem, biayaBuckets, "jalan", "biaya_jalan_items"),
+    pengeluaran: mergeBiayaCategoryForSave(baseItem, biayaBuckets, "pengeluaran", "biaya_pengeluaran_items"),
+    reimbursment: mergeBiayaCategoryForSave(baseItem, biayaBuckets, "reimbursment", "biaya_reimbursment_items"),
   });
 
   const biayaDuplicateOpts = {
@@ -1042,6 +1051,8 @@ export default function ProjekKerjaPage() {
 
   const sumBiayaRows = (rows) =>
     rows.reduce((acc, r) => acc + parseRibuanId(r.nominal), 0);
+
+  const sumBiayaBucket = (bucket) => sumBiayaRows(flattenBiayaCategory(bucket));
 
   /** Baris biaya yang tampil di modal, dengan index asli & filter lunas (untuk layout dashboard) */
   const filterDisplayedBiayaByLunas = (rows, wantLunas, projectMarkedLunas = false) =>
@@ -1083,11 +1094,7 @@ export default function ProjekKerjaPage() {
 
   const openUangModal = (item) => {
     setCurrentId(item.id);
-    setBiayaEdit({
-      jalan: normalizeBiayaRowsForModalOpen(item.biaya_jalan_items),
-      pengeluaran: normalizeBiayaRowsForModalOpen(item.biaya_pengeluaran_items),
-      reimbursment: normalizeBiayaRowsForModalOpen(item.biaya_reimbursment_items),
-    });
+    setBiayaBuckets(loadBiayaBucketsFromProjek(item));
     setEditUang(false);
     setShowUangModal(true);
   };
@@ -1210,51 +1217,54 @@ export default function ProjekKerjaPage() {
   }, [highlightProjekId, filteredData, searchTerm, dataList, itemsPerPage]);
 
   const addBiayaRow = (key) => {
-    setBiayaEdit((prev) => ({
+    setBiayaBuckets((prev) => ({
       ...prev,
-      [key]: [emptyBiayaRow(), ...prev[key]],
+      [key]: {
+        ...prev[key],
+        new: [emptyBiayaRow(), ...(prev[key]?.new || [])],
+      },
     }));
   };
 
-  const removeBiayaRow = (key, index) => {
-    setDeleteBiayaRowAction({ key, index });
+  const removeBiayaRow = (key, section, index) => {
+    setDeleteBiayaRowAction({ key, section, index });
     setShowDeleteBiayaRowModal(true);
   };
 
   const executeDeleteBiayaRow = () => {
     if (!deleteBiayaRowAction) return;
-    const { key, index } = deleteBiayaRowAction;
+    const { key, section, index } = deleteBiayaRowAction;
 
-    setBiayaEdit((prev) => {
-      const next = [...prev[key]];
-      if (next.length <= 1) {
-        // Jika hanya ada 1 baris, ganti dengan baris kosong
-        next[0] = emptyBiayaRow();
-      } else {
-        next.splice(index, 1);
-      }
-      return { ...prev, [key]: next };
+    setBiayaBuckets((prev) => {
+      const nextSection = [...(prev[key]?.[section] || [])];
+      nextSection.splice(index, 1);
+      return {
+        ...prev,
+        [key]: { ...prev[key], [section]: nextSection },
+      };
     });
 
     setShowDeleteBiayaRowModal(false);
     setDeleteBiayaRowAction(null);
   };
 
-  const handlePhotoSelection = async (kategori, rowIndex, fileList) => {
+  const handlePhotoSelection = async (kategori, section, rowIndex, fileList) => {
     const files = fileList ? Array.from(fileList) : [];
     if (files.length === 0) return;
 
-    const key = `${kategori}_${rowIndex}`;
+    const key = `${kategori}_${section}_${rowIndex}`;
     setCompressingPhotoKey(key);
     try {
-      // Auto-compress uploads to reduce storage usage.
       const compressed = await Promise.all(
         files.map((file) => compressImage(file, 1280, 1280, 0.6))
       );
-      setBiayaEdit((prev) => {
-        const next = [...prev[kategori]];
-        next[rowIndex] = { ...next[rowIndex], photoFiles: compressed };
-        return { ...prev, [kategori]: next };
+      setBiayaBuckets((prev) => {
+        const nextSection = [...(prev[kategori]?.[section] || [])];
+        nextSection[rowIndex] = { ...nextSection[rowIndex], photoFiles: compressed };
+        return {
+          ...prev,
+          [kategori]: { ...prev[kategori], [section]: nextSection },
+        };
       });
     } catch (err) {
       console.error("Gagal kompres foto:", err);
@@ -1264,23 +1274,29 @@ export default function ProjekKerjaPage() {
     }
   };
 
-  const handleRemovePhoto = (kategori, rowIndex, fileIndex) => {
-    setBiayaEdit((prev) => {
-      const next = [...prev[kategori]];
-      const row = { ...next[rowIndex] };
+  const handleRemovePhoto = (kategori, section, rowIndex, fileIndex) => {
+    setBiayaBuckets((prev) => {
+      const nextSection = [...(prev[kategori]?.[section] || [])];
+      const row = { ...nextSection[rowIndex] };
       const newPhotoFiles = [...(row.photoFiles || [])];
       newPhotoFiles.splice(fileIndex, 1);
       row.photoFiles = newPhotoFiles;
-      next[rowIndex] = row;
-      return { ...prev, [kategori]: next };
+      nextSection[rowIndex] = row;
+      return {
+        ...prev,
+        [kategori]: { ...prev[kategori], [section]: nextSection },
+      };
     });
   };
 
-  const updateBiayaCell = (key, index, field, value) => {
-    setBiayaEdit((prev) => {
-      const next = [...prev[key]];
-      next[index] = { ...next[index], [field]: value };
-      return { ...prev, [key]: next };
+  const updateBiayaCell = (key, section, index, field, value) => {
+    setBiayaBuckets((prev) => {
+      const nextSection = [...(prev[key]?.[section] || [])];
+      nextSection[index] = { ...nextSection[index], [field]: value };
+      return {
+        ...prev,
+        [key]: { ...prev[key], [section]: nextSection },
+      };
     });
   };
 
@@ -1512,19 +1528,22 @@ export default function ProjekKerjaPage() {
 
     setLunasConfirmProcessing(true);
     const lunasGroupId = newStatus ? createLunasGroupId() : null;
-    setBiayaEdit((prev) => ({
+    setBiayaBuckets((prev) => ({
       ...prev,
-      [kategoriKey]: (prev[kategoriKey] || []).map((r, i) =>
-        i === index
-          ? {
-              ...r,
-              is_lunas: newStatus,
-              ...(newStatus
-                ? { lunas_at: new Date().toISOString(), lunas_group_id: lunasGroupId }
-                : { lunas_at: null, lunas_group_id: null }),
-            }
-          : r
-      ),
+      [kategoriKey]: {
+        ...prev[kategoriKey],
+        existing: (prev[kategoriKey]?.existing || []).map((r, i) =>
+          i === index
+            ? {
+                ...r,
+                is_lunas: newStatus,
+                ...(newStatus
+                  ? { lunas_at: new Date().toISOString(), lunas_group_id: lunasGroupId }
+                  : { lunas_at: null, lunas_group_id: null }),
+              }
+            : r
+        ),
+      },
     }));
 
     try {
@@ -1660,6 +1679,152 @@ export default function ProjekKerjaPage() {
     );
 
   const rowsForProjekBiayaModal = (rows) => filterBiayaRowsForCurrentUserOnly(rows);
+
+  const renderBiayaEditRow = (colKey, section, idx, row) => {
+    const isNewRow = section === "new";
+    const barisLunas = Boolean(row.is_lunas);
+    const bolehEditNominal = !barisLunas;
+    const bolehEditKeterangan = true;
+    const bolehHapus = isNewRow || !barisLunas || role === "super_admin";
+    const compressKey = `${colKey}_${section}_${idx}`;
+
+    return (
+      <div
+        key={`${colKey}-${section}-${idx}-${row.created_at || "row"}`}
+        className={`rounded-lg border p-2 space-y-2 ${
+          isNewRow
+            ? "border-dashed border-emerald-400/80 bg-emerald-50/40"
+            : barisLunas
+              ? "border-amber-200/80 bg-amber-50/30"
+              : "border-gray-200 bg-white"
+        }`}
+      >
+        {isNewRow ? (
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+            {tr("Baris baru", "New row")}
+          </p>
+        ) : null}
+        {!isNewRow && row.oleh ? (
+          <p className="text-[10px] text-gray-500">
+            {tr("Oleh", "By")}: <span className="font-medium">{row.oleh}</span>
+            {row.created_at &&
+              (() => {
+                const d = new Date(row.created_at);
+                if (!Number.isNaN(d.getTime())) {
+                  const dateStr = d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
+                  return `, ${dateStr}`;
+                }
+                return "";
+              })()}
+          </p>
+        ) : null}
+        {!isNewRow && barisLunas ? (
+          <p className="text-[10px] text-amber-800 font-medium">
+            {tr("Sudah lunas", "Already paid")}
+            {tr(" — nominal dikunci, keterangan masih bisa diubah", " — amount is locked, description can still be edited")}
+            {role === "super_admin" ? tr("; hanya super admin bisa hapus baris ini", "; only super admin can delete this row") : ""}
+          </p>
+        ) : null}
+        <div className="flex gap-2">
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            value={row.nominal}
+            onChange={(e) =>
+              updateBiayaCell(colKey, section, idx, "nominal", formatRibuanId(digitsOnly(e.target.value)))
+            }
+            readOnly={!bolehEditNominal}
+            disabled={!bolehEditNominal}
+            className={`border w-full p-2 rounded-lg text-sm ${!bolehEditNominal ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
+            placeholder={tr("Biaya", "Amount")}
+          />
+          {bolehHapus ? (
+            <button
+              type="button"
+              onClick={() => removeBiayaRow(colKey, section, idx)}
+              className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 shrink-0"
+              title={tr("Hapus baris", "Delete row")}
+            >
+              <Trash2 size={16} />
+            </button>
+          ) : (
+            <span className="p-2 shrink-0 text-[10px] text-gray-400 w-10 text-center" title={tr("Tidak bisa dihapus", "Cannot be deleted")}>
+              —
+            </span>
+          )}
+        </div>
+        <input
+          type="text"
+          value={row.keterangan}
+          onChange={(e) => updateBiayaCell(colKey, section, idx, "keterangan", e.target.value)}
+          readOnly={!bolehEditKeterangan}
+          disabled={!bolehEditKeterangan}
+          className={`border w-full p-2 rounded-lg text-sm ${!bolehEditKeterangan ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
+          placeholder={tr("Keterangan", "Description")}
+        />
+        {(colKey === "pengeluaran" || colKey === "reimbursment") && (
+          <div className="mt-2">
+            <label className="block text-xs text-gray-600 mb-1">{tr("Upload Foto", "Upload Photo")}</label>
+            <input
+              type="file"
+              multiple
+              accept="image/jpeg,image/jpg,image/png,image/webp"
+              onChange={(e) => handlePhotoSelection(colKey, section, idx, e.target.files)}
+              disabled={!bolehEditKeterangan}
+              className="w-full text-xs border rounded-lg p-1.5 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+            <p className="text-[10px] text-gray-500 mt-1">
+              {tr("Foto akan otomatis dikompres sebelum disimpan.", "Photos will be automatically compressed before saving.")}
+            </p>
+            {compressingPhotoKey === compressKey ? (
+              <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
+            ) : null}
+            {row.photoFiles?.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {row.photoFiles.map((file, fileIdx) => (
+                  <div key={fileIdx} className="relative inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200">
+                    <span className="text-[10px] text-blue-700 truncate max-w-[100px]">{file.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePhoto(colKey, section, idx, fileIdx)}
+                      className="text-red-500 hover:text-red-700"
+                      disabled={!bolehEditKeterangan}
+                      title={tr("Hapus foto", "Delete photo")}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {!isNewRow && row.photoPaths && row.photoPaths.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                <span className="text-[11px] text-gray-500 w-full">{tr("Foto tersimpan:", "Saved photos:")}</span>
+                {(row.photoItems?.length ? row.photoItems : row.photoPaths.map((path) => ({ path, uploadedAt: row.created_at }))).map((photo, photoIdx) => (
+                  <button
+                    key={photoIdx}
+                    type="button"
+                    onClick={() =>
+                      setBiayaPhotoPreview({
+                        url: storagePhotoUrl(photo.path),
+                        uploadedAt: photo.uploadedAt || row.created_at,
+                      })
+                    }
+                    className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-[10px] border border-green-200 hover:bg-green-100"
+                    title={tr("Klik untuk lihat foto", "Click to view photo")}
+                  >
+                    {tr("Foto", "Photo")} {photoIdx + 1}
+                    <Eye size={10} />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   const handlePrevPage = () => {
     if (currentPage > 1) setCurrentPage(currentPage - 1);
@@ -2440,9 +2605,9 @@ export default function ProjekKerjaPage() {
                 {(() => {
                   const rowItem = dataList.find((i) => i.id === currentId);
                   const projectMarkedLunas = Boolean(rowItem?.is_lunas);
-                  const jalanRows = rowsForProjekBiayaModal(biayaEdit.jalan);
-                  const pengeluaranRows = rowsForProjekBiayaModal(biayaEdit.pengeluaran);
-                  const reimbRows = rowsForProjekBiayaModal(biayaEdit.reimbursment);
+                  const jalanRows = rowsForProjekBiayaModal(flattenBiayaCategory(biayaBuckets.jalan));
+                  const pengeluaranRows = rowsForProjekBiayaModal(flattenBiayaCategory(biayaBuckets.pengeluaran));
+                  const reimbRows = rowsForProjekBiayaModal(flattenBiayaCategory(biayaBuckets.reimbursment));
                   const kategoriCols = [
                     { key: "jalan", label: tr("Biaya Jalan", "Travel Cost"), rows: jalanRows },
                     {
@@ -2625,7 +2790,14 @@ export default function ProjekKerjaPage() {
                   {canEditCurrentBiayaProject && !Boolean(currentProject?.is_lunas) ? (
                     <button
                       type="button"
-                      onClick={() => setEditUang(true)}
+                      onClick={() => {
+                        setBiayaBuckets((prev) => ({
+                          jalan: { existing: prev.jalan.existing, new: [] },
+                          pengeluaran: { existing: prev.pengeluaran.existing, new: [] },
+                          reimbursment: { existing: prev.reimbursment.existing, new: [] },
+                        }));
+                        setEditUang(true);
+                      }}
                       className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
                     >
                       {tr("Edit", "Edit")}
@@ -2642,186 +2814,123 @@ export default function ProjekKerjaPage() {
               </>
             ) : (
               <>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  {[
-                    { key: "jalan", label: tr("Biaya Jalan & Keterangan", "Travel Cost & Description"), color: "border-emerald-200 bg-emerald-50/50" },
-                    { key: "pengeluaran", label: tr("Biaya Pengeluaran & Keterangan", "Expense Cost & Description"), color: "border-blue-200 bg-blue-50/50" },
-                    { key: "reimbursment", label: tr("Biaya Reimbursment & Keterangan", "Reimbursement Cost & Description"), color: "border-violet-200 bg-violet-50/50" },
-                  ].map((col) => {
-                    const editItem = dataList.find((i) => i.id === currentId);
-                    const meta = editItem?.biaya_edit_meta?.[col.key];
-                    return (
-                      <div key={col.key} className={`rounded-xl border p-3 ${col.color}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="font-semibold text-sm text-gray-800">{col.label}</span>
-                          <button
-                            type="button"
-                            onClick={() => addBiayaRow(col.key)}
-                            className="p-1.5 rounded-lg bg-white border border-gray-200 hover:bg-gray-100 text-emerald-700"
-                            title={tr("Tambah baris", "Add row")}
-                          >
-                            <Plus size={18} />
-                          </button>
+                {(() => {
+                  const kategoriCols = [
+                    { key: "jalan", label: tr("Biaya Jalan", "Travel Cost"), shortLabel: tr("Biaya Jalan & Keterangan", "Travel Cost & Description"), color: "border-emerald-200 bg-emerald-50/40" },
+                    { key: "pengeluaran", label: tr("Biaya Pengeluaran", "Expense Cost"), shortLabel: tr("Biaya Pengeluaran & Keterangan", "Expense Cost & Description"), color: "border-blue-200 bg-blue-50/40" },
+                    { key: "reimbursment", label: tr("Biaya Reimbursment", "Reimbursement Cost"), shortLabel: tr("Biaya Reimbursment & Keterangan", "Reimbursement Cost & Description"), color: "border-violet-200 bg-violet-50/40" },
+                  ];
+                  const editItem = dataList.find((i) => i.id === currentId);
+
+                  return (
+                    <>
+                      {/* Panel atas: hanya data yang sudah ada di database */}
+                      <section className="mb-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 shadow-sm">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-800">
+                              {tr("Data tersimpan", "Saved data")}
+                            </h4>
+                            <p className="text-xs text-slate-500">
+                              {tr(
+                                "Edit baris yang sudah tersimpan. Baris lunas: nominal dikunci.",
+                                "Edit saved rows. Paid rows: amount is locked.",
+                              )}
+                            </p>
+                          </div>
                         </div>
-                        <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                          {biayaEdit[col.key].map((row, idx) => {
-                            const barisLunas = Boolean(row.is_lunas);
-                            const bolehEditNominal = !barisLunas;
-                            const bolehEditKeterangan = true;
-                            const bolehHapus = !barisLunas || role === "super_admin";
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                          {kategoriCols.map((col) => {
+                            const meta = editItem?.biaya_edit_meta?.[col.key];
+                            const existingRows = biayaBuckets[col.key]?.existing || [];
                             return (
-                              <div
-                                key={idx}
-                                className={`bg-white rounded-lg border p-2 space-y-2 ${barisLunas ? "border-amber-200/80 bg-amber-50/30" : ""}`}
-                              >
-                                {row.oleh && (
-                                  <p className="text-[10px] text-gray-500">
-                                    {tr("Oleh", "By")}: <span className="font-medium">{row.oleh}</span>
-                                    {row.created_at && (
-                                      (() => {
-                                        const d = new Date(row.created_at);
-                                        if (!Number.isNaN(d.getTime())) {
-                                          const dateStr = d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" });
-                                          return `, ${dateStr}`;
-                                        }
-                                        return "";
-                                      })()
-                                    )}
-                                  </p>
-                                )}
-                                {barisLunas ? (
-                                  <p className="text-[10px] text-amber-800 font-medium">
-                                    {tr("Sudah lunas", "Already paid")}
-                                    {role === "super_admin"
-                                      ? tr(" — nominal dikunci, keterangan masih bisa diubah", " - amount is locked, description can still be edited")
-                                      : tr(" — nominal dikunci, keterangan masih bisa diubah", " - amount is locked, description can still be edited")}
-                                    {role === "super_admin" ? tr("; hanya super admin bisa hapus baris ini", "; only super admin can delete this row") : ""}
-                                  </p>
-                                ) : null}
-                                <div className="flex gap-2">
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoComplete="off"
-                                    value={row.nominal}
-                                    onChange={(e) =>
-                                      updateBiayaCell(
-                                        col.key,
-                                        idx,
-                                        "nominal",
-                                        formatRibuanId(digitsOnly(e.target.value))
-                                      )
-                                    }
-                                    readOnly={!bolehEditNominal}
-                                    disabled={!bolehEditNominal}
-                                    className={`border w-full p-2 rounded-lg text-sm ${!bolehEditNominal ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
-                                    placeholder={tr("Biaya", "Amount")}
-                                  />
-                                  {bolehHapus ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeBiayaRow(col.key, idx)}
-                                      className="p-2 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 shrink-0"
-                                      title={tr("Hapus baris", "Delete row")}
-                                    >
-                                      <Trash2 size={16} />
-                                    </button>
+                              <div key={`saved-${col.key}`} className={`rounded-xl border p-3 ${col.color}`}>
+                                <p className="mb-2 text-sm font-semibold text-gray-800">{col.shortLabel}</p>
+                                <div className="max-h-56 space-y-2 overflow-y-auto pr-1">
+                                  {existingRows.length === 0 ? (
+                                    <p className="rounded-lg border border-dashed border-slate-200 bg-white/80 px-2 py-4 text-center text-xs text-slate-400">
+                                      {tr("Belum ada data", "No saved entries")}
+                                    </p>
                                   ) : (
-                                    <span className="p-2 shrink-0 text-[10px] text-gray-400 w-10 text-center" title={tr("Tidak bisa dihapus", "Cannot be deleted")}>
-                                      —
-                                    </span>
+                                    existingRows.map((row, idx) =>
+                                      renderBiayaEditRow(col.key, "existing", idx, row)
+                                    )
                                   )}
                                 </div>
-                                <input
-                                  type="text"
-                                  value={row.keterangan}
-                                  onChange={(e) => updateBiayaCell(col.key, idx, "keterangan", e.target.value)}
-                                  readOnly={!bolehEditKeterangan}
-                                  disabled={!bolehEditKeterangan}
-                                  className={`border w-full p-2 rounded-lg text-sm ${!bolehEditKeterangan ? "bg-gray-100 text-gray-600 cursor-not-allowed" : ""}`}
-                                  placeholder={tr("Keterangan", "Description")}
-                                />
-                                {/* Upload Foto - Hanya untuk Pengeluaran & Reimbursment */}
-                                {(col.key === "pengeluaran" || col.key === "reimbursment") && (
-                                  <div className="mt-2">
-                                    <label className="block text-xs text-gray-600 mb-1">{tr("Upload Foto", "Upload Photo")}</label>
-                                    <input
-                                      type="file"
-                                      multiple
-                                      accept="image/jpeg,image/jpg,image/png,image/webp"
-                                      onChange={(e) => handlePhotoSelection(col.key, idx, e.target.files)}
-                                      disabled={!bolehEditKeterangan}
-                                      className="w-full text-xs border rounded-lg p-1.5 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-                                    />
-                                    <p className="text-[10px] text-gray-500 mt-1">
-                                      {tr("Foto akan otomatis dikompres sebelum disimpan.", "Photos will be automatically compressed before saving.")}
-                                    </p>
-                                    {compressingPhotoKey === `${col.key}_${idx}` ? (
-                                      <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
-                                    ) : null}
-                                    {/* Tampilkan foto yang sudah diupload */}
-                                    {row.photoFiles?.length > 0 && (
-                                      <div className="mt-2 flex flex-wrap gap-2">
-                                        {row.photoFiles.map((file, fileIdx) => (
-                                          <div key={fileIdx} className="relative inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 border border-blue-200">
-                                            <span className="text-[10px] text-blue-700 truncate max-w-[100px]">{file.name}</span>
-                                            <button
-                                              type="button"
-                                              onClick={() => handleRemovePhoto(col.key, idx, fileIdx)}
-                                              className="text-red-500 hover:text-red-700"
-                                              disabled={!bolehEditKeterangan}
-                                              title={tr("Hapus foto", "Delete photo")}
-                                            >
-                                              <X size={12} />
-                                            </button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {/* Tampilkan foto yang sudah tersimpan di database */}
-                                    {row.photoPaths && row.photoPaths.length > 0 && (
-                                      <div className="mt-2 flex flex-wrap gap-1">
-                                        <span className="text-[11px] text-gray-500 w-full">{tr("Foto tersimpan:", "Saved photos:")}</span>
-                                        {(row.photoItems?.length ? row.photoItems : row.photoPaths.map((path) => ({ path, uploadedAt: row.created_at }))).map((photo, photoIdx) => (
-                                          <button
-                                            key={photoIdx}
-                                            type="button"
-                                            onClick={() =>
-                                              setBiayaPhotoPreview({
-                                                url: storagePhotoUrl(photo.path),
-                                                uploadedAt: photo.uploadedAt || row.created_at,
-                                              })
-                                            }
-                                            className="inline-flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded text-[10px] border border-green-200 hover:bg-green-100"
-                                            title={tr("Klik untuk lihat foto", "Click to view photo")}
-                                          >
-                                            {tr("Foto", "Photo")} {photoIdx + 1}
-                                            <Eye size={10} />
-                                          </button>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                <p className="mt-2 text-xs font-semibold text-slate-700">
+                                  {tr("Subtotal tersimpan", "Saved subtotal")}:{" "}
+                                  {formatRupiah(sumBiayaRows(existingRows))}
+                                </p>
+                                <BiayaMetaFooter meta={meta} />
                               </div>
                             );
                           })}
                         </div>
-                        <p className="mt-2 text-sm font-semibold text-gray-800">
-                          {tr("Subtotal", "Subtotal")}: {formatRupiah(sumBiayaRows(biayaEdit[col.key]))}
-                        </p>
-                        <BiayaMetaFooter meta={meta} />
-                      </div>
-                    );
-                  })}
-                </div>
+                      </section>
+
+                      {/* Panel bawah: hanya baris baru dari tombol + */}
+                      <section className="mb-4 rounded-2xl border-2 border-dashed border-emerald-300 bg-emerald-50/50 p-4">
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-emerald-200/80 pb-3">
+                          <div>
+                            <h4 className="text-sm font-bold text-emerald-900">
+                              {tr("Tambah biaya baru", "Add new expense")}
+                            </h4>
+                            <p className="text-xs text-emerald-800/80">
+                              {tr(
+                                "Tekan + di kategori yang ingin ditambah. Data di sini belum tersimpan sampai Anda klik Simpan.",
+                                "Press + on the category you want to add to. Data here is not saved until you click Save.",
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                          {kategoriCols.map((col) => {
+                            const newRows = biayaBuckets[col.key]?.new || [];
+                            return (
+                              <div
+                                key={`new-${col.key}`}
+                                className="rounded-xl border border-emerald-200 bg-white/90 p-3 shadow-sm"
+                              >
+                                <div className="mb-2 flex items-center justify-between gap-2">
+                                  <p className="text-sm font-semibold text-emerald-900">{col.label}</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => addBiayaRow(col.key)}
+                                    className="shrink-0 rounded-lg border border-emerald-400 bg-emerald-600 p-1.5 text-white hover:bg-emerald-700"
+                                    title={tr("Tambah baris baru", "Add new row")}
+                                  >
+                                    <Plus size={18} />
+                                  </button>
+                                </div>
+                                <div className="min-h-[4.5rem] max-h-56 space-y-2 overflow-y-auto pr-1">
+                                  {newRows.length === 0 ? (
+                                    <p className="rounded-lg border border-dashed border-emerald-200 bg-emerald-50/60 px-2 py-6 text-center text-xs text-emerald-700/75">
+                                      {tr("Tekan + untuk menambah", "Press + to add")}
+                                    </p>
+                                  ) : (
+                                    newRows.map((row, idx) =>
+                                      renderBiayaEditRow(col.key, "new", idx, row)
+                                    )
+                                  )}
+                                </div>
+                                <p className="mt-2 text-xs font-semibold text-emerald-800">
+                                  {tr("Subtotal baru", "New subtotal")}: {formatRupiah(sumBiayaRows(newRows))}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    </>
+                  );
+                })()}
                 <div className="mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                   <p className="text-base font-bold text-amber-900">
                     {tr("Total keseluruhan", "Grand total")}:{" "}
                     {formatRupiah(
-                      sumBiayaRows(biayaEdit.jalan) +
-                      sumBiayaRows(biayaEdit.pengeluaran) +
-                      sumBiayaRows(biayaEdit.reimbursment)
+                      sumBiayaBucket(biayaBuckets.jalan) +
+                      sumBiayaBucket(biayaBuckets.pengeluaran) +
+                      sumBiayaBucket(biayaBuckets.reimbursment)
                     )}
                   </p>
                 </div>
@@ -2848,11 +2957,7 @@ export default function ProjekKerjaPage() {
                       setEditUang(false);
                       const item = dataList.find((i) => i.id === currentId);
                       if (item) {
-                        setBiayaEdit({
-                          jalan: normalizeBiayaRowsForModalOpen(item.biaya_jalan_items),
-                          pengeluaran: normalizeBiayaRowsForModalOpen(item.biaya_pengeluaran_items),
-                          reimbursment: normalizeBiayaRowsForModalOpen(item.biaya_reimbursment_items),
-                        });
+                        setBiayaBuckets(loadBiayaBucketsFromProjek(item));
                       }
                     }}
                     className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"

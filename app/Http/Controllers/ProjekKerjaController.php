@@ -1380,6 +1380,16 @@ class ProjekKerjaController extends Controller
                 continue;
             }
 
+            $createdAtRaw = trim((string) ($row['created_at'] ?? ''));
+            if (! BiayaDuplicateValidator::isOnOrAfterEnforceDate(
+                $createdAtRaw !== '' ? $createdAtRaw : null,
+                $createdAtRaw === '' ? $fallback : null
+            )) {
+                $withoutKey[] = $row;
+
+                continue;
+            }
+
             if (! isset($byKey[$key])) {
                 $byKey[$key] = $row;
 

@@ -10,9 +10,22 @@ use InvalidArgumentException;
 
 class BiayaDuplicateValidator
 {
+    /** Validasi duplikat hanya berlaku mulai tanggal ini (Asia/Jakarta). Data sebelumnya tetap boleh sama. */
+    public const ENFORCE_FROM_DATE = '2026-08-24';
+
     public static function timezone(): DateTimeZone
     {
         return new DateTimeZone(config('app.timezone', 'Asia/Jakarta'));
+    }
+
+    public static function isOnOrAfterEnforceDate(?string $value, ?DateTimeInterface $fallback = null): bool
+    {
+        $dateKey = self::normalizeDateKey($value, $fallback);
+        if ($dateKey === '' || ! preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateKey)) {
+            return true;
+        }
+
+        return $dateKey >= self::ENFORCE_FROM_DATE;
     }
 
     public static function nowInAppTimezone(): DateTimeImmutable
@@ -138,6 +151,10 @@ class BiayaDuplicateValidator
             }
 
             $rowFallback = $createdAtRaw === '' ? $fallback : null;
+            if (! self::isOnOrAfterEnforceDate($createdAtRaw !== '' ? $createdAtRaw : null, $rowFallback)) {
+                continue;
+            }
+
             $key = self::businessKeyForRow($row, $rowFallback);
             if ($key === null) {
                 continue;
@@ -174,6 +191,10 @@ class BiayaDuplicateValidator
         $keteranganNorm = mb_strtolower(trim((string) ($keterangan ?? '')));
 
         if ($nominal <= 0 && $keteranganNorm === '') {
+            return;
+        }
+
+        if (! self::isOnOrAfterEnforceDate(null, $referenceDate)) {
             return;
         }
 
