@@ -160,7 +160,7 @@ class SPHController extends Controller
             'paragraf_pembuka' => 'nullable|string|max:50000',
             'items' => 'required|array|min:1',
             'items.*.nama_item' => 'required|string',
-            'items.*.deskripsi' => 'nullable|string',
+            'items.*.deskripsi' => 'nullable|string|max:4000000',
             'items.*.qty' => 'required|string',
             'items.*.harga' => 'required|numeric|min:0',
             'kota_tanda_tangan' => 'nullable|string|max:100',
@@ -208,7 +208,8 @@ class SPHController extends Controller
         })->all();
 
         $showDeskripsiColumn = collect($items)->contains(
-            fn (array $item) => trim((string) ($item['deskripsi_html'] ?? '')) !== ''
+            fn (array $item) => trim(strip_tags((string) ($item['deskripsi_html'] ?? ''), '<img>')) !== ''
+                || str_contains((string) ($item['deskripsi_html'] ?? ''), '<img')
         );
 
         return [
@@ -252,7 +253,7 @@ class SPHController extends Controller
         $filename = 'SPH-' . str_replace('/', '-', $data['nomor_surat']) . '.pdf';
         $pdfOutput = $dompdf->output();
 
-        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename, 'SPH');
 
         return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
@@ -292,7 +293,7 @@ class SPHController extends Controller
             return [
                 'no' => $index + 1,
                 'nama_item' => trim((string) ($item['nama_item'] ?? '')),
-                'deskripsi' => trim((string) ($item['deskripsi'] ?? '')),
+                'deskripsi' => $this->sanitizeHtml(trim((string) ($item['deskripsi'] ?? ''))) ?? '',
                 'qty' => (string) ($item['qty'] ?? '1'),
                 'harga' => $harga,
                 'total_harga' => $harga * $qty,
@@ -311,7 +312,33 @@ class SPHController extends Controller
             return null;
         }
 
-        return strip_tags($html, '<p><br><strong><b><em><i><u><ol><ul><li><span>');
+        $allowed = strip_tags($html, '<p><br><strong><b><em><i><u><ol><ul><li><span><img><figure><figcaption>');
+
+        return preg_replace_callback(
+            '/<img\b[^>]*>/i',
+            fn (array $match) => $this->sanitizeImgTag($match[0]),
+            $allowed
+        );
+    }
+
+    private function sanitizeImgTag(string $tag): string
+    {
+        if (! preg_match('/src\s*=\s*["\']([^"\']+)["\']/i', $tag, $match)) {
+            return '';
+        }
+
+        $src = html_entity_decode($match[1], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $isDataImage = (bool) preg_match('/^data:image\/(png|jpe?g|gif|webp);base64,[a-z0-9+\/=]+$/i', $src);
+        $isHttp = (bool) preg_match('#^https?://#i', $src);
+        $isStorage = str_starts_with($src, '/storage/');
+
+        if (! $isDataImage && ! $isHttp && ! $isStorage) {
+            return '';
+        }
+
+        $safeSrc = htmlspecialchars($src, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return '<img src="'.$safeSrc.'" alt="" style="max-width:180px;max-height:140px;height:auto;display:block;margin:6px 0;" />';
     }
 
     private function deskripsiToHtml(string $deskripsi): string
@@ -346,6 +373,7 @@ class SPHController extends Controller
     /**
      * Dompdf tidak konsisten merender <ul>/<ol> di dalam sel tabel.
      * Konversi ke bullet + <br> agar deskripsi tetap tampil di PDF.
+     * Gambar dipertahankan (placeholder) agar tidak hilang saat strip HTML.
      */
     private function richHtmlToPdfCell(string $html): string
     {
@@ -353,6 +381,16 @@ class SPHController extends Controller
         if ($html === '') {
             return '';
         }
+
+        $images = [];
+        $html = preg_replace_callback('/<img\b[^>]*>/i', function (array $match) use (&$images) {
+            $token = '%%SPHIMG'.count($images).'%%';
+            $images[$token] = $this->sanitizeImgTag($match[0]);
+
+            return $token;
+        }, $html) ?? $html;
+
+        $converted = '';
 
         if (preg_match('/<li[\s>]/i', $html)) {
             preg_match_all('/<li[^>]*>(.*?)<\/li>/is', $html, $matches);
@@ -369,12 +407,12 @@ class SPHController extends Controller
             }
 
             if ($lines !== []) {
-                return implode('<br>', $lines);
+                $converted = implode('<br>', $lines);
             }
         }
 
-        if (preg_match('/<p[\s>]/i', $html)) {
-            preg_match_all('/<p[^>]*>(.*?)<\/p>/is', $html, $matches);
+        if ($converted === '' && preg_match('/<p[\s>]|<figure[\s>]/i', $html)) {
+            preg_match_all('/<(?:p|figure)[^>]*>(.*?)<\/(?:p|figure)>/is', $html, $matches);
             $lines = [];
 
             foreach ($matches[1] ?? [] as $chunk) {
@@ -385,13 +423,20 @@ class SPHController extends Controller
             }
 
             if ($lines !== []) {
-                return implode('<br>', $lines);
+                $converted = implode('<br>', $lines);
             }
         }
 
-        $plain = $this->plainTextFromHtmlFragment($html);
+        if ($converted === '') {
+            $plain = $this->plainTextFromHtmlFragment($html);
+            $converted = $plain !== '' ? e($plain) : '';
+        }
 
-        return $plain !== '' ? e($plain) : '';
+        if ($images === []) {
+            return $converted;
+        }
+
+        return str_replace(array_keys($images), array_values($images), $converted);
     }
 
     private function plainTextFromHtmlFragment(string $html): string

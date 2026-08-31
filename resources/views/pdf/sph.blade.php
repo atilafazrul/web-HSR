@@ -162,6 +162,14 @@
             text-align: justify;
         }
 
+        .items-table td img {
+            max-width: 180px;
+            max-height: 140px;
+            height: auto;
+            display: block;
+            margin: 6px 0;
+        }
+
         @include('pdf.partials.footer_qr_copyright_styles')
     </style>
 </head>

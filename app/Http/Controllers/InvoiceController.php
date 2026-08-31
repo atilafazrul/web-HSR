@@ -248,7 +248,7 @@ class InvoiceController extends Controller
         $filename = 'INVOICE-' . str_replace('/', '-', $data['nomor_surat']) . '.pdf';
         $pdfOutput = $dompdf->output();
 
-        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename, 'Invoice');
 
         return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',

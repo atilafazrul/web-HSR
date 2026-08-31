@@ -10,8 +10,18 @@ import {
   List,
   Undo,
   Indent,
+  Image,
+  ImageToolbar,
+  ImageStyle,
+  ImageResize,
+  ImageUpload,
+  ImageInsert,
+  PictureEditing,
+  AutoImage,
+  FileRepository,
 } from "ckeditor5";
 import "ckeditor5/ckeditor5.css";
+import { compressImage } from "../../../../utils/imageCompress";
 
 const LICENSE_KEY = import.meta.env.VITE_CKEDITOR_LICENSE_KEY || "GPL";
 
@@ -23,6 +33,30 @@ function isInsideListItem(position) {
     if (ancestor.name === "listItem") return true;
   }
   return false;
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Upload gambar ke editor sebagai data URL (dikompres dulu agar PDF tidak membengkak). */
+function CompressedImageUploadAdapter(editor) {
+  const repo = editor.plugins.get(FileRepository);
+  repo.createUploadAdapter = (loader) => ({
+    upload() {
+      return loader.file.then(async (file) => {
+        const compressed = await compressImage(file, 960, 960, 0.72);
+        const dataUrl = await fileToDataUrl(compressed);
+        return { default: dataUrl };
+      });
+    },
+    abort() {},
+  });
 }
 
 /** Tab seperti Word: sisipkan tab stop di kursor; di list tetap nested. */
@@ -90,35 +124,65 @@ export const RichTextEditor = ({
   onChange,
   minHeight = 180,
   editorKey = "default",
+  allowImages = false,
+  hint = "",
 }) => {
-  const editorConfig = useMemo(
-    () => ({
+  const editorConfig = useMemo(() => {
+    const plugins = [
+      Essentials,
+      Paragraph,
+      Bold,
+      Italic,
+      Underline,
+      List,
+      Undo,
+      Indent,
+      WordTabSupport,
+    ];
+    const toolbar = [
+      "undo",
+      "redo",
+      "|",
+      "bold",
+      "italic",
+      "underline",
+      "|",
+      "bulletedList",
+      "numberedList",
+    ];
+
+    if (allowImages) {
+      plugins.push(
+        Image,
+        ImageToolbar,
+        ImageStyle,
+        ImageResize,
+        ImageUpload,
+        ImageInsert,
+        PictureEditing,
+        AutoImage,
+        CompressedImageUploadAdapter
+      );
+      toolbar.push("|", "insertImage");
+    }
+
+    return {
       licenseKey: LICENSE_KEY,
-      plugins: [
-        Essentials,
-        Paragraph,
-        Bold,
-        Italic,
-        Underline,
-        List,
-        Undo,
-        Indent,
-        WordTabSupport,
-      ],
-      toolbar: [
-        "undo",
-        "redo",
-        "|",
-        "bold",
-        "italic",
-        "underline",
-        "|",
-        "bulletedList",
-        "numberedList",
-      ],
-    }),
-    []
-  );
+      plugins,
+      toolbar,
+      ...(allowImages
+        ? {
+            image: {
+              toolbar: ["imageTextAlternative", "|", "imageStyle:inline", "imageStyle:block", "|", "resizeImage"],
+              insert: {
+                integrations: ["upload"],
+                type: "block",
+              },
+            },
+          }
+        : {}),
+    };
+  }, [allowImages]);
 
   return (
     <div>
@@ -132,7 +196,7 @@ export const RichTextEditor = ({
         style={{ "--ck-editor-min-height": `${minHeight}px` }}
       >
         <CKEditor
-          key={editorKey}
+          key={`${editorKey}-${allowImages ? "img" : "plain"}`}
           editor={ClassicEditor}
           data={value || ""}
           config={editorConfig}
@@ -141,9 +205,15 @@ export const RichTextEditor = ({
           }}
         />
       </div>
+      {hint ? <p className="mt-1 text-xs text-gray-500">{hint}</p> : null}
       <style>{`
         .ckeditor-wrapper .ck-editor__editable {
           min-height: var(--ck-editor-min-height, 180px);
+        }
+        .ckeditor-wrapper .ck-content img,
+        .ckeditor-wrapper .ck-content figure.image img {
+          max-width: 100%;
+          height: auto;
         }
       `}</style>
     </div>

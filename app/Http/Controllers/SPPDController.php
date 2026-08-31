@@ -376,7 +376,7 @@ class SPPDController extends Controller
         $filename = 'SPPD-' . $data['nomor_surat'] . '.pdf';
         $pdfOutput = $dompdf->output();
 
-        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename, 'SPPD');
 
         return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',

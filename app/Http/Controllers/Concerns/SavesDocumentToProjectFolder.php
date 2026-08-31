@@ -10,18 +10,15 @@ use Illuminate\Support\Facades\Storage;
 trait SavesDocumentToProjectFolder
 {
     /**
-     * Nama folder dokumentasi projek tempat semua PDF berita acara (BAM, BAST, BAUF,
-     * SPPD, SPH, PO, Invoice) otomatis disimpan.
+     * Simpan salinan PDF ke folder dokumentasi projek sesuai jenis dokumen
+     * (BAM, SPH, BAST, dst.) supaya tidak tercampur di satu folder Berita_Acara.
      */
-    private const BERITA_ACARA_FOLDER = 'Berita_Acara';
-
-    /**
-     * Simpan salinan PDF berita acara ke folder "Berita Acara" pada Dokumentasi Projek,
-     * supaya file yang dibuat dari halaman Berita Acara otomatis muncul juga di sana
-     * tanpa perlu diunggah manual.
-     */
-    protected function saveDocumentPdfToProjectFolder(?int $projekKerjaId, string $pdfContents, string $filename): void
-    {
+    protected function saveDocumentPdfToProjectFolder(
+        ?int $projekKerjaId,
+        string $pdfContents,
+        string $filename,
+        string $folderName = 'Berita_Acara'
+    ): void {
         if (!$projekKerjaId) {
             return;
         }
@@ -30,8 +27,10 @@ trait SavesDocumentToProjectFolder
             return;
         }
 
+        $folderName = $this->sanitizeProjectFolderName($folderName);
+
         try {
-            $targetDir = 'projek-kerja-files/' . $projekKerjaId . '/' . self::BERITA_ACARA_FOLDER;
+            $targetDir = 'projek-kerja-files/' . $projekKerjaId . '/' . $folderName;
             $candidate = $this->uniqueProjectFileName($targetDir, $filename);
 
             Storage::disk('public')->put($targetDir . '/' . $candidate, $pdfContents);
@@ -43,6 +42,14 @@ trait SavesDocumentToProjectFolder
         } catch (\Throwable $e) {
             Log::warning('Gagal menyimpan PDF berita acara ke folder projek: ' . $e->getMessage());
         }
+    }
+
+    private function sanitizeProjectFolderName(string $folderName): string
+    {
+        $safe = preg_replace('/[^a-zA-Z0-9._ -]/', '', str_replace(['/', '\\'], '-', $folderName));
+        $safe = trim((string) $safe);
+
+        return $safe !== '' ? $safe : 'Berita_Acara';
     }
 
     private function uniqueProjectFileName(string $targetDir, string $filename): string

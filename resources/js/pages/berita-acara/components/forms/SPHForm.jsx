@@ -126,6 +126,11 @@ export const SPHForm = ({
                   onChange={(value) => onItemChange(index, "deskripsi", value)}
                   minHeight={120}
                   editorKey={`sph-deskripsi-${index}`}
+                  allowImages
+                  hint={tr(
+                    "Tulis keterangan, lalu klik ikon gambar di toolbar untuk sisip foto di antara teks.",
+                    "Write the description, then click the image icon in the toolbar to insert a photo between the text."
+                  )}
                 />
               </div>
             </div>

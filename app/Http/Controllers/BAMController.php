@@ -256,7 +256,7 @@ class BAMController extends Controller
         $filename = 'BAM-' . $data['nomor_surat'] . '.pdf';
         $pdfOutput = $dompdf->output();
 
-        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename, 'BAM');
 
         return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',

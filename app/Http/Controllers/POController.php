@@ -253,7 +253,7 @@ class POController extends Controller
         $filename = 'PO-' . str_replace('/', '-', $data['nomor_surat']) . '.pdf';
         $pdfOutput = $dompdf->output();
 
-        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename, 'PO');
 
         return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',

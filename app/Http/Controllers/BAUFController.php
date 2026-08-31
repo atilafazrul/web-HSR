@@ -285,7 +285,7 @@ class BAUFController extends Controller
         $filename = 'BAUF-' . $data['nomor_surat'] . '.pdf';
         $pdfOutput = $dompdf->output();
 
-        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename, 'BAUF');
 
         return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',

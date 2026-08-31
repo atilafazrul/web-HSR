@@ -264,7 +264,7 @@ class BASTController extends Controller
         $filename = 'BAST-' . $data['nomor_surat'] . '.pdf';
         $pdfOutput = $dompdf->output();
 
-        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename);
+        $this->saveDocumentPdfToProjectFolder($projekKerjaId, $pdfOutput, $filename, 'BAST');
 
         return response()->make($pdfOutput, 200, [
             'Content-Type' => 'application/pdf',
