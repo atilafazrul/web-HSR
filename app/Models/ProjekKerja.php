@@ -33,6 +33,7 @@ class ProjekKerja extends Model
         'problem_description',
         'barang_dibeli',
         'nominal_po',
+        'nominal_po_items',
         'biaya_jalan_items',
         'biaya_pengeluaran_items',
         'biaya_reimbursment_items',
@@ -67,14 +68,14 @@ class ProjekKerja extends Model
 
     /* =============================
        APPEND COMPUTED ATTRIBUTES
-       NOTE: biaya_*_items are no longer real JSON columns. They are
-       computed on the fly from the `projek_kerja_biayas` table (see
-       relation + accessors/mutators below) so existing controllers,
-       services, and the frontend keep working against the same shape.
+       NOTE: biaya_*_items and nominal_po_items are no longer JSON columns.
+       They are computed from `projek_kerja_biayas` / `projek_kerja_nominal_po_items`
+       so existing controllers and the frontend keep the same API shape.
     ============================== */
     protected $appends = [
         'total_biaya',
         'profit',
+        'nominal_po_items',
         'biaya_jalan_items',
         'biaya_pengeluaran_items',
         'biaya_reimbursment_items',
@@ -112,6 +113,44 @@ class ProjekKerja extends Model
         return (float) (($this->nominal_po ?? 0) - $this->total_biaya);
     }
 
+    /**
+     * Baris Nominal PO dari tabel `projek_kerja_nominal_po_items`.
+     * Bentuk API tetap [{ nominal, keterangan }] agar frontend tidak berubah.
+     * Data lama (hanya kolom nominal_po) tetap tampil sebagai 1 baris.
+     */
+    public function getNominalPoItemsAttribute(): array
+    {
+        $rows = $this->relationLoaded('poItems')
+            ? $this->poItems
+            : $this->poItems()->orderBy('sort_order')->get();
+
+        $normalized = $rows
+            ->map(function (ProjekKerjaNominalPoItem $row) {
+                return [
+                    'id' => $row->id,
+                    'nominal' => round((float) $row->nominal, 2),
+                    'keterangan' => trim((string) ($row->keterangan ?? '')),
+                ];
+            })
+            ->filter(fn ($row) => $row['nominal'] > 0 || $row['keterangan'] !== '')
+            ->values()
+            ->all();
+
+        if ($normalized === []) {
+            $legacy = round((float) ($this->attributes['nominal_po'] ?? 0), 2);
+            if ($legacy > 0) {
+                return [['id' => null, 'nominal' => $legacy, 'keterangan' => '']];
+            }
+        }
+
+        return $normalized;
+    }
+
+    public function setNominalPoItemsAttribute($items): void
+    {
+        $this->syncNominalPoItems(is_array($items) ? $items : []);
+    }
+
 
     /* =============================
        AUTO LOAD RELATION
@@ -119,13 +158,120 @@ class ProjekKerja extends Model
 
     protected $with = [
         'photos',
-        'files'
+        'files',
+        'poItems',
+    ];
+
+    protected $hidden = [
+        'poItems',
+        'po_items',
     ];
 
 
     /* =============================
        RELATION BIAYA (jalan/pengeluaran/reimbursment)
     ============================== */
+
+    public function poItems()
+    {
+        return $this->hasMany(ProjekKerjaNominalPoItem::class, 'projek_kerja_id')->orderBy('sort_order');
+    }
+
+    protected function syncNominalPoItems(array $items): void
+    {
+        if (! $this->exists || ! $this->getKey()) {
+            return;
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($items) {
+            ProjekKerjaNominalPoItem::where('projek_kerja_id', $this->getKey())->delete();
+
+            foreach (array_values($items) as $index => $item) {
+                if (! is_array($item)) {
+                    continue;
+                }
+
+                $nominal = round((float) ($item['nominal'] ?? 0), 2);
+                $keterangan = trim((string) ($item['keterangan'] ?? ''));
+                if ($nominal <= 0 && $keterangan === '') {
+                    continue;
+                }
+
+                ProjekKerjaNominalPoItem::create([
+                    'projek_kerja_id' => $this->getKey(),
+                    'nominal' => $nominal,
+                    'keterangan' => $keterangan,
+                    'sort_order' => $index,
+                ]);
+            }
+        });
+
+        $this->unsetRelation('poItems');
+    }
+
+    public function upsertNominalPoItem(array $item): ProjekKerjaNominalPoItem
+    {
+        $nominal = round((float) ($item['nominal'] ?? 0), 2);
+        $keterangan = trim((string) ($item['keterangan'] ?? ''));
+
+        return \Illuminate\Support\Facades\DB::transaction(function () use ($item, $nominal, $keterangan) {
+            $itemId = isset($item['id']) ? (int) $item['id'] : 0;
+
+            if ($itemId > 0) {
+                $row = ProjekKerjaNominalPoItem::query()
+                    ->where('projek_kerja_id', $this->getKey())
+                    ->where('id', $itemId)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $row->update([
+                    'nominal' => $nominal,
+                    'keterangan' => $keterangan,
+                ]);
+            } else {
+                $maxSort = ProjekKerjaNominalPoItem::query()
+                    ->where('projek_kerja_id', $this->getKey())
+                    ->max('sort_order');
+                $row = ProjekKerjaNominalPoItem::create([
+                    'projek_kerja_id' => $this->getKey(),
+                    'nominal' => $nominal,
+                    'keterangan' => $keterangan,
+                    'sort_order' => ((int) ($maxSort ?? -1)) + 1,
+                ]);
+            }
+
+            $this->refreshNominalPoTotal();
+            $this->unsetRelation('poItems');
+
+            return $row->fresh();
+        });
+    }
+
+    public function deleteNominalPoItem(int $itemId): void
+    {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($itemId) {
+            $row = ProjekKerjaNominalPoItem::query()
+                ->where('projek_kerja_id', $this->getKey())
+                ->where('id', $itemId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($row) {
+                $row->delete();
+            }
+
+            $this->refreshNominalPoTotal();
+            $this->unsetRelation('poItems');
+        });
+    }
+
+    protected function refreshNominalPoTotal(): void
+    {
+        $sum = (float) ProjekKerjaNominalPoItem::query()
+            ->where('projek_kerja_id', $this->getKey())
+            ->sum('nominal');
+
+        $this->forceFill(['nominal_po' => $sum])->save();
+    }
 
     public function biayas()
     {

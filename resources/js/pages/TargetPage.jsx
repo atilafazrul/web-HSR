@@ -17,6 +17,8 @@ import {
   ChevronRight,
   Building2,
   Pencil,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { PieChart, Pie, Cell } from "recharts";
 import api from "../api/axiosConfig";
@@ -88,10 +90,68 @@ export default function TargetPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [filterDivisi, setFilterDivisi] = useState("");
 
-  // map projek_id -> string formatted display
+  // map projek_id -> [{ localId, id, nominal, keterangan }]
   const [poInputs, setPoInputs] = useState({});
-  // map projek_id -> "idle" | "saving" | "saved" | "error"
+  // map `${projekId}:${localId}` -> "idle" | "saving" | "saved" | "error"
   const [saveState, setSaveState] = useState({});
+
+  const emptyPoRow = () => ({
+    localId: `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: null,
+    nominal: "",
+    keterangan: "",
+  });
+
+  const rowStateKey = (projectId, localId) => `${projectId}:${localId}`;
+
+  const applyProjectPoUpdate = (id, updated, fallbackItems, fallbackTotal) => {
+    const items = updated?.nominal_po_items ?? fallbackItems;
+    const value = updated?.nominal_po ?? fallbackTotal;
+    setProjek((prev) =>
+      prev.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              nominal_po: value,
+              nominal_po_items: items,
+              total_biaya: updated?.total_biaya ?? p.total_biaya,
+              profit: updated?.profit ?? value - (p.total_biaya || 0),
+            }
+          : p
+      )
+    );
+  };
+
+  const normalizePoItemsFromApi = (p) => {
+    const raw = Array.isArray(p?.nominal_po_items) ? p.nominal_po_items : [];
+    const rows = raw
+      .filter((r) => r && (Number(r.nominal) > 0 || String(r.keterangan || "").trim() !== ""))
+      .map((r) => ({
+        localId: r.id ? `db-${r.id}` : `new-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        id: r.id ? Number(r.id) : null,
+        nominal: nominalApiToInput(r.nominal),
+        keterangan: String(r.keterangan || ""),
+      }));
+    if (rows.length) return rows;
+    if (Number(p?.nominal_po) > 0) {
+      return [{ ...emptyPoRow(), nominal: nominalApiToInput(p.nominal_po) }];
+    }
+    return [emptyPoRow()];
+  };
+
+  const isPoRowDirty = (row, serverItems = []) => {
+    const nominal = parseRibuanId(row?.nominal);
+    const keterangan = String(row?.keterangan || "").trim();
+    if (!row?.id) return nominal > 0 || keterangan !== "";
+    const server = (serverItems || []).find((s) => Number(s?.id) === Number(row.id));
+    if (!server) return true;
+    return nominal !== Number(server.nominal || 0) || keterangan !== String(server.keterangan || "").trim();
+  };
+
+  const meaningfulPoItems = (rows) =>
+    (rows || []).filter(
+      (r) => parseRibuanId(r.nominal) > 0 || String(r.keterangan || "").trim() !== ""
+    );
   const [projectSlide, setProjectSlide] = useState(0);
   const projectCarouselRef = useRef(null);
 
@@ -105,10 +165,9 @@ export default function TargetPage() {
       data = Array.isArray(data) ? data : [];
       setProjek(data);
 
-      // Inisialisasi input PO dari data API
       const map = {};
       data.forEach((p) => {
-        map[p.id] = nominalApiToInput(p.nominal_po);
+        map[p.id] = normalizePoItemsFromApi(p);
       });
       setPoInputs(map);
     } catch (err) {
@@ -142,41 +201,131 @@ export default function TargetPage() {
   }, [filterDivisi]);
 
   /* ================= HANDLERS ================= */
-  const handlePoChange = (id, raw) => {
+  const handlePoNominalChange = (id, index, raw) => {
     const formatted = formatRibuanId(digitsOnly(raw));
-    setPoInputs((prev) => ({ ...prev, [id]: formatted }));
-    setSaveState((prev) => ({ ...prev, [id]: "idle" }));
+    let localId = null;
+    setPoInputs((prev) => {
+      const next = [...(prev[id] || [emptyPoRow()])];
+      next[index] = { ...next[index], nominal: formatted };
+      localId = next[index].localId;
+      return { ...prev, [id]: next };
+    });
+    if (localId) {
+      setSaveState((prev) => ({ ...prev, [rowStateKey(id, localId)]: "idle" }));
+    }
   };
 
-  const savePo = async (id) => {
-    const value = parseRibuanId(poInputs[id] || "");
-    setSaveState((prev) => ({ ...prev, [id]: "saving" }));
+  const handlePoKeteranganChange = (id, index, value) => {
+    let localId = null;
+    setPoInputs((prev) => {
+      const next = [...(prev[id] || [emptyPoRow()])];
+      next[index] = { ...next[index], keterangan: value };
+      localId = next[index].localId;
+      return { ...prev, [id]: next };
+    });
+    if (localId) {
+      setSaveState((prev) => ({ ...prev, [rowStateKey(id, localId)]: "idle" }));
+    }
+  };
+
+  const addPoRow = (id) => {
+    setPoInputs((prev) => ({
+      ...prev,
+      [id]: [...(prev[id] || [emptyPoRow()]), emptyPoRow()],
+    }));
+  };
+
+  const removePoRow = async (id, index) => {
+    const current = [...(poInputs[id] || [emptyPoRow()])];
+    const row = current[index];
+    if (!row) return;
+
+    if (row.id) {
+      const key = rowStateKey(id, row.localId);
+      setSaveState((prev) => ({ ...prev, [key]: "saving" }));
+      try {
+        const res = await api.delete(`/projek-kerja/${id}/nominal-po-items/${row.id}`);
+        const updated = res.data?.data;
+        current.splice(index, 1);
+        const next = current.length ? current : [emptyPoRow()];
+        setPoInputs((prev) => ({ ...prev, [id]: next }));
+        applyProjectPoUpdate(id, updated, next.filter((r) => r.id), Number(updated?.nominal_po) || 0);
+        setSaveState((prev) => {
+          const copy = { ...prev };
+          delete copy[key];
+          return copy;
+        });
+      } catch (err) {
+        console.error(err);
+        setSaveState((prev) => ({ ...prev, [key]: "error" }));
+        alert(err.response?.data?.message || tr("Gagal menghapus baris PO", "Failed to delete PO row"));
+      }
+      return;
+    }
+
+    current.splice(index, 1);
+    const next = current.length ? current : [emptyPoRow()];
+    setPoInputs((prev) => ({ ...prev, [id]: next }));
+  };
+
+  const savePoRow = async (id, index) => {
+    const rows = poInputs[id] || [emptyPoRow()];
+    const row = rows[index];
+    if (!row) return;
+
+    const payload = {
+      id: row.id || undefined,
+      nominal: parseRibuanId(row.nominal),
+      keterangan: String(row.keterangan || "").trim(),
+    };
+    if (payload.nominal <= 0 && payload.keterangan === "") {
+      return;
+    }
+
+    const key = rowStateKey(id, row.localId);
+    setSaveState((prev) => ({ ...prev, [key]: "saving" }));
     try {
-      const res = await api.patch(`/projek-kerja/${id}/nominal-po`, {
-        nominal_po: value,
-      });
+      const res = await api.patch(`/projek-kerja/${id}/nominal-po`, { item: payload });
       const updated = res.data?.data;
-      // Update list dengan data terbaru (nominal_po, total_biaya, profit)
-      setProjek((prev) =>
-        prev.map((p) =>
-          p.id === id
-            ? {
-                ...p,
-                nominal_po: updated?.nominal_po ?? value,
-                total_biaya: updated?.total_biaya ?? p.total_biaya,
-                profit: updated?.profit ?? value - (p.total_biaya || 0),
-              }
-            : p
-        )
+      const savedItems = Array.isArray(updated?.nominal_po_items) ? updated.nominal_po_items : [];
+      const usedIds = new Set(
+        rows.filter((r, i) => i !== index && r.id).map((r) => Number(r.id))
       );
-      setSaveState((prev) => ({ ...prev, [id]: "saved" }));
-      // Auto reset ke idle setelah 2 detik
+      const savedRow =
+        savedItems.find((item) =>
+          row.id ? Number(item.id) === Number(row.id) : !usedIds.has(Number(item.id))
+        ) ||
+        savedItems[savedItems.length - 1] ||
+        payload;
+
+      setPoInputs((prev) => {
+        const next = [...(prev[id] || [])];
+        if (!next[index]) return prev;
+        const nextId = savedRow.id ? Number(savedRow.id) : row.id;
+        next[index] = {
+          ...next[index],
+          id: nextId || null,
+          localId: nextId ? `db-${nextId}` : next[index].localId,
+          nominal: nominalApiToInput(savedRow.nominal ?? payload.nominal),
+          keterangan: String(savedRow.keterangan ?? payload.keterangan),
+        };
+        return { ...prev, [id]: next };
+      });
+      applyProjectPoUpdate(id, updated, savedItems, payload.nominal);
+
+      const nextKey = savedRow.id ? rowStateKey(id, `db-${savedRow.id}`) : key;
+      setSaveState((prev) => {
+        const copy = { ...prev };
+        if (nextKey !== key) delete copy[key];
+        copy[nextKey] = "saved";
+        return copy;
+      });
       setTimeout(() => {
-        setSaveState((prev) => ({ ...prev, [id]: "idle" }));
+        setSaveState((prev) => ({ ...prev, [nextKey]: "idle" }));
       }, 2000);
     } catch (err) {
       console.error(err);
-      setSaveState((prev) => ({ ...prev, [id]: "error" }));
+      setSaveState((prev) => ({ ...prev, [key]: "error" }));
       alert(err.response?.data?.message || tr("Gagal menyimpan nominal PO", "Failed to save PO amount"));
     }
   };
@@ -260,15 +409,29 @@ export default function TargetPage() {
   };
 
   const getProjectMetrics = (p) => {
-    const po = parseRibuanId(poInputs[p.id] || "");
+    const rows = poInputs[p.id] || [emptyPoRow()];
+    const po = rows.reduce((s, r) => s + parseRibuanId(r.nominal), 0);
     const biaya = Number(p.total_biaya) || 0;
     const profit = po - biaya;
     const margin = po > 0 ? (profit / po) * 100 : 0;
-    const dirty =
-      String(parseRibuanId(poInputs[p.id] || "")) !==
-      String(Math.round(Number(p.nominal_po) || 0));
-    const state = saveState[p.id] || "idle";
-    return { po, biaya, profit, margin, dirty, state };
+    const localKey = JSON.stringify(
+      meaningfulPoItems(rows).map((r) => ({
+        n: parseRibuanId(r.nominal),
+        k: String(r.keterangan || "").trim(),
+      }))
+    );
+    const serverKey = JSON.stringify(
+      meaningfulPoItems(normalizePoItemsFromApi(p)).map((r) => ({
+        n: parseRibuanId(r.nominal),
+        k: String(r.keterangan || "").trim(),
+      }))
+    );
+    const dirty = localKey !== serverKey;
+    const rowStates = rows.map((row) => ({
+      dirty: isPoRowDirty(row, p.nominal_po_items),
+      state: saveState[rowStateKey(p.id, row.localId)] || "idle",
+    }));
+    return { po, biaya, profit, margin, dirty, rowStates, rows };
   };
 
   /* ================= RENDER ================= */
@@ -453,7 +616,7 @@ export default function TargetPage() {
                 >
                   <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                     {slideProjects.map((p) => {
-                      const { po, biaya, profit, margin, dirty, state } = getProjectMetrics(p);
+                      const { po, biaya, profit, margin, dirty, rowStates, rows } = getProjectMetrics(p);
                       return (
                         <ProjectCard
                           key={p.id}
@@ -463,10 +626,13 @@ export default function TargetPage() {
                           profit={profit}
                           margin={margin}
                           dirty={dirty}
-                          state={state}
-                          poValue={poInputs[p.id] || ""}
-                          onPoChange={(v) => handlePoChange(p.id, v)}
-                          onPoBlur={() => dirty && savePo(p.id)}
+                          rowStates={rowStates}
+                          poRows={rows}
+                          onAddPoRow={() => addPoRow(p.id)}
+                          onRemovePoRow={(idx) => removePoRow(p.id, idx)}
+                          onPoNominalChange={(idx, v) => handlePoNominalChange(p.id, idx, v)}
+                          onPoKeteranganChange={(idx, v) => handlePoKeteranganChange(p.id, idx, v)}
+                          onPoSave={(idx) => savePoRow(p.id, idx)}
                           dateLocale={dateLocale}
                           tr={tr}
                         />
@@ -602,14 +768,18 @@ const ProjectCard = ({
   biaya,
   profit,
   margin,
-  poValue,
-  onPoChange,
-  onPoBlur,
-  state,
+  poRows,
+  onAddPoRow,
+  onRemovePoRow,
+  onPoNominalChange,
+  onPoKeteranganChange,
+  onPoSave,
+  rowStates = [],
   dateLocale,
   tr,
 }) => {
   const metaLine = [p.karyawan, p.alamat].filter(Boolean).join(" · ");
+  const rows = poRows?.length ? poRows : [{ localId: "empty", id: null, nominal: "", keterangan: "" }];
 
   return (
     <article className="flex h-full min-w-0 flex-col rounded-2xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/40 shadow-sm ring-1 ring-slate-900/[0.04] transition hover:border-slate-300 hover:shadow-md">
@@ -648,17 +818,87 @@ const ProjectCard = ({
       </header>
 
       <div className="px-3.5 py-3 sm:px-4">
-        <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">
-          {tr("Nominal PO", "PO Amount")}
-        </p>
-        <PoInput
-          value={poValue}
-          onChange={onPoChange}
-          onBlur={onPoBlur}
-          state={state}
-          fullWidth
-          compact
-        />
+        <div className="mb-1.5 flex items-center justify-between gap-2">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            {tr("Nominal PO", "PO Amount")}
+          </p>
+          <button
+            type="button"
+            onClick={onAddPoRow}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-md border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100"
+            title={tr("Tambah baris PO", "Add PO row")}
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+        <div className="max-h-44 space-y-2 overflow-y-auto pr-0.5">
+          {rows.map((row, idx) => {
+            const rowState = rowStates[idx] || { dirty: false, state: "idle" };
+            const canSave = rowState.dirty && rowState.state !== "saving";
+            return (
+            <div key={`po-${p.id}-${row.localId || idx}`} className="space-y-1 rounded-lg border border-slate-200/80 bg-white p-1.5">
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-[10px] font-semibold text-slate-500">Rp</p>
+                  <button
+                    type="button"
+                    onClick={() => onPoSave(idx)}
+                    disabled={!canSave && rowState.state !== "error"}
+                    className={`inline-flex h-6 w-6 items-center justify-center rounded-md border disabled:opacity-70 ${
+                      rowState.state === "saving"
+                        ? "cursor-wait border-amber-200 bg-amber-50 text-amber-600"
+                        : rowState.dirty || rowState.state === "error"
+                        ? "border-indigo-400 bg-indigo-600 text-white hover:bg-indigo-700"
+                        : "border-slate-200 bg-slate-50 text-slate-400"
+                    }`}
+                    title={
+                      rowState.dirty
+                        ? tr("Simpan baris ini", "Save this row")
+                        : tr("Baris sudah tersimpan", "Row already saved")
+                    }
+                  >
+                    {rowState.state === "saving" && <Loader2 size={12} className="animate-spin text-amber-500" />}
+                    {rowState.state === "saved" && <CheckCircle2 size={13} className="text-emerald-500" />}
+                    {rowState.state === "error" && <AlertCircle size={13} className="text-rose-500" />}
+                    {rowState.state === "idle" && <Save size={12} />}
+                  </button>
+                </div>
+                {rows.length > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => onRemovePoRow(idx)}
+                    className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-rose-200 text-rose-600 hover:bg-rose-50"
+                    title={tr("Hapus baris", "Delete row")}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                ) : null}
+              </div>
+              <PoInput
+                value={row.nominal}
+                onChange={(v) => onPoNominalChange(idx, v)}
+                state={rowState.state}
+                fullWidth
+                compact
+                hidePrefix
+                hideStatus
+              />
+              <input
+                type="text"
+                value={row.keterangan}
+                onChange={(e) => onPoKeteranganChange(idx, e.target.value)}
+                placeholder={tr("Keterangan PO", "PO description")}
+                className="w-full rounded-md border border-slate-200 bg-slate-50/80 px-2 py-1 text-[11px] text-slate-700 outline-none placeholder:text-slate-400 focus:border-indigo-300 focus:ring-1 focus:ring-indigo-200"
+              />
+            </div>
+            );
+          })}
+        </div>
+        {rows.length > 1 ? (
+          <p className="mt-1.5 text-right text-[10px] font-semibold tabular-nums text-indigo-700">
+            {tr("Total PO", "Total PO")}: {formatRupiah(po)}
+          </p>
+        ) : null}
       </div>
 
       <footer className="mt-auto divide-y divide-slate-200/80 border-t border-slate-100 bg-slate-50/80 px-3 py-1 sm:px-3.5">
@@ -980,7 +1220,16 @@ const BreakdownItem = ({ label, value, color }) => {
   );
 };
 
-const PoInput = ({ value, onChange, onBlur, state, fullWidth = false, compact = false }) => {
+const PoInput = ({
+  value,
+  onChange,
+  onBlur,
+  state,
+  fullWidth = false,
+  compact = false,
+  hidePrefix = false,
+  hideStatus = false,
+}) => {
   const ring =
     state === "saving"
       ? "ring-amber-300 border-amber-300 bg-amber-50/30"
@@ -992,33 +1241,38 @@ const PoInput = ({ value, onChange, onBlur, state, fullWidth = false, compact = 
       ? "ring-slate-200 border-slate-300 bg-white focus-within:border-indigo-400 focus-within:ring-indigo-300/50"
       : "ring-indigo-200 border-indigo-300 bg-indigo-50/40 focus-within:border-indigo-500 focus-within:ring-indigo-400/50";
 
+  const digits = String(value || "").length;
+  const compactSize = digits > 18 ? "text-[10px]" : digits > 14 ? "text-[11px]" : "text-[12px]";
+
   return (
     <div
       className={`flex min-w-0 items-center rounded-lg border bg-white ring-1 transition ${ring} ${
-        compact ? "gap-1.5 py-1.5 pl-2 pr-2" : "gap-1.5 py-2 pl-3 pr-2"
+        compact ? "gap-1 py-1.5 px-2" : "gap-1.5 py-2 pl-3 pr-2"
       } ${fullWidth ? "w-full" : "w-[200px]"}`}
     >
-      <span className="shrink-0 text-xs font-semibold text-slate-500">Rp</span>
-      <div className="min-w-0 flex-1 overflow-x-auto overflow-y-hidden [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-        <input
-          type="text"
-          inputMode="numeric"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onBlur={onBlur}
-          placeholder={value ? "0" : compact ? "Nominal" : "Ketik nominal..."}
-          className={`box-border min-w-full w-max max-w-none bg-transparent text-right font-semibold text-slate-900 outline-none tabular-nums placeholder:font-normal placeholder:text-slate-400 ${
-            compact ? "text-[11px] placeholder:text-[11px]" : "text-sm placeholder:text-xs"
-          }`}
-        />
-      </div>
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center">
-        {state === "saving" && <Loader2 size={13} className="animate-spin text-amber-500" />}
-        {state === "saved" && <CheckCircle2 size={14} className="text-emerald-500" />}
-        {state === "error" && <AlertCircle size={14} className="text-rose-500" />}
-        {state === "idle" && !compact && (value ? <Save size={12} className="text-slate-300" /> : <Pencil size={12} className="text-indigo-400" />)}
-        {state === "idle" && compact && value ? <Save size={11} className="text-slate-300" /> : null}
-      </span>
+      {!hidePrefix ? (
+        <span className="shrink-0 text-xs font-semibold text-slate-500">Rp</span>
+      ) : null}
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
+        placeholder={value ? "0" : compact ? "Nominal" : "Ketik nominal..."}
+        className={`min-w-0 w-full flex-1 bg-transparent text-left font-semibold text-slate-900 outline-none tabular-nums placeholder:font-normal placeholder:text-slate-400 ${
+          compact ? `${compactSize} placeholder:text-[11px]` : "text-sm placeholder:text-xs"
+        }`}
+        title={value ? `Rp ${value}` : undefined}
+      />
+      {!hideStatus ? (
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+          {state === "saving" && <Loader2 size={13} className="animate-spin text-amber-500" />}
+          {state === "saved" && <CheckCircle2 size={14} className="text-emerald-500" />}
+          {state === "error" && <AlertCircle size={14} className="text-rose-500" />}
+          {state === "idle" && !compact && (value ? <Save size={12} className="text-slate-300" /> : <Pencil size={12} className="text-indigo-400" />)}
+        </span>
+      ) : null}
     </div>
   );
 };

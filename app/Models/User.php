@@ -21,6 +21,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'is_active',
         'divisi',
         'profile_photo',
         'nik',
@@ -61,6 +62,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'is_active' => 'boolean',
         'tanggal_lahir' => 'date',
         'password' => 'hashed',
         'ijazah' => 'array',

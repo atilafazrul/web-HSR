@@ -2125,29 +2125,124 @@ class ProjekKerjaController extends Controller
         }
 
         $validated = $request->validate([
-            'nominal_po' => 'required|numeric|min:0',
+            'nominal_po' => 'nullable|numeric|min:0',
+            'item' => 'nullable|array',
+            'item.id' => 'nullable|integer|min:1',
+            'item.nominal' => 'nullable|numeric|min:0',
+            'item.keterangan' => 'nullable|string|max:500',
+            'nominal_po_items' => 'nullable|array|max:50',
+            'nominal_po_items.*.id' => 'nullable|integer|min:1',
+            'nominal_po_items.*.nominal' => 'nullable|numeric|min:0',
+            'nominal_po_items.*.keterangan' => 'nullable|string|max:500',
         ]);
 
+        if (
+            ! $request->exists('item')
+            && ! $request->exists('nominal_po_items')
+            && ! $request->exists('nominal_po')
+        ) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nominal PO atau daftar item wajib diisi.',
+            ], 422);
+        }
+
         try {
-            $projek->update([
-                'nominal_po' => $validated['nominal_po'],
-            ]);
+            if ($request->exists('item')) {
+                $row = $validated['item'] ?? [];
+                $nominal = round((float) ($row['nominal'] ?? 0), 2);
+                $keterangan = trim((string) ($row['keterangan'] ?? ''));
+                if ($nominal <= 0 && $keterangan === '') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Nominal atau keterangan baris PO wajib diisi.',
+                    ], 422);
+                }
+
+                $projek->upsertNominalPoItem($row);
+            } elseif ($request->exists('nominal_po_items')) {
+                $items = [];
+                foreach ($validated['nominal_po_items'] ?? [] as $row) {
+                    if (! is_array($row)) {
+                        continue;
+                    }
+                    $nominal = round((float) ($row['nominal'] ?? 0), 2);
+                    $keterangan = trim((string) ($row['keterangan'] ?? ''));
+                    if ($nominal <= 0 && $keterangan === '') {
+                        continue;
+                    }
+                    $items[] = [
+                        'nominal' => $nominal,
+                        'keterangan' => $keterangan,
+                    ];
+                }
+                $sum = array_sum(array_column($items, 'nominal'));
+                $projek->update([
+                    'nominal_po_items' => $items,
+                    'nominal_po' => $sum,
+                ]);
+            } else {
+                $projek->update([
+                    'nominal_po' => $validated['nominal_po'] ?? 0,
+                    'nominal_po_items' => [[
+                        'nominal' => round((float) ($validated['nominal_po'] ?? 0), 2),
+                        'keterangan' => '',
+                    ]],
+                ]);
+            }
+            $projek->unsetRelation('poItems');
             $projek->refresh();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Nominal PO berhasil diperbarui',
                 'data' => [
-                    'id'          => $projek->id,
-                    'nominal_po'  => (float) $projek->nominal_po,
+                    'id' => $projek->id,
+                    'nominal_po' => (float) $projek->nominal_po,
+                    'nominal_po_items' => $projek->nominal_po_items ?? [],
                     'total_biaya' => (float) $projek->total_biaya,
-                    'profit'      => (float) $projek->profit,
+                    'profit' => (float) $projek->profit,
                 ],
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal update nominal PO: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroyNominalPoItem($id, $itemId)
+    {
+        $projek = ProjekKerja::find($id);
+
+        if (! $projek) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Projek kerja tidak ditemukan',
+            ], 404);
+        }
+
+        try {
+            $projek->deleteNominalPoItem((int) $itemId);
+            $projek->unsetRelation('poItems');
+            $projek->refresh();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Baris nominal PO berhasil dihapus',
+                'data' => [
+                    'id' => $projek->id,
+                    'nominal_po' => (float) $projek->nominal_po,
+                    'nominal_po_items' => $projek->nominal_po_items ?? [],
+                    'total_biaya' => (float) $projek->total_biaya,
+                    'profit' => (float) $projek->profit,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus baris PO: ' . $e->getMessage(),
             ], 500);
         }
     }

@@ -25,6 +25,7 @@ import {
   FolderOpen,
   Users,
   Plus,
+  Power,
   Image,
   Mail,
   Phone,
@@ -211,6 +212,33 @@ export default function KaryawanPage() {
     }
   };
 
+  const handleToggleActive = async (emp) => {
+    if (!isSuperAdmin) return;
+    const nextActive = !Boolean(emp.is_active ?? true);
+    const confirmText = nextActive
+      ? trText(
+          `Aktifkan akun ${emp.name}? Karyawan/user ini bisa login lagi.`,
+          `Activate ${emp.name}'s account? This employee/user can log in again.`
+        )
+      : trText(
+          `Nonaktifkan akun ${emp.name}? Karyawan/user ini tidak bisa login.`,
+          `Deactivate ${emp.name}'s account? This employee/user will not be able to log in.`
+        );
+    if (!window.confirm(confirmText)) return;
+
+    try {
+      await api.patch(`/karyawan/${emp.id}/status`, { is_active: nextActive });
+      setEmployees((prev) =>
+        prev.map((item) => (item.id === emp.id ? { ...item, is_active: nextActive } : item))
+      );
+      if (selected?.id === emp.id) {
+        setSelected((prev) => (prev ? { ...prev, is_active: nextActive } : prev));
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || trText("Gagal mengubah status akun", "Failed to update account status"));
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm(trText("Yakin ingin menghapus karyawan ini?", "Are you sure you want to delete this employee?"))) return;
     try {
@@ -364,6 +392,7 @@ export default function KaryawanPage() {
               <EmployeeCard
                 key={emp.id}
                 employee={emp}
+                canToggleActive={isSuperAdmin}
                 onView={() => setSelected(emp)}
                 onEdit={() => {
                   const formattedData = {
@@ -373,6 +402,7 @@ export default function KaryawanPage() {
                   setEditData(formattedData);
                   setFilePhoto(null);
                 }}
+                onToggleActive={() => handleToggleActive(emp)}
                 onDelete={() => handleDelete(emp.id)}
               />
             ))}
@@ -451,11 +481,12 @@ const StatCard = ({ title, value, icon, color }) => {
 };
 
 // ================= EMPLOYEE CARD =================
-const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
+const EmployeeCard = ({ employee, onView, onEdit, onDelete, onToggleActive, canToggleActive = false }) => {
   const getInitials = (name) => name?.charAt(0)?.toUpperCase() || "U";
 
   const roleLabel = String(employee.role || "-").replace(/_/g, " ");
   const isAdmin = String(employee.role || "").toLowerCase().includes("admin");
+  const isActive = Boolean(employee.is_active ?? true);
 
   return (
     <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:-translate-y-1.5 hover:border-slate-300/90 hover:shadow-xl hover:shadow-slate-900/10">
@@ -502,6 +533,16 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
             <Briefcase size={12} />
             {roleLabel}
           </span>
+          <span
+            className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold ${
+              isActive
+                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80"
+                : "bg-rose-50 text-rose-700 ring-1 ring-rose-200/80"
+            }`}
+          >
+            <Power size={12} />
+            {isActive ? trText("Akun Aktif", "Active") : trText("Akun Nonaktif", "Inactive")}
+          </span>
         </div>
 
         <div className="mx-auto mt-4 flex max-w-full items-center justify-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/90 px-3 py-1.5 text-xs text-slate-500">
@@ -512,6 +553,14 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete }) => {
         <div className="mx-auto mt-5 flex max-w-[220px] items-center justify-center gap-1 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white to-slate-50/90 p-1.5 shadow-inner">
           <ActionButton icon={<Eye size={15} />} onClick={onView} variant="card-view" tooltip={trText("Lihat Detail", "View Detail")} />
           <ActionButton icon={<Pencil size={15} />} onClick={onEdit} variant="card-edit" tooltip="Edit" />
+          {canToggleActive ? (
+            <ActionButton
+              icon={<Power size={15} />}
+              onClick={onToggleActive}
+              variant={isActive ? "card-deactivate" : "card-activate"}
+              tooltip={isActive ? trText("Nonaktifkan akun", "Deactivate account") : trText("Aktifkan akun", "Activate account")}
+            />
+          ) : null}
           <ActionButton icon={<Trash2 size={15} />} onClick={onDelete} variant="card-delete" tooltip={trText("Hapus", "Delete")} />
         </div>
       </div>
@@ -532,6 +581,8 @@ const ActionButton = ({ icon, onClick, color, variant = "default", tooltip }) =>
     "glass-danger": "border border-red-200/80 bg-red-500/10 text-red-600 backdrop-blur-sm hover:bg-red-500/15",
     "card-view": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700",
     "card-edit": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-violet-100 hover:text-violet-700",
+    "card-activate": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-emerald-100 hover:text-emerald-700",
+    "card-deactivate": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-amber-100 hover:text-amber-700",
     "card-delete": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-red-100 hover:text-red-600",
   };
 
@@ -608,6 +659,11 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
           <h3 className="text-xl font-bold text-white">{employee.name}</h3>
           <span className="mt-2 inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white backdrop-blur-md">
             {employee.divisi || "-"}
+          </span>
+          <span className={`mt-2 ml-2 inline-flex items-center rounded-full px-3 py-1 text-sm font-medium backdrop-blur-md ${
+            Boolean(employee.is_active ?? true) ? "bg-emerald-500/30 text-emerald-50" : "bg-rose-500/30 text-rose-50"
+          }`}>
+            {Boolean(employee.is_active ?? true) ? trText("Akun Aktif", "Active") : trText("Akun Nonaktif", "Inactive")}
           </span>
         </div>
       </div>

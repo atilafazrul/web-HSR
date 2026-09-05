@@ -44,7 +44,10 @@ apiClient.interceptors.response.use(
             const errorMessage = error.response?.data?.message;
 
             // Jika session timeout atau token invalid
-            if (errorCode === 'SESSION_TIMEOUT' || errorMessage?.includes('Session')) {
+            if (errorCode === 'ACCOUNT_DISABLED') {
+                tokenManager.clearToken();
+                window.location.href = '/login';
+            } else if (errorCode === 'SESSION_TIMEOUT' || errorMessage?.includes('Session')) {
                 // Clear token dari storage
                 tokenManager.clearToken();
 

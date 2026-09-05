@@ -620,4 +620,50 @@ class UserController extends Controller
             'message' => 'Karyawan berhasil dihapus'
         ]);
     }
+
+    public function toggleActive(Request $request, $id)
+    {
+        $actor = $request->user();
+        if (($actor->role ?? null) !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang dapat mengubah status akun.',
+            ], 403);
+        }
+
+        $user = User::findOrFail($id);
+
+        if ((int) $user->id === (int) $actor->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat menonaktifkan akun sendiri.',
+            ], 422);
+        }
+
+        if (($user->role ?? null) === 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun superadmin tidak dapat dinonaktifkan dari sini.',
+            ], 422);
+        }
+
+        $validated = $request->validate([
+            'is_active' => 'required|boolean',
+        ]);
+
+        $user->is_active = (bool) $validated['is_active'];
+        $user->save();
+
+        if (! $user->is_active) {
+            $user->tokens()->delete();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $user->is_active
+                ? 'Akun berhasil diaktifkan.'
+                : 'Akun berhasil dinonaktifkan.',
+            'user' => $user,
+        ]);
+    }
 }

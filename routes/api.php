@@ -64,7 +64,7 @@ Route::get('/karyawan/{id}/sertifikat', [UserController::class, 'downloadSertifi
 |--------------------------------------------------------------------------
 */
 
-Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
+Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function () {
     
     /*
     |--------------------------------------------------------------------------
@@ -215,6 +215,7 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::get('/karyawan/{id}', [UserController::class, 'show']);
     Route::post('/karyawan', [UserController::class, 'store']);
     Route::put('/karyawan/{id}', [UserController::class, 'update']);
+    Route::patch('/karyawan/{id}/status', [UserController::class, 'toggleActive']);
     Route::delete('/karyawan/{id}', [UserController::class, 'destroy']);
 
 
@@ -356,6 +357,10 @@ Route::middleware(['auth:sanctum', 'log.activity'])->group(function () {
     Route::patch('/projek-kerja/{id}/nominal-po', [
         ProjekKerjaController::class,
         'updateNominalPo'
+    ]);
+    Route::delete('/projek-kerja/{id}/nominal-po-items/{itemId}', [
+        ProjekKerjaController::class,
+        'destroyNominalPoItem'
     ]);
     Route::patch('/projek-kerja/{id}/biaya-item-lunas', [
         ProjekKerjaController::class,

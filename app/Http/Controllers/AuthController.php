@@ -31,6 +31,12 @@ class AuthController extends Controller
             ]);
         }
 
+        if (! (bool) ($user->is_active ?? true)) {
+            throw ValidationException::withMessages([
+                'email' => ['Akun Anda dinonaktifkan. Hubungi superadmin.'],
+            ]);
+        }
+
         // Cek remember_me untuk menentukan expiration
         $rememberMe = $request->boolean('remember_me', false);
         
