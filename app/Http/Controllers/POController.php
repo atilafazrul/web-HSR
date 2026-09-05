@@ -168,7 +168,7 @@ class POController extends Controller
         $ppnPersen = (float) ($validated['ppn_persen'] ?? 11);
         $ppnNominal = (int) round($dpp * ($ppnPersen / 100));
 
-        return [
+        $attrs = [
             'tanggal_po' => $validated['tanggal_po'],
             'to_nama' => $validated['to_nama'],
             'to_alamat' => trim((string) ($validated['to_alamat'] ?? '')) ?: null,
@@ -189,6 +189,12 @@ class POController extends Controller
             'nama_penandatangan' => trim((string) ($validated['nama_penandatangan'] ?? '')) ?: 'Syahrul Roji',
             'jabatan_penandatangan' => trim((string) ($validated['jabatan_penandatangan'] ?? '')) ?: null,
         ];
+
+        if (array_key_exists('projek_kerja_id', $validated)) {
+            $attrs['projek_kerja_id'] = $validated['projek_kerja_id'];
+        }
+
+        return $attrs;
     }
 
     private function documentToPdfData(PoDocument $document): array

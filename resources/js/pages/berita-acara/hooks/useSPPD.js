@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian } from "../utils/dateHelpers";
 import { useDocumentSchedule } from "./useDocumentSchedule";
+import { scopeDocumentHistory } from "../utils/historyScope";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -83,7 +84,7 @@ export const useSPPD = (projekKerjaId = null) => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "history") {
+    if (activeTab === "history" || activeTab === "history-project") {
       fetchHistory();
     }
   }, [activeTab]);
@@ -198,7 +199,7 @@ export const useSPPD = (projekKerjaId = null) => {
       resetForm();
       setIsEditing(false);
       setEditId(null);
-      setActiveTab("history");
+      setActiveTab(projekKerjaId ? "history-project" : "history");
       fetchHistory();
     } catch (error) {
       console.error("Error saving document:", error);
@@ -339,10 +340,15 @@ export const useSPPD = (projekKerjaId = null) => {
     fetchNextNomorSurat();
   };
 
-  const filteredHistory = historyData.filter(item =>
-    item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.nama_pegawai?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.tempat_tujuan?.toLowerCase().includes(searchTerm.toLowerCase())
+  const { filteredHistory, historyAllCount, historyProjectCount } = scopeDocumentHistory(
+    historyData,
+    searchTerm,
+    (item, term) =>
+      item.nomor_surat?.toLowerCase().includes(term) ||
+      item.nama_pegawai?.toLowerCase().includes(term) ||
+      item.tempat_tujuan?.toLowerCase().includes(term),
+    activeTab,
+    projekKerjaId
   );
 
   return {
@@ -356,6 +362,8 @@ export const useSPPD = (projekKerjaId = null) => {
     formData,
     historyData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     fetchingHistory,
     selectedItem,
     showViewModal,

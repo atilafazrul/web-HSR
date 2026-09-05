@@ -10,6 +10,7 @@ class InvoiceDocument extends Model
     use HasFactory;
 
     protected $fillable = [
+        'projek_kerja_id',
         'nomor_surat',
         'tanggal_invoice',
         'tanggal_jatuh_tempo',

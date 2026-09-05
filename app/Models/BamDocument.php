@@ -10,6 +10,7 @@ class BamDocument extends Model
     use HasFactory;
 
     protected $fillable = [
+        'projek_kerja_id',
         'nomor_surat',
         'nama_hari',
         'tanggal_bam',

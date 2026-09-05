@@ -169,7 +169,7 @@ class InvoiceController extends Controller
         $ppnPersen = (float) ($validated['ppn_persen'] ?? 11);
         $ppnNominal = (int) round($dpp * ($ppnPersen / 100));
 
-        return [
+        $attrs = [
             'tanggal_invoice' => $validated['tanggal_invoice'],
             'tanggal_jatuh_tempo' => trim((string) ($validated['tanggal_jatuh_tempo'] ?? '')) ?: null,
             'bill_to_nama' => $validated['bill_to_nama'],
@@ -187,6 +187,12 @@ class InvoiceController extends Controller
             'nama_penandatangan' => trim((string) ($validated['nama_penandatangan'] ?? '')) ?: 'SYAHRUL ROJI',
             'jabatan_penandatangan' => trim((string) ($validated['jabatan_penandatangan'] ?? '')) ?: 'DIREKTUR',
         ];
+
+        if (array_key_exists('projek_kerja_id', $validated)) {
+            $attrs['projek_kerja_id'] = $validated['projek_kerja_id'];
+        }
+
+        return $attrs;
     }
 
     private function documentToPdfData(InvoiceDocument $document): array

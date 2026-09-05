@@ -21,21 +21,22 @@ class ScheduledBeritaAcaraGenerator
         $payload = $schedule->form_payload ?? [];
 
         return match ($schedule->document_type) {
-            ScheduledBeritaAcaraDocument::TYPE_BAST => $this->generateBast($payload),
-            ScheduledBeritaAcaraDocument::TYPE_BAUF => $this->generateBauf($payload),
-            ScheduledBeritaAcaraDocument::TYPE_BAM => $this->generateBam($payload),
-            ScheduledBeritaAcaraDocument::TYPE_SPH => $this->generateSph($payload),
-            ScheduledBeritaAcaraDocument::TYPE_SPPD => $this->generateSppd($payload),
+            ScheduledBeritaAcaraDocument::TYPE_BAST => $this->generateBast($payload, $schedule),
+            ScheduledBeritaAcaraDocument::TYPE_BAUF => $this->generateBauf($payload, $schedule),
+            ScheduledBeritaAcaraDocument::TYPE_BAM => $this->generateBam($payload, $schedule),
+            ScheduledBeritaAcaraDocument::TYPE_SPH => $this->generateSph($payload, $schedule),
+            ScheduledBeritaAcaraDocument::TYPE_SPPD => $this->generateSppd($payload, $schedule),
             ScheduledBeritaAcaraDocument::TYPE_SERVICE_REPORT => $this->generateServiceReport($payload, $schedule),
             default => throw new InvalidArgumentException('Tipe dokumen tidak dikenal.'),
         };
     }
 
-    private function generateBast(array $payload): array
+    private function generateBast(array $payload, ScheduledBeritaAcaraDocument $schedule): array
     {
         $nomorData = BeritaAcaraNomorGenerator::forBast();
 
         $document = BastDocument::create([
+            'projek_kerja_id' => $schedule->projek_kerja_id,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $payload['nama_hari'],
             'tanggal_bast' => $payload['tanggal_bast'],
@@ -59,11 +60,12 @@ class ScheduledBeritaAcaraGenerator
         ];
     }
 
-    private function generateBauf(array $payload): array
+    private function generateBauf(array $payload, ScheduledBeritaAcaraDocument $schedule): array
     {
         $nomorData = BeritaAcaraNomorGenerator::forBauf();
 
         $document = BaufDocument::create([
+            'projek_kerja_id' => $schedule->projek_kerja_id,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $payload['nama_hari'],
             'tanggal_bauf' => $payload['tanggal_bauf'],
@@ -87,11 +89,12 @@ class ScheduledBeritaAcaraGenerator
         ];
     }
 
-    private function generateBam(array $payload): array
+    private function generateBam(array $payload, ScheduledBeritaAcaraDocument $schedule): array
     {
         $nomorData = BeritaAcaraNomorGenerator::forBam();
 
         $document = BamDocument::create([
+            'projek_kerja_id' => $schedule->projek_kerja_id,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $payload['nama_hari'],
             'tanggal_bam' => $payload['tanggal_bam'],
@@ -114,13 +117,14 @@ class ScheduledBeritaAcaraGenerator
         ];
     }
 
-    private function generateSph(array $payload): array
+    private function generateSph(array $payload, ScheduledBeritaAcaraDocument $schedule): array
     {
         $nomorData = BeritaAcaraNomorGenerator::forSph();
         $controller = app(\App\Http\Controllers\SPHController::class);
         $attributes = $controller->buildDocumentAttributes($payload);
 
         $document = SphDocument::create(array_merge($attributes, [
+            'projek_kerja_id' => $schedule->projek_kerja_id,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nomor_urut' => $nomorData['nomor_urut'],
             'bulan' => $nomorData['bulan'],
@@ -133,11 +137,12 @@ class ScheduledBeritaAcaraGenerator
         ];
     }
 
-    private function generateSppd(array $payload): array
+    private function generateSppd(array $payload, ScheduledBeritaAcaraDocument $schedule): array
     {
         $nomorData = BeritaAcaraNomorGenerator::forSppd();
 
         $document = SppdDocument::create([
+            'projek_kerja_id' => $schedule->projek_kerja_id,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nomor_urut' => $nomorData['nomor_urut'],
             'bulan' => $nomorData['bulan'],
@@ -181,6 +186,7 @@ class ScheduledBeritaAcaraGenerator
             $userId = $payload['user_id'] ?? $schedule->created_by;
 
             $report = ServiceReport::create([
+                'projek_kerja_id' => $schedule->projek_kerja_id,
                 'report_no' => $reportNo,
                 'customer' => $payload['customer'],
                 'contact_person' => $payload['contact_person'] ?? null,

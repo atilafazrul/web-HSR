@@ -3,6 +3,7 @@ import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian, getDayName } from "../utils/dateHelpers";
 import { useDocumentSchedule } from "./useDocumentSchedule";
 import { mapKlientDocToForm } from "./pdfDocEditHelpers";
+import { scopeDocumentHistory } from "../utils/historyScope";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -70,7 +71,7 @@ export const useBAST = (projekKerjaId = null) => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "history") {
+    if (activeTab === "history" || activeTab === "history-project") {
       fetchHistory();
     }
   }, [activeTab]);
@@ -186,7 +187,7 @@ export const useBAST = (projekKerjaId = null) => {
         setEditId(null);
         setEditNomorSurat("");
         resetForm();
-        setActiveTab("history");
+        setActiveTab(projekKerjaId ? "history-project" : "history");
         fetchHistory();
         return;
       }
@@ -310,9 +311,14 @@ export const useBAST = (projekKerjaId = null) => {
     resetForm();
   };
 
-  const filteredHistory = historyData.filter(item =>
-    item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.nama_klient?.toLowerCase().includes(searchTerm.toLowerCase())
+  const { filteredHistory, historyAllCount, historyProjectCount } = scopeDocumentHistory(
+    historyData,
+    searchTerm,
+    (item, term) =>
+      item.nomor_surat?.toLowerCase().includes(term) ||
+      item.nama_klient?.toLowerCase().includes(term),
+    activeTab,
+    projekKerjaId
   );
 
   return {
@@ -326,6 +332,8 @@ export const useBAST = (projekKerjaId = null) => {
     formData,
     historyData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     fetchingHistory,
     selectedItem,
     showViewModal,

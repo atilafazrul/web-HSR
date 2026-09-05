@@ -12,6 +12,7 @@ class ServiceReport extends Model
     protected $table = 'service_reports';
 
     protected $fillable = [
+        'projek_kerja_id',
         'report_no',
         'customer',
         'contact_person',

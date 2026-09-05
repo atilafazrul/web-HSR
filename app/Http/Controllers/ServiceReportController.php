@@ -93,6 +93,7 @@ class ServiceReportController extends Controller
             // Meta
             'divisi' => 'required|string|max:50',
             'user_id' => 'required|integer|exists:users,id',
+            'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
 
         try {
@@ -105,6 +106,7 @@ class ServiceReportController extends Controller
 
             // Create Service Report
             $report = ServiceReport::create([
+                'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
                 'report_no' => $reportNo,
                 'customer' => $validated['customer'],
                 'contact_person' => $validated['contact_person'] ?? null,

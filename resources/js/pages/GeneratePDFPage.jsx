@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { useParams } from "react-router-dom";
-import { History, Plus } from "lucide-react";
 import { usePdf } from "./generatepdf/usePdf";
 import pdfForm from "./generatepdf/pdfform";
 import DocumentationHistory from "./generatepdf/pdfHistory";
+import BeritaAcaraTabBar from "./berita-acara/components/BeritaAcaraTabBar";
 import { useI18n } from "../i18n";
 
 export default function GeneratePDFPage({ user }) {
@@ -22,6 +22,8 @@ export default function GeneratePDFPage({ user }) {
     partsList,
     historyData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     fetchingHistory,
     serviceTypeOptions,
     selectedItem,
@@ -44,6 +46,21 @@ export default function GeneratePDFPage({ user }) {
     handleScheduleGenerate,
   } = usePdf(user, projekId);
 
+  const handleTabChange = (tab) => {
+    if (isEditing) {
+      const message =
+        tab === "form"
+          ? tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan membuat dokumen baru?", "You are editing a document. Are you sure you want to cancel and create a new one?")
+          : tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan melihat riwayat?", "You are editing a document. Are you sure you want to cancel and view history?");
+      if (window.confirm(message)) {
+        cancelEdit();
+        setActiveTab(tab);
+      }
+      return;
+    }
+    setActiveTab(tab);
+  };
+
   return (
     <div>
       {/* HEADER */}
@@ -62,47 +79,15 @@ export default function GeneratePDFPage({ user }) {
         </div>
       </div>
 
-      {/* TABS */}
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => {
-            if (isEditing) {
-              if (window.confirm(tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan membuat dokumen baru?", "You are editing a document. Are you sure you want to cancel and create a new one?"))) {
-                cancelEdit();
-                setActiveTab("form");
-              }
-            } else {
-              setActiveTab("form");
-            }
-          }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ${activeTab === "form"
-            ? "bg-blue-600 text-white"
-            : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-        >
-          <Plus size={18} />
-          {isEditing ? tr("Edit Dokumen", "Edit Document") : tr("Buat Baru", "Create New")}
-        </button>
-        <button
-          onClick={() => {
-            if (isEditing) {
-              if (window.confirm(tr("Anda sedang mengedit dokumen. Yakin ingin membatalkan dan melihat riwayat?", "You are editing a document. Are you sure you want to cancel and view history?"))) {
-                cancelEdit();
-                setActiveTab("history");
-              }
-            } else {
-              setActiveTab("history");
-            }
-          }}
-          className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ${activeTab === "history"
-            ? "bg-blue-600 text-white"
-            : "bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-        >
-          <History size={18} />
-          {tr("Riwayat", "History")} ({historyData.length})
-        </button>
-      </div>
+      <BeritaAcaraTabBar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        isEditing={isEditing}
+        hasProject={Boolean(projekId)}
+        allCount={historyAllCount}
+        projectCount={historyProjectCount}
+        tr={tr}
+      />
 
       {/* CONTENT */}
       {activeTab === "form" ? (

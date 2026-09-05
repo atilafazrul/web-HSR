@@ -10,6 +10,7 @@ class SphDocument extends Model
     use HasFactory;
 
     protected $fillable = [
+        'projek_kerja_id',
         'nomor_surat',
         'lampiran',
         'perihal',

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../api/axiosConfig";
 import { useDocumentSchedule } from "../berita-acara/hooks/useDocumentSchedule";
+import { scopeDocumentHistory } from "../berita-acara/utils/historyScope";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -181,6 +182,7 @@ export const usePdf = (user, projekKerjaId = null) => {
           tanggal: item.tanggal,
           divisi: item.divisi,
           status: item.status,
+          projek_kerja_id: item.projek_kerja_id,
           created_at: item.created_at,
         }));
         setHistoryData(mappedData);
@@ -224,6 +226,7 @@ export const usePdf = (user, projekKerjaId = null) => {
       partsList: partsData,
       divisi: divisiToSend,
       user_id: user?.id,
+      ...(projekKerjaId ? { projek_kerja_id: Number(projekKerjaId) } : {}),
     };
   };
 
@@ -274,7 +277,7 @@ export const usePdf = (user, projekKerjaId = null) => {
         resetForm();
         setIsEditing(false);
         setEditId(null);
-        setActiveTab("history");
+        setActiveTab(projekKerjaId ? "history-project" : "history");
         // Refresh history
         await fetchHistory();
       } else {
@@ -417,13 +420,18 @@ export const usePdf = (user, projekKerjaId = null) => {
   };
 
   // ================= FILTERED HISTORY =================
-  const filteredHistory = historyData.filter(item =>
-    item.customer?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.contact_person?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.phone?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.nama_teknisi?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.divisi?.toLowerCase().includes(searchTerm.toLowerCase())
+  const { filteredHistory, historyAllCount, historyProjectCount } = scopeDocumentHistory(
+    historyData,
+    searchTerm,
+    (item, term) =>
+      item.customer?.toLowerCase().includes(term) ||
+      item.contact_person?.toLowerCase().includes(term) ||
+      item.phone?.toLowerCase().includes(term) ||
+      item.nama_teknisi?.toLowerCase().includes(term) ||
+      item.brand?.toLowerCase().includes(term) ||
+      item.divisi?.toLowerCase().includes(term),
+    activeTab,
+    projekKerjaId
   );
 
   // ================= SERVICE TYPE OPTIONS =================
@@ -453,6 +461,8 @@ export const usePdf = (user, projekKerjaId = null) => {
     partsList,
     historyData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     fetchingHistory,
     serviceTypeOptions,
     selectedItem,

@@ -1,9 +1,9 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { History, Plus } from "lucide-react";
 import { useBAUF } from "./hooks/useBAUF";
 import { BAUFForm } from "./components/forms/BAUFForm";
 import { BAUFHistory } from "./components/history/BAUFHistory";
+import BeritaAcaraTabBar from "./components/BeritaAcaraTabBar";
 import { useI18n } from "../../i18n";
 
 export default function BAUFPage() {
@@ -18,6 +18,8 @@ export default function BAUFPage() {
     setSearchTerm,
     formData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     selectedItem,
     showViewModal,
     isEditing,
@@ -63,22 +65,15 @@ export default function BAUFPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
-        <button
-          onClick={() => handleTabChange("form")}
-          className={'flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ' + (activeTab === "form" ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100')}
-        >
-          <Plus size={18} />
-          {isEditing ? tr("Edit Dokumen", "Edit Document") : tr("Buat Baru", "Create New")}
-        </button>
-        <button
-          onClick={() => handleTabChange("history")}
-          className={'flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition ' + (activeTab === "history" ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 hover:bg-gray-100')}
-        >
-          <History size={18} />
-          {tr("Riwayat", "History")} ({filteredHistory.length})
-        </button>
-      </div>
+      <BeritaAcaraTabBar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        isEditing={isEditing}
+        hasProject={Boolean(projekId)}
+        allCount={historyAllCount}
+        projectCount={historyProjectCount}
+        tr={tr}
+      />
 
       <div className="animate-fadeIn">
         {activeTab === "form" ? (

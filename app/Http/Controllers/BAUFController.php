@@ -122,6 +122,7 @@ class BAUFController extends Controller
         $nomorData = $this->generateNomorSurat();
 
         $document = BaufDocument::create([
+            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $validated['nama_hari'],
             'tanggal_bauf' => $validated['tanggal_bauf'],

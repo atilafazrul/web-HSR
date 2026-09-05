@@ -76,6 +76,7 @@ class SPHController extends Controller
         $totalHarga = $this->calculateTotal($items);
 
         $document = SphDocument::create([
+            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
             'nomor_surat' => $nomorData['nomor_surat'],
             'lampiran' => $validated['lampiran'] ?? '-',
             'perihal' => $validated['perihal'] ?? 'Penawaran Harga',

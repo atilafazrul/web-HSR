@@ -4,6 +4,7 @@ import { formatDateToIndonesian } from "../utils/dateHelpers";
 import { parseRibuanId } from "../../../utils/formatRupiahInput";
 import { useDocumentSchedule } from "./useDocumentSchedule";
 import { mapSphDocToForm } from "./pdfDocEditHelpers";
+import { scopeDocumentHistory } from "../utils/historyScope";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -86,7 +87,7 @@ export const useSPH = (projekKerjaId = null) => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "history") {
+    if (activeTab === "history" || activeTab === "history-project") {
       fetchHistory();
     }
   }, [activeTab]);
@@ -190,7 +191,7 @@ export const useSPH = (projekKerjaId = null) => {
         setEditId(null);
         setEditNomorSurat("");
         resetForm();
-        setActiveTab("history");
+        setActiveTab(projekKerjaId ? "history-project" : "history");
         fetchHistory();
         return;
       }
@@ -309,10 +310,14 @@ export const useSPH = (projekKerjaId = null) => {
     resetForm();
   };
 
-  const filteredHistory = historyData.filter(
-    (item) =>
-      item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.penerima_nama?.toLowerCase().includes(searchTerm.toLowerCase())
+  const { filteredHistory, historyAllCount, historyProjectCount } = scopeDocumentHistory(
+    historyData,
+    searchTerm,
+    (item, term) =>
+      item.nomor_surat?.toLowerCase().includes(term) ||
+      item.penerima_nama?.toLowerCase().includes(term),
+    activeTab,
+    projekKerjaId
   );
 
   const formatRupiah = (value) =>
@@ -339,6 +344,8 @@ export const useSPH = (projekKerjaId = null) => {
     formData,
     historyData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     fetchingHistory,
     selectedItem,
     showViewModal,

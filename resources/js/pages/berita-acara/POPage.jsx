@@ -1,9 +1,9 @@
 import React from "react";
 import { useParams } from "react-router-dom";
-import { History, Plus } from "lucide-react";
 import { usePO } from "./hooks/usePO";
 import { POForm } from "./components/forms/POForm";
 import { POHistory } from "./components/history/POHistory";
+import BeritaAcaraTabBar from "./components/BeritaAcaraTabBar";
 import { useI18n } from "../../i18n";
 
 export default function POPage() {
@@ -20,6 +20,8 @@ export default function POPage() {
     setSearchTerm,
     formData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     selectedItem,
     showViewModal,
     isEditing,
@@ -66,16 +68,15 @@ export default function POPage() {
         </p>
       </div>
 
-      <div className="mb-6 flex gap-2">
-        <button onClick={() => handleTabChange("form")} className={`flex items-center gap-2 rounded-xl px-6 py-3 font-medium transition ${activeTab === "form" ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>
-          <Plus size={18} />
-          {isEditing ? tr("Edit Dokumen", "Edit Document") : tr("Buat Baru", "Create New")}
-        </button>
-        <button onClick={() => handleTabChange("history")} className={`flex items-center gap-2 rounded-xl px-6 py-3 font-medium transition ${activeTab === "history" ? "bg-blue-600 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>
-          <History size={18} />
-          {tr("Riwayat", "History")} ({filteredHistory.length})
-        </button>
-      </div>
+      <BeritaAcaraTabBar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        isEditing={isEditing}
+        hasProject={Boolean(projekId)}
+        allCount={historyAllCount}
+        projectCount={historyProjectCount}
+        tr={tr}
+      />
 
       <div className="animate-fadeIn">
         {activeTab === "form" ? (

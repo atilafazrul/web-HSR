@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../../api/axiosConfig";
 import { formatDateToIndonesian } from "../utils/dateHelpers";
 import { nominalApiToInput, parseRibuanId } from "../../../utils/formatRupiahInput";
+import { scopeDocumentHistory } from "../utils/historyScope";
 
 const tr = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -80,7 +81,7 @@ export const usePO = (projekKerjaId = null) => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "history") fetchHistory();
+    if (activeTab === "history" || activeTab === "history-project") fetchHistory();
   }, [activeTab]);
 
   const fetchNextNomorSurat = async () => {
@@ -185,7 +186,7 @@ export const usePO = (projekKerjaId = null) => {
         setEditId(null);
         setEditNomorSurat("");
         resetForm();
-        setActiveTab("history");
+        setActiveTab(projekKerjaId ? "history-project" : "history");
         fetchHistory();
         return;
       }
@@ -323,10 +324,14 @@ export const usePO = (projekKerjaId = null) => {
   const estimatedPpn = Math.round(estimatedDpp * (Number(formData.ppn_persen || 11) / 100));
   const estimatedTotal = estimatedDpp + estimatedPpn;
 
-  const filteredHistory = historyData.filter(
-    (item) =>
-      item.nomor_surat?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.to_nama?.toLowerCase().includes(searchTerm.toLowerCase())
+  const { filteredHistory, historyAllCount, historyProjectCount } = scopeDocumentHistory(
+    historyData,
+    searchTerm,
+    (item, term) =>
+      item.nomor_surat?.toLowerCase().includes(term) ||
+      item.to_nama?.toLowerCase().includes(term),
+    activeTab,
+    projekKerjaId
   );
 
   return {
@@ -340,6 +345,8 @@ export const usePO = (projekKerjaId = null) => {
     formData,
     historyData,
     filteredHistory,
+    historyAllCount,
+    historyProjectCount,
     fetchingHistory,
     selectedItem,
     showViewModal,

@@ -122,6 +122,7 @@ class BASTController extends Controller
         $nomorData = $this->generateNomorSurat();
 
         $document = BastDocument::create([
+            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $validated['nama_hari'],
             'tanggal_bast' => $validated['tanggal_bast'],

@@ -10,6 +10,7 @@ class SppdDocument extends Model
     use HasFactory;
 
     protected $fillable = [
+        'projek_kerja_id',
         'nomor_surat',
         'nomor_urut',
         'bulan',

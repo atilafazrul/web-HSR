@@ -120,6 +120,7 @@ class BAMController extends Controller
         $nomorData = $this->generateNomorSurat();
 
         $document = BamDocument::create([
+            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nama_hari' => $validated['nama_hari'],
             'tanggal_bam' => $validated['tanggal_bam'],

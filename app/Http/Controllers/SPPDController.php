@@ -121,6 +121,7 @@ class SPPDController extends Controller
         $nomorData = $this->generateNomorSurat();
 
         $document = SppdDocument::create([
+            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nomor_urut' => $nomorData['nomor_urut'],
             'bulan' => $nomorData['bulan'],
@@ -186,6 +187,7 @@ class SPPDController extends Controller
         $nomorData = $this->generateNomorSurat();
 
         $document = SppdDocument::create([
+            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
             'nomor_surat' => $nomorData['nomor_surat'],
             'nomor_urut' => $nomorData['nomor_urut'],
             'bulan' => $nomorData['bulan'],
