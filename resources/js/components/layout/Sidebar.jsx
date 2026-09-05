@@ -11,7 +11,6 @@ import {
   Hammer,
   LogOut,
   Users,
-  X,
   AlertTriangle,
   Wallet,
   Truck,
@@ -145,13 +144,13 @@ export default function Sidebar({
       {/* MOBILE OVERLAY */}
       {sidebarOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="lg:hidden fixed inset-0 bg-black/50 z-[55]"
           onClick={() => setSidebarOpen && setSidebarOpen(false)}
         />
       )}
 
       <aside
-        className={`fixed z-50 top-0 left-0 h-full
+        className={`fixed z-[60] top-0 left-0 h-svh lg:h-full
         ${expanded ? "w-64 md:w-72" : "w-20"}
         text-white flex flex-col justify-between
         transform transition-all duration-300 ease-in-out
@@ -161,22 +160,13 @@ export default function Sidebar({
       >
 
         <div className="flex-1 flex flex-col min-h-0">
-          {/* MOBILE HEADER - CLOSE BUTTON */}
-          <div className="lg:hidden flex items-center justify-between p-4 border-b border-slate-800">
-            <span className="font-semibold text-lg">{t("menu", "Menu")}</span>
-            <button
-              onClick={() => setSidebarOpen && setSidebarOpen(false)}
-              className="p-2 rounded-lg hover:bg-slate-700 transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-
           {/* LOGO SECTION */}
-          <div className="px-4 py-6 flex justify-center">
+          <div
+            className="px-4 pb-6 flex justify-center"
+            style={{ paddingTop: isMobile ? "max(3rem, calc(env(safe-area-inset-top, 0px) + 1.75rem))" : "1.5rem" }}
+          >
             <div className="relative">
-              {/* Logo untuk expanded state */}
-              <div className={`transition-all duration-300 ${expanded ? 'opacity-100 w-auto' : 'opacity-0 w-0 overflow-hidden'}`}>
+              <div className={`transition-all duration-300 ${expanded ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"}`}>
                 <img
                   src="/images/LOGO HSR.png"
                   alt="HSR"
@@ -184,7 +174,6 @@ export default function Sidebar({
                 />
               </div>
 
-              {/* Logo untuk collapsed state - hanya tampil di desktop */}
               {!expanded && !isMobile && (
                 <div className="absolute inset-0 flex items-center justify-center">
                   <img

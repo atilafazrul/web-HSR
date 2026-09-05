@@ -1,5 +1,5 @@
 import React from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown.jsx";
 
@@ -46,7 +46,7 @@ export default function Header({
   };
 
   return (
-    <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center relative z-50">
+    <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center relative z-40">
       <div className="flex items-center gap-4">
         {setSidebarExpanded && (
           <button
@@ -59,14 +59,14 @@ export default function Header({
           </button>
         )}
 
-        {setSidebarOpen && (
+        {setSidebarOpen && !sidebarOpen && (
           <button
             onClick={toggleMobileSidebar}
             className="lg:hidden flex items-center justify-center p-2 rounded-lg hover:bg-gray-100"
             style={{ minWidth: "44px", minHeight: "44px", touchAction: "manipulation" }}
             aria-label="Toggle mobile sidebar"
           >
-            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+            <Menu size={20} />
           </button>
         )}
       </div>
