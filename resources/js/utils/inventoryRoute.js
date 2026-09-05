@@ -1,5 +1,5 @@
 /** Slug divisi yang memakai InventoryPage / FormBarangPage / EditBarangPage */
-export const INVENTORY_DIVISI_SLUGS = ["it", "service", "kontraktor", "purchasing"];
+export const INVENTORY_DIVISI_SLUGS = ["it", "service", "kontraktor", "purchasing", "siplah"];
 
 export function getBasePathFromRole(role) {
   if (role === "super_admin") return "/super_admin";
@@ -8,7 +8,7 @@ export function getBasePathFromRole(role) {
 }
 
 export function getInventoryDivisiFromPath(pathname) {
-  const match = pathname.match(/\/(it|service|kontraktor|purchasing)\/inventory/);
+  const match = pathname.match(/\/(it|service|kontraktor|purchasing|siplah)\/inventory/);
   return match?.[1] || "it";
 }
 

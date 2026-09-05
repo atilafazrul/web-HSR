@@ -6,6 +6,7 @@ const DIVISI_TO_PATH = {
   kontraktor: "kontraktor",
   logistik: "logistik",
   purchasing: "purchasing",
+  siplah: "siplah",
 };
 
 export function resolveDivisiSlug(divisi) {

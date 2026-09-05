@@ -128,6 +128,7 @@ class WhatsAppRecipientResolver
             'kontraktor', 'contractor', 'divisi kontraktor' => 'kontraktor',
             'logistik', 'divisi logistik' => 'logistik',
             'purchasing', 'divisi purchasing' => 'purchasing',
+            'siplah', 'divisi siplah' => 'siplah',
             default => preg_replace('/[^a-z0-9_]/', '', str_replace(' ', '_', $raw)) ?? $raw,
         };
     }

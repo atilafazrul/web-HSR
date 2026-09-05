@@ -31,6 +31,7 @@ import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
 import LogistikPage from "./LogistikPage";
 import PurchasingPage from "./PurchasingPage";
+import SIPLAHPage from "./SIPLAHPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import EditProjekKerjaPage from "./EditProjekKerjaPage";
@@ -171,6 +172,7 @@ export default function AdminDashboard({ user, logout }) {
     if (path.includes("kontraktor")) return language === "en" ? "Contractor Division" : "Divisi Kontraktor";
     if (path.includes("logistik")) return language === "en" ? "Logistics Division" : "Divisi Logistik";
     if (path.includes("purchasing")) return language === "en" ? "Purchasing Division" : "Divisi Purchasing";
+    if (path.includes("siplah")) return language === "en" ? "SIPLAH Division" : "Divisi SIPLAH";
     if (path.includes("profile")) return language === "en" ? "Profile" : "Profil";
     if (path.includes("settings")) return language === "en" ? "Settings" : "Pengaturan";
 
@@ -255,6 +257,7 @@ export default function AdminDashboard({ user, logout }) {
       "Kontraktor": "/images/Kontraktor Card.png",
       "Logistik": "/images/logistik card.png",
       "Purchasing": "/images/Purchasing Card.png",
+      "SIPLAH": "/images/Purchasing Card.png",
     };
     return imageMap[divisi] || "/images/IT Card.png";
   };
@@ -406,6 +409,7 @@ export default function AdminDashboard({ user, logout }) {
                             <option value="Kontraktor">Kontraktor</option>
                             <option value="Logistik">Logistik</option>
                             <option value="Purchasing">Purchasing</option>
+                            <option value="SIPLAH">SIPLAH</option>
                           </select>
                         )}
 
@@ -655,14 +659,20 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="kontraktor/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="logistik" element={<LogistikPage user={user} />} />
             <Route path="purchasing" element={<PurchasingPage user={user} />} />
+            <Route path="siplah" element={<SIPLAHPage user={user} />} />
             <Route path="logistik/projek" element={<ProjekKerjaPage />} />
             <Route path="logistik/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="purchasing/projek" element={<ProjekKerjaPage />} />
             <Route path="purchasing/projek/archive" element={<ProjekKerjaPage />} />
+            <Route path="siplah/projek" element={<ProjekKerjaPage />} />
+            <Route path="siplah/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="purchasing/pembelian" element={<PembelianPage />} />
             <Route path="purchasing/inventory" element={<InventoryPage />} />
             <Route path="purchasing/inventory/tambah" element={<FormBarangPage />} />
             <Route path="purchasing/inventory/edit/:id" element={<EditBarangPage />} />
+            <Route path="siplah/inventory" element={<InventoryPage />} />
+            <Route path="siplah/inventory/tambah" element={<FormBarangPage />} />
+            <Route path="siplah/inventory/edit/:id" element={<EditBarangPage />} />
 
             <Route path="logistik/inventory" element={<LogistikInventoryPage />} />
             <Route path="logistik/inventory/tambah" element={<LogistikFormBarangPage />} />
@@ -688,6 +698,7 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="kontraktor/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
             <Route path="logistik/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
             <Route path="purchasing/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
+            <Route path="siplah/buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
 
             {/* ================= PROFILE ================= */}
             <Route

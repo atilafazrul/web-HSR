@@ -375,6 +375,7 @@ export default function EditProjekKerjaPage() {
               <option value="Sales">Sales</option>
               <option value="Logistik">Logistik</option>
               <option value="Purchasing">Purchasing</option>
+              <option value="SIPLAH">SIPLAH</option>
             </select>
           </div>
 

@@ -142,6 +142,7 @@ export default function ProjekKerjaPage() {
       kontraktor: "Kontraktor",
       logistik: "Logistik",
       purchasing: "Purchasing",
+      siplah: "SIPLAH",
     };
     return map[key] || d || "-";
   };
@@ -304,7 +305,8 @@ export default function ProjekKerjaPage() {
         kontraktor: "Kontraktor",
         sales: "Sales",
         logistik: "Logistik",
-        purchasing: "Purchasing"
+        purchasing: "Purchasing",
+        siplah: "SIPLAH",
       };
       return divisiMap[divisiFromPath.toLowerCase()] || divisiFromPath;
     }
@@ -1893,6 +1895,7 @@ export default function ProjekKerjaPage() {
                   <option value="Sales">Sales</option>
                   <option value="Logistik">Logistik</option>
                   <option value="Purchasing">Purchasing</option>
+                  <option value="SIPLAH">SIPLAH</option>
                 </select>
               )
             ) : (

@@ -16,6 +16,7 @@ import {
   Wallet,
   Truck,
   ShoppingCart,
+  GraduationCap,
   FileText,
   CalendarCheck,
   ClipboardCheck,
@@ -113,6 +114,7 @@ export default function Sidebar({
     { name: "Sales", path: "sales", icon: <BarChart3 size={18} /> },
     { name: "Logistik", path: "logistik", icon: <Truck size={18} /> },
     { name: "Purchasing", path: "purchasing", icon: <ShoppingCart size={18} /> },
+    { name: "SIPLAH", path: "siplah", icon: <GraduationCap size={18} /> },
   ];
 
   const go = (path) => {

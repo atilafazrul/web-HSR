@@ -1000,7 +1000,7 @@ const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, o
         value={createData.divisi}
         onChange={(v) => setCreateData({ ...createData, divisi: v })}
         type="select"
-        options={["IT", "Service", "Sales", "Kontraktor", "Logistik", "Purchasing"]}
+        options={["IT", "Service", "Sales", "Kontraktor", "Logistik", "Purchasing", "SIPLAH"]}
       />
       <FormField
         label={trText("Role Akun", "Account Role")}

@@ -47,7 +47,7 @@ export default function BeritaAcaraPage() {
 
   const handleBackToProject = () => {
     const divisi = String(project?.divisi || "").toLowerCase();
-    const divisiPath = ["it", "service", "sales", "kontraktor", "logistik", "purchasing"].includes(divisi)
+    const divisiPath = ["it", "service", "sales", "kontraktor", "logistik", "purchasing", "siplah"].includes(divisi)
       ? divisi
       : "it";
     navigate(`${basePath}/${divisiPath}/projek`);

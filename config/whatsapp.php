@@ -63,6 +63,10 @@ return [
             'trim',
             explode(',', (string) env('WHATSAPP_LEADERS_KONTRAKTOR', ''))
         ))),
+        'siplah' => array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) env('WHATSAPP_LEADERS_SIPLAH', ''))
+        ))),
     ],
 
     'division_leader_phones' => [
@@ -70,6 +74,7 @@ return [
         'it' => env('WHATSAPP_LEADERS_IT_PHONES', ''),
         'sales' => env('WHATSAPP_LEADERS_SALES_PHONES', ''),
         'kontraktor' => env('WHATSAPP_LEADERS_KONTRAKTOR_PHONES', ''),
+        'siplah' => env('WHATSAPP_LEADERS_SIPLAH_PHONES', ''),
     ],
 
     'fonnte' => [

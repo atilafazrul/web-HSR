@@ -228,6 +228,7 @@ export default function FotoProjekPage() {
       kontraktor: "kontraktor",
       logistik: "logistik",
       purchasing: "purchasing",
+      siplah: "siplah",
     };
     return map[key] || "";
   };

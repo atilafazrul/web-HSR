@@ -725,6 +725,7 @@ const DIVISI_TONE = {
   Kontraktor:  "bg-amber-50 text-amber-800 ring-amber-200/70",
   Logistik:    "bg-violet-50 text-violet-700 ring-violet-200/70",
   Purchasing:  "bg-rose-50 text-rose-700 ring-rose-200/70",
+  SIPLAH:      "bg-teal-50 text-teal-700 ring-teal-200/70",
 };
 
 const DivisiBadge = ({ divisi }) => {

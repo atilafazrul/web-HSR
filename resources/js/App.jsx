@@ -60,6 +60,7 @@ export default function App() {
       sales: "/sales/dashboard",
       logistik: "/logistik/dashboard",
       purchasing: "/purchasing/dashboard",
+      siplah: "/siplah/dashboard",
     };
     return paths[user.role] || "/";
   }, [user?.role]);

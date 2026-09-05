@@ -31,6 +31,7 @@ import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
 import LogistikPage from "./LogistikPage";
 import PurchasingPage from "./PurchasingPage";
+import SIPLAHPage from "./SIPLAHPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import Profile from "./Profile";
@@ -44,6 +45,7 @@ const DIVISI_TO_PATH = {
   Kontraktor: "kontraktor",
   Logistik: "logistik",
   Purchasing: "purchasing",
+  SIPLAH: "siplah",
 };
 
 const DIVISI_PAGE = {
@@ -53,6 +55,7 @@ const DIVISI_PAGE = {
   kontraktor: KontraktorPage,
   logistik: LogistikPage,
   purchasing: PurchasingPage,
+  siplah: SIPLAHPage,
 };
 
 export default function UserDashboard({ user, logout }) {
@@ -81,6 +84,7 @@ export default function UserDashboard({ user, logout }) {
       Kontraktor: "/images/Kontraktor Card.png",
       Logistik: "/images/logistik card.png",
       Purchasing: "/images/Purchasing Card.png",
+      SIPLAH: "/images/Purchasing Card.png",
     };
     return imageMap[divisi] || "/images/IT Card.png";
   };

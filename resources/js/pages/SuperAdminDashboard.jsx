@@ -54,6 +54,7 @@ import SalesPage from "./SalesPage";
 import KontraktorPage from "./KontraktorPage";
 import LogistikPage from "./LogistikPage";
 import PurchasingPage from "./PurchasingPage";
+import SIPLAHPage from "./SIPLAHPage";
 import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import EditProjekKerjaPage from "./EditProjekKerjaPage";
@@ -131,6 +132,7 @@ export default function SuperAdminDashboard({ user, logout }) {
     if (path.includes("kontraktor")) return "Divisi Kontraktor";
     if (path.includes("logistik")) return "Divisi Logistik";
     if (path.includes("purchasing")) return "Divisi Purchasing";
+    if (path.includes("siplah")) return "Divisi SIPLAH";
     if (path.includes("profile")) return language === "en" ? "Profile" : "Profil";
     if (path.includes("settings")) return language === "en" ? "Settings" : "Pengaturan";
     if (path.includes("dashboard")) return "Dashboard";
@@ -253,6 +255,16 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
               <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
               <Route path="pembelian" element={<PembelianPage />} />
+            </Route>
+
+            <Route path="siplah">
+              <Route index element={<SIPLAHPage user={user} />} />
+              <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="inventory/tambah" element={<FormBarangPage />} />
+              <Route path="inventory/edit/:id" element={<EditBarangPage />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
             </Route>
 
             <Route path="projek-kerja" element={<ProjekKerjaPage />} />
@@ -531,6 +543,15 @@ const Dashboard = ({ user, windowWidth }) => {
             isMobile={isMobile}
             language={language}
           />
+
+          <DivisiCard
+            title={language === "en" ? "SIPLAH Division" : "Divisi SIPLAH"}
+            image="/images/Purchasing Card.png"
+            count={projek.filter((p) => p.divisi === "SIPLAH").length}
+            onClick={() => navigate(`${basePath}/siplah`)}
+            isMobile={isMobile}
+            language={language}
+          />
         </div>
       </DashboardSurface>
 
@@ -594,6 +615,7 @@ const Dashboard = ({ user, windowWidth }) => {
               <option value="Kontraktor">Kontraktor</option>
               <option value="Logistik">Logistik</option>
               <option value="Purchasing">Purchasing</option>
+              <option value="SIPLAH">SIPLAH</option>
             </select>
 
             <select

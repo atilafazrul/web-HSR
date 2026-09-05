@@ -9,7 +9,7 @@ export default function Login({ login, isLoading }) {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const divisions = ["IT", "SERVICE", "KONTRAKTOR", "SALES", "LOGISTIK", "PURCHASING"];
+  const divisions = ["IT", "SERVICE", "KONTRAKTOR", "SALES", "LOGISTIK", "PURCHASING", "SIPLAH"];
   const [currentDivision, setCurrentDivision] = useState(0);
   const [animate, setAnimate] = useState(true);
 

@@ -160,6 +160,7 @@ const uiIdToEn = {
   "Divisi Kontraktor": "Contractor Division",
   "Divisi Logistik": "Logistics Division",
   "Divisi Purchasing": "Purchasing Division",
+  "Divisi SIPLAH": "SIPLAH Division",
   "Progres Pekerjaan": "Work Progress",
   "Archive Pekerjaan": "Work Archive",
   "Buat PDF": "Create PDF",
