@@ -299,7 +299,7 @@ class ProjekKerja extends Model
                 if (!empty($row->item_created_at)) {
                     $item['created_at'] = $row->item_created_at;
                 }
-                if (!empty($row->photo_paths)) {
+                if ($row->relationLoaded('photos') && !empty($row->photo_paths)) {
                     $item['photo_paths'] = $row->photo_paths;
                 }
                 if ($row->relationLoaded('photos') && $row->photos->isNotEmpty()) {

@@ -571,7 +571,21 @@ class DashboardBiayaController extends Controller
             })->filter(); // Hapus nilai null
 
         // Ambil biaya dari projek_kerjas (biaya_*_items dihitung dari relasi `biayas`, bukan kolom mentah)
-        $projekKerjas = \App\Models\ProjekKerja::with('biayas')->get(['id', 'created_at']);
+        $projekKerjas = \App\Models\ProjekKerja::query()
+            ->where(function ($q) use ($bulan, $tahun) {
+                // Proyek yang created_at di bulan/tahun ini (fallback untuk item tanpa tanggal)
+                $q->where(function ($q2) use ($bulan, $tahun) {
+                    $q2->whereYear('created_at', $tahun)
+                       ->whereMonth('created_at', $bulan);
+                // ATAU punya biaya item yang tanggalnya di bulan/tahun ini
+                })->orWhereHas('biayas', function ($q2) use ($bulan, $tahun) {
+                    $q2->whereNotNull('item_created_at')
+                       ->whereYear('item_created_at', $tahun)
+                       ->whereMonth('item_created_at', $bulan);
+                });
+            })
+            ->with(['biayas' => fn ($q) => $q->without('photos')])
+            ->get(['id', 'created_at']);
 
         // Ambil semua user yang masih aktif untuk validasi
         $activeUserNames = \App\Models\User::pluck('name')
@@ -1122,6 +1136,14 @@ class DashboardBiayaController extends Controller
                 $keterangan = strtoupper((string) ($row->kategori ?? 'BIAYA'));
             }
 
+            $kat = strtolower(trim((string) ($row->kategori ?? '')));
+            $jenisBiaya = match ($kat) {
+                'jalan' => 'Biaya Jalan',
+                'pengeluaran' => 'Biaya Pengeluaran',
+                'reimbursment', 'reimbursement' => 'Biaya Reimbursment',
+                default => $kat !== '' ? ucwords(str_replace('_', ' ', $kat)) : 'Biaya Pengeluaran',
+            };
+
             $lines[] = [
                 'date' => Carbon::parse($row->created_at),
                 'keterangan' => $keterangan,
@@ -1129,16 +1151,40 @@ class DashboardBiayaController extends Controller
                 'kredit' => $nominal,
                 'staff' => $staff,
                 'projek' => 'Di Luar Projek',
+                'jenis_biaya' => $jenisBiaya,
             ];
         }
 
         // Biaya dari proyek kerja (biaya_*_items dihitung dari relasi `biayas`, bukan kolom mentah)
-        $projekKerjas = ProjekKerja::query()->with('biayas')->get(['id', 'created_at', 'report_no', 'jenis_pekerjaan']);
+        $projekKerjas = ProjekKerja::query()
+            ->where(function ($q) use ($bulan, $tahun) {
+                // Proyek yang created_at di bulan/tahun ini (fallback untuk item tanpa tanggal)
+                $q->where(function ($q2) use ($bulan, $tahun) {
+                    $q2->whereYear('created_at', $tahun)
+                       ->whereMonth('created_at', $bulan);
+                // ATAU punya biaya item yang tanggalnya di bulan/tahun ini
+                })->orWhereHas('biayas', function ($q2) use ($bulan, $tahun) {
+                    $q2->whereNotNull('item_created_at')
+                       ->whereYear('item_created_at', $tahun)
+                       ->whereMonth('item_created_at', $bulan);
+                });
+            })
+            ->with(['biayas' => fn ($q) => $q->without('photos')])
+            ->get(['id', 'created_at', 'report_no', 'jenis_pekerjaan']);
 
         $kategoriLabels = [
-            'jalan' => 'UANG JALAN',
-            'pengeluaran' => 'BIAYA PENGELUARAN',
-            'reimbursment' => 'BIAYA REIMBURSMENT',
+            'jalan' => [
+                'label' => 'UANG JALAN',
+                'jenis' => 'Biaya Jalan',
+            ],
+            'pengeluaran' => [
+                'label' => 'BIAYA PENGELUARAN',
+                'jenis' => 'Biaya Pengeluaran',
+            ],
+            'reimbursment' => [
+                'label' => 'BIAYA REIMBURSMENT',
+                'jenis' => 'Biaya Reimbursment',
+            ],
         ];
 
         foreach ($projekKerjas as $projek) {
@@ -1154,7 +1200,7 @@ class DashboardBiayaController extends Controller
                 $projekLabel = 'Projek #'.$projek->id;
             }
 
-            foreach ($kategoriLabels as $kategori => $defaultLabel) {
+            foreach ($kategoriLabels as $kategori => $meta) {
                 $items = $projek->{"biaya_{$kategori}_items"} ?? [];
                 foreach ($items as $item) {
                     $oleh = trim((string) ($item['oleh'] ?? ''));
@@ -1177,7 +1223,7 @@ class DashboardBiayaController extends Controller
 
                     $keterangan = trim((string) ($item['keterangan'] ?? ''));
                     if ($keterangan === '') {
-                        $keterangan = $defaultLabel;
+                        $keterangan = $meta['label'];
                     }
 
                     $rawDate = $item['created_at'] ?? $projek->created_at;
@@ -1188,6 +1234,7 @@ class DashboardBiayaController extends Controller
                         'kredit' => $nominal,
                         'staff' => $oleh,
                         'projek' => $projekLabel,
+                        'jenis_biaya' => $meta['jenis'],
                     ];
                 }
             }
@@ -1247,12 +1294,7 @@ class DashboardBiayaController extends Controller
         $monthLabel = $monthNames[$bulan] ?? strtoupper(Carbon::create($tahun, $bulan, 1)->locale('id')->translatedFormat('F'));
         $title = 'KAS PT HSR '.$monthLabel.' '.$tahun;
 
-        $styleTemplate = IOFactory::load($this->kasTemplatePath());
-        $styleSheet = $styleTemplate->getActiveSheet();
-        $dataRowStyle = $styleSheet->getStyle('A3:G3');
-        $footerTotalStyle = $styleSheet->getStyle('A139:G139');
-        $footerSisaStyle = $styleSheet->getStyle('A140:G140');
-
+        // Load template sekali saja untuk efisiensi performa
         $spreadsheet = IOFactory::load($this->kasTemplatePath());
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle(substr($monthLabel.' '.$tahun, 0, 31));
@@ -1262,7 +1304,15 @@ class DashboardBiayaController extends Controller
         $sheet->setCellValue('H2', 'PROJEK');
         $sheet->duplicateStyle($sheet->getStyle('G2'), 'H2');
 
-        $dataStyleRow = 3;
+        $sheet->getColumnDimension('I')->setWidth(24);
+        $sheet->setCellValue('I2', 'JENIS BIAYA');
+        $sheet->duplicateStyle($sheet->getStyle('G2'), 'I2');
+
+        // Simpan style sebelum baris contoh template dihapus
+        $dataRowStyle = $sheet->getStyle('A3:G3')->exportArray();
+        $footerTotalStyle = $sheet->getStyle('A139:G139')->exportArray();
+        $footerSisaStyle = $sheet->getStyle('A140:G140')->exportArray();
+
         $highest = (int) $sheet->getHighestRow();
         if ($highest > 2) {
             $sheet->removeRow(3, $highest - 2);
@@ -1275,10 +1325,7 @@ class DashboardBiayaController extends Controller
         $rpSaldoFormat = '"Rp"#,##0';
 
         foreach ($lines as $line) {
-            if ($row > $dataStyleRow) {
-                $sheet->insertNewRowBefore($row);
-            }
-            $sheet->duplicateStyle($dataRowStyle, "A{$row}:G{$row}");
+            $sheet->getStyle("A{$row}:G{$row}")->applyFromArray($dataRowStyle);
 
             $debit = (float) ($line['debit'] ?? 0);
             $kredit = (float) ($line['kredit'] ?? 0);
@@ -1311,14 +1358,18 @@ class DashboardBiayaController extends Controller
             $sheet->duplicateStyle($sheet->getStyle("G{$row}"), "H{$row}");
             $sheet->setCellValue("H{$row}", $line['projek'] ?? '-');
 
+            $sheet->duplicateStyle($sheet->getStyle("G{$row}"), "I{$row}");
+            $sheet->setCellValue("I{$row}", $line['jenis_biaya'] ?? '-');
+
             $no++;
             $row++;
         }
 
         $lastDataRow = $row - 1;
         $totalRow = $row;
-        $sheet->duplicateStyle($footerTotalStyle, "A{$totalRow}:G{$totalRow}");
+        $sheet->getStyle("A{$totalRow}:G{$totalRow}")->applyFromArray($footerTotalStyle);
         $sheet->duplicateStyle($sheet->getStyle("G{$totalRow}"), "H{$totalRow}");
+        $sheet->duplicateStyle($sheet->getStyle("G{$totalRow}"), "I{$totalRow}");
 
         $sheet->setCellValue("C{$totalRow}", 'TOTAL');
         $sheet->setCellValue("D{$totalRow}", "=SUM(D{$firstDataRow}:D{$lastDataRow})");
@@ -1326,8 +1377,9 @@ class DashboardBiayaController extends Controller
         $sheet->getStyle("D{$totalRow}:E{$totalRow}")->getNumberFormat()->setFormatCode($rpMoneyFormat);
 
         $sisaRow = $totalRow + 1;
-        $sheet->duplicateStyle($footerSisaStyle, "A{$sisaRow}:G{$sisaRow}");
+        $sheet->getStyle("A{$sisaRow}:G{$sisaRow}")->applyFromArray($footerSisaStyle);
         $sheet->duplicateStyle($sheet->getStyle("G{$sisaRow}"), "H{$sisaRow}");
+        $sheet->duplicateStyle($sheet->getStyle("G{$sisaRow}"), "I{$sisaRow}");
         $sheet->setCellValue("C{$sisaRow}", 'SISA SALDO');
         $sheet->setCellValue("F{$sisaRow}", "=D{$totalRow}-E{$totalRow}");
         $sheet->getStyle("F{$sisaRow}")->getNumberFormat()->setFormatCode($rpSaldoFormat);

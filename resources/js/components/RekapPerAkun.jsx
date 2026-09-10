@@ -207,6 +207,7 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
   const [activeDetailSourceTab, setActiveDetailSourceTab] = useState("projek");
   // Mapping nama_akun ke id untuk mencari id dari dataByAkun yang tidak punya id
   const [akunIdMap, setAkunIdMap] = useState({});
+  const [exportLoading, setExportLoading] = useState(false);
 
   const months = [];
   for (let i = 0; i < 12; i++) {
@@ -840,10 +841,13 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
   }, []);
 
   const handleExportCSV = async () => {
+    if (exportLoading) return;
     if (dataByAkun.length === 0) {
       alert(tr("Tidak ada data biaya", "No cost data"));
       return;
     }
+
+    setExportLoading(true);
 
     const params = new URLSearchParams({
       bulan: selectedMonth,
@@ -887,6 +891,8 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
         err?.response?.data?.message ||
           tr("Gagal mengekspor Excel", "Failed to export Excel")
       );
+    } finally {
+      setExportLoading(false);
     }
   };
 
@@ -969,11 +975,18 @@ export default React.memo(function RekapPerAkun({ user, onlyCurrentUser = false 
 
         <button
           onClick={handleExportCSV}
-          disabled={dataByAkun.length === 0}
+          disabled={dataByAkun.length === 0 || exportLoading}
           className="flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-2 text-sm text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300 sm:px-4 sm:text-base"
         >
-          <Download size={16} />
-          {tr("Export Excel", "Export Excel")}
+          {exportLoading ? (
+            <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          ) : (
+            <Download size={16} />
+          )}
+          {exportLoading ? tr("Mengunduh...", "Downloading...") : tr("Export Excel", "Export Excel")}
         </button>
       </div>
 
