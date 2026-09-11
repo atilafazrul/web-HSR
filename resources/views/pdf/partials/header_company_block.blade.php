@@ -17,7 +17,7 @@
         </td>
         <td class="logo-right" width="16%" valign="middle" align="right">
             @if(!empty($isoLogo))
-                <img src="{{ $isoLogo }}" class="header-logo-iso" width="56" height="57" alt="ISO 9001">
+                <img src="{{ $isoLogo }}" class="header-logo-iso" width="56" height="57" alt="ISO 45001 & 9001">
             @endif
         </td>
     </tr>
