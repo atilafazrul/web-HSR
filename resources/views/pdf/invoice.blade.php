@@ -139,13 +139,36 @@
         .sign-name { font-weight: bold; font-size: 8.4pt; }
         .sign-title { font-size: 8.4pt; }
 
-        .thanks {
+        .thanks-wrapper {
+            margin-top: 14px;
+            margin-bottom: 6px;
             text-align: right;
+            padding-right: 6px;
+        }
+
+        .thanks-title {
             font-weight: bold;
             font-size: 8.4pt;
-            margin-top: 22px;
-            margin-bottom: 10px;
-            padding-right: 6px;
+            margin-bottom: 3px;
+        }
+
+        .thanks-qr-block {
+            display: inline-block;
+            text-align: center;
+        }
+
+        .thanks-qr {
+            height: 34px;
+            width: 34px;
+            display: block;
+            margin: 0 auto 2px auto;
+        }
+
+        .thanks-copyright {
+            font-size: 6pt;
+            font-family: "Calibri", sans-serif;
+            color: #333;
+            white-space: nowrap;
         }
 
         .watermark {
@@ -388,7 +411,17 @@
         </tr>
     </table>
 
-    <div class="thanks">Thank you for your business!</div>
+    <div class="thanks-wrapper">
+        <div class="thanks-title">Thank you for your business!</div>
+        @if(!empty($qrCode))
+            <div class="thanks-qr-block">
+                <img src="{{ $qrCode }}" class="thanks-qr" alt="QR {{ $nomor_surat ?? '' }}">
+                <div class="thanks-copyright">Copyright by PT.HSR</div>
+            </div>
+        @else
+            <div class="thanks-copyright">Copyright by PT.HSR</div>
+        @endif
+    </div>
     <div class="bar-bottom"></div>
 </body>
 </html>
