@@ -212,6 +212,15 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="inventory" element={<InventoryPage />} />
               <Route path="inventory/tambah" element={<FormBarangPage />} />
               <Route path="inventory/edit/:id" element={<EditBarangPage />} />
+              <Route path="berita-acara" element={<BeritaAcaraPage />} />
+              <Route path="berita-acara/bam" element={<BAMPage />} />
+              <Route path="berita-acara/bauf" element={<BAUFPage />} />
+              <Route path="berita-acara/bast" element={<BASTPage />} />
+              <Route path="berita-acara/sppd" element={<SPPDPage />} />
+              <Route path="berita-acara/sph" element={<SPHPage />} />
+              <Route path="berita-acara/po" element={<POPage />} />
+              <Route path="berita-acara/invoice" element={<InvoicePage />} />
+              <Route path="berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
               <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
             </Route>
 

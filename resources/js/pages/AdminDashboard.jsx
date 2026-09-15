@@ -640,6 +640,14 @@ export default function AdminDashboard({ user, logout }) {
             {/* ================= DIVISI ================= */}
             <Route path="it" element={<ITPage user={user} />} />
             <Route path="service" element={<ServicePage user={user} />} />
+            <Route path="service/berita-acara" element={<BeritaAcaraPage />} />
+            <Route path="service/berita-acara/bam" element={<BAMPage />} />
+            <Route path="service/berita-acara/bauf" element={<BAUFPage />} />
+            <Route path="service/berita-acara/bast" element={<BASTPage />} />
+            <Route path="service/berita-acara/sppd" element={<SPPDPage />} />
+            <Route path="service/berita-acara/sph" element={<SPHPage />} />
+            <Route path="service/berita-acara/po" element={<POPage />} />
+            <Route path="service/berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
             <Route path="service/form-pekerjaan" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
             <Route path="sales" element={<SalesPage user={user} />} />
             <Route path="kontraktor" element={<KontraktorPage user={user} />} />

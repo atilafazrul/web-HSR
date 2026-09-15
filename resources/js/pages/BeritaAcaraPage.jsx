@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FileText, ClipboardCheck, Wrench, FileSignature, Receipt, ArrowLeft, ClipboardList, ShoppingCart, FileSpreadsheet } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n";
 
 export default function BeritaAcaraPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { projekId } = useParams();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -20,9 +21,15 @@ export default function BeritaAcaraPage() {
       ? "/super_admin"
       : "/admin";
 
+  // Detect if accessed from a divisi context (e.g. /super_admin/service/berita-acara)
+  const divisiMatch = location.pathname.match(/\/(it|service|sales|kontraktor|logistik|purchasing|siplah)\/berita-acara/);
+  const divisiContext = divisiMatch ? divisiMatch[1] : null;
+
   const beritaAcaraBase = projekId
     ? `${basePath}/projek-kerja/berita-acara/${projekId}`
-    : `${basePath}/berita-acara`;
+    : divisiContext
+      ? `${basePath}/${divisiContext}/berita-acara`
+      : `${basePath}/berita-acara`;
 
   useEffect(() => {
     if (!projekId) {
@@ -63,6 +70,17 @@ export default function BeritaAcaraPage() {
         >
           <ArrowLeft size={16} />
           {tr("Kembali ke Data Projek Kerja", "Back to Project Data")}
+        </button>
+      )}
+
+      {!projekId && divisiContext && (
+        <button
+          type="button"
+          onClick={() => navigate(`${basePath}/${divisiContext}`)}
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-indigo-600"
+        >
+          <ArrowLeft size={16} />
+          {tr(`Kembali ke Divisi ${divisiContext.charAt(0).toUpperCase() + divisiContext.slice(1)}`, `Back to ${divisiContext.charAt(0).toUpperCase() + divisiContext.slice(1)} Division`)}
         </button>
       )}
 
