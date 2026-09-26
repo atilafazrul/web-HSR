@@ -223,7 +223,9 @@
                 @endif
                 <th class="col-qty">QTY</th>
                 <th class="col-price">Harga Satuan</th>
-                <th class="col-total">Total Harga</th>
+                @if($show_total ?? true)
+                    <th class="col-total">Total Harga</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -236,13 +238,17 @@
                     @endif
                     <td class="col-qty">{{ $item['qty'] ?? '1' }}</td>
                     <td class="col-price">{{ $item['harga_formatted'] ?? '' }}</td>
-                    <td class="col-total">{{ $item['total_harga_formatted'] ?? '' }}</td>
+                    @if($show_total ?? true)
+                        <td class="col-total">{{ $item['total_harga_formatted'] ?? '' }}</td>
+                    @endif
                 </tr>
             @endforeach
-            <tr class="total-row">
-                <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
-                <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
-            </tr>
+            @if($show_total ?? true)
+                <tr class="total-row">
+                    <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
+                    <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
+                </tr>
+            @endif
         </tbody>
     </table>
 

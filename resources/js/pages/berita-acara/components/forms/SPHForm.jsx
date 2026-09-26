@@ -78,15 +78,27 @@ export const SPHForm = ({
         </div>
 
         <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between border-b pb-2">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b pb-2">
             <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-700">
               <Receipt size={20} className="text-blue-600" />
               {tr("Rincian Penawaran", "Quotation Details")}
             </h3>
-            <button type="button" onClick={onAddItem} className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700">
-              <Plus size={16} />
-              {tr("Tambah Item", "Add Item")}
-            </button>
+            <div className="flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 select-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
+                <input
+                  type="checkbox"
+                  name="show_total"
+                  checked={formData.show_total !== false}
+                  onChange={onInputChange}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+                <span className="font-medium">{tr("Tampilkan Total", "Show Total")}</span>
+              </label>
+              <button type="button" onClick={onAddItem} className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700">
+                <Plus size={16} />
+                {tr("Tambah Item", "Add Item")}
+              </button>
+            </div>
           </div>
 
           {formData.items.map((item, index) => (
@@ -136,10 +148,12 @@ export const SPHForm = ({
             </div>
           ))}
 
-          <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-right">
-            <span className="text-sm text-gray-600">{tr("Estimasi Total", "Estimated Total")}: </span>
-            <span className="text-lg font-bold text-blue-700">{formatRupiah(estimatedTotal)}</span>
-          </div>
+          {formData.show_total !== false && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-right transition">
+              <span className="text-sm text-gray-600">{tr("Estimasi Total", "Estimated Total")}: </span>
+              <span className="text-lg font-bold text-blue-700">{formatRupiah(estimatedTotal)}</span>
+            </div>
+          )}
         </div>
 
         <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">

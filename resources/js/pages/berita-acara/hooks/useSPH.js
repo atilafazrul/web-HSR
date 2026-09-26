@@ -45,6 +45,7 @@ export const useSPH = (projekKerjaId = null) => {
     penerima_nama: "",
     paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
     items: [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
+    show_total: true,
     kota_tanda_tangan: "Tangerang",
     tanggal_tanda_tangan: "",
     tanggal_tanda_tangan_display: "",
@@ -65,6 +66,7 @@ export const useSPH = (projekKerjaId = null) => {
       qty: item.qty,
       harga: parseRibuanId(item.harga),
     })),
+    show_total: formData.show_total !== false,
     kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
     tanggal_tanda_tangan:
       formData.tanggal_tanda_tangan_display ||
@@ -118,7 +120,11 @@ export const useSPH = (projekKerjaId = null) => {
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target;
+    if (type === "checkbox") {
+      setFormData((prev) => ({ ...prev, [name]: checked }));
+      return;
+    }
     if (name === "tanggal_tanda_tangan") {
       setFormData((prev) => ({
         ...prev,
@@ -167,6 +173,7 @@ export const useSPH = (projekKerjaId = null) => {
       penerima_nama: "",
       paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
       items: [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
+      show_total: true,
       kota_tanda_tangan: "Tangerang",
       tanggal_tanda_tangan: "",
       tanggal_tanda_tangan_display: "",

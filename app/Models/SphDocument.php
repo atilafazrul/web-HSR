@@ -18,6 +18,7 @@ class SphDocument extends Model
         'paragraf_pembuka',
         'items',
         'total_harga',
+        'show_total',
         'kota_tanda_tangan',
         'tanggal_tanda_tangan',
         'nama_penandatangan',
@@ -32,5 +33,6 @@ class SphDocument extends Model
     protected $casts = [
         'items' => 'array',
         'total_harga' => 'integer',
+        'show_total' => 'boolean',
     ];
 }

@@ -48,7 +48,9 @@ export const SPHHistory = ({
                   <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{item.nomor_surat}</span>
                   <h4 className="mt-2 text-lg font-semibold text-gray-800">{item.penerima_nama}</h4>
                   <p className="mt-1 text-sm text-gray-500">{item.perihal || "Penawaran Harga"}</p>
-                  <p className="mt-2 text-sm font-medium text-green-700">{formatRupiah(item.total_harga)}</p>
+                  <p className="mt-2 text-sm font-medium text-green-700">
+                    {item.show_total !== false ? formatRupiah(item.total_harga) : tr("Total: Disembunyikan", "Total: Hidden")}
+                  </p>
                   <p className="mt-1 text-xs text-gray-400">{tr("Dibuat", "Created")}: {formatDate(item.created_at)}</p>
                 </div>
                 <div className="flex w-full gap-2 sm:w-auto">
@@ -78,7 +80,7 @@ export const SPHHistory = ({
             <div className="space-y-2 text-sm text-gray-700">
               <p><strong>{tr("Penerima", "Recipient")}:</strong> {selectedItem.penerima_nama}</p>
               <p><strong>{tr("Perihal", "Subject")}:</strong> {selectedItem.perihal}</p>
-              <p><strong>{tr("Total", "Total")}:</strong> {formatRupiah(selectedItem.total_harga)}</p>
+              <p><strong>{tr("Total", "Total")}:</strong> {selectedItem.show_total !== false ? formatRupiah(selectedItem.total_harga) : tr("Disembunyikan", "Hidden")}</p>
               <p><strong>{tr("Tanggal", "Date")}:</strong> {selectedItem.tanggal_tanda_tangan}</p>
               <p><strong>{tr("Item", "Items")}:</strong> {selectedItem.items?.length || 0}</p>
             </div>

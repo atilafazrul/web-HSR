@@ -62,6 +62,7 @@ export function mapSphDocToForm(data, defaults = {}) {
             harga: nominalApiToInput(item.harga),
           }))
         : [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
+    show_total: data.show_total !== undefined && data.show_total !== null ? Boolean(data.show_total) : true,
     kota_tanda_tangan: data.kota_tanda_tangan || "Tangerang",
     tanggal_tanda_tangan: parseDateToInput(data.tanggal_tanda_tangan),
     tanggal_tanda_tangan_display: data.tanggal_tanda_tangan || "",
