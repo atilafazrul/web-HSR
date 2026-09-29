@@ -14,6 +14,8 @@ class InvoiceDocument extends Model
         'nomor_surat',
         'tanggal_invoice',
         'tanggal_jatuh_tempo',
+        'no_po',
+        'pakai_ttd',
         'bill_to_nama',
         'bill_to_alamat',
         'bill_to_telepon',
@@ -40,5 +42,6 @@ class InvoiceDocument extends Model
         'ppn_persen' => 'float',
         'ppn_nominal' => 'integer',
         'total_harga' => 'integer',
+        'pakai_ttd'   => 'boolean',
     ];
 }

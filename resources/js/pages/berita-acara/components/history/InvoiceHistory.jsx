@@ -51,6 +51,9 @@ export const InvoiceHistory = ({
                   {item.tanggal_jatuh_tempo && (
                     <p className="mt-1 text-sm text-gray-500">Due: {item.tanggal_jatuh_tempo}</p>
                   )}
+                  {item.no_po && (
+                    <p className="mt-1 text-sm text-gray-500">NO. PO: <span className="font-medium text-gray-700">{item.no_po}</span></p>
+                  )}
                   <p className="mt-2 text-sm font-medium text-green-700">{formatRupiah(item.total_harga)}</p>
                   <p className="mt-1 text-xs text-gray-400">{tr("Dibuat", "Created")}: {formatDate(item.created_at)}</p>
                 </div>
@@ -82,6 +85,9 @@ export const InvoiceHistory = ({
               <p><strong>Bill To:</strong> {selectedItem.bill_to_nama}</p>
               <p><strong>Date:</strong> {selectedItem.tanggal_invoice}</p>
               <p><strong>Due Date:</strong> {selectedItem.tanggal_jatuh_tempo || "-"}</p>
+              {selectedItem.no_po && (
+                <p><strong>NO. PO:</strong> {selectedItem.no_po}</p>
+              )}
               <p><strong>Sub Total:</strong> {formatRupiah(selectedItem.subtotal)}</p>
               {Number(selectedItem.diskon_nominal || 0) > 0 && (
                 <p><strong>{tr("Diskon", "Discount")}:</strong> - {formatRupiah(selectedItem.diskon_nominal)}</p>

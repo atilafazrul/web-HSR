@@ -39,6 +39,8 @@ export const useInvoice = (projekKerjaId = null) => {
     tanggal_invoice_display: "",
     tanggal_jatuh_tempo: "",
     tanggal_jatuh_tempo_display: "",
+    no_po: "",
+    pakai_ttd: true,
     bill_to_nama: "",
     bill_to_alamat: "",
     bill_to_telepon: "",
@@ -54,6 +56,8 @@ export const useInvoice = (projekKerjaId = null) => {
   const buildSubmitData = () => ({
     tanggal_invoice: formData.tanggal_invoice_display || formatDateEnglish(formData.tanggal_invoice),
     tanggal_jatuh_tempo: formData.tanggal_jatuh_tempo_display || formatDateEnglish(formData.tanggal_jatuh_tempo) || null,
+    no_po: (formData.no_po || "").trim() || null,
+    pakai_ttd: formData.pakai_ttd !== false,
     bill_to_nama: formData.bill_to_nama,
     bill_to_alamat: formData.bill_to_alamat,
     bill_to_telepon: formData.bill_to_telepon,
@@ -137,6 +141,8 @@ export const useInvoice = (projekKerjaId = null) => {
             : prev.catatan,
         };
       });
+    } else if (name === "pakai_ttd") {
+      setFormData((prev) => ({ ...prev, pakai_ttd: Boolean(value) }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
@@ -175,6 +181,8 @@ export const useInvoice = (projekKerjaId = null) => {
       tanggal_invoice_display: "",
       tanggal_jatuh_tempo: "",
       tanggal_jatuh_tempo_display: "",
+      no_po: "",
+      pakai_ttd: true,
       bill_to_nama: "",
       bill_to_alamat: "",
       bill_to_telepon: "",
@@ -290,6 +298,8 @@ export const useInvoice = (projekKerjaId = null) => {
         tanggal_invoice_display: data.tanggal_invoice || "",
         tanggal_jatuh_tempo: "",
         tanggal_jatuh_tempo_display: data.tanggal_jatuh_tempo || "",
+        no_po: data.no_po || "",
+        pakai_ttd: data.pakai_ttd !== false,
         bill_to_nama: data.bill_to_nama || "",
         bill_to_alamat: data.bill_to_alamat || "",
         bill_to_telepon: data.bill_to_telepon || "",

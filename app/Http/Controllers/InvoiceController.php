@@ -83,7 +83,10 @@ class InvoiceController extends Controller
             $this->whatsAppDivisiFromRequest($request)
         );
 
-        return $this->generatePDFResponse($this->documentToPdfData($document), $validated['projek_kerja_id'] ?? null);
+        $pdfData = $this->documentToPdfData($document);
+        $pdfData['pakai_ttd'] = $validated['pakai_ttd'] ?? true;
+
+        return $this->generatePDFResponse($pdfData, $validated['projek_kerja_id'] ?? null);
     }
 
     public function show(Request $request, $id)
@@ -141,6 +144,7 @@ class InvoiceController extends Controller
         return $request->validate([
             'tanggal_invoice' => 'required|string',
             'tanggal_jatuh_tempo' => 'nullable|string',
+            'no_po' => 'nullable|string|max:255',
             'bill_to_nama' => 'required|string|max:255',
             'bill_to_alamat' => 'nullable|string|max:20000',
             'bill_to_telepon' => 'nullable|string|max:100',
@@ -155,6 +159,7 @@ class InvoiceController extends Controller
             'terms' => 'nullable|string|max:20000',
             'nama_penandatangan' => 'nullable|string|max:255',
             'jabatan_penandatangan' => 'nullable|string|max:255',
+            'pakai_ttd' => 'nullable|boolean',
             'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
     }
@@ -172,6 +177,7 @@ class InvoiceController extends Controller
         $attrs = [
             'tanggal_invoice' => $validated['tanggal_invoice'],
             'tanggal_jatuh_tempo' => trim((string) ($validated['tanggal_jatuh_tempo'] ?? '')) ?: null,
+            'no_po' => trim((string) ($validated['no_po'] ?? '')) ?: null,
             'bill_to_nama' => $validated['bill_to_nama'],
             'bill_to_alamat' => trim((string) ($validated['bill_to_alamat'] ?? '')) ?: null,
             'bill_to_telepon' => trim((string) ($validated['bill_to_telepon'] ?? '')) ?: null,
@@ -186,6 +192,7 @@ class InvoiceController extends Controller
             'terms' => trim((string) ($validated['terms'] ?? '')) ?: null,
             'nama_penandatangan' => trim((string) ($validated['nama_penandatangan'] ?? '')) ?: 'SYAHRUL ROJI',
             'jabatan_penandatangan' => trim((string) ($validated['jabatan_penandatangan'] ?? '')) ?: 'DIREKTUR',
+            'pakai_ttd' => isset($validated['pakai_ttd']) ? (bool) $validated['pakai_ttd'] : true,
         ];
 
         if (array_key_exists('projek_kerja_id', $validated)) {
@@ -214,6 +221,7 @@ class InvoiceController extends Controller
             'nomor_surat' => $document->nomor_surat,
             'tanggal_invoice' => $document->tanggal_invoice,
             'tanggal_jatuh_tempo' => $document->tanggal_jatuh_tempo,
+            'no_po' => $document->no_po,
             'bill_to_nama' => $document->bill_to_nama,
             'bill_to_alamat' => $document->bill_to_alamat,
             'bill_to_telepon' => $document->bill_to_telepon,
@@ -233,6 +241,7 @@ class InvoiceController extends Controller
             'terms' => $document->terms,
             'nama_penandatangan' => $document->nama_penandatangan ?: 'SYAHRUL ROJI',
             'jabatan_penandatangan' => $document->jabatan_penandatangan ?: 'DIREKTUR',
+            'pakai_ttd' => $document->pakai_ttd ?? true,
         ];
     }
 
@@ -264,8 +273,13 @@ class InvoiceController extends Controller
 
     private function applySignatureAndCap(array $data): array
     {
+        // Jika pengguna memilih tidak pakai TTD, langsung kembalikan tanpa TTD
+        if (($data['pakai_ttd'] ?? true) === false) {
+            return $data;
+        }
+
         $signaturePath = public_path('images/TTD Direktur.png');
-        $capStampPath = public_path('images/Cap HSR.png');
+        $capStampPath  = public_path('images/Cap HSR.png');
 
         $signatureDataUrl = null;
         if (file_exists($signaturePath)) {

@@ -72,13 +72,58 @@ export const InvoiceForm = ({
             {formData.tanggal_jatuh_tempo_display && <p className="mt-1 text-sm text-gray-600">{formData.tanggal_jatuh_tempo_display}</p>}
           </div>
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Nama Penandatangan", "Signatory Name")}</label>
-            <input type="text" name="nama_penandatangan" value={formData.nama_penandatangan} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3" />
+            <label className="mb-2 block text-sm font-medium text-gray-700">NO. PO</label>
+            <input
+              type="text"
+              name="no_po"
+              value={formData.no_po}
+              onChange={onInputChange}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3"
+              placeholder={tr("Nomor Purchase Order (opsional)", "Purchase Order Number (optional)")}
+            />
           </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Jabatan", "Title")}</label>
-            <input type="text" name="jabatan_penandatangan" value={formData.jabatan_penandatangan} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3" />
+
+          {/* ── Tanda Tangan Toggle ── */}
+          <div className="md:col-span-2">
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-gray-700">{tr("Tanda Tangan & Cap", "Signature & Stamp")}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {formData.pakai_ttd
+                    ? tr("TTD + Cap akan dicetak di PDF", "Signature + Stamp will be printed on PDF")
+                    : tr("PDF tanpa TTD & Cap", "PDF without signature & stamp")}
+                </p>
+              </div>
+              {/* Toggle switch */}
+              <button
+                type="button"
+                onClick={() => onInputChange({ target: { name: "pakai_ttd", value: !formData.pakai_ttd } })}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  formData.pakai_ttd ? "bg-blue-600" : "bg-gray-300"
+                }`}
+                aria-pressed={formData.pakai_ttd}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    formData.pakai_ttd ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
           </div>
+
+          {formData.pakai_ttd && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Nama Penandatangan", "Signatory Name")}</label>
+                <input type="text" name="nama_penandatangan" value={formData.nama_penandatangan} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3" />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Jabatan", "Title")}</label>
+                <input type="text" name="jabatan_penandatangan" value={formData.jabatan_penandatangan} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3" />
+              </div>
+            </>
+          )}
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Diskon (Rp)", "Discount (Rp)")}</label>
             <RupiahInput

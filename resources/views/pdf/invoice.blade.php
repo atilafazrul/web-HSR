@@ -254,6 +254,13 @@
                         <td class="meta-gap">&nbsp;</td>
                         <td class="meta-val">{{ filled($tanggal_jatuh_tempo ?? null) ? $tanggal_jatuh_tempo : '—' }}</td>
                     </tr>
+                    @if(!empty($no_po))
+                    <tr>
+                        <td class="meta-key">NO. PO</td>
+                        <td class="meta-gap">&nbsp;</td>
+                        <td class="meta-val">{{ $no_po }}</td>
+                    </tr>
+                    @endif
                 </table>
             </td>
         </tr>
