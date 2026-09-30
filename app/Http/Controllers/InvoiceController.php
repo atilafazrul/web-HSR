@@ -160,6 +160,7 @@ class InvoiceController extends Controller
             'nama_penandatangan' => 'nullable|string|max:255',
             'jabatan_penandatangan' => 'nullable|string|max:255',
             'pakai_ttd' => 'nullable|boolean',
+            'pakai_cap' => 'nullable|boolean',
             'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
     }
@@ -193,6 +194,7 @@ class InvoiceController extends Controller
             'nama_penandatangan' => trim((string) ($validated['nama_penandatangan'] ?? '')) ?: 'SYAHRUL ROJI',
             'jabatan_penandatangan' => trim((string) ($validated['jabatan_penandatangan'] ?? '')) ?: 'DIREKTUR',
             'pakai_ttd' => isset($validated['pakai_ttd']) ? (bool) $validated['pakai_ttd'] : true,
+            'pakai_cap' => isset($validated['pakai_cap']) ? (bool) $validated['pakai_cap'] : true,
         ];
 
         if (array_key_exists('projek_kerja_id', $validated)) {
@@ -242,6 +244,7 @@ class InvoiceController extends Controller
             'nama_penandatangan' => $document->nama_penandatangan ?: 'SYAHRUL ROJI',
             'jabatan_penandatangan' => $document->jabatan_penandatangan ?: 'DIREKTUR',
             'pakai_ttd' => $document->pakai_ttd ?? true,
+            'pakai_cap' => $document->pakai_cap ?? true,
         ];
     }
 
@@ -273,8 +276,11 @@ class InvoiceController extends Controller
 
     private function applySignatureAndCap(array $data): array
     {
-        // Jika pengguna memilih tidak pakai TTD, langsung kembalikan tanpa TTD
-        if (($data['pakai_ttd'] ?? true) === false) {
+        $pakaiTtd = ($data['pakai_ttd'] ?? true) !== false;
+        $pakaiCap = ($data['pakai_cap'] ?? true) !== false;
+
+        // Tidak ada yang dipakai — kembalikan tanpa perubahan
+        if (!$pakaiTtd && !$pakaiCap) {
             return $data;
         }
 
@@ -282,16 +288,27 @@ class InvoiceController extends Controller
         $capStampPath  = public_path('images/Cap HSR.png');
 
         $signatureDataUrl = null;
-        if (file_exists($signaturePath)) {
+        if ($pakaiTtd && file_exists($signaturePath)) {
             $signatureDataUrl = 'data:image/png;base64,' . base64_encode(file_get_contents($signaturePath));
         }
 
-        if (file_exists($capStampPath)) {
-            $capStampBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($capStampPath));
+        $capDataUrl = null;
+        if ($pakaiCap && file_exists($capStampPath)) {
+            $capDataUrl = 'data:image/png;base64,' . base64_encode(file_get_contents($capStampPath));
+        }
+
+        if (!empty($signatureDataUrl) && !empty($capDataUrl)) {
+            // TTD + Cap: gabungkan
             $merger = new SignatureStampMerger();
-            $data['ttd_penandatangan'] = $merger->merge($signatureDataUrl, $capStampBase64);
+            $data['ttd_penandatangan'] = $merger->merge($signatureDataUrl, $capDataUrl);
+        } elseif (!empty($capDataUrl)) {
+            // Cap saja (tanpa TTD): merge dengan signature null
+            $merger = new SignatureStampMerger();
+            $data['ttd_penandatangan'] = $merger->merge(null, $capDataUrl);
         } elseif (!empty($signatureDataUrl)) {
-            $data['ttd_penandatangan'] = $signatureDataUrl;
+            // TTD saja (tanpa Cap)
+            $merger = new SignatureStampMerger();
+            $data['ttd_penandatangan'] = $merger->normalizeSignature($signatureDataUrl);
         }
 
         return $data;

@@ -83,18 +83,18 @@ export const InvoiceForm = ({
             />
           </div>
 
-          {/* ── Tanda Tangan Toggle ── */}
-          <div className="md:col-span-2">
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
+
+          {/* ── Toggle TTD ── */}
+          <div>
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 h-full">
               <div>
-                <p className="text-sm font-medium text-gray-700">{tr("Tanda Tangan & Cap", "Signature & Stamp")}</p>
+                <p className="text-sm font-medium text-gray-700">{tr("Tanda Tangan (TTD)", "Signature (TTD)")}</p>
                 <p className="text-xs text-gray-400 mt-0.5">
                   {formData.pakai_ttd
-                    ? tr("TTD + Cap akan dicetak di PDF", "Signature + Stamp will be printed on PDF")
-                    : tr("PDF tanpa TTD & Cap", "PDF without signature & stamp")}
+                    ? tr("TTD dicetak di PDF", "Signature printed on PDF")
+                    : tr("Tanpa TTD", "Without signature")}
                 </p>
               </div>
-              {/* Toggle switch */}
               <button
                 type="button"
                 onClick={() => onInputChange({ target: { name: "pakai_ttd", value: !formData.pakai_ttd } })}
@@ -106,6 +106,34 @@ export const InvoiceForm = ({
                 <span
                   className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
                     formData.pakai_ttd ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          {/* ── Toggle Cap ── */}
+          <div>
+            <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 h-full">
+              <div>
+                <p className="text-sm font-medium text-gray-700">{tr("Cap Perusahaan", "Company Stamp")}</p>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {formData.pakai_cap
+                    ? tr("Cap dicetak di PDF", "Stamp printed on PDF")
+                    : tr("Tanpa cap", "Without stamp")}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => onInputChange({ target: { name: "pakai_cap", value: !formData.pakai_cap } })}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                  formData.pakai_cap ? "bg-purple-600" : "bg-gray-300"
+                }`}
+                aria-pressed={formData.pakai_cap}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                    formData.pakai_cap ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
               </button>
@@ -124,6 +152,7 @@ export const InvoiceForm = ({
               </div>
             </>
           )}
+
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Diskon (Rp)", "Discount (Rp)")}</label>
             <RupiahInput
