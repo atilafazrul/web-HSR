@@ -63,9 +63,7 @@ export default function FotoProjekPage() {
 
   const fetchPhotos = async () => {
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/photos`
-      );
+      const res = await axios.get(`/projek-kerja/${id}/photos`);
 
       if (res.data.success) {
         setPhotos(res.data.photos || []);
@@ -78,9 +76,7 @@ export default function FotoProjekPage() {
 
   const fetchFiles = async () => {
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/files`
-      );
+      const res = await axios.get(`/projek-kerja/${id}/files`);
 
       if (res.data.success) {
         setFiles(res.data.files || []);
@@ -93,9 +89,7 @@ export default function FotoProjekPage() {
 
   const fetchFolders = async () => {
     try {
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/folders`
-      );
+      const res = await axios.get(`/projek-kerja/${id}/folders`);
       if (res.data?.success) {
         setFileFolders(res.data.file_folders || []);
         setPhotoFolders(res.data.photo_folders || []);
@@ -107,7 +101,7 @@ export default function FotoProjekPage() {
 
   const fetchProjectDetail = async () => {
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/projek-kerja/${id}`);
+      const res = await axios.get(`/projek-kerja/${id}`);
       if (res.data?.success) {
         const taskName = String(res.data?.data?.jenis_pekerjaan || "").trim();
         setProjectTaskName(taskName);
@@ -284,7 +278,7 @@ export default function FotoProjekPage() {
     }
 
     try {
-      const res = await axios.post(`${import.meta.env.VITE_API_URL}/projek-kerja/${id}/folders`, {
+      const res = await axios.post(`/projek-kerja/${id}/folders`, {
         type,
         folder_name: folderName,
       });
@@ -327,7 +321,7 @@ export default function FotoProjekPage() {
         formData.append("folder_name", folderName);
 
         return axios.post(
-          `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-photo`,
+          `/projek-kerja/${id}/add-photo`,
           formData,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
@@ -365,7 +359,7 @@ export default function FotoProjekPage() {
         formData.append("folder_name", folderName);
 
         return axios.post(
-          `${import.meta.env.VITE_API_URL}/projek-kerja/${id}/add-file`,
+          `/projek-kerja/${id}/add-file`,
           formData,
           { headers: { "Content-Type": "multipart/form-data" } }
         );
@@ -384,9 +378,7 @@ export default function FotoProjekPage() {
   const handleDeletePhoto = async (photoId) => {
     if (!window.confirm(tr("Hapus foto ini?", "Delete this photo?"))) return;
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/photo/${photoId}`
-      );
+      await axios.delete(`/projek-kerja/photo/${photoId}`);
       await fetchPhotos();
     } catch (err) {
       alert(tr("Gagal hapus foto", "Failed to delete photo"));
@@ -396,9 +388,7 @@ export default function FotoProjekPage() {
   const handleDeleteFile = async (fileId) => {
     if (!window.confirm(tr("Hapus file ini?", "Delete this file?"))) return;
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/file/${fileId}`
-      );
+      await axios.delete(`/projek-kerja/file/${fileId}`);
       await fetchFiles();
     } catch (err) {
       alert(tr("Gagal hapus file", "Failed to delete file"));
@@ -423,7 +413,7 @@ export default function FotoProjekPage() {
 
     setRenamingFile(true);
     try {
-      await axios.patch(`${import.meta.env.VITE_API_URL}/projek-kerja/file/${renameFileTarget.id}`, {
+      await axios.patch(`/projek-kerja/file/${renameFileTarget.id}`, {
         new_name: newName,
       });
       await fetchFiles();
@@ -460,7 +450,7 @@ export default function FotoProjekPage() {
     setSavingFolder(true);
 
     try {
-      const res = await axios.patch(`${import.meta.env.VITE_API_URL}/projek-kerja/${id}/folders`, {
+      const res = await axios.patch(`/projek-kerja/${id}/folders`, {
         type,
         old_folder_name: oldName,
         new_folder_name: newName,
@@ -493,7 +483,7 @@ export default function FotoProjekPage() {
     setDeletingFolder(true);
 
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/projek-kerja/${id}/folders`, {
+      await axios.delete(`/projek-kerja/${id}/folders`, {
         data: {
           type,
           folder_name: folderName,

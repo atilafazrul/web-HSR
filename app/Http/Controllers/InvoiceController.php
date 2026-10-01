@@ -29,19 +29,55 @@ class InvoiceController extends Controller
         }
     }
 
-    private function generateNomorSurat(?string $tanggalInvoice = null): array
+    public static function resolveDivisiCode(?string $divisi): string
+    {
+        $d = strtolower(trim((string) $divisi));
+        return match ($d) {
+            'it', 'divisi it', 'divit', 'inv-divit' => 'INV-DIVIT',
+            'sales', 'disal', 'divsal', 'divisi sales', 'inv-disal', 'inv-divsal' => 'INV-DIVSAL',
+            'service', 'divser', 'divisi service', 'inv-divser' => 'INV-DIVSER',
+            'bhp', 'barang habis pakai', 'barang habis pakai bhp', 'dipro', 'divpro', 'projek', 'divisi projek', 'inv-dipro', 'inv-divpro' => 'INV-DIVPRO',
+            'kontraktor', 'divisi kontraktor', 'dikon', 'divkon', 'inv-dikon', 'inv-divkon' => 'INV-DIVKON',
+            'logistik', 'divisi logistik', 'dilog', 'divlog', 'inv-dilog', 'inv-divlog' => 'INV-DIVLOG',
+            'purchasing', 'divisi purchasing', 'dipur', 'divpur', 'inv-dipur', 'inv-divpur' => 'INV-DIVPUR',
+            'siplah', 'divisi siplah', 'disip', 'divsip', 'inv-disip', 'inv-divsip' => 'INV-DIVSIP',
+            default => 'INV-DIVPRO',
+        };
+    }
+
+    private function generateNomorSurat(?string $tanggalInvoice = null, ?string $divisi = null): array
     {
         $date = $this->parseFlexibleDate($tanggalInvoice) ?? Carbon::now();
         $tahun = (int) $date->year;
+        $divisiCode = $this->resolveDivisiCode($divisi);
 
-        $lastDocument = InvoiceDocument::orderBy('nomor_urut', 'desc')->first();
-        $nomorUrut = $lastDocument ? ((int) $lastDocument->nomor_urut + 1) : 1;
-        $nomorSurat = sprintf('%dINV-DIVPRO/HSR/%s', $nomorUrut, $date->format('dmY'));
+        // Cari nomor urut tertinggi secara GLOBAL (semua divisi) pada tahun yang sama
+        $maxUrut = InvoiceDocument::where('tahun', $tahun)->max('nomor_urut');
+
+        if ($maxUrut === null) {
+            $maxUrut = InvoiceDocument::max('nomor_urut');
+        }
+
+        $nomorUrut = $maxUrut !== null ? ((int) $maxUrut + 1) : 1;
+
+        // Pastikan nomor urut & nomor surat belum pernah dipakai di divisi manapun
+        do {
+            $nomorSurat = sprintf('%03d/%s/HSR/%s', $nomorUrut, $divisiCode, $date->format('dmY'));
+            $suratExists = InvoiceDocument::where('nomor_surat', $nomorSurat)->exists();
+            $urutExists = InvoiceDocument::where('tahun', $tahun)
+                ->where('nomor_urut', $nomorUrut)
+                ->exists();
+
+            if ($suratExists || $urutExists) {
+                $nomorUrut++;
+            }
+        } while ($suratExists || $urutExists);
 
         return [
             'nomor_surat' => $nomorSurat,
             'nomor_urut' => $nomorUrut,
             'tahun' => $tahun,
+            'divisi_code' => $divisiCode,
         ];
     }
 
@@ -50,8 +86,19 @@ class InvoiceController extends Controller
         $this->ensureSuperAdmin($request);
 
         $tanggal = $request->query('tanggal_invoice');
+        $divisi = $request->query('divisi');
 
-        return response()->json($this->generateNomorSurat($tanggal));
+        if (!$divisi && $request->filled('projek_kerja_id')) {
+            $projek = \App\Models\ProjekKerja::find($request->query('projek_kerja_id'));
+            if ($projek && $projek->divisi) {
+                $divisi = $projek->divisi;
+            }
+        }
+
+        $data = $this->generateNomorSurat($tanggal, $divisi);
+        $data['nomor_urut_formatted'] = sprintf('%03d', (int) $data['nomor_urut']);
+
+        return response()->json($data);
     }
 
     public function getHistory(Request $request)
@@ -67,20 +114,88 @@ class InvoiceController extends Controller
     {
         $this->ensureSuperAdmin($request);
         $validated = $this->validatePayload($request);
-        $nomorData = $this->generateNomorSurat($validated['tanggal_invoice'] ?? null);
+        $nomorData = $this->generateNomorSurat(
+            $validated['tanggal_invoice'] ?? null,
+            $validated['divisi'] ?? null
+        );
         $attrs = $this->buildDocumentAttributes($validated);
 
-        $document = InvoiceDocument::create(array_merge($attrs, [
-            'nomor_surat' => $nomorData['nomor_surat'],
-            'nomor_urut' => $nomorData['nomor_urut'],
-            'tahun' => $nomorData['tahun'],
-        ]));
+        $nomorUrutInt = $nomorData['nomor_urut'];
+        $nomorSurat = $nomorData['nomor_surat'];
+
+        if (!empty($validated['nomor_urut'])) {
+            $rawUrut = trim((string) $validated['nomor_urut']);
+            if (ctype_digit($rawUrut)) {
+                $nomorUrutInt = (int) $rawUrut;
+                $divisiCode = $this->resolveDivisiCode($validated['divisi'] ?? null);
+                $date = $this->parseFlexibleDate($validated['tanggal_invoice'] ?? null) ?? Carbon::now();
+                $nomorSurat = sprintf('%03d/%s/HSR/%s', $nomorUrutInt, $divisiCode, $date->format('dmY'));
+            }
+        }
+
+        if (!empty($validated['nomor_surat'])) {
+            $nomorSurat = trim($validated['nomor_surat']);
+        }
+
+        $divisi = $validated['divisi'] ?? null;
+        $divisiCode = $this->resolveDivisiCode($divisi);
+        $tahun = $nomorData['tahun'];
+
+        // Cek apakah nomor_surat sudah terdaftar
+        $existingSurat = InvoiceDocument::where('nomor_surat', $nomorSurat)->first();
+        if ($existingSurat) {
+            return response()->json([
+                'success' => false,
+                'message' => "Nomor invoice '{$nomorSurat}' sudah terdaftar. Tidak bisa menggunakan nomor yang sama.",
+                'errors' => [
+                    'nomor_surat' => ["Nomor invoice '{$nomorSurat}' sudah terdaftar."],
+                    'nomor_urut' => ["Nomor urut " . sprintf('%03d', $nomorUrutInt) . " sudah terpakai."],
+                ],
+            ], 422);
+        }
+
+        // Cek apakah nomor_urut sudah terdaftar secara global (meskipun divisi berbeda)
+        $existingUrut = InvoiceDocument::where('tahun', $tahun)
+            ->where('nomor_urut', $nomorUrutInt)
+            ->first();
+
+        if ($existingUrut) {
+            $formattedUrut = sprintf('%03d', $nomorUrutInt);
+            $divisiName = $existingUrut->divisi ? strtoupper($existingUrut->divisi) : 'lain';
+            return response()->json([
+                'success' => false,
+                'message' => "Nomor urut {$formattedUrut} sudah digunakan pada divisi {$divisiName} ({$existingUrut->nomor_surat}). Meskipun divisi berbeda, nomor urut tidak boleh kembar.",
+                'errors' => [
+                    'nomor_urut' => ["Nomor urut {$formattedUrut} sudah digunakan pada dokumen {$existingUrut->nomor_surat}."],
+                ],
+            ], 422);
+        }
+
+        try {
+            $document = InvoiceDocument::create(array_merge($attrs, [
+                'divisi' => $validated['divisi'] ?? null,
+                'nomor_surat' => $nomorSurat,
+                'nomor_urut' => $nomorUrutInt,
+                'tahun' => $tahun,
+            ]));
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == 23000) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Nomor invoice '{$nomorSurat}' sudah terdaftar di sistem. Silakan gunakan nomor lain.",
+                    'errors' => [
+                        'nomor_surat' => ["Nomor invoice '{$nomorSurat}' sudah ada."],
+                    ],
+                ], 422);
+            }
+            throw $e;
+        }
 
         app(WhatsAppService::class)->notifyDocumentCreated(
             'Invoice',
             $validated['bill_to_nama'],
-            $nomorData['nomor_surat'],
-            $this->whatsAppDivisiFromRequest($request)
+            $nomorSurat,
+            $validated['divisi'] ?? $this->whatsAppDivisiFromRequest($request)
         );
 
         $pdfData = $this->documentToPdfData($document);
@@ -104,7 +219,79 @@ class InvoiceController extends Controller
         $this->ensureSuperAdmin($request);
         $validated = $this->validatePayload($request);
         $document = InvoiceDocument::findOrFail($id);
-        $document->update($this->buildDocumentAttributes($validated));
+
+        $attrs = $this->buildDocumentAttributes($validated);
+        $activeDivisi = $validated['divisi'] ?? $document->divisi;
+        $divisiCode = $this->resolveDivisiCode($activeDivisi);
+        $date = $this->parseFlexibleDate($validated['tanggal_invoice'] ?? $document->tanggal_invoice) ?? Carbon::now();
+        $tahun = (int) $date->year;
+
+        $nomorUrutInt = $document->nomor_urut;
+        $nomorSurat = $document->nomor_surat;
+
+        if (!empty($validated['nomor_urut'])) {
+            $rawUrut = trim((string) $validated['nomor_urut']);
+            if (ctype_digit($rawUrut)) {
+                $nomorUrutInt = (int) $rawUrut;
+                $nomorSurat = sprintf('%03d/%s/HSR/%s', $nomorUrutInt, $divisiCode, $date->format('dmY'));
+                $attrs['nomor_urut'] = $nomorUrutInt;
+                $attrs['nomor_surat'] = $nomorSurat;
+            }
+        }
+
+        if (!empty($validated['nomor_surat'])) {
+            $nomorSurat = trim($validated['nomor_surat']);
+            $attrs['nomor_surat'] = $nomorSurat;
+        }
+
+        // Cek duplikasi nomor surat pada dokumen lain
+        $existingSurat = InvoiceDocument::where('nomor_surat', $nomorSurat)
+            ->where('id', '!=', $id)
+            ->first();
+
+        if ($existingSurat) {
+            return response()->json([
+                'success' => false,
+                'message' => "Nomor invoice '{$nomorSurat}' sudah terdaftar pada dokumen lain.",
+                'errors' => [
+                    'nomor_surat' => ["Nomor invoice '{$nomorSurat}' sudah terdaftar."],
+                    'nomor_urut' => ["Nomor urut " . sprintf('%03d', $nomorUrutInt) . " sudah terpakai."],
+                ],
+            ], 422);
+        }
+
+        // Cek duplikasi nomor urut secara global pada dokumen lain (meskipun divisi berbeda)
+        $existingUrut = InvoiceDocument::where('tahun', $tahun)
+            ->where('nomor_urut', $nomorUrutInt)
+            ->where('id', '!=', $id)
+            ->first();
+
+        if ($existingUrut) {
+            $formattedUrut = sprintf('%03d', $nomorUrutInt);
+            $divisiName = $existingUrut->divisi ? strtoupper($existingUrut->divisi) : 'lain';
+            return response()->json([
+                'success' => false,
+                'message' => "Nomor urut {$formattedUrut} sudah digunakan pada divisi {$divisiName} ({$existingUrut->nomor_surat}). Meskipun divisi berbeda, nomor urut tidak boleh kembar.",
+                'errors' => [
+                    'nomor_urut' => ["Nomor urut {$formattedUrut} sudah digunakan pada dokumen {$existingUrut->nomor_surat}."],
+                ],
+            ], 422);
+        }
+
+        try {
+            $document->update($attrs);
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() == 23000) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Nomor invoice '{$nomorSurat}' sudah terdaftar di sistem. Silakan gunakan nomor lain.",
+                    'errors' => [
+                        'nomor_surat' => ["Nomor invoice '{$nomorSurat}' sudah ada."],
+                    ],
+                ], 422);
+            }
+            throw $e;
+        }
 
         return response()->json([
             'success' => true,
@@ -142,6 +329,9 @@ class InvoiceController extends Controller
     public function validatePayload(Request $request): array
     {
         return $request->validate([
+            'divisi' => 'nullable|string|max:50',
+            'nomor_urut' => 'nullable|string|max:50',
+            'nomor_surat' => 'nullable|string|max:255',
             'tanggal_invoice' => 'required|string',
             'tanggal_jatuh_tempo' => 'nullable|string',
             'no_po' => 'nullable|string|max:255',
@@ -176,6 +366,7 @@ class InvoiceController extends Controller
         $ppnNominal = (int) round($dpp * ($ppnPersen / 100));
 
         $attrs = [
+            'divisi' => trim((string) ($validated['divisi'] ?? '')) ?: null,
             'tanggal_invoice' => $validated['tanggal_invoice'],
             'tanggal_jatuh_tempo' => trim((string) ($validated['tanggal_jatuh_tempo'] ?? '')) ?: null,
             'no_po' => trim((string) ($validated['no_po'] ?? '')) ?: null,
@@ -220,6 +411,7 @@ class InvoiceController extends Controller
         })->all();
 
         return [
+            'divisi' => $document->divisi,
             'nomor_surat' => $document->nomor_surat,
             'tanggal_invoice' => $document->tanggal_invoice,
             'tanggal_jatuh_tempo' => $document->tanggal_jatuh_tempo,
@@ -343,8 +535,17 @@ class InvoiceController extends Controller
             return null;
         }
 
+        $idMonths = [
+            'januari' => 'january', 'februari' => 'february', 'maret' => 'march',
+            'april' => 'april', 'mei' => 'may', 'juni' => 'june',
+            'juli' => 'july', 'agustus' => 'august', 'september' => 'september',
+            'oktober' => 'october', 'november' => 'november', 'desember' => 'december',
+        ];
+
+        $normalized = str_ireplace(array_keys($idMonths), array_values($idMonths), $value);
+
         try {
-            return Carbon::parse($value);
+            return Carbon::parse($normalized);
         } catch (\Throwable $e) {
             return null;
         }

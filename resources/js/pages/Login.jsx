@@ -89,7 +89,7 @@ export default function Login({ login, isLoading }) {
           </div>
 
           {/* Hero Text */}
-          <h2 className="mb-4 text-4xl font-bold leading-tight text-slate-800">
+          <h2 className="mb-4 text-4xl font-bold leading-tight text-slate-800 font-brand">
             Streamline Your Business Operations
           </h2>
           <p className="mb-8 text-lg leading-relaxed text-slate-600">
@@ -178,7 +178,7 @@ export default function Login({ login, isLoading }) {
                   </select>
                 </label>
               </div>
-              <h2 className="mb-2 text-2xl font-bold text-slate-800 lg:text-3xl">
+              <h2 className="mb-2 text-2xl font-bold text-slate-800 lg:text-3xl font-brand">
                 {t("welcomeBack", "Welcome Back")}
               </h2>
               <p className="text-slate-500">

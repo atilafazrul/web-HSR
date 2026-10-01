@@ -45,7 +45,14 @@ export const InvoiceHistory = ({
             <div key={item.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-6 transition hover:shadow-md">
               <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                 <div className="flex-1">
-                  <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{item.nomor_surat}</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{item.nomor_surat}</span>
+                    {item.divisi && (
+                      <span className="rounded bg-slate-200/80 px-2 py-0.5 text-xs font-medium text-slate-700 uppercase">
+                        {item.divisi === "bhp" ? "Barang Habis Pakai (BHP)" : `Divisi ${item.divisi}`}
+                      </span>
+                    )}
+                  </div>
                   <h4 className="mt-2 text-lg font-semibold text-gray-800">{item.bill_to_nama}</h4>
                   <p className="mt-1 text-sm text-gray-500">Date: {item.tanggal_invoice}</p>
                   {item.tanggal_jatuh_tempo && (

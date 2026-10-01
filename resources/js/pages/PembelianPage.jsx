@@ -16,7 +16,7 @@ export default function PembelianPage() {
   const [dataList, setDataList] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL || "";
   const BASE_URL = API_URL.replace('/api', ''); // Hapus /api untuk akses file storage
 
   // Modal Tambah

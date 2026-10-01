@@ -338,11 +338,12 @@ const Dashboard = ({ user, windowWidth }) => {
   const loadData = async () => {
     try {
       // Super Admin melihat semua data, Admin hanya melihat data divisi sendiri
-      const res = await axios.get(
-        `${import.meta.env.VITE_API_URL}/projek-kerja`
-      );
+      const res = await axios.get("/projek-kerja");
 
-      let data = res.data?.data || res.data || [];
+      let data = res.data?.data ?? res.data ?? [];
+      if (!Array.isArray(data)) {
+        data = [];
+      }
 
       // Admin hanya melihat data divisi sendiri
       if (user?.role !== "super_admin") {
@@ -368,9 +369,7 @@ const Dashboard = ({ user, windowWidth }) => {
     if (!window.confirm(language === "en" ? "Are you sure you want to delete this project?" : "Yakin ingin menghapus projek ini?")) return;
 
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/${id}`
-      );
+      await axios.delete(`/projek-kerja/${id}`);
       setProjek(prev => prev.filter(p => p.id !== id));
     } catch {
       alert(language === "en" ? "Failed to delete data" : "Gagal menghapus data");
@@ -380,12 +379,9 @@ const Dashboard = ({ user, windowWidth }) => {
   /* ================= UPDATE DESKRIPSI ================= */
   const handleUpdateDesc = async () => {
     try {
-      await axios.patch(
-        `${import.meta.env.VITE_API_URL}/projek-kerja/${selectedId}/deskripsi`,
-        {
-          problem_description: descText
-        }
-      );
+      await axios.patch(`/projek-kerja/${selectedId}/deskripsi`, {
+        problem_description: descText
+      });
 
       setProjek(prev =>
         prev.map(p =>

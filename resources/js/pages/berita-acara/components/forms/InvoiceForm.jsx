@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, Download, Trash2, Calendar, FileSpreadsheet, Edit, X, Save } from "lucide-react";
+import { Plus, Download, Trash2, Calendar, FileSpreadsheet, Edit, X, Save, AlertCircle } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import { parseRibuanId } from "../../../../utils/formatRupiahInput";
 import { RichTextEditor } from "./RichTextEditor";
@@ -24,6 +24,8 @@ export const InvoiceForm = ({
   estimatedDiskon,
   estimatedPpn,
   estimatedTotal,
+  isDuplicateNomor = null,
+  onSuggestNextNomor = () => {},
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -32,29 +34,118 @@ export const InvoiceForm = ({
     <div className="min-w-0 overflow-x-auto rounded-3xl bg-white p-4 shadow-md sm:p-6 lg:p-8">
       <form id="invoice-form" onSubmit={onSubmit} className="min-w-0">
         {isEditing && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
-              <Edit size={20} className="text-orange-600" />
+          <div className="mb-6 flex items-center justify-between flex-wrap gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
+                <Edit size={20} className="text-orange-600" />
+              </div>
+              <div>
+                <p className="font-semibold text-orange-800">{tr("Mode Edit", "Edit Mode")}</p>
+                <p className="text-sm text-orange-600">
+                  {tr("Nomor Invoice", "Invoice Number")}: <span className="font-mono font-bold text-slate-800">{nextNomorSurat || editNomorSurat}</span>
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-semibold text-orange-800">{tr("Mode Edit", "Edit Mode")}</p>
-              <p className="text-sm text-orange-600">{tr("Nomor Invoice", "Invoice Number")}: {editNomorSurat}</p>
-            </div>
+            <span className="text-xs text-orange-700 bg-orange-100 px-2.5 py-1 rounded-lg">
+              {tr("No. Urut (001) dapat disesuaikan di kolom bawah", "Sequence No. (001) can be customized below")}
+            </span>
           </div>
         )}
 
         {!isEditing && (
-          <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-              {tr("Preview Nomor Invoice", "Invoice Number Preview")}
-            </p>
-            <p className="text-lg font-semibold text-slate-800">
-              {fetchingNomor ? tr("Memuat...", "Loading...") : nextNomorSurat}
-            </p>
+          <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                {tr("Preview Nomor Invoice", "Invoice Number Preview")}
+              </p>
+              <p className="text-lg font-semibold text-slate-800 font-mono">
+                {fetchingNomor ? tr("Memuat...", "Loading...") : nextNomorSurat}
+              </p>
+            </div>
+            <span className="text-xs text-blue-700 bg-blue-100/80 font-medium px-2.5 py-1 rounded-lg">
+              {tr("No. Urut (001) dapat diedit di kolom bawah", "Sequence No. (001) can be edited below")}
+            </span>
           </div>
         )}
 
         <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">
+              {tr("Divisi", "Division")} *
+            </label>
+            <select
+              name="divisi"
+              value={formData.divisi || "it"}
+              onChange={onInputChange}
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+            >
+              <option value="it">DIVISI IT (INV-DIVIT)</option>
+              <option value="sales">DIVISI SALES (INV-DIVSAL)</option>
+              <option value="service">DIVISI SERVICE (INV-DIVSER)</option>
+              <option value="bhp">Barang Habis Pakai BHP (INV-DIVPRO)</option>
+              <option value="kontraktor">DIVISI KONTRAKTOR (INV-DIVKON)</option>
+              <option value="logistik">DIVISI LOGISTIK (INV-DIVLOG)</option>
+              <option value="purchasing">DIVISI PURCHASING (INV-DIVPUR)</option>
+              <option value="siplah">DIVISI SIPLAH (INV-DIVSIP)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700 flex items-center justify-between">
+              <span>{tr("Nomor Urut Invoice", "Invoice Sequence Number")} *</span>
+              <span className="text-xs text-indigo-600 font-medium">{tr("Dapat diedit (misal: 001)", "Editable (e.g. 001)")}</span>
+            </label>
+            <input
+              type="text"
+              name="nomor_urut"
+              value={formData.nomor_urut ?? "001"}
+              onChange={onInputChange}
+              onBlur={(e) => {
+                const val = e.target.value.trim();
+                if (/^\d+$/.test(val)) {
+                  onInputChange({ target: { name: "nomor_urut", value: val.padStart(3, "0") } });
+                }
+              }}
+              placeholder="001"
+              className={`w-full rounded-xl border px-4 py-3 font-mono font-semibold outline-none transition ${
+                isDuplicateNomor
+                  ? "border-red-400 bg-red-50/50 text-red-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                  : "border-gray-200 bg-gray-50 text-slate-800 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+              }`}
+              required
+            />
+            {isDuplicateNomor ? (
+              <div className="mt-2.5 rounded-xl border border-red-200 bg-red-50 p-3 text-xs text-red-700 shadow-sm animate-fadeIn">
+                <div className="flex items-start gap-2">
+                  <AlertCircle size={16} className="mt-0.5 shrink-0 text-red-600" />
+                  <div className="flex-1">
+                    <p className="font-semibold text-red-800">
+                      {tr("Nomor Invoice Sudah Digunakan!", "Invoice Number Already Used!")}
+                    </p>
+                    <p className="mt-1 leading-relaxed text-red-600">
+                      {tr(
+                        `Nomor urut ${isDuplicateNomor.nomor_urut} sudah terdaftar pada ${isDuplicateNomor.nomor_surat} (${isDuplicateNomor.divisi ? "Divisi " + String(isDuplicateNomor.divisi).toUpperCase() : "divisi lain"}). Meskipun divisi berbeda, nomor urut invoice tidak boleh kembar!`,
+                        `Sequence number ${isDuplicateNomor.nomor_urut} is already registered on ${isDuplicateNomor.nomor_surat} (${isDuplicateNomor.divisi ? "Division " + String(isDuplicateNomor.divisi).toUpperCase() : "another division"}). Even with different divisions, sequence numbers cannot be duplicated!`
+                      )}
+                    </p>
+                    {onSuggestNextNomor && (
+                      <button
+                        type="button"
+                        onClick={onSuggestNextNomor}
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800 hover:bg-red-200 transition cursor-pointer"
+                      >
+                        {tr("Gunakan nomor berikutnya otomatis", "Use next available number")}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500">
+                {tr("Ubah angka ini jika ingin menggunakan nomor urut tertentu.", "Edit this number to customize the sequence number.")}
+              </p>
+            )}
+          </div>
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Tanggal Invoice", "Invoice Date")} *</label>
             <div className="relative">
@@ -291,7 +382,16 @@ export const InvoiceForm = ({
           <button type="button" onClick={onReset} className={`rounded-xl px-6 py-3 font-medium ${isEditing ? "bg-orange-100 text-orange-700 hover:bg-orange-200" : "border border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
             {isEditing ? <span className="flex items-center justify-center gap-2"><X size={18} />{tr("Batal Edit", "Cancel Edit")}</span> : tr("Reset", "Reset")}
           </button>
-          <button type="submit" disabled={loading} className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-medium text-white ${loading ? "bg-gray-400" : "bg-blue-600 hover:bg-blue-700"}`}>
+          <button
+            type="submit"
+            disabled={loading || Boolean(isDuplicateNomor)}
+            className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-medium text-white transition ${
+              loading || isDuplicateNomor
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
+            title={isDuplicateNomor ? tr("Nomor invoice sudah terdaftar", "Invoice number already registered") : undefined}
+          >
             {loading ? (isEditing ? tr("Menyimpan...", "Saving...") : tr("Generating...", "Generating...")) : isEditing ? <><Save size={20} />{tr("Simpan Perubahan", "Save Changes")}</> : <><Download size={20} />{tr("Generate PDF", "Generate PDF")}</>}
           </button>
         </div>

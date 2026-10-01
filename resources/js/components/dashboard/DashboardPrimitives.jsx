@@ -29,9 +29,9 @@ export function DashboardWelcome({ greeting, name, tag }) {
       {showTag ? (
         <p className="text-xs font-semibold uppercase tracking-wider text-indigo-600/90">{tag.trim()}</p>
       ) : null}
-      <h1 className={`text-xl font-bold tracking-tight text-slate-900 sm:text-2xl md:text-3xl ${showTag ? "mt-1" : "mt-0"}`}>
+      <h1 className={`text-xl font-bold tracking-tight text-slate-900 sm:text-2xl md:text-3xl font-brand ${showTag ? "mt-1" : "mt-0"}`}>
         {greeting}
-        {name ? <span className="text-indigo-600">, {name}</span> : null}
+        {name ? <span className="text-indigo-600 font-brand">, {name}</span> : null}
       </h1>
       <div className="mt-3 h-1 w-16 rounded-full bg-indigo-500" />
     </header>

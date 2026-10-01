@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useInvoice } from "./hooks/useInvoice";
 import { InvoiceForm } from "./components/forms/InvoiceForm";
 import { InvoiceHistory } from "./components/history/InvoiceHistory";
@@ -8,8 +8,13 @@ import { useI18n } from "../../i18n";
 
 export default function InvoicePage() {
   const { projekId } = useParams();
+  const location = useLocation();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
+
+  const divisiMatch = location.pathname.match(/\/(it|service|sales|kontraktor|logistik|purchasing|siplah)\//);
+  const defaultDivisi = divisiMatch ? divisiMatch[1] : "it";
+
   const {
     activeTab,
     setActiveTab,
@@ -44,7 +49,9 @@ export default function InvoicePage() {
     estimatedDiskon,
     estimatedPpn,
     estimatedTotal,
-  } = useInvoice(projekId);
+    isDuplicateNomor,
+    handleSuggestNextNomor,
+  } = useInvoice(projekId, defaultDivisi);
 
   const handleTabChange = (tab) => {
     if (isEditing) {
@@ -99,6 +106,8 @@ export default function InvoicePage() {
             estimatedDiskon={estimatedDiskon}
             estimatedPpn={estimatedPpn}
             estimatedTotal={estimatedTotal}
+            isDuplicateNomor={isDuplicateNomor}
+            onSuggestNextNomor={handleSuggestNextNomor}
           />
         ) : (
           <InvoiceHistory

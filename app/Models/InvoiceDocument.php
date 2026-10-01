@@ -11,6 +11,7 @@ class InvoiceDocument extends Model
 
     protected $fillable = [
         'projek_kerja_id',
+        'divisi',
         'nomor_surat',
         'tanggal_invoice',
         'tanggal_jatuh_tempo',
