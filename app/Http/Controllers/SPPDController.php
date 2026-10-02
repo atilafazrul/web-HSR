@@ -12,6 +12,7 @@ use App\Services\SignatureStampMerger;
 use App\Services\WhatsAppService;
 use App\Http\Controllers\Concerns\ResolvesWhatsAppDivisi;
 use App\Http\Controllers\Concerns\SavesDocumentToProjectFolder;
+use Illuminate\Support\Facades\DB;
 
 class SPPDController extends Controller
 {
@@ -41,21 +42,33 @@ class SPPDController extends Controller
     private function generateNomorSurat()
     {
         $now = Carbon::now();
-        $tahun = $now->year;
-        $bulan = $now->month;
+        $tahun = (int) $now->year;
+        $bulan = (int) $now->month;
         $bulanRomawi = $this->bulanToRomawi($bulan);
         
-        $lastDocument = SppdDocument::where('tahun', $tahun)
-            ->orderBy('nomor_urut', 'desc')
-            ->first();
+        $query = SppdDocument::where('tahun', $tahun);
+        if (DB::transactionLevel() > 0) {
+            $query->lockForUpdate();
+        }
+
+        // Ambil dokumen terakhir yang dibuat pada tahun ini
+        $lastDocument = $query->orderBy('id', 'desc')->first();
         
-        $nomorUrut = $lastDocument ? $lastDocument->nomor_urut + 1 : 1;
+        $nomorUrut = $lastDocument ? ((int) $lastDocument->nomor_urut + 1) : 1;
         
-        $nomorSurat = sprintf('%03d/SPPD-HSR/%s/%d', $nomorUrut, $bulanRomawi, $tahun);
+        // Pastikan nomor surat unik dan tidak pernah kembar
+        do {
+            $nomorSurat = sprintf('%03d/SPPD-HSR/%s/%d', $nomorUrut, $bulanRomawi, $tahun);
+            if (SppdDocument::where('nomor_surat', $nomorSurat)->exists()) {
+                $nomorUrut++;
+            } else {
+                break;
+            }
+        } while (true);
         
         return [
             'nomor_surat' => $nomorSurat,
-            'nomor_urut' => $nomorUrut,
+            'nomor_urut' => (int) $nomorUrut,
             'bulan' => $bulan,
             'tahun' => $tahun,
             'bulan_romawi' => $bulanRomawi
@@ -118,33 +131,50 @@ class SPPDController extends Controller
             'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
 
-        $nomorData = $this->generateNomorSurat();
+        $nomorData = null;
+        $document = null;
+        $maxAttempts = 3;
 
-        $document = SppdDocument::create([
-            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
-            'nomor_surat' => $nomorData['nomor_surat'],
-            'nomor_urut' => $nomorData['nomor_urut'],
-            'bulan' => $nomorData['bulan'],
-            'tahun' => $nomorData['tahun'],
-            'pejabat_perintah' => $validated['pejabat_perintah'],
-            'nama_pegawai' => $validated['nama_pegawai'],
-            'jabatan' => $validated['jabatan'],
-            'tempat_berangkat' => $validated['tempat_berangkat'],
-            'tempat_tujuan' => $validated['tempat_tujuan'],
-            'transportasi' => $validated['transportasi'],
-            'tanggal_berangkat' => $validated['tanggal_berangkat'],
-            'tanggal_kembali' => $validated['tanggal_kembali'],
-            'maksud' => $validated['maksud'],
-            'pengikut_nama' => $validated['pengikut_nama'] ?? null,
-            'atas_beban' => $validated['atas_beban'],
-            'keterangan' => $validated['keterangan'] ?? null,
-            'dibuat_oleh' => $validated['dibuat_oleh'],
-            'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
-            'approve_nama' => $validated['approve_nama'],
-            'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
-            'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
-            'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
-        ]);
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $document = DB::transaction(function () use ($validated, &$nomorData) {
+                    $nomorData = $this->generateNomorSurat();
+
+                    return SppdDocument::create([
+                        'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
+                        'nomor_surat' => $nomorData['nomor_surat'],
+                        'nomor_urut' => $nomorData['nomor_urut'],
+                        'bulan' => $nomorData['bulan'],
+                        'tahun' => $nomorData['tahun'],
+                        'pejabat_perintah' => $validated['pejabat_perintah'],
+                        'nama_pegawai' => $validated['nama_pegawai'],
+                        'jabatan' => $validated['jabatan'],
+                        'tempat_berangkat' => $validated['tempat_berangkat'],
+                        'tempat_tujuan' => $validated['tempat_tujuan'],
+                        'transportasi' => $validated['transportasi'],
+                        'tanggal_berangkat' => $validated['tanggal_berangkat'],
+                        'tanggal_kembali' => $validated['tanggal_kembali'],
+                        'maksud' => $validated['maksud'],
+                        'pengikut_nama' => $validated['pengikut_nama'] ?? null,
+                        'atas_beban' => $validated['atas_beban'],
+                        'keterangan' => $validated['keterangan'] ?? null,
+                        'dibuat_oleh' => $validated['dibuat_oleh'],
+                        'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
+                        'approve_nama' => $validated['approve_nama'],
+                        'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
+                        'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
+                        'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
+                    ]);
+                });
+                break;
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($e->getCode() == 23000 && $attempt < $maxAttempts) {
+                    usleep(100000);
+                    continue;
+                }
+                throw $e;
+            }
+        }
 
         app(WhatsAppService::class)->notifyDocumentCreated(
             'SPPD',
@@ -184,33 +214,50 @@ class SPPDController extends Controller
             'projek_kerja_id' => 'nullable|integer|exists:projek_kerjas,id',
         ]);
 
-        $nomorData = $this->generateNomorSurat();
+        $nomorData = null;
+        $document = null;
+        $maxAttempts = 3;
 
-        $document = SppdDocument::create([
-            'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
-            'nomor_surat' => $nomorData['nomor_surat'],
-            'nomor_urut' => $nomorData['nomor_urut'],
-            'bulan' => $nomorData['bulan'],
-            'tahun' => $nomorData['tahun'],
-            'pejabat_perintah' => $validated['pejabat_perintah'],
-            'nama_pegawai' => $validated['nama_pegawai'],
-            'jabatan' => $validated['jabatan'],
-            'tempat_berangkat' => $validated['tempat_berangkat'],
-            'tempat_tujuan' => $validated['tempat_tujuan'],
-            'transportasi' => $validated['transportasi'],
-            'tanggal_berangkat' => $validated['tanggal_berangkat'],
-            'tanggal_kembali' => $validated['tanggal_kembali'],
-            'maksud' => $validated['maksud'],
-            'pengikut_nama' => $validated['pengikut_nama'] ?? null,
-            'atas_beban' => $validated['atas_beban'],
-            'keterangan' => $validated['keterangan'] ?? null,
-            'dibuat_oleh' => $validated['dibuat_oleh'],
-            'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
-            'approve_nama' => $validated['approve_nama'],
-            'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
-            'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
-            'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
-        ]);
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $document = DB::transaction(function () use ($validated, &$nomorData) {
+                    $nomorData = $this->generateNomorSurat();
+
+                    return SppdDocument::create([
+                        'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
+                        'nomor_surat' => $nomorData['nomor_surat'],
+                        'nomor_urut' => $nomorData['nomor_urut'],
+                        'bulan' => $nomorData['bulan'],
+                        'tahun' => $nomorData['tahun'],
+                        'pejabat_perintah' => $validated['pejabat_perintah'],
+                        'nama_pegawai' => $validated['nama_pegawai'],
+                        'jabatan' => $validated['jabatan'],
+                        'tempat_berangkat' => $validated['tempat_berangkat'],
+                        'tempat_tujuan' => $validated['tempat_tujuan'],
+                        'transportasi' => $validated['transportasi'],
+                        'tanggal_berangkat' => $validated['tanggal_berangkat'],
+                        'tanggal_kembali' => $validated['tanggal_kembali'],
+                        'maksud' => $validated['maksud'],
+                        'pengikut_nama' => $validated['pengikut_nama'] ?? null,
+                        'atas_beban' => $validated['atas_beban'],
+                        'keterangan' => $validated['keterangan'] ?? null,
+                        'dibuat_oleh' => $validated['dibuat_oleh'],
+                        'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
+                        'approve_nama' => $validated['approve_nama'],
+                        'approve_jabatan' => $validated['approve_jabatan'] ?? 'Direktur',
+                        'ttd_dibuat_oleh' => $validated['ttd_dibuat_oleh'] ?? null,
+                        'ttd_menyetujui' => $validated['ttd_menyetujui'] ?? null,
+                    ]);
+                });
+                break;
+            } catch (\Illuminate\Database\QueryException $e) {
+                if ($e->getCode() == 23000 && $attempt < $maxAttempts) {
+                    usleep(100000);
+                    continue;
+                }
+                throw $e;
+            }
+        }
 
         app(WhatsAppService::class)->notifyDocumentCreated(
             'SPPD',

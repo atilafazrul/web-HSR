@@ -34,4 +34,11 @@ class SppdDocument extends Model
         'ttd_dibuat_oleh',
         'ttd_menyetujui',
     ];
+
+    protected $casts = [
+        'nomor_urut' => 'integer',
+        'bulan' => 'integer',
+        'tahun' => 'integer',
+        'projek_kerja_id' => 'integer',
+    ];
 }

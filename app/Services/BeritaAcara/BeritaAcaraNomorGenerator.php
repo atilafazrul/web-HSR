@@ -49,20 +49,28 @@ class BeritaAcaraNomorGenerator
     private static function generate(string $modelClass, string $prefix, string $urutColumn = 'nomor_urut'): array
     {
         $now = Carbon::now();
-        $tahun = $now->year;
-        $bulan = $now->month;
+        $tahun = (int) $now->year;
+        $bulan = (int) $now->month;
         $bulanRomawi = self::bulanToRomawi($bulan);
 
         $lastDocument = $modelClass::where('tahun', $tahun)
-            ->orderBy($urutColumn, 'desc')
+            ->orderBy('id', 'desc')
             ->first();
 
-        $nomorUrut = $lastDocument ? ((int) $lastDocument->{$urutColumn}) + 1 : 1;
-        $nomorSurat = sprintf('%03d/%s/%s/%d', $nomorUrut, $prefix, $bulanRomawi, $tahun);
+        $nomorUrut = $lastDocument ? ((int) $lastDocument->{$urutColumn} + 1) : 1;
+
+        do {
+            $nomorSurat = sprintf('%03d/%s/%s/%d', $nomorUrut, $prefix, $bulanRomawi, $tahun);
+            if ($modelClass::where('nomor_surat', $nomorSurat)->exists()) {
+                $nomorUrut++;
+            } else {
+                break;
+            }
+        } while (true);
 
         return [
             'nomor_surat' => $nomorSurat,
-            'nomor_urut' => $nomorUrut,
+            'nomor_urut' => (int) $nomorUrut,
             'bulan' => $bulan,
             'tahun' => $tahun,
             'bulan_romawi' => $bulanRomawi,
