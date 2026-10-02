@@ -218,8 +218,8 @@ export default function ProjekKerjaPage() {
       .filter((v) => v !== "");
     const invitedUsers = Array.isArray(item?.invited_user_ids)
       ? item.invited_user_ids
-          .map((v) => String(v || "").trim())
-          .filter((v) => v !== "")
+        .map((v) => String(v || "").trim())
+        .filter((v) => v !== "")
       : [];
     const arr = [
       item?.pic_karyawan,
@@ -363,6 +363,30 @@ export default function ProjekKerjaPage() {
   );
   const itemsPerPage = 5; // jumlah item per halaman
   const projekListDepsKeyRef = useRef(null);
+
+  const tableScrollRef = useRef(null);
+  const [tableVisibleWidth, setTableVisibleWidth] = useState(0);
+
+  useEffect(() => {
+    const el = tableScrollRef.current;
+    if (!el) return;
+
+    const updateWidth = () => {
+      if (el) {
+        setTableVisibleWidth(el.clientWidth);
+      }
+    };
+
+    updateWidth();
+    const ro = new ResizeObserver(updateWidth);
+    ro.observe(el);
+    window.addEventListener("resize", updateWidth);
+
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateWidth);
+    };
+  }, []);
 
   // Modal deskripsi
   const [showDesc, setShowDesc] = useState(false);
@@ -1326,7 +1350,7 @@ export default function ProjekKerjaPage() {
       let savedProjek = null;
       // Cek apakah ada foto yang perlu diupload
       const hasPhotos = payloadBiaya.pengeluaran.some(r => r.photoFiles?.length > 0) ||
-                          payloadBiaya.reimbursment.some(r => r.photoFiles?.length > 0);
+        payloadBiaya.reimbursment.some(r => r.photoFiles?.length > 0);
 
       if (hasPhotos) {
         // Gunakan FormData untuk upload foto
@@ -1537,12 +1561,12 @@ export default function ProjekKerjaPage() {
         existing: (prev[kategoriKey]?.existing || []).map((r, i) =>
           i === index
             ? {
-                ...r,
-                is_lunas: newStatus,
-                ...(newStatus
-                  ? { lunas_at: new Date().toISOString(), lunas_group_id: lunasGroupId }
-                  : { lunas_at: null, lunas_group_id: null }),
-              }
+              ...r,
+              is_lunas: newStatus,
+              ...(newStatus
+                ? { lunas_at: new Date().toISOString(), lunas_group_id: lunasGroupId }
+                : { lunas_at: null, lunas_group_id: null }),
+            }
             : r
         ),
       },
@@ -1693,13 +1717,12 @@ export default function ProjekKerjaPage() {
     return (
       <div
         key={`${colKey}-${section}-${idx}-${row.created_at || "row"}`}
-        className={`rounded-lg border p-2 space-y-2 ${
-          isNewRow
+        className={`rounded-lg border p-2 space-y-2 ${isNewRow
             ? "border-dashed border-emerald-400/80 bg-emerald-50/40"
             : barisLunas
               ? "border-amber-200/80 bg-amber-50/30"
               : "border-gray-200 bg-white"
-        }`}
+          }`}
       >
         {isNewRow ? (
           <p className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
@@ -2031,7 +2054,7 @@ export default function ProjekKerjaPage() {
               />
             </div>
 
-            <div className="relative mx-auto min-w-0 w-full max-w-[min(100%,17rem)] overflow-hidden md:mx-0 md:max-w-none">
+            <div className="relative">
               <Calendar
                 className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400"
                 size={18}
@@ -2041,7 +2064,7 @@ export default function ProjekKerjaPage() {
                 name="start_date"
                 value={form.start_date}
                 onChange={handleChange}
-                className={`projek-kerja-date-input ${projekField} min-w-0 max-w-full shrink pl-10 pr-3 text-base leading-none`}
+                className={`projek-kerja-date-input ${projekField} pl-10`}
                 required
               />
             </div>
@@ -2127,24 +2150,24 @@ export default function ProjekKerjaPage() {
               <h2 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
                 {tr("Data Projek Kerja", "Project Data")}
               </h2>
-            {role === "super_admin" && isSelesaiContext ? (
-              <p className="mt-1 text-xs text-slate-500">
-                Hanya proyek status <span className="font-medium text-gray-700">Selesai</span>
-                {currentDivisi ? (
-                  <>
-                    {" · "}
-                    divisi <span className="font-medium text-gray-700">{divisiLabel(currentDivisi)}</span>
-                  </>
-                ) : (
-                  <> · semua divisi</>
-                )}
-              </p>
-            ) : null}
-            {isArchiveContext ? (
-              <p className="mt-1 text-xs text-slate-500">
-                Menampilkan proyek yang sudah di-<span className="font-medium text-slate-700">archive</span>.
-              </p>
-            ) : null}
+              {role === "super_admin" && isSelesaiContext ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  Hanya proyek status <span className="font-medium text-gray-700">Selesai</span>
+                  {currentDivisi ? (
+                    <>
+                      {" · "}
+                      divisi <span className="font-medium text-gray-700">{divisiLabel(currentDivisi)}</span>
+                    </>
+                  ) : (
+                    <> · semua divisi</>
+                  )}
+                </p>
+              ) : null}
+              {isArchiveContext ? (
+                <p className="mt-1 text-xs text-slate-500">
+                  Menampilkan proyek yang sudah di-<span className="font-medium text-slate-700">archive</span>.
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="relative w-full shrink-0 sm:mt-0 sm:w-72">
@@ -2170,242 +2193,255 @@ export default function ProjekKerjaPage() {
           </div>
         </div>
 
-        <div className="w-full overflow-x-auto rounded-xl border border-slate-200/80">
-          <table className="text-sm" style={{ minWidth: "1280px", width: "100%", tableLayout: "fixed" }}>
-            <thead className="border-b border-slate-200 bg-slate-50/95 text-slate-600">
-              <tr className="text-left">
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '90px' }}>
-                  <Building size={16} className="inline mr-1 text-gray-400" /> {tr("Divisi", "Division")}
-                </th>
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '220px' }}>
-                  <Briefcase size={16} className="inline mr-1 text-gray-400" /> {tr("Tugas", "Task")}
-                </th>
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '150px' }}>
-                  <User size={16} className="inline mr-1 text-gray-400" /> {tr("Karyawan", "Employee")}
-                </th>
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '180px' }}>
-                  <MapPin size={16} className="inline mr-1 text-gray-400" /> {tr("Lokasi", "Location")}
-                </th>
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '110px' }}>
-                  <Calendar size={16} className="inline mr-1 text-gray-400" /> {tr("Tanggal", "Date")}
-                </th>
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '120px' }}>
-                  <FileText size={16} className="inline mr-1 text-gray-400" /> {tr("Deskripsi", "Description")}
-                </th>
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '110px' }}>
-                  <ShoppingCart size={16} className="inline mr-1 text-gray-400" /> {tr("Barang", "Items")}
-                </th>
-                <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '140px' }}>
-                  <Activity size={16} className="inline mr-1 text-gray-400" /> {tr("Status", "Status")}
-                </th>
-                <th className="p-2.5 font-semibold text-center whitespace-nowrap" style={{ width: '160px' }}>
-                  <Settings size={16} className="inline mr-1 text-gray-400" /> {tr("Aksi", "Actions")}
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((item) => {
-                const isHighlighted = Number(highlightProjekId) === Number(item.id);
-                return (
-                <tr
-                  key={item.id}
-                  ref={(el) => {
-                    if (el) rowRefs.current[item.id] = el;
-                  }}
-                  id={isHighlighted ? `projek-row-${item.id}` : undefined}
-                  className={`border-b border-slate-100 transition hover:bg-slate-50/70 ${
-                    isHighlighted
-                      ? "bg-indigo-50 ring-2 ring-indigo-500 ring-inset shadow-sm"
-                      : ""
-                  }`}
-                >
-                  <td className="p-2.5">
-                    <select
-                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
-                      value={divisiKey(item.divisi)}
-                      title="Divisi yang pernah terlibat (klik untuk lihat)"
-                      onChange={(e) => {
-                        e.target.value = divisiKey(item.divisi);
-                      }}
-                    >
-                      {Array.isArray(item.divisi_flow) && item.divisi_flow.length > 0 ? (
-                        item.divisi_flow.map((d, idx) => (
-                          <option key={`${d}-${idx}`} value={divisiKey(d)}>
-                            {divisiLabel(d)}
-                          </option>
-                        ))
-                      ) : (
-                        <option value={divisiKey(item.divisi)}>{divisiLabel(item.divisi)}</option>
-                      )}
-                    </select>
-                  </td>
-                  <td className="p-2.5">
-                    <button
-                      type="button"
-                      onClick={() => handleViewPhoto(item.id)}
-                      className="w-full truncate text-left font-medium text-slate-800 transition hover:text-indigo-600 hover:underline"
-                      title={tr("Buka halaman dokumen projek", "Open project document page")}
-                    >
-                      {item.jenis_pekerjaan}
-                    </button>
-                  </td>
-                  <td className="p-2.5">
-                    {(() => {
-                      const rows = buildKaryawanDropdownRows(item);
-                      const currentName = getCurrentKaryawanName(item);
-                      if (rows.length <= 1) {
-                        const row = rows[0];
-                        const label = row
-                          ? row.isInvite
-                            ? `${row.display} (Invite)`
-                            : row.display
-                          : currentName || "-";
-                        return <span className="truncate block">{label}</span>;
-                      }
-                      return (
-                        <select
-                          className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
-                          value={currentName}
-                          onChange={(e) => {
-                            e.target.value = currentName;
-                          }}
-                          title="Karyawan yang terlibat di project"
-                        >
-                          {rows.map((row, idx) => (
-                            <option key={`${row.display}-${idx}`} value={row.display}>
-                              {row.isInvite ? `${row.display} (Invite)` : row.display}
-                            </option>
-                          ))}
-                        </select>
-                      );
-                    })()}
-                  </td>
-                  <td className="p-2.5 truncate">{item.alamat}</td>
-                  <td className="p-2.5 whitespace-nowrap">{new Date(item.start_date).toLocaleDateString("id-ID")}</td>
-                  <td className="p-2.5">
-                    {item.problem_description ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDescText(item.problem_description);
-                          setNewDesc(item.problem_description);
-                          setCurrentId(item.id);
-                          setEditDesc(false);
-                          setShowDesc(true);
-                        }}
-                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                        title={tr("Lihat deskripsi", "View description")}
-                      >
-                        <Eye size={14} aria-hidden />
-                      </button>
-                    ) : "-"}
-                  </td>
-                  <td className="p-2.5">
-                    {item.barang_dibeli ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setBarangText(item.barang_dibeli);
-                          setNewBarang(item.barang_dibeli);
-                          setCurrentId(item.id);
-                          setEditBarang(false);
-                          setShowBarangModal(true);
-                        }}
-                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                        title={tr("Lihat barang dibeli", "View purchased items")}
-                      >
-                        <Eye size={14} aria-hidden />
-                      </button>
-                    ) : "-"}
-                  </td>
-                  <td className="p-2.5">
-                    <button
-                      onClick={() => openTimelineModal(item)}
-                      className={`px-2.5 py-1 rounded-full text-xs border cursor-pointer transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm ${getStatusColor(item.status)} whitespace-nowrap inline-block max-w-full truncate`}
-                      title="Klik untuk lihat timeline"
-                    >
-                      {displayStatus(item.status)}
-                    </button>
-                  </td>
-                  <td className="p-2.5">
-                    <div className="flex justify-center items-center gap-1">
-                      <button
-                        onClick={() => handleViewPhoto(item.id)}
-                        className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
-                        title={tr("Lihat Foto", "View Photos")}
-                      >
-                        <FileText size={18} />
-                      </button>
-                      {canManageProject && (
-                        <button
-                          onClick={() => handleBeritaAcara(item.id)}
-                          className={`${actionIconBtn} text-indigo-600 hover:bg-indigo-50`}
-                          title={tr("Berita Acara", "Minutes Report")}
-                        >
-                          <ClipboardCheck size={18} />
-                        </button>
-                      )}
-                      {!isUserRole && item.file_url && (
-                        <a
-                          href={item.file_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className={`${actionIconBtn} text-sky-600 hover:bg-sky-50`}
-                          title={tr("Download File", "Download File")}
-                        >
-                          <Download size={18} />
-                        </a>
-                      )}
-                      {canOpenBiayaAction(item) && (
-                        <>
-                          {!isUserRole && !isArchiveContext && canEditProjectAction(item) ? (
-                            <button
-                              onClick={() => goToEditProjectPage(item)}
-                              className={`${actionIconBtn} text-blue-600 hover:bg-blue-50`}
-                              title="Edit project & oper divisi"
-                            >
-                              <Edit3 size={18} />
-                            </button>
-                          ) : null}
-                          <button
-                            onClick={() => openUangModal(item)}
-                            className={`${actionIconBtn} ${item.is_lunas ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"}`}
-                            title={item.is_lunas ? "Biaya (Lunas)" : "Biaya (Belum Lunas)"}
-                          >
-                            <DollarSign size={18} />
-                          </button>
-                          {isArchiveContext ? (
-                            <button
-                              onClick={() => handleUnarchiveProject(item)}
-                              className={`${actionIconBtn} text-emerald-600 hover:bg-emerald-50`}
-                              title={tr("Batalkan Archive", "Cancel Archive")}
-                            >
-                              <RotateCcw size={18} />
-                            </button>
-                          ) : null}
-                        </>
-                      )}
-                      {!isUserRole && !isArchiveContext && canEditProjectAction(item) && (
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
-                          title={tr("Hapus", "Delete")}
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+        <div ref={tableScrollRef} className="w-full overflow-x-auto rounded-xl border border-slate-200/80">
+          <div className="inline-block min-w-full align-middle">
+            <table className="min-w-full text-sm" style={{ minWidth: "1180px", tableLayout: "fixed" }}>
+              <thead className="border-b border-slate-200 bg-slate-50/95 text-slate-600">
+                <tr className="text-left bg-slate-50/95">
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '90px' }}>
+                    <Building size={16} className="inline mr-1 text-gray-400" /> {tr("Divisi", "Division")}
+                  </th>
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ minWidth: '220px' }}>
+                    <Briefcase size={16} className="inline mr-1 text-gray-400" /> {tr("Tugas", "Task")}
+                  </th>
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '150px' }}>
+                    <User size={16} className="inline mr-1 text-gray-400" /> {tr("Karyawan", "Employee")}
+                  </th>
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '180px' }}>
+                    <MapPin size={16} className="inline mr-1 text-gray-400" /> {tr("Lokasi", "Location")}
+                  </th>
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '110px' }}>
+                    <Calendar size={16} className="inline mr-1 text-gray-400" /> {tr("Tanggal", "Date")}
+                  </th>
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '120px' }}>
+                    <FileText size={16} className="inline mr-1 text-gray-400" /> {tr("Deskripsi", "Description")}
+                  </th>
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '110px' }}>
+                    <ShoppingCart size={16} className="inline mr-1 text-gray-400" /> {tr("Barang", "Items")}
+                  </th>
+                  <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: '140px' }}>
+                    <Activity size={16} className="inline mr-1 text-gray-400" /> {tr("Status", "Status")}
+                  </th>
+                  <th className="p-2.5 font-semibold text-center whitespace-nowrap" style={{ width: '160px' }}>
+                    <Settings size={16} className="inline mr-1 text-gray-400" /> {tr("Aksi", "Actions")}
+                  </th>
                 </tr>
-              );
-              })}
-            </tbody>
-          </table>
-          {filteredData.length === 0 && (
-            <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 py-10 text-center text-sm text-slate-500">
-              {tr("Tidak ada data yang cocok", "No matching data")}
-            </p>
-          )}
+              </thead>
+              <tbody>
+                {filteredData.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="p-4 sm:p-6">
+                      <div
+                        className="sticky left-4 sm:left-6 rounded-xl border border-dashed border-slate-200 bg-slate-50/80 py-10 text-center text-sm text-slate-500"
+                        style={{
+                          width: tableVisibleWidth
+                            ? `${Math.max(240, tableVisibleWidth - (tableVisibleWidth < 640 ? 32 : 48))}px`
+                            : "100%",
+                          maxWidth: "100%",
+                        }}
+                      >
+                        {tr("Tidak ada data yang cocok", "No matching data")}
+                      </div>
+                    </td>
+                  </tr>
+                ) : (
+                  currentItems.map((item) => {
+                    const isHighlighted = Number(highlightProjekId) === Number(item.id);
+                    return (
+                      <tr
+                        key={item.id}
+                        ref={(el) => {
+                          if (el) rowRefs.current[item.id] = el;
+                        }}
+                        id={isHighlighted ? `projek-row-${item.id}` : undefined}
+                        className={`border-b border-slate-100 transition hover:bg-slate-50/70 ${isHighlighted
+                            ? "bg-indigo-50 ring-2 ring-indigo-500 ring-inset shadow-sm"
+                            : ""
+                          }`}
+                      >
+                        <td className="p-2.5">
+                          <select
+                            className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
+                            value={divisiKey(item.divisi)}
+                            title="Divisi yang pernah terlibat (klik untuk lihat)"
+                            onChange={(e) => {
+                              e.target.value = divisiKey(item.divisi);
+                            }}
+                          >
+                            {Array.isArray(item.divisi_flow) && item.divisi_flow.length > 0 ? (
+                              item.divisi_flow.map((d, idx) => (
+                                <option key={`${d}-${idx}`} value={divisiKey(d)}>
+                                  {divisiLabel(d)}
+                                </option>
+                              ))
+                            ) : (
+                              <option value={divisiKey(item.divisi)}>{divisiLabel(item.divisi)}</option>
+                            )}
+                          </select>
+                        </td>
+                        <td className="p-2.5">
+                          <button
+                            type="button"
+                            onClick={() => handleViewPhoto(item.id)}
+                            className="w-full truncate text-left font-medium text-slate-800 transition hover:text-indigo-600 hover:underline"
+                            title={tr("Buka halaman dokumen projek", "Open project document page")}
+                          >
+                            {item.jenis_pekerjaan}
+                          </button>
+                        </td>
+                        <td className="p-2.5">
+                          {(() => {
+                            const rows = buildKaryawanDropdownRows(item);
+                            const currentName = getCurrentKaryawanName(item);
+                            if (rows.length <= 1) {
+                              const row = rows[0];
+                              const label = row
+                                ? row.isInvite
+                                  ? `${row.display} (Invite)`
+                                  : row.display
+                                : currentName || "-";
+                              return <span className="truncate block">{label}</span>;
+                            }
+                            return (
+                              <select
+                                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
+                                value={currentName}
+                                onChange={(e) => {
+                                  e.target.value = currentName;
+                                }}
+                                title="Karyawan yang terlibat di project"
+                              >
+                                {rows.map((row, idx) => (
+                                  <option key={`${row.display}-${idx}`} value={row.display}>
+                                    {row.isInvite ? `${row.display} (Invite)` : row.display}
+                                  </option>
+                                ))}
+                              </select>
+                            );
+                          })()}
+                        </td>
+                        <td className="p-2.5 truncate">{item.alamat}</td>
+                        <td className="p-2.5 whitespace-nowrap">{new Date(item.start_date).toLocaleDateString("id-ID")}</td>
+                        <td className="p-2.5">
+                          {item.problem_description ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDescText(item.problem_description);
+                                setNewDesc(item.problem_description);
+                                setCurrentId(item.id);
+                                setEditDesc(false);
+                                setShowDesc(true);
+                              }}
+                              className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                              title={tr("Lihat deskripsi", "View description")}
+                            >
+                              <Eye size={14} aria-hidden />
+                            </button>
+                          ) : "-"}
+                        </td>
+                        <td className="p-2.5">
+                          {item.barang_dibeli ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setBarangText(item.barang_dibeli);
+                                setNewBarang(item.barang_dibeli);
+                                setCurrentId(item.id);
+                                setEditBarang(false);
+                                setShowBarangModal(true);
+                              }}
+                              className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                              title={tr("Lihat barang dibeli", "View purchased items")}
+                            >
+                              <Eye size={14} aria-hidden />
+                            </button>
+                          ) : "-"}
+                        </td>
+                        <td className="p-2.5">
+                          <button
+                            onClick={() => openTimelineModal(item)}
+                            className={`px-2.5 py-1 rounded-full text-xs border cursor-pointer transition-all duration-200 hover:-translate-y-[1px] hover:shadow-sm ${getStatusColor(item.status)} whitespace-nowrap inline-block max-w-full truncate`}
+                            title="Klik untuk lihat timeline"
+                          >
+                            {displayStatus(item.status)}
+                          </button>
+                        </td>
+                        <td className="p-2.5">
+                          <div className="flex justify-center items-center gap-1">
+                            <button
+                              onClick={() => handleViewPhoto(item.id)}
+                              className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
+                              title={tr("Lihat Foto", "View Photos")}
+                            >
+                              <FileText size={18} />
+                            </button>
+                            {canManageProject && (
+                              <button
+                                onClick={() => handleBeritaAcara(item.id)}
+                                className={`${actionIconBtn} text-indigo-600 hover:bg-indigo-50`}
+                                title={tr("Berita Acara", "Minutes Report")}
+                              >
+                                <ClipboardCheck size={18} />
+                              </button>
+                            )}
+                            {!isUserRole && item.file_url && (
+                              <a
+                                href={item.file_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className={`${actionIconBtn} text-sky-600 hover:bg-sky-50`}
+                                title={tr("Download File", "Download File")}
+                              >
+                                <Download size={18} />
+                              </a>
+                            )}
+                            {canOpenBiayaAction(item) && (
+                              <>
+                                {!isUserRole && !isArchiveContext && canEditProjectAction(item) ? (
+                                  <button
+                                    onClick={() => goToEditProjectPage(item)}
+                                    className={`${actionIconBtn} text-blue-600 hover:bg-blue-50`}
+                                    title="Edit project & oper divisi"
+                                  >
+                                    <Edit3 size={18} />
+                                  </button>
+                                ) : null}
+                                <button
+                                  onClick={() => openUangModal(item)}
+                                  className={`${actionIconBtn} ${item.is_lunas ? "text-emerald-600 hover:bg-emerald-50" : "text-amber-600 hover:bg-amber-50"}`}
+                                  title={item.is_lunas ? "Biaya (Lunas)" : "Biaya (Belum Lunas)"}
+                                >
+                                  <DollarSign size={18} />
+                                </button>
+                                {isArchiveContext ? (
+                                  <button
+                                    onClick={() => handleUnarchiveProject(item)}
+                                    className={`${actionIconBtn} text-emerald-600 hover:bg-emerald-50`}
+                                    title={tr("Batalkan Archive", "Cancel Archive")}
+                                  >
+                                    <RotateCcw size={18} />
+                                  </button>
+                                ) : null}
+                              </>
+                            )}
+                            {!isUserRole && !isArchiveContext && canEditProjectAction(item) && (
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
+                                title={tr("Hapus", "Delete")}
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  }))}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* ================= PAGINATION ================= */}
@@ -2576,13 +2612,13 @@ export default function ProjekKerjaPage() {
               <p className="mt-2 max-w-3xl text-sm text-slate-500">
                 {role === "super_admin" && !restrictedInvitedBiayaView
                   ? tr(
-                      "Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.",
-                      "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.",
-                    )
+                    "Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.",
+                    "Add multiple rows per category; totals are calculated automatically. Download as Excel (CSV) for reporting.",
+                  )
                   : tr(
-                      "Menampilkan biaya atas nama Anda (Biaya Jalan, Pengeluaran, dan Reimbursment) pada project ini. Karyawan lain tidak melihat entri Anda.",
-                      "Showing costs under your name (travel, expense, and reimbursement) for this project. Other employees do not see your entries.",
-                    )}
+                    "Menampilkan biaya atas nama Anda (Biaya Jalan, Pengeluaran, dan Reimbursment) pada project ini. Karyawan lain tidak melihat entri Anda.",
+                    "Showing costs under your name (travel, expense, and reimbursement) for this project. Other employees do not see your entries.",
+                  )}
               </p>
             </div>
             {(() => {
@@ -2595,9 +2631,9 @@ export default function ProjekKerjaPage() {
                     ? tr("Tampilan pembacaan untuk akun Anda.", "Read-only view for your account.")
                     : role === "super_admin"
                       ? tr(
-                          "Biaya terkunci. Klik «Batalkan Lunas» di bawah untuk mengubah.",
-                          "Costs are locked. Click «Mark Unpaid» below to make changes.",
-                        )
+                        "Biaya terkunci. Klik «Batalkan Lunas» di bawah untuk mengubah.",
+                        "Costs are locked. Click «Mark Unpaid» below to make changes.",
+                      )
                       : tr("Admin tidak bisa edit.", "Admin cannot edit.")}
                 </div>
               );
@@ -2655,44 +2691,44 @@ export default function ProjekKerjaPage() {
                             </span>
                           )}
                         </div>
-                      {r.oleh ? (
-                        <p className="mt-1 text-[11px] text-gray-500">
-                          <span className="font-medium text-gray-600">{r.oleh}</span>
-                          {r.created_at &&
-                            (() => {
-                              const d = new Date(r.created_at);
-                              if (!Number.isNaN(d.getTime())) {
-                                return ` · ${d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}`;
-                              }
-                              return "";
-                            })()}
-                        </p>
-                      ) : null}
-                      {r.keterangan ? <p className="mt-1 text-gray-600 whitespace-pre-wrap break-words">{r.keterangan}</p> : null}
-                      {r.photoPaths && r.photoPaths.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-1">
-                          {(r.photoItems?.length ? r.photoItems : r.photoPaths.map((path) => ({ path, uploadedAt: r.created_at }))).map((photo, photoIdx) => (
-                            <button
-                              key={photoIdx}
-                              type="button"
-                              onClick={() =>
-                                setBiayaPhotoPreview({
-                                  url: storagePhotoUrl(photo.path),
-                                  uploadedAt: photo.uploadedAt || r.created_at,
-                                })
-                              }
-                              className="inline-flex items-center gap-0.5 px-2 py-1 bg-slate-100 text-slate-700 rounded text-[10px] border border-slate-300 hover:bg-slate-200"
-                              title={tr("Klik untuk lihat foto", "Click to view photo")}
-                            >
-                              <Eye size={12} className="shrink-0" />
-                              {r.photoPaths.length > 1 ? (
-                                <span className="font-medium tabular-nums">{photoIdx + 1}</span>
-                              ) : null}
-                            </button>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
+                        {r.oleh ? (
+                          <p className="mt-1 text-[11px] text-gray-500">
+                            <span className="font-medium text-gray-600">{r.oleh}</span>
+                            {r.created_at &&
+                              (() => {
+                                const d = new Date(r.created_at);
+                                if (!Number.isNaN(d.getTime())) {
+                                  return ` · ${d.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}`;
+                                }
+                                return "";
+                              })()}
+                          </p>
+                        ) : null}
+                        {r.keterangan ? <p className="mt-1 text-gray-600 whitespace-pre-wrap break-words">{r.keterangan}</p> : null}
+                        {r.photoPaths && r.photoPaths.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {(r.photoItems?.length ? r.photoItems : r.photoPaths.map((path) => ({ path, uploadedAt: r.created_at }))).map((photo, photoIdx) => (
+                              <button
+                                key={photoIdx}
+                                type="button"
+                                onClick={() =>
+                                  setBiayaPhotoPreview({
+                                    url: storagePhotoUrl(photo.path),
+                                    uploadedAt: photo.uploadedAt || r.created_at,
+                                  })
+                                }
+                                className="inline-flex items-center gap-0.5 px-2 py-1 bg-slate-100 text-slate-700 rounded text-[10px] border border-slate-300 hover:bg-slate-200"
+                                title={tr("Klik untuk lihat foto", "Click to view photo")}
+                              >
+                                <Eye size={12} className="shrink-0" />
+                                {r.photoPaths.length > 1 ? (
+                                  <span className="font-medium tabular-nums">{photoIdx + 1}</span>
+                                ) : null}
+                              </button>
+                            ))}
+                          </div>
+                        ) : null}
+                      </div>
                     );
                   };
                   const renderKategoriColumn = (wantLunas) => (
@@ -2749,20 +2785,20 @@ export default function ProjekKerjaPage() {
                         </div>
                       </div>
                       {role === "super_admin" && (
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">{tr("Total belum lunas", "Total unpaid")}</p>
-                          <p className="text-base font-bold tabular-nums text-slate-900">{formatRupiah(totalBelum)}</p>
+                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">{tr("Total belum lunas", "Total unpaid")}</p>
+                            <p className="text-base font-bold tabular-nums text-slate-900">{formatRupiah(totalBelum)}</p>
+                          </div>
+                          <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/60 p-3">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">{tr("Total sudah lunas", "Total paid")}</p>
+                            <p className="text-base font-bold tabular-nums text-indigo-900">{formatRupiah(totalLunas)}</p>
+                          </div>
+                          <div className="rounded-xl border border-slate-200 bg-white p-3 sm:col-span-1">
+                            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">{tr("Total keseluruhan", "Grand total")}</p>
+                            <p className="text-lg font-bold tabular-nums text-slate-900">{formatRupiah(grandTotal)}</p>
+                          </div>
                         </div>
-                        <div className="rounded-xl border border-indigo-200/80 bg-indigo-50/60 p-3">
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-indigo-700">{tr("Total sudah lunas", "Total paid")}</p>
-                          <p className="text-base font-bold tabular-nums text-indigo-900">{formatRupiah(totalLunas)}</p>
-                        </div>
-                        <div className="rounded-xl border border-slate-200 bg-white p-3 sm:col-span-1">
-                          <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600">{tr("Total keseluruhan", "Grand total")}</p>
-                          <p className="text-lg font-bold tabular-nums text-slate-900">{formatRupiah(grandTotal)}</p>
-                        </div>
-                      </div>
                       )}
                     </>
                   );
@@ -2980,11 +3016,10 @@ export default function ProjekKerjaPage() {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm transform transition-all animate-in fade-in zoom-in duration-200">
             {/* Header dengan icon */}
             <div className="pt-6 pb-2 px-6 flex flex-col items-center">
-              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${
-                lunasConfirmAction.newStatus
+              <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 ${lunasConfirmAction.newStatus
                   ? 'bg-emerald-100'
                   : 'bg-amber-100'
-              }`}>
+                }`}>
                 {lunasConfirmAction.newStatus ? (
                   <CheckCircle size={32} className="text-emerald-600" />
                 ) : (
@@ -3002,11 +3037,10 @@ export default function ProjekKerjaPage() {
 
             {/* Status yang akan diubah */}
             <div className="px-6 pb-4">
-              <div className={`py-3 px-4 rounded-xl text-center font-semibold ${
-                lunasConfirmAction.newStatus
+              <div className={`py-3 px-4 rounded-xl text-center font-semibold ${lunasConfirmAction.newStatus
                   ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-200'
                   : 'bg-amber-50 text-amber-700 border-2 border-amber-200'
-              }`}>
+                }`}>
                 {lunasConfirmAction.statusText}
               </div>
             </div>
@@ -3037,11 +3071,10 @@ export default function ProjekKerjaPage() {
               </button>
               <button
                 onClick={lunasConfirmAction.type === 'project' ? handleConfirmProjectLunas : handleConfirmItemLunas}
-                className={`flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm ${
-                  lunasConfirmAction.newStatus
+                className={`flex-1 py-2.5 px-4 rounded-xl text-white font-medium transition-colors text-sm ${lunasConfirmAction.newStatus
                     ? 'bg-emerald-600 hover:bg-emerald-700'
                     : 'bg-amber-600 hover:bg-amber-700'
-                }`}
+                  }`}
               >
                 Ya, Ubah Status
               </button>
@@ -3075,8 +3108,8 @@ export default function ProjekKerjaPage() {
                   <p className="text-xs text-gray-500 mb-1">Kategori:</p>
                   <p className="font-semibold text-gray-700 capitalize">
                     {deleteBiayaRowAction.key === 'jalan' ? 'Biaya Jalan' :
-                     deleteBiayaRowAction.key === 'pengeluaran' ? 'Biaya Pengeluaran' :
-                     'Biaya Reimbursment'}
+                      deleteBiayaRowAction.key === 'pengeluaran' ? 'Biaya Pengeluaran' :
+                        'Biaya Reimbursment'}
                   </p>
                 </div>
               </div>
