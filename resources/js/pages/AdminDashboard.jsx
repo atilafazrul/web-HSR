@@ -551,7 +551,7 @@ export default function AdminDashboard({ user, logout }) {
                                 <span>{item.karyawan}</span>
                               </div>
                               <div className="flex items-center gap-2 text-gray-600">
-                                <MapPin size={14} className="min-w-[70px]" />
+                                <span className="font-medium min-w-[70px]">{tr("Lokasi", "Location")}:</span>
                                 <span className="truncate">{item.alamat}</span>
                               </div>
                               <div className="flex items-center gap-2 text-gray-600">

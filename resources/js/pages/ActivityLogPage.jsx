@@ -573,12 +573,12 @@ export default function ActivityLogPage() {
         )}
 
         {!loading && !error && pagination.last_page > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
-            <p className="text-sm text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
+            <p className="text-xs sm:text-sm text-slate-500 order-2 sm:order-1">
               {tr("Halaman", "Page")} {pagination.current_page} / {pagination.last_page} ({pagination.total}{" "}
               {tr("total", "total")})
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 order-1 sm:order-2">
               <button
                 type="button"
                 disabled={pagination.current_page <= 1}

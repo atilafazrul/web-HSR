@@ -306,7 +306,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       if (files.ktp) formDataToSend.append("ktp", files.ktp);
       if (files.kk) formDataToSend.append("kk", files.kk);
       if (files.akte) formDataToSend.append("akte", files.akte);
-      
+
       ijazahFiles.forEach((file) => formDataToSend.append(`ijazah[]`, file));
       sertifikatFiles.forEach((file) => formDataToSend.append(`sertifikat[]`, file));
 
@@ -413,8 +413,8 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   const photoUrl = getPhotoUrl(profileData.profile_photo);
   const initial = profileData.name?.charAt(0) || user?.name?.charAt(0) || "U";
 
-  const totalDocuments = (profileData.ktp ? 1 : 0) + (profileData.kk ? 1 : 0) + (profileData.akte ? 1 : 0) + 
-                         (profileData.ijazah?.length || 0) + (profileData.sertifikat?.length || 0);
+  const totalDocuments = (profileData.ktp ? 1 : 0) + (profileData.kk ? 1 : 0) + (profileData.akte ? 1 : 0) +
+    (profileData.ijazah?.length || 0) + (profileData.sertifikat?.length || 0);
 
   const tabs = [
     { id: "personal", label: tr("Informasi Pribadi", "Personal Information"), icon: <User size={16} /> },
@@ -426,7 +426,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
       <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleFileChange} />
 
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-6 md:py-12">
-       
+
         {/* Alert Messages */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-center gap-3">
@@ -530,16 +530,15 @@ export default function Profile({ user, logout, onProfileUpdate }) {
 
           {/* Tab Navigation */}
           <div className="border-b border-gray-200 px-4 md:px-8">
-            <div className="flex gap-6 overflow-x-auto">
+            <div className="flex gap-6 overflow-x-auto sidebar-no-scrollbar">
               {tabs.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2 py-3 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${
-                    activeTab === tab.id
-                      ? "border-purple-600 text-purple-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
+                  className={`flex items-center gap-2 py-3 border-b-2 transition-all whitespace-nowrap text-sm font-medium ${activeTab === tab.id
+                    ? "border-purple-600 text-purple-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
                 >
                   {tab.icon}
                   {tab.label}
@@ -602,23 +601,23 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                     {/* Dokumen Identitas - KTP, KK, Akte Kelahiran */}
                     <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        <UploadCard 
-                          label="KTP" 
-                          file={files.ktp} 
-                          onFileChange={(f) => handleDocFilePick("ktp", f)} 
+                        <UploadCard
+                          label="KTP"
+                          file={files.ktp}
+                          onFileChange={(f) => handleDocFilePick("ktp", f)}
                           existingFile={profileData.ktp}
                           required
                         />
-                        <UploadCard 
-                          label={tr("Kartu Keluarga (KK)", "Family Card (KK)")} 
-                          file={files.kk} 
-                          onFileChange={(f) => handleDocFilePick("kk", f)} 
+                        <UploadCard
+                          label={tr("Kartu Keluarga (KK)", "Family Card (KK)")}
+                          file={files.kk}
+                          onFileChange={(f) => handleDocFilePick("kk", f)}
                           existingFile={profileData.kk}
                         />
-                        <UploadCard 
-                          label={tr("Akte Kelahiran", "Birth Certificate")} 
-                          file={files.akte} 
-                          onFileChange={(f) => handleDocFilePick("akte", f)} 
+                        <UploadCard
+                          label={tr("Akte Kelahiran", "Birth Certificate")}
+                          file={files.akte}
+                          onFileChange={(f) => handleDocFilePick("akte", f)}
                           existingFile={profileData.akte}
                         />
                       </div>
@@ -674,11 +673,11 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                       <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-purple-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {profileData.ijazah.map((f, i) => (
-                            <DocCard 
-                              key={`ijazah-${i}`} 
-                              label={`Ijazah ${i + 1}`} 
-                              filename={getFileName(f)} 
-                              onPreview={() => previewFile('ijazah', i)} 
+                            <DocCard
+                              key={`ijazah-${i}`}
+                              label={`Ijazah ${i + 1}`}
+                              filename={getFileName(f)}
+                              onPreview={() => previewFile('ijazah', i)}
                             />
                           ))}
                         </div>
@@ -690,11 +689,11 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                       <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {profileData.sertifikat.map((f, i) => (
-                            <DocCard 
-                              key={`sertifikat-${i}`} 
-                              label={`${tr("Sertifikat", "Certificate")} ${i + 1}`} 
-                              filename={getFileName(f)} 
-                              onPreview={() => previewFile('sertifikat', i)} 
+                            <DocCard
+                              key={`sertifikat-${i}`}
+                              label={`${tr("Sertifikat", "Certificate")} ${i + 1}`}
+                              filename={getFileName(f)}
+                              onPreview={() => previewFile('sertifikat', i)}
                             />
                           ))}
                         </div>
@@ -784,9 +783,8 @@ const UploadCard = ({ label, file, onFileChange, existingFile, required = false 
           const dropped = e.dataTransfer.files[0];
           if (dropped) onFileChange(dropped);
         }}
-        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${
-          isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
-        } ${file ? 'bg-purple-50 border-purple-500' : 'bg-gray-50'}`}
+        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
+          } ${file ? 'bg-purple-50 border-purple-500' : 'bg-gray-50'}`}
       >
         <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileChange(e.target.files[0])} className="hidden" id={inputId} />
         <label htmlFor={inputId} className="cursor-pointer block">
@@ -831,9 +829,8 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
           const dropped = Array.from(e.dataTransfer.files);
           if (dropped.length) onFileSelect(dropped);
         }}
-        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${
-          isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
-        }`}
+        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
+          }`}
       >
         <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileSelect(Array.from(e.target.files))} className="hidden" id={inputId} multiple />
         <label htmlFor={inputId} className="cursor-pointer block">
@@ -843,7 +840,7 @@ const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFile
           </div>
         </label>
       </div>
-      
+
       <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
         {/* Existing Files */}
         {existingFiles?.map((file, idx) => (
@@ -890,8 +887,8 @@ const DocCard = ({ label, filename, onPreview }) => (
         <p className="text-sm font-medium text-gray-700 truncate">{filename}</p>
       </div>
     </div>
-    <button 
-      onClick={onPreview} 
+    <button
+      onClick={onPreview}
       className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition opacity-100 md:opacity-60 md:group-hover:opacity-100"
       title={(localStorage.getItem("app_language") || "id") === "en" ? "View Document" : "Lihat Dokumen"}
     >
