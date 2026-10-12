@@ -14,11 +14,28 @@ const tr = (id, en) => {
 const DEFAULT_PARAGRAF_PEMBUKA =
   "<p>\u00A0\u00A0\u00A0\u00A0Sehubungan dengan kebutuhan infrastruktur TI di perusahaan bapak/ibu, bersama ini kami dari PT. Hayati Semesta Raharja mengajukan penawaran sesuai dengan kebutuhan sistem di perusahaan bapak/ibu.</p><p>Berikut kami sampaikan rincian penawarannya:</p>";
 
-const DEFAULT_SYARAT =
+const DEFAULT_SYARAT_NON_PPN =
   "<ol><li>Harga belum termasuk PPN 11%.</li><li>Pembayaran dilakukan 100% setelah barang diterima.</li><li>Penawaran ini berlaku selama 30 (tiga puluh) hari dari tanggal penerbitan penawaran.</li></ol>";
+
+const DEFAULT_SYARAT_PPN = (ppn = 11) =>
+  `<ol><li>Harga sudah termasuk PPN ${ppn}%.</li><li>Pembayaran dilakukan 100% setelah barang diterima.</li><li>Penawaran ini berlaku selama 30 (tiga puluh) hari dari tanggal penerbitan penawaran.</li></ol>`;
 
 const DEFAULT_PENUTUP =
   "<p>Untuk informasi lebih lanjut atau apabila terdapat hal yang ingin dikonsultasikan, Bapak/Ibu dapat menghubungi Nana Mahendra di nomor 0812-8722-2400.</p>";
+
+function updateSyaratKetentuanPpn(currentSyarat, pakaiPpn, ppnPersen) {
+  if (!currentSyarat) {
+    return pakaiPpn ? DEFAULT_SYARAT_PPN(ppnPersen) : DEFAULT_SYARAT_NON_PPN;
+  }
+  const ppnPattern = /<li>Harga\s+(?:belum|sudah)\s+termasuk\s+PPN[^<]*<\/li>/i;
+  if (ppnPattern.test(currentSyarat)) {
+    const replacement = pakaiPpn
+      ? `<li>Harga sudah termasuk PPN ${ppnPersen}%.</li>`
+      : `<li>Harga belum termasuk PPN 11%.</li>`;
+    return currentSyarat.replace(ppnPattern, replacement);
+  }
+  return currentSyarat;
+}
 
 export const useSPH = (projekKerjaId = null) => {
   const [activeTab, setActiveTab] = useState("form");
@@ -46,12 +63,14 @@ export const useSPH = (projekKerjaId = null) => {
     paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
     items: [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
     show_total: true,
+    pakai_ppn: false,
+    ppn_persen: "11",
     kota_tanda_tangan: "Tangerang",
     tanggal_tanda_tangan: "",
     tanggal_tanda_tangan_display: "",
     nama_penandatangan: "Syahrul Roji",
     jabatan_penandatangan: "Direktur",
-    syarat_ketentuan: DEFAULT_SYARAT,
+    syarat_ketentuan: DEFAULT_SYARAT_NON_PPN,
     paragraf_penutup: DEFAULT_PENUTUP,
   });
 
@@ -67,6 +86,8 @@ export const useSPH = (projekKerjaId = null) => {
       harga: parseRibuanId(item.harga),
     })),
     show_total: formData.show_total !== false,
+    pakai_ppn: Boolean(formData.pakai_ppn),
+    ppn_persen: Number(formData.ppn_persen || 11),
     kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
     tanggal_tanda_tangan:
       formData.tanggal_tanda_tangan_display ||
@@ -122,7 +143,39 @@ export const useSPH = (projekKerjaId = null) => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     if (type === "checkbox") {
-      setFormData((prev) => ({ ...prev, [name]: checked }));
+      setFormData((prev) => {
+        let nextSyarat = prev.syarat_ketentuan;
+        if (name === "pakai_ppn") {
+          nextSyarat = updateSyaratKetentuanPpn(
+            prev.syarat_ketentuan,
+            checked,
+            prev.ppn_persen || 11
+          );
+        }
+        return {
+          ...prev,
+          [name]: checked,
+          syarat_ketentuan: nextSyarat,
+        };
+      });
+      return;
+    }
+    if (name === "ppn_persen") {
+      setFormData((prev) => {
+        let nextSyarat = prev.syarat_ketentuan;
+        if (prev.pakai_ppn) {
+          nextSyarat = updateSyaratKetentuanPpn(
+            prev.syarat_ketentuan,
+            true,
+            value || 11
+          );
+        }
+        return {
+          ...prev,
+          ppn_persen: value,
+          syarat_ketentuan: nextSyarat,
+        };
+      });
       return;
     }
     if (name === "tanggal_tanda_tangan") {
@@ -174,12 +227,14 @@ export const useSPH = (projekKerjaId = null) => {
       paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
       items: [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
       show_total: true,
+      pakai_ppn: false,
+      ppn_persen: "11",
       kota_tanda_tangan: "Tangerang",
       tanggal_tanda_tangan: "",
       tanggal_tanda_tangan_display: "",
       nama_penandatangan: "Syahrul Roji",
       jabatan_penandatangan: "Direktur",
-      syarat_ketentuan: DEFAULT_SYARAT,
+      syarat_ketentuan: DEFAULT_SYARAT_NON_PPN,
       paragraf_penutup: DEFAULT_PENUTUP,
     });
     fetchNextNomorSurat();
@@ -292,7 +347,7 @@ export const useSPH = (projekKerjaId = null) => {
       setFormData(
         mapSphDocToForm(data, {
           paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
-          syarat_ketentuan: DEFAULT_SYARAT,
+          syarat_ketentuan: DEFAULT_SYARAT_NON_PPN,
           paragraf_penutup: DEFAULT_PENUTUP,
           nama_penandatangan: "Syahrul Roji",
           jabatan_penandatangan: "Direktur",
@@ -334,11 +389,17 @@ export const useSPH = (projekKerjaId = null) => {
       minimumFractionDigits: 0,
     }).format(Number(value || 0));
 
-  const estimatedTotal = formData.items.reduce((sum, item) => {
+  const estimatedSubtotal = formData.items.reduce((sum, item) => {
     const harga = parseRibuanId(item.harga);
     const qty = Math.max(1, Number(String(item.qty || "1").replace(/\D/g, "")) || 1);
     return sum + harga * qty;
   }, 0);
+
+  const estimatedPpn = formData.pakai_ppn
+    ? Math.round(estimatedSubtotal * (Number(formData.ppn_persen || 11) / 100))
+    : 0;
+
+  const estimatedTotal = estimatedSubtotal + estimatedPpn;
 
   return {
     activeTab,
@@ -375,6 +436,8 @@ export const useSPH = (projekKerjaId = null) => {
     scheduleSectionProps,
     handleScheduleGenerate,
     formatRupiah,
+    estimatedSubtotal,
+    estimatedPpn,
     estimatedTotal,
   };
 };

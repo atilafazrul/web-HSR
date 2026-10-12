@@ -42,6 +42,8 @@ export default function SPHPage() {
     scheduleSectionProps,
     handleScheduleGenerate,
     formatRupiah,
+    estimatedSubtotal,
+    estimatedPpn,
     estimatedTotal,
   } = useSPH(projekId);
 
@@ -94,6 +96,8 @@ export default function SPHPage() {
             isEditing={isEditing}
             editNomorSurat={editNomorSurat}
             formatRupiah={formatRupiah}
+            estimatedSubtotal={estimatedSubtotal}
+            estimatedPpn={estimatedPpn}
             estimatedTotal={estimatedTotal}
             scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}

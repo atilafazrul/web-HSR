@@ -72,29 +72,15 @@ class SPHController extends Controller
         $validated = $this->validatePayload($request);
 
         $nomorData = $this->generateNomorSurat();
-        $items = $this->normalizeItems($validated['items']);
-        $totalHarga = $this->calculateTotal($items);
+        $attributes = $this->buildDocumentAttributes($validated);
 
-        $document = SphDocument::create([
+        $document = SphDocument::create(array_merge($attributes, [
             'projek_kerja_id' => $validated['projek_kerja_id'] ?? null,
             'nomor_surat' => $nomorData['nomor_surat'],
-            'lampiran' => $validated['lampiran'] ?? '-',
-            'perihal' => $validated['perihal'] ?? 'Penawaran Harga',
-            'penerima_nama' => $validated['penerima_nama'],
-            'paragraf_pembuka' => $this->sanitizeHtml($validated['paragraf_pembuka'] ?? null),
-            'items' => $items,
-            'total_harga' => $totalHarga,
-            'show_total' => $request->has('show_total') ? $request->boolean('show_total') : true,
-            'kota_tanda_tangan' => trim((string) ($validated['kota_tanda_tangan'] ?? '')) ?: 'Tangerang',
-            'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
-            'nama_penandatangan' => trim((string) ($validated['nama_penandatangan'] ?? '')) ?: null,
-            'jabatan_penandatangan' => trim((string) ($validated['jabatan_penandatangan'] ?? '')) ?: 'Direktur',
-            'syarat_ketentuan' => $this->sanitizeHtml($validated['syarat_ketentuan'] ?? null),
-            'paragraf_penutup' => $this->sanitizeHtml($validated['paragraf_penutup'] ?? null),
             'nomor_urut' => $nomorData['nomor_urut'],
             'bulan' => $nomorData['bulan'],
             'tahun' => $nomorData['tahun'],
-        ]);
+        ]));
 
         app(WhatsAppService::class)->notifyDocumentCreated(
             'SPH',
@@ -166,6 +152,8 @@ class SPHController extends Controller
             'items.*.qty' => 'required|string',
             'items.*.harga' => 'required|numeric|min:0',
             'show_total' => 'nullable|boolean',
+            'pakai_ppn' => 'nullable|boolean',
+            'ppn_persen' => 'nullable|numeric|min:0|max:100',
             'kota_tanda_tangan' => 'nullable|string|max:100',
             'tanggal_tanda_tangan' => 'required|string',
             'nama_penandatangan' => 'nullable|string|max:150',
@@ -179,6 +167,11 @@ class SPHController extends Controller
     public function buildDocumentAttributes(array $validated): array
     {
         $items = $this->normalizeItems($validated['items']);
+        $subtotal = $this->calculateTotal($items);
+        $pakaiPpn = array_key_exists('pakai_ppn', $validated) ? (bool) $validated['pakai_ppn'] : false;
+        $ppnPersen = $pakaiPpn ? (float) ($validated['ppn_persen'] ?? 11) : 0;
+        $ppnNominal = $pakaiPpn ? (int) round($subtotal * ($ppnPersen / 100)) : 0;
+        $totalHarga = $subtotal + $ppnNominal;
 
         return [
             'lampiran' => $validated['lampiran'] ?? '-',
@@ -186,7 +179,11 @@ class SPHController extends Controller
             'penerima_nama' => $validated['penerima_nama'],
             'paragraf_pembuka' => $this->sanitizeHtml($validated['paragraf_pembuka'] ?? null),
             'items' => $items,
-            'total_harga' => $this->calculateTotal($items),
+            'subtotal' => $subtotal,
+            'pakai_ppn' => $pakaiPpn,
+            'ppn_persen' => $ppnPersen,
+            'ppn_nominal' => $ppnNominal,
+            'total_harga' => $totalHarga,
             'show_total' => array_key_exists('show_total', $validated) ? (bool) $validated['show_total'] : true,
             'kota_tanda_tangan' => trim((string) ($validated['kota_tanda_tangan'] ?? '')) ?: 'Tangerang',
             'tanggal_tanda_tangan' => $validated['tanggal_tanda_tangan'],
@@ -216,6 +213,12 @@ class SPHController extends Controller
                 || str_contains((string) ($item['deskripsi_html'] ?? ''), '<img')
         );
 
+        $subtotal = (int) ($document->subtotal ?? $document->total_harga);
+        $pakaiPpn = (bool) ($document->pakai_ppn ?? false);
+        $ppnPersen = (float) ($document->ppn_persen ?? 11);
+        $ppnNominal = (int) ($document->ppn_nominal ?? 0);
+        $ppnPersenLabel = rtrim(rtrim(number_format($ppnPersen, 2, ',', '.'), '0'), ',');
+
         return [
             'nomor_surat' => $document->nomor_surat,
             'lampiran' => $document->lampiran ?: '-',
@@ -225,7 +228,14 @@ class SPHController extends Controller
             'items' => $items,
             'show_deskripsi_column' => $showDeskripsiColumn,
             'show_total' => (bool) ($document->show_total ?? true),
-            'total_harga' => $document->total_harga,
+            'subtotal' => $subtotal,
+            'subtotal_formatted' => $this->formatRupiah($subtotal),
+            'pakai_ppn' => $pakaiPpn,
+            'ppn_persen' => $ppnPersen,
+            'ppn_persen_label' => $ppnPersenLabel,
+            'ppn_nominal' => $ppnNominal,
+            'ppn_formatted' => $this->formatRupiah($ppnNominal),
+            'total_harga' => (int) $document->total_harga,
             'total_harga_formatted' => $this->formatRupiah((int) $document->total_harga),
             'kota_tanda_tangan' => $document->kota_tanda_tangan ?: 'Tangerang',
             'tanggal_tanda_tangan' => $document->tanggal_tanda_tangan,

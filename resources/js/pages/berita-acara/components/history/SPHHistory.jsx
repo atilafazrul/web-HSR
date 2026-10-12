@@ -49,7 +49,16 @@ export const SPHHistory = ({
                   <h4 className="mt-2 text-lg font-semibold text-gray-800">{item.penerima_nama}</h4>
                   <p className="mt-1 text-sm text-gray-500">{item.perihal || "Penawaran Harga"}</p>
                   <p className="mt-2 text-sm font-medium text-green-700">
-                    {item.show_total !== false ? formatRupiah(item.total_harga) : tr("Total: Disembunyikan", "Total: Hidden")}
+                    {item.show_total !== false ? (
+                      <>
+                        {formatRupiah(item.total_harga)}
+                        {Boolean(item.pakai_ppn) && (
+                          <span className="ml-2 rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 text-xs font-normal text-blue-600">
+                            + PPN {item.ppn_persen}%
+                          </span>
+                        )}
+                      </>
+                    ) : tr("Total: Disembunyikan", "Total: Hidden")}
                   </p>
                   <p className="mt-1 text-xs text-gray-400">{tr("Dibuat", "Created")}: {formatDate(item.created_at)}</p>
                 </div>
@@ -80,7 +89,19 @@ export const SPHHistory = ({
             <div className="space-y-2 text-sm text-gray-700">
               <p><strong>{tr("Penerima", "Recipient")}:</strong> {selectedItem.penerima_nama}</p>
               <p><strong>{tr("Perihal", "Subject")}:</strong> {selectedItem.perihal}</p>
-              <p><strong>{tr("Total", "Total")}:</strong> {selectedItem.show_total !== false ? formatRupiah(selectedItem.total_harga) : tr("Disembunyikan", "Hidden")}</p>
+              {selectedItem.show_total !== false ? (
+                Boolean(selectedItem.pakai_ppn) ? (
+                  <>
+                    <p><strong>{tr("Sub Total", "Sub Total")}:</strong> {formatRupiah(selectedItem.subtotal ?? selectedItem.total_harga)}</p>
+                    <p><strong>PPN ({selectedItem.ppn_persen}%):</strong> {formatRupiah(selectedItem.ppn_nominal)}</p>
+                    <p><strong>{tr("Total", "Total")}:</strong> {formatRupiah(selectedItem.total_harga)}</p>
+                  </>
+                ) : (
+                  <p><strong>{tr("Total", "Total")}:</strong> {formatRupiah(selectedItem.total_harga)}</p>
+                )
+              ) : (
+                <p><strong>{tr("Total", "Total")}:</strong> {tr("Disembunyikan", "Hidden")}</p>
+              )}
               <p><strong>{tr("Tanggal", "Date")}:</strong> {selectedItem.tanggal_tanda_tangan}</p>
               <p><strong>{tr("Item", "Items")}:</strong> {selectedItem.items?.length || 0}</p>
             </div>

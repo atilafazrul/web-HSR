@@ -244,10 +244,25 @@
                 </tr>
             @endforeach
             @if($show_total ?? true)
-                <tr class="total-row">
-                    <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
-                    <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
-                </tr>
+                @if(!empty($pakai_ppn))
+                    <tr class="total-row">
+                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Sub Total</td>
+                        <td class="col-total">{{ $subtotal_formatted ?? '' }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">PPN ({{ $ppn_persen_label ?? '11' }}%)</td>
+                        <td class="col-total">{{ $ppn_formatted ?? '' }}</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
+                        <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
+                    </tr>
+                @else
+                    <tr class="total-row">
+                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
+                        <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
+                    </tr>
+                @endif
             @endif
         </tbody>
     </table>

@@ -17,8 +17,12 @@ class SphDocument extends Model
         'penerima_nama',
         'paragraf_pembuka',
         'items',
+        'subtotal',
         'total_harga',
         'show_total',
+        'pakai_ppn',
+        'ppn_persen',
+        'ppn_nominal',
         'kota_tanda_tangan',
         'tanggal_tanda_tangan',
         'nama_penandatangan',
@@ -32,7 +36,11 @@ class SphDocument extends Model
 
     protected $casts = [
         'items' => 'array',
+        'subtotal' => 'integer',
         'total_harga' => 'integer',
         'show_total' => 'boolean',
+        'pakai_ppn' => 'boolean',
+        'ppn_persen' => 'float',
+        'ppn_nominal' => 'integer',
     ];
 }
