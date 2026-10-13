@@ -21,6 +21,7 @@ export const SPHForm = ({
   editNomorSurat = "",
   formatRupiah,
   estimatedSubtotal,
+  estimatedDiskon,
   estimatedPpn,
   estimatedTotal,
   scheduleSectionProps,
@@ -86,6 +87,16 @@ export const SPHForm = ({
               {tr("Rincian Penawaran", "Quotation Details")}
             </h3>
             <div className="flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 select-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
+                <input
+                  type="checkbox"
+                  name="pakai_diskon"
+                  checked={Boolean(formData.pakai_diskon)}
+                  onChange={onInputChange}
+                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+                <span className="font-medium">{tr("Gunakan Diskon", "Use Discount")}</span>
+              </label>
               <label className="flex cursor-pointer items-center gap-2 select-none rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition">
                 <input
                   type="checkbox"
@@ -160,7 +171,7 @@ export const SPHForm = ({
             </div>
           ))}
 
-          {formData.pakai_ppn ? (
+          {formData.pakai_ppn || formData.pakai_diskon ? (
             <div className="ml-auto w-full max-w-md space-y-2 rounded-2xl border border-blue-100 bg-blue-50/70 p-4 transition">
               {formData.show_total === false && (
                 <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-700">
@@ -171,38 +182,73 @@ export const SPHForm = ({
                 <span className="text-gray-600">{tr("Sub Total", "Sub Total")}</span>
                 <span className="font-semibold tabular-nums text-slate-800">{formatRupiah(estimatedSubtotal)}</span>
               </div>
-              <div className="flex items-center justify-between gap-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <span className="text-gray-600">{tr("PPN", "VAT/PPN")}</span>
-                  <div className="flex items-center">
-                    <input
-                      type="number"
-                      min="0"
-                      max="100"
-                      step="0.01"
-                      name="ppn_persen"
-                      value={formData.ppn_persen}
-                      onChange={onInputChange}
-                      className="w-16 rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-800 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                      placeholder="11"
-                    />
-                    <span className="ml-1 text-xs text-gray-600">%</span>
+              {Boolean(formData.pakai_diskon) && (
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">{tr("Diskon", "Discount")}</span>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        name="diskon_persen"
+                        value={formData.diskon_persen}
+                        onChange={onInputChange}
+                        className="w-16 rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-800 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        placeholder="0"
+                      />
+                      <span className="ml-1 text-xs text-gray-600">%</span>
+                    </div>
                   </div>
+                  <span className="font-semibold tabular-nums text-red-600">- {formatRupiah(estimatedDiskon)}</span>
                 </div>
-                <span className="font-semibold tabular-nums text-slate-800">{formatRupiah(estimatedPpn)}</span>
-              </div>
+              )}
+              {Boolean(formData.pakai_ppn) && (
+                <div className="flex items-center justify-between gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-gray-600">{tr("PPN", "VAT/PPN")}</span>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        name="ppn_persen"
+                        value={formData.ppn_persen}
+                        onChange={onInputChange}
+                        className="w-16 rounded-lg border border-gray-300 bg-white px-2 py-1 text-xs font-semibold text-gray-800 text-center focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                        placeholder="11"
+                      />
+                      <span className="ml-1 text-xs text-gray-600">%</span>
+                    </div>
+                  </div>
+                  <span className="font-semibold tabular-nums text-slate-800">{formatRupiah(estimatedPpn)}</span>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-4 border-t border-blue-200 pt-2">
-                <span className="font-bold text-blue-700">{tr("Total", "Total")}</span>
+                <span className="font-bold text-blue-700">
+                  {tr("Total", "Total")}
+                  {formData.show_total === false && (
+                    <span className="ml-2 text-xs font-normal text-amber-600">({tr("Disembunyikan di PDF", "Hidden on PDF")})</span>
+                  )}
+                </span>
                 <span className="text-lg font-bold tabular-nums text-blue-700">{formatRupiah(estimatedTotal)}</span>
               </div>
             </div>
           ) : (
-            formData.show_total !== false && (
+            formData.show_total !== false ? (
               <div className="ml-auto w-full max-w-md rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 transition">
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-sm text-gray-600">{tr("Estimasi Total", "Estimated Total")}: </span>
                   <span className="text-lg font-bold tabular-nums text-blue-700">{formatRupiah(estimatedTotal ?? estimatedSubtotal)}</span>
                 </div>
+              </div>
+            ) : (
+              <div className="ml-auto w-full max-w-md rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 transition text-right">
+                <p className="text-xs font-medium text-amber-700">
+                  {tr("Catatan: Total harga disembunyikan pada dokumen PDF.", "Note: Total price is hidden on the PDF document.")}
+                </p>
               </div>
             )
           )}

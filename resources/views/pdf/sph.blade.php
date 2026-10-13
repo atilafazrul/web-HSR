@@ -243,25 +243,45 @@
                     @endif
                 </tr>
             @endforeach
-            @if($show_total ?? true)
-                @if(!empty($pakai_ppn))
+            @php
+                $showTotalCol = $show_total ?? true;
+                $hasDiskon = !empty($pakai_diskon) && !empty($diskon_nominal);
+                $hasPpn = !empty($pakai_ppn);
+                $summaryColspan = (!empty($show_deskripsi_column) ? 1 : 0) + ($showTotalCol ? 4 : 3);
+                $valueColClass = $showTotalCol ? 'col-total' : 'col-price';
+            @endphp
+
+            @if($hasDiskon || $hasPpn || $showTotalCol)
+                @if($hasDiskon || $hasPpn)
                     <tr class="total-row">
-                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Sub Total</td>
-                        <td class="col-total">{{ $subtotal_formatted ?? '' }}</td>
+                        <td colspan="{{ $summaryColspan }}" style="text-align:right;">Sub Total</td>
+                        <td class="{{ $valueColClass }}">{{ $subtotal_formatted ?? '' }}</td>
                     </tr>
-                    <tr class="total-row">
-                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">PPN ({{ $ppn_persen_label ?? '11' }}%)</td>
-                        <td class="col-total">{{ $ppn_formatted ?? '' }}</td>
-                    </tr>
-                    <tr class="total-row">
-                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
-                        <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
-                    </tr>
+                    @if($hasDiskon)
+                        <tr class="total-row">
+                            <td colspan="{{ $summaryColspan }}" style="text-align:right;">Diskon ({{ $diskon_persen_label ?? '0' }}%)</td>
+                            <td class="{{ $valueColClass }}">- {{ $diskon_formatted ?? '' }}</td>
+                        </tr>
+                    @endif
+                    @if($hasPpn)
+                        <tr class="total-row">
+                            <td colspan="{{ $summaryColspan }}" style="text-align:right;">PPN ({{ $ppn_persen_label ?? '11' }}%)</td>
+                            <td class="{{ $valueColClass }}">{{ $ppn_formatted ?? '' }}</td>
+                        </tr>
+                    @endif
+                    @if($showTotalCol)
+                        <tr class="total-row">
+                            <td colspan="{{ $summaryColspan }}" style="text-align:right;">Total</td>
+                            <td class="{{ $valueColClass }}">{{ $total_harga_formatted ?? '' }}</td>
+                        </tr>
+                    @endif
                 @else
-                    <tr class="total-row">
-                        <td colspan="{{ !empty($show_deskripsi_column) ? 5 : 4 }}" style="text-align:right;">Total</td>
-                        <td class="col-total">{{ $total_harga_formatted ?? '' }}</td>
-                    </tr>
+                    @if($showTotalCol)
+                        <tr class="total-row">
+                            <td colspan="{{ $summaryColspan }}" style="text-align:right;">Total</td>
+                            <td class="{{ $valueColClass }}">{{ $total_harga_formatted ?? '' }}</td>
+                        </tr>
+                    @endif
                 @endif
             @endif
         </tbody>

@@ -63,6 +63,8 @@ export const useSPH = (projekKerjaId = null) => {
     paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
     items: [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
     show_total: true,
+    pakai_diskon: false,
+    diskon_persen: "0",
     pakai_ppn: false,
     ppn_persen: "11",
     kota_tanda_tangan: "Tangerang",
@@ -86,6 +88,8 @@ export const useSPH = (projekKerjaId = null) => {
       harga: parseRibuanId(item.harga),
     })),
     show_total: formData.show_total !== false,
+    pakai_diskon: Boolean(formData.pakai_diskon),
+    diskon_persen: Number(formData.diskon_persen || 0),
     pakai_ppn: Boolean(formData.pakai_ppn),
     ppn_persen: Number(formData.ppn_persen || 11),
     kota_tanda_tangan: (formData.kota_tanda_tangan || "").trim() || "Tangerang",
@@ -227,6 +231,8 @@ export const useSPH = (projekKerjaId = null) => {
       paragraf_pembuka: DEFAULT_PARAGRAF_PEMBUKA,
       items: [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
       show_total: true,
+      pakai_diskon: false,
+      diskon_persen: "0",
       pakai_ppn: false,
       ppn_persen: "11",
       kota_tanda_tangan: "Tangerang",
@@ -395,11 +401,17 @@ export const useSPH = (projekKerjaId = null) => {
     return sum + harga * qty;
   }, 0);
 
+  const diskonPersenVal = Math.min(100, Math.max(0, Number(formData.diskon_persen || 0)));
+  const estimatedDiskon = formData.pakai_diskon
+    ? Math.round(estimatedSubtotal * (diskonPersenVal / 100))
+    : 0;
+  const estimatedDpp = Math.max(0, estimatedSubtotal - estimatedDiskon);
+
   const estimatedPpn = formData.pakai_ppn
-    ? Math.round(estimatedSubtotal * (Number(formData.ppn_persen || 11) / 100))
+    ? Math.round(estimatedDpp * (Number(formData.ppn_persen || 11) / 100))
     : 0;
 
-  const estimatedTotal = estimatedSubtotal + estimatedPpn;
+  const estimatedTotal = estimatedDpp + estimatedPpn;
 
   return {
     activeTab,
@@ -437,6 +449,8 @@ export const useSPH = (projekKerjaId = null) => {
     handleScheduleGenerate,
     formatRupiah,
     estimatedSubtotal,
+    estimatedDiskon,
+    estimatedDpp,
     estimatedPpn,
     estimatedTotal,
   };

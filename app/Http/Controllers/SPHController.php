@@ -151,6 +151,9 @@ class SPHController extends Controller
             'items.*.deskripsi' => 'nullable|string|max:4000000',
             'items.*.qty' => 'required|string',
             'items.*.harga' => 'required|numeric|min:0',
+            'pakai_diskon' => 'nullable|boolean',
+            'diskon_persen' => 'nullable|numeric|min:0|max:100',
+            'diskon_nominal' => 'nullable|numeric|min:0',
             'show_total' => 'nullable|boolean',
             'pakai_ppn' => 'nullable|boolean',
             'ppn_persen' => 'nullable|numeric|min:0|max:100',
@@ -168,10 +171,14 @@ class SPHController extends Controller
     {
         $items = $this->normalizeItems($validated['items']);
         $subtotal = $this->calculateTotal($items);
+        $pakaiDiskon = array_key_exists('pakai_diskon', $validated) ? (bool) $validated['pakai_diskon'] : false;
+        $diskonPersen = $pakaiDiskon ? (float) ($validated['diskon_persen'] ?? 0) : 0;
+        $diskonNominal = $pakaiDiskon ? (int) round($subtotal * ($diskonPersen / 100)) : 0;
+        $dpp = max(0, $subtotal - $diskonNominal);
         $pakaiPpn = array_key_exists('pakai_ppn', $validated) ? (bool) $validated['pakai_ppn'] : false;
         $ppnPersen = $pakaiPpn ? (float) ($validated['ppn_persen'] ?? 11) : 0;
-        $ppnNominal = $pakaiPpn ? (int) round($subtotal * ($ppnPersen / 100)) : 0;
-        $totalHarga = $subtotal + $ppnNominal;
+        $ppnNominal = $pakaiPpn ? (int) round($dpp * ($ppnPersen / 100)) : 0;
+        $totalHarga = $dpp + $ppnNominal;
 
         return [
             'lampiran' => $validated['lampiran'] ?? '-',
@@ -180,6 +187,9 @@ class SPHController extends Controller
             'paragraf_pembuka' => $this->sanitizeHtml($validated['paragraf_pembuka'] ?? null),
             'items' => $items,
             'subtotal' => $subtotal,
+            'pakai_diskon' => $pakaiDiskon,
+            'diskon_persen' => $diskonPersen,
+            'diskon_nominal' => $diskonNominal,
             'pakai_ppn' => $pakaiPpn,
             'ppn_persen' => $ppnPersen,
             'ppn_nominal' => $ppnNominal,
@@ -214,6 +224,10 @@ class SPHController extends Controller
         );
 
         $subtotal = (int) ($document->subtotal ?? $document->total_harga);
+        $pakaiDiskon = (bool) ($document->pakai_diskon ?? ((int) ($document->diskon_nominal ?? 0) > 0));
+        $diskonPersen = (float) ($document->diskon_persen ?? 0);
+        $diskonNominal = (int) ($document->diskon_nominal ?? 0);
+        $diskonPersenLabel = rtrim(rtrim(number_format($diskonPersen, 2, ',', '.'), '0'), ',');
         $pakaiPpn = (bool) ($document->pakai_ppn ?? false);
         $ppnPersen = (float) ($document->ppn_persen ?? 11);
         $ppnNominal = (int) ($document->ppn_nominal ?? 0);
@@ -230,6 +244,11 @@ class SPHController extends Controller
             'show_total' => (bool) ($document->show_total ?? true),
             'subtotal' => $subtotal,
             'subtotal_formatted' => $this->formatRupiah($subtotal),
+            'pakai_diskon' => $pakaiDiskon,
+            'diskon_persen' => $diskonPersen,
+            'diskon_persen_label' => $diskonPersenLabel,
+            'diskon_nominal' => $diskonNominal,
+            'diskon_formatted' => $this->formatRupiah($diskonNominal),
             'pakai_ppn' => $pakaiPpn,
             'ppn_persen' => $ppnPersen,
             'ppn_persen_label' => $ppnPersenLabel,

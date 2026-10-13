@@ -52,6 +52,11 @@ export const SPHHistory = ({
                     {item.show_total !== false ? (
                       <>
                         {formatRupiah(item.total_harga)}
+                        {Boolean(item.pakai_diskon ?? (Number(item.diskon_nominal || 0) > 0)) && Number(item.diskon_nominal || 0) > 0 && (
+                          <span className="ml-2 rounded-md border border-rose-100 bg-rose-50 px-2 py-0.5 text-xs font-normal text-rose-600">
+                            {tr("Diskon", "Discount")} {item.diskon_persen}% (-{formatRupiah(item.diskon_nominal)})
+                          </span>
+                        )}
                         {Boolean(item.pakai_ppn) && (
                           <span className="ml-2 rounded-md border border-blue-100 bg-blue-50 px-2 py-0.5 text-xs font-normal text-blue-600">
                             + PPN {item.ppn_persen}%
@@ -89,18 +94,19 @@ export const SPHHistory = ({
             <div className="space-y-2 text-sm text-gray-700">
               <p><strong>{tr("Penerima", "Recipient")}:</strong> {selectedItem.penerima_nama}</p>
               <p><strong>{tr("Perihal", "Subject")}:</strong> {selectedItem.perihal}</p>
+              {(Boolean(selectedItem.pakai_ppn) || Boolean(selectedItem.pakai_diskon ?? (Number(selectedItem.diskon_nominal || 0) > 0))) && (
+                <p><strong>{tr("Sub Total", "Sub Total")}:</strong> {formatRupiah(selectedItem.subtotal ?? selectedItem.total_harga)}</p>
+              )}
+              {Boolean(selectedItem.pakai_diskon ?? (Number(selectedItem.diskon_nominal || 0) > 0)) && Number(selectedItem.diskon_nominal || 0) > 0 && (
+                <p><strong>{tr("Diskon", "Discount")} ({selectedItem.diskon_persen}%):</strong> - {formatRupiah(selectedItem.diskon_nominal)}</p>
+              )}
+              {Boolean(selectedItem.pakai_ppn) && (
+                <p><strong>PPN ({selectedItem.ppn_persen}%):</strong> {formatRupiah(selectedItem.ppn_nominal)}</p>
+              )}
               {selectedItem.show_total !== false ? (
-                Boolean(selectedItem.pakai_ppn) ? (
-                  <>
-                    <p><strong>{tr("Sub Total", "Sub Total")}:</strong> {formatRupiah(selectedItem.subtotal ?? selectedItem.total_harga)}</p>
-                    <p><strong>PPN ({selectedItem.ppn_persen}%):</strong> {formatRupiah(selectedItem.ppn_nominal)}</p>
-                    <p><strong>{tr("Total", "Total")}:</strong> {formatRupiah(selectedItem.total_harga)}</p>
-                  </>
-                ) : (
-                  <p><strong>{tr("Total", "Total")}:</strong> {formatRupiah(selectedItem.total_harga)}</p>
-                )
+                <p><strong>{tr("Total", "Total")}:</strong> {formatRupiah(selectedItem.total_harga)}</p>
               ) : (
-                <p><strong>{tr("Total", "Total")}:</strong> {tr("Disembunyikan", "Hidden")}</p>
+                <p><strong>{tr("Total", "Total")}:</strong> <span className="text-amber-600 font-medium">{tr("Disembunyikan di PDF", "Hidden on PDF")}</span></p>
               )}
               <p><strong>{tr("Tanggal", "Date")}:</strong> {selectedItem.tanggal_tanda_tangan}</p>
               <p><strong>{tr("Item", "Items")}:</strong> {selectedItem.items?.length || 0}</p>
