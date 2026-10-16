@@ -1,5 +1,5 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/index.jsx";
 import {
   Package,
@@ -10,8 +10,6 @@ import {
 
 const ServicePage = () => {
   const { language } = useI18n();
-
-  const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
@@ -49,7 +47,7 @@ const ServicePage = () => {
             icon={<Package size={24} className="text-indigo-600" />}
             title="Inventory"
             desc={language === "en" ? "Manage service stock and equipment" : "Kelola stok dan peralatan servis"}
-            onClick={() => navigate(`${basePath}/service/inventory`)}
+            to={`${basePath}/service/inventory`}
           />
         )}
 
@@ -58,7 +56,7 @@ const ServicePage = () => {
           icon={<ListTodo size={24} className="text-indigo-600" />}
           title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
           desc={language === "en" ? "Track service work status" : "Pantau status pekerjaan servis"}
-          onClick={() => navigate(`${basePath}/service/projek`)}
+          to={`${basePath}/service/projek`}
         />
 
         {!isUserRole && (
@@ -66,7 +64,7 @@ const ServicePage = () => {
             icon={<Archive size={24} className="text-indigo-600" />}
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
-            onClick={() => navigate(`${basePath}/service/projek/archive`)}
+            to={`${basePath}/service/projek/archive`}
           />
         )}
 
@@ -76,7 +74,7 @@ const ServicePage = () => {
             icon={<FileText size={24} className="text-indigo-600" />}
             title={language === "en" ? "Minutes Report" : "Berita Acara"}
             desc={language === "en" ? "Create and manage service minutes reports" : "Buat dan kelola berita acara servis"}
-            onClick={() => navigate(`${basePath}/service/berita-acara`)}
+            to={`${basePath}/service/berita-acara`}
           />
         )}
 
@@ -88,23 +86,42 @@ const ServicePage = () => {
 
 
 /* CARD COMPONENT */
-const Card = ({ icon, title, desc, onClick }) => (
-  <div
-    onClick={onClick}
-    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
-  >
-    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-      {icon}
+const Card = ({ icon, title, desc, to, onClick }) => {
+  const content = (
+    <>
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
+        {icon}
+      </div>
+
+      <h3 className="mb-2 text-xl font-semibold text-slate-800">
+        {title}
+      </h3>
+
+      <p className="text-sm text-slate-500">
+        {desc}
+      </p>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="block cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+    >
+      {content}
     </div>
-
-    <h3 className="mb-2 text-xl font-semibold text-slate-800">
-      {title}
-    </h3>
-
-    <p className="text-sm text-slate-500">
-      {desc}
-    </p>
-  </div>
-);
+  );
+};
 
 export default ServicePage;

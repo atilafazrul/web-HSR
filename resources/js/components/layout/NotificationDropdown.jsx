@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Bell, Trash2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import api from "../../api/axiosConfig";
 import { useI18n } from "../../i18n/index.jsx";
 import { resolveNotificationPath } from "../../utils/notificationPaths.js";
@@ -100,12 +100,10 @@ export default function NotificationDropdown({ user }) {
         );
         setUnreadCount((c) => Math.max(0, c - 1));
       } catch {
-        // tetap navigasi meski mark-read gagal
+        // tetap lanjut meski mark-read gagal
       }
     }
     setOpen(false);
-    const target = resolveNotificationPath(notification, user);
-    navigate(target);
   };
 
   const handleMarkAllRead = async (e) => {
@@ -225,10 +223,10 @@ export default function NotificationDropdown({ user }) {
                 <ul className="divide-y divide-gray-100">
                   {items.map((n) => (
                     <li key={n.id} className="relative group">
-                      <button
-                        type="button"
+                      <Link
+                        to={resolveNotificationPath(n, user)}
                         onClick={() => handleItemClick(n)}
-                        className={`w-full text-left px-4 py-3 pr-10 hover:bg-gray-50 transition ${
+                        className={`w-full block text-left px-4 py-3 pr-10 hover:bg-gray-50 transition ${
                           !n.read_at ? "bg-blue-50/50" : ""
                         }`}
                       >
@@ -237,7 +235,7 @@ export default function NotificationDropdown({ user }) {
                         <p className="text-[11px] text-gray-400 mt-1">
                           {formatRelativeTime(n.created_at, language)}
                         </p>
-                      </button>
+                      </Link>
                       <button
                         type="button"
                         onClick={(e) => handleDeleteClick(e, n)}

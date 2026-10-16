@@ -23,7 +23,7 @@ import {
   Settings,
 } from "lucide-react";
 
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useI18n } from "../../i18n/index.jsx";
 
 export default function Sidebar({
@@ -189,10 +189,10 @@ export default function Sidebar({
           {/* NAVIGATION MENU */}
           <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
             {/* ================= DASHBOARD ================= */}
-            <button
-              type="button"
-              className="w-full text-left"
-              onClick={() => go(`${basePath}/dashboard`)}
+            <Link
+              to={`${basePath}/dashboard`}
+              className="w-full text-left block"
+              onClick={() => { if (isMobile) setSidebarOpen(false); }}
             >
               <SidebarItem
                 icon={<LayoutDashboard size={18} />}
@@ -201,15 +201,15 @@ export default function Sidebar({
                 expanded={expanded}
                 isMobile={isMobile}
               />
-            </button>
+            </Link>
 
             {/* ================= KARYAWAN (SUPER ADMIN ONLY) ================= */}
             {isSuperAdmin && (
               <>
-                <button
-                  type="button"
-                  className="w-full text-left"
-                  onClick={() => go(`${basePath}/karyawan`)}
+                <Link
+                  to={`${basePath}/karyawan`}
+                  className="w-full text-left block"
+                  onClick={() => { if (isMobile) setSidebarOpen(false); }}
                 >
                   <SidebarItem
                     icon={<Users size={18} />}
@@ -218,12 +218,12 @@ export default function Sidebar({
                     expanded={expanded}
                     isMobile={isMobile}
                   />
-                </button>
+                </Link>
 
-                <button
-                  type="button"
-                  className="w-full text-left"
-                  onClick={() => go(`${basePath}/rekap-akun`)}
+                <Link
+                  to={`${basePath}/rekap-akun`}
+                  className="w-full text-left block"
+                  onClick={() => { if (isMobile) setSidebarOpen(false); }}
                 >
                   <SidebarItem
                     icon={<Wallet size={18} />}
@@ -232,16 +232,16 @@ export default function Sidebar({
                     expanded={expanded}
                     isMobile={isMobile}
                   />
-                </button>
+                </Link>
               </>
             )}
 
             {/* ================= REKAP BIAYA AKUN (ADMIN) ================= */}
             {isAdmin && (
-              <button
-                type="button"
-                className="w-full text-left"
-                onClick={() => go(`${basePath}/rekap-akun`)}
+              <Link
+                to={`${basePath}/rekap-akun`}
+                className="w-full text-left block"
+                onClick={() => { if (isMobile) setSidebarOpen(false); }}
               >
                 <SidebarItem
                   icon={<Wallet size={18} />}
@@ -250,15 +250,15 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </button>
+              </Link>
             )}
 
             {/* ================= APPROVAL CUTI (SUPER ADMIN) ================= */}
             {isSuperAdmin && (
-              <button
-                type="button"
-                className="w-full text-left"
-                onClick={() => go(`${basePath}/cuti-approval`)}
+              <Link
+                to={`${basePath}/cuti-approval`}
+                className="w-full text-left block"
+                onClick={() => { if (isMobile) setSidebarOpen(false); }}
               >
                 <SidebarItem
                   icon={<ClipboardCheck size={18} />}
@@ -267,15 +267,15 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </button>
+              </Link>
             )}
 
             {/* ================= PENGAJUAN CUTI (ADMIN ONLY) ================= */}
             {isAdmin && (
-              <button
-                type="button"
-                className="w-full text-left"
-                onClick={() => go(`${basePath}/cuti`)}
+              <Link
+                to={`${basePath}/cuti`}
+                className="w-full text-left block"
+                onClick={() => { if (isMobile) setSidebarOpen(false); }}
               >
                 <SidebarItem
                   icon={<CalendarCheck size={18} />}
@@ -284,7 +284,7 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </button>
+              </Link>
             )}
 
             {/* ================= DIVISI (SUPER ADMIN / ADMIN / USER) ================= */}
@@ -312,11 +312,11 @@ export default function Sidebar({
                 {openDivisi && (
                   <div className="mt-1 space-y-1">
                     {divisiMenuItems.map((d) => (
-                      <button
-                        type="button"
-                        className="w-full text-left"
+                      <Link
+                        to={`${basePath}/${d.path}`}
+                        className="w-full text-left block"
                         key={d.path}
-                        onClick={() => go(`${basePath}/${d.path}`)}
+                        onClick={() => { if (isMobile) setSidebarOpen(false); }}
                       >
                         <SidebarItem
                           icon={d.icon}
@@ -326,7 +326,7 @@ export default function Sidebar({
                           isMobile={isMobile}
                           indented
                         />
-                      </button>
+                      </Link>
                     ))}
                   </div>
                 )}
@@ -334,10 +334,10 @@ export default function Sidebar({
             )}
 
             {/* ================= PROFILE ================= */}
-            <button
-              type="button"
-              className="w-full text-left"
-              onClick={() => go(`${basePath}/profile`)}
+            <Link
+              to={`${basePath}/profile`}
+              className="w-full text-left block"
+              onClick={() => { if (isMobile) setSidebarOpen(false); }}
             >
               <SidebarItem
                 icon={<User size={18} />}
@@ -346,14 +346,14 @@ export default function Sidebar({
                 expanded={expanded}
                 isMobile={isMobile}
               />
-            </button>
+            </Link>
 
             {/* ================= LOG AKTIVITAS (SUPER ADMIN) ================= */}
             {isSuperAdmin && (
-              <button
-                type="button"
-                className="w-full text-left"
-                onClick={() => go(`${basePath}/activity-log`)}
+              <Link
+                to={`${basePath}/activity-log`}
+                className="w-full text-left block"
+                onClick={() => { if (isMobile) setSidebarOpen(false); }}
               >
                 <SidebarItem
                   icon={<HistoryIcon size={18} />}
@@ -362,17 +362,17 @@ export default function Sidebar({
                   expanded={expanded}
                   isMobile={isMobile}
                 />
-              </button>
+              </Link>
             )}
           </nav>
         </div>
 
         {/* ================= BAWAH: PENGATURAN & LOGOUT ================= */}
         <div className="shrink-0 border-t border-slate-800 px-3 py-3 space-y-2">
-          <button
-            type="button"
-            className="w-full text-left"
-            onClick={() => go(`${basePath}/settings`)}
+          <Link
+            to={`${basePath}/settings`}
+            className="w-full text-left block"
+            onClick={() => { if (isMobile) setSidebarOpen(false); }}
           >
             <SidebarItem
               icon={<Settings size={18} />}
@@ -381,7 +381,7 @@ export default function Sidebar({
               expanded={expanded}
               isMobile={isMobile}
             />
-          </button>
+          </Link>
 
           <button
             onClick={() => {

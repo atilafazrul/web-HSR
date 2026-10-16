@@ -1,11 +1,10 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Truck, Package, ListTodo, Archive } from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
 
 const LogistikPage = () => {
   const { language } = useI18n();
-  const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
@@ -35,14 +34,14 @@ const LogistikPage = () => {
           icon={<ListTodo size={24} className="text-indigo-600" />}
           title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
           desc={language === "en" ? "Track logistics status and progress" : "Pantau status dan perkembangan logistik"}
-          onClick={() => navigate(`${basePath}/logistik/projek`)}
+          to={`${basePath}/logistik/projek`}
         />
         {!isUserRole && (
           <Card
             icon={<Archive size={24} className="text-indigo-600" />}
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
-            onClick={() => navigate(`${basePath}/logistik/projek/archive`)}
+            to={`${basePath}/logistik/projek/archive`}
           />
         )}
         {!isUserRole && (
@@ -50,7 +49,7 @@ const LogistikPage = () => {
             icon={<Package size={24} className="text-indigo-600" />}
             title="Inventory"
             desc={language === "en" ? "Manage logistics devices and stock" : "Kelola perangkat dan stok barang logistik"}
-            onClick={() => navigate(`${basePath}/logistik/inventory`)}
+            to={`${basePath}/logistik/inventory`}
           />
         )}
       </div>
@@ -58,12 +57,31 @@ const LogistikPage = () => {
   );
 };
 
-const Card = ({ icon, title, desc, onClick }) => (
-  <div onClick={onClick} className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
-    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">{icon}</div>
-    <h3 className="mb-2 text-xl font-semibold text-slate-800">{title}</h3>
-    <p className="text-sm text-slate-500">{desc}</p>
-  </div>
-);
+const Card = ({ icon, title, desc, to, onClick }) => {
+  const content = (
+    <>
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">{icon}</div>
+      <h3 className="mb-2 text-xl font-semibold text-slate-800">{title}</h3>
+      <p className="text-sm text-slate-500">{desc}</p>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="block cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div onClick={onClick} className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md">
+      {content}
+    </div>
+  );
+};
 
 export default LogistikPage;

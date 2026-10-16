@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { useNavigate, useParams, useLocation, Link } from "react-router-dom";
 import { FileText, ClipboardCheck, Wrench, FileSignature, Receipt, ArrowLeft, ClipboardList, ShoppingCart, FileSpreadsheet } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n";
@@ -52,36 +52,31 @@ export default function BeritaAcaraPage() {
     fetchProject();
   }, [projekId]);
 
-  const handleBackToProject = () => {
-    const divisi = String(project?.divisi || "").toLowerCase();
-    const divisiPath = ["it", "service", "sales", "kontraktor", "logistik", "purchasing", "siplah"].includes(divisi)
-      ? divisi
-      : "it";
-    navigate(`${basePath}/${divisiPath}/projek`);
-  };
+  const projectDivisi = String(project?.divisi || "").toLowerCase();
+  const projectDivisiPath = ["it", "service", "sales", "kontraktor", "logistik", "purchasing", "siplah"].includes(projectDivisi)
+    ? projectDivisi
+    : "it";
 
   return (
     <div>
       {projekId && (
-        <button
-          type="button"
-          onClick={handleBackToProject}
+        <Link
+          to={`${basePath}/${projectDivisiPath}/projek`}
           className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-indigo-600"
         >
           <ArrowLeft size={16} />
           {tr("Kembali ke Data Projek Kerja", "Back to Project Data")}
-        </button>
+        </Link>
       )}
 
       {!projekId && divisiContext && (
-        <button
-          type="button"
-          onClick={() => navigate(`${basePath}/${divisiContext}`)}
+        <Link
+          to={`${basePath}/${divisiContext}`}
           className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition hover:text-indigo-600"
         >
           <ArrowLeft size={16} />
           {tr(`Kembali ke Divisi ${divisiContext.charAt(0).toUpperCase() + divisiContext.slice(1)}`, `Back to ${divisiContext.charAt(0).toUpperCase() + divisiContext.slice(1)} Division`)}
-        </button>
+        </Link>
       )}
 
       <div className="flex items-center gap-4 mb-2">
@@ -122,42 +117,42 @@ export default function BeritaAcaraPage() {
           icon={<Wrench size={24} className="text-indigo-600" />}
           title="BAM"
           subtitle={tr("Berita Acara Maintenance", "Maintenance Minutes Report")}
-          onClick={() => navigate(`${beritaAcaraBase}/bam`)}
+          to={`${beritaAcaraBase}/bam`}
         />
 
         <Card
           icon={<ClipboardCheck size={24} className="text-indigo-600" />}
           title="BAUF"
           subtitle={tr("Berita Acara Uji Fungsi", "Function Test Minutes Report")}
-          onClick={() => navigate(`${beritaAcaraBase}/bauf`)}
+          to={`${beritaAcaraBase}/bauf`}
         />
 
         <Card
           icon={<FileText size={24} className="text-indigo-600" />}
           title="BAST"
           subtitle={tr("Berita Acara Serah Terima", "Handover Minutes Report")}
-          onClick={() => navigate(`${beritaAcaraBase}/bast`)}
+          to={`${beritaAcaraBase}/bast`}
         />
 
         <Card
           icon={<FileSignature size={24} className="text-indigo-600" />}
           title="SPPD"
           subtitle={tr("Surat Perintah Perjalanan Dinas", "Official Travel Order")}
-          onClick={() => navigate(`${beritaAcaraBase}/sppd`)}
+          to={`${beritaAcaraBase}/sppd`}
         />
 
         <Card
           icon={<Receipt size={24} className="text-indigo-600" />}
           title="SPH"
           subtitle={tr("Surat Penawaran Harga", "Price Quotation Letter")}
-          onClick={() => navigate(`${beritaAcaraBase}/sph`)}
+          to={`${beritaAcaraBase}/sph`}
         />
 
         <Card
           icon={<ShoppingCart size={24} className="text-indigo-600" />}
           title="PO"
           subtitle={tr("Purchase Order", "Purchase Order")}
-          onClick={() => navigate(`${beritaAcaraBase}/po`)}
+          to={`${beritaAcaraBase}/po`}
         />
 
         {role === "super_admin" && (
@@ -165,7 +160,7 @@ export default function BeritaAcaraPage() {
             icon={<FileSpreadsheet size={24} className="text-indigo-600" />}
             title="Invoice"
             subtitle={tr("Invoice (Super Admin)", "Invoice (Super Admin)")}
-            onClick={() => navigate(`${beritaAcaraBase}/invoice`)}
+            to={`${beritaAcaraBase}/invoice`}
           />
         )}
 
@@ -173,28 +168,47 @@ export default function BeritaAcaraPage() {
           icon={<ClipboardList size={24} className="text-indigo-600" />}
           title="Service Report"
           subtitle={tr("Laporan Pekerjaan Servis", "Service Work Report")}
-          onClick={() => navigate(`${beritaAcaraBase}/service-report`)}
+          to={`${beritaAcaraBase}/service-report`}
         />
       </div>
     </div>
   );
 }
 
-const Card = ({ icon, title, subtitle, onClick }) => (
-  <div
-    onClick={onClick}
-    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
-  >
-    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-      {icon}
+const Card = ({ icon, title, subtitle, to, onClick }) => {
+  const content = (
+    <>
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
+        {icon}
+      </div>
+
+      <h3 className="mb-1 text-xl font-semibold text-slate-800">
+        {title}
+      </h3>
+
+      <p className="text-sm text-slate-500">
+        {subtitle}
+      </p>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="block cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+    >
+      {content}
     </div>
-
-    <h3 className="mb-1 text-xl font-semibold text-slate-800">
-      {title}
-    </h3>
-
-    <p className="text-sm text-slate-500">
-      {subtitle}
-    </p>
-  </div>
-);
+  );
+};

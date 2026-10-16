@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import api from "../api/axiosConfig";
 import tokenManager from "../utils/tokenManager";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useI18n } from "../i18n/index.jsx";
 import { DashboardSurface } from "../components/dashboard/DashboardPrimitives.jsx";
 
@@ -166,13 +166,12 @@ export default function RfiFormPage() {
         <div className="pointer-events-none absolute -bottom-10 -left-4 h-28 w-28 rounded-full bg-emerald-300/10 blur-2xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <button
-              type="button"
-              onClick={() => navigate(`${basePath}/kontraktor`)}
+            <Link
+              to={`${basePath}/kontraktor`}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition mb-2"
             >
               <ArrowLeft size={13} /> {tr("Kembali", "Back")}
-            </button>
+            </Link>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-indigo-600/90">
               {tr("Kontraktor · Dokumen", "Contractor · Document")}
             </p>
@@ -387,13 +386,12 @@ export default function RfiFormPage() {
         {/* === SUBMIT BAR === */}
         <div className="sticky bottom-0 bg-gradient-to-t from-slate-50 via-slate-50/90 to-transparent pt-4 pb-2 -mx-4 sm:-mx-5 md:-mx-6 px-4 sm:px-5 md:px-6">
           <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <button
-              type="button"
-              onClick={() => navigate(`${basePath}/kontraktor`)}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition"
+            <Link
+              to={`${basePath}/kontraktor`}
+              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 transition inline-flex items-center justify-center"
             >
               {tr("Batal", "Cancel")}
-            </button>
+            </Link>
             <button
               type="submit"
               disabled={submitting}

@@ -1,12 +1,10 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Archive, BarChart3, ListTodo } from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
 
 const SalesPage = () => {
   const { language } = useI18n();
-
-  const navigate = useNavigate();
 
   // =============================
   // AMBIL USER DARI LOCALSTORAGE
@@ -51,7 +49,7 @@ const SalesPage = () => {
             icon={<BarChart3 size={24} className="text-indigo-600" />}
             title={language === "en" ? "Target" : "Target"}
             desc={language === "en" ? "Manage sales targets and performance" : "Kelola target dan performa penjualan"}
-            onClick={() => navigate(`${basePath}/sales/target`)}
+            to={`${basePath}/sales/target`}
           />
         )}
 
@@ -60,7 +58,7 @@ const SalesPage = () => {
           icon={<ListTodo size={24} className="text-indigo-600" />}
           title={language === "en" ? "Work Progress" : "Progres Pekerjaan"}
           desc={language === "en" ? "Track sales status and progress" : "Pantau status dan perkembangan penjualan"}
-          onClick={() => navigate(`${basePath}/sales/projek`)}
+          to={`${basePath}/sales/projek`}
         />
 
         {!isUserRole && (
@@ -68,7 +66,7 @@ const SalesPage = () => {
             icon={<Archive size={24} className="text-indigo-600" />}
             title={language === "en" ? "Work Archive" : "Archive Pekerjaan"}
             desc={language === "en" ? "View completed archived work" : "Lihat pekerjaan selesai yang sudah di-archive"}
-            onClick={() => navigate(`${basePath}/sales/projek/archive`)}
+            to={`${basePath}/sales/projek/archive`}
           />
         )}
 
@@ -80,23 +78,40 @@ const SalesPage = () => {
 
 
 /* CARD */
-const Card = ({ icon, title, desc, onClick }) => (
-  <div
-    onClick={onClick}
-    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
-  >
+const Card = ({ icon, title, desc, to, onClick }) => {
+  const content = (
+    <>
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">{icon}</div>
 
-    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">{icon}</div>
+      <h3 className="mb-2 text-xl font-semibold text-slate-800">
+        {title}
+      </h3>
 
-    <h3 className="mb-2 text-xl font-semibold text-slate-800">
-      {title}
-    </h3>
+      <p className="text-sm text-slate-500">
+        {desc}
+      </p>
+    </>
+  );
 
-    <p className="text-sm text-slate-500">
-      {desc}
-    </p>
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="block cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+      >
+        {content}
+      </Link>
+    );
+  }
 
-  </div>
-);
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+    >
+      {content}
+    </div>
+  );
+};
 
 export default SalesPage;

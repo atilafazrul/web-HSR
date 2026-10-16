@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation, Link } from "react-router-dom";
 import {
   ListTodo,
   CheckCircle,
@@ -205,9 +205,9 @@ export default function UserDashboard({ user, logout }) {
                     name={user?.name}
                   />
 
-                  <div
-                    onClick={() => navigate(`/user/${divisiPath}`)}
-                    className="group relative cursor-pointer overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-900/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl sm:hover:-translate-y-2"
+                  <Link
+                    to={`/user/${divisiPath}`}
+                    className="group relative block cursor-pointer overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-900/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl sm:hover:-translate-y-2"
                   >
                     <div className="relative h-72 sm:h-80 md:h-96 w-full">
                       <img
@@ -224,13 +224,13 @@ export default function UserDashboard({ user, logout }) {
                         <p className="text-sm sm:text-base text-gray-200 mb-4">
                           Total <span className="font-semibold">{total}</span> {tr("Pekerjaan", "Tasks")}
                         </p>
-                        <button className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-6 py-3 text-sm font-medium transition hover:bg-white/30">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-6 py-3 text-sm font-medium transition hover:bg-white/30">
                           {language === "en" ? "Open" : "Masuk"}
                           <span className="group-hover:translate-x-1 transition">→</span>
-                        </button>
+                        </span>
                       </div>
                     </div>
-                  </div>
+                  </Link>
 
                   <DashboardSurface className="p-4 sm:p-5 md:p-6 lg:p-8">
                     <DashboardSectionHeading

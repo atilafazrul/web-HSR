@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation, Link } from "react-router-dom";
 import { AlertTriangle, Download, Pencil, Search, Trash2 } from "lucide-react";
 import axios from "../api/axiosConfig";
 import { compressImage } from "../utils/imageCompress";
@@ -546,12 +546,12 @@ export default function FotoProjekPage() {
             {tr("Kelola dokumen dan foto dokumentasi projek", "Manage project documentation files and photos")}
           </p>
         </div>
-        <button
-          onClick={() => (folderRouteState.inFolder ? goFolderHome() : navigate(backToProjekPath))}
-          className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800"
+        <Link
+          to={folderRouteState.inFolder ? `${basePath}/projek-kerja/foto/${id}` : backToProjekPath}
+          className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-800 inline-block"
         >
           {folderRouteState.inFolder ? tr("Kembali ke Folder", "Back to Folders") : tr("Kembali", "Back")}
-        </button>
+        </Link>
       </div>
 
       {!folderRouteState.inFolder ? (
@@ -583,16 +583,15 @@ export default function FotoProjekPage() {
                     key={folder}
                     className="group relative flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50"
                   >
-                    <button
-                      type="button"
-                      onClick={() => openFolder("file", folder)}
+                    <Link
+                      to={`${basePath}/projek-kerja/foto/${id}/folder/file/${encodeURIComponent(folder)}`}
                       className="flex w-full flex-col items-center justify-center gap-2"
                     >
                       <span className="text-3xl leading-none">📁</span>
                       <span className="line-clamp-2 text-center text-xs font-medium text-slate-700 break-all">
                         {folder}
                       </span>
-                    </button>
+                    </Link>
                     <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
                       <button
                         type="button"
@@ -644,16 +643,15 @@ export default function FotoProjekPage() {
                     key={folder}
                     className="group relative flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3 transition hover:-translate-y-0.5 hover:border-emerald-300 hover:bg-emerald-50"
                   >
-                    <button
-                      type="button"
-                      onClick={() => openFolder("photo", folder)}
+                    <Link
+                      to={`${basePath}/projek-kerja/foto/${id}/folder/photo/${encodeURIComponent(folder)}`}
                       className="flex w-full flex-col items-center justify-center gap-2"
                     >
                       <span className="text-3xl leading-none">📁</span>
                       <span className="line-clamp-2 text-center text-xs font-medium text-slate-700 break-all">
                         {folder}
                       </span>
-                    </button>
+                    </Link>
                     <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
                       <button
                         type="button"

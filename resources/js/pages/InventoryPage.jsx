@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Plus, Package, Search, Eye, Pencil, Trash2 } from "lucide-react";
 import api from "../api/axiosConfig";
 import { useI18n } from "../i18n/index.jsx";
@@ -141,15 +141,13 @@ export default function InventoryPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-4 sm:mb-6">
 
         {/* Tombol Tambah Barang */}
-        <button
-          onClick={() =>
-            navigate(`${inventoryPath}/tambah`)
-          }
+        <Link
+          to={`${inventoryPath}/tambah`}
           className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start"
         >
           <Plus size={18} />
           <span className="hidden sm:inline">{tr("Tambah Barang", "Add Item")}</span>
-        </button>
+        </Link>
 
         {/* Search Bar */}
         <div className="relative w-full sm:w-auto">
@@ -232,13 +230,13 @@ export default function InventoryPage() {
                           <Eye size={18} />
                         </button>
                       )}
-                      <button
-                        onClick={() => navigate(`${inventoryPath}/edit/${b.id}`)}
-                        className="text-blue-600 hover:text-blue-800"
+                      <Link
+                        to={`${inventoryPath}/edit/${b.id}`}
+                        className="text-blue-600 hover:text-blue-800 inline-flex items-center"
                         title={tr("Edit", "Edit")}
                       >
                         <Pencil size={18} />
-                      </button>
+                      </Link>
                       {role === "super_admin" && (
                         <button
                           onClick={() => handleDelete(b.id)}
@@ -329,13 +327,13 @@ export default function InventoryPage() {
                     <Eye size={20} />
                   </button>
                 )}
-                <button
-                  onClick={() => navigate(`${inventoryPath}/edit/${b.id}`)}
+                <Link
+                  to={`${inventoryPath}/edit/${b.id}`}
                   className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-600 p-3 rounded-lg transition flex items-center justify-center"
                   title={tr("Edit", "Edit")}
                 >
                   <Pencil size={20} />
-                </button>
+                </Link>
                 {role === "super_admin" && (
                   <button
                     onClick={() => handleDelete(b.id)}

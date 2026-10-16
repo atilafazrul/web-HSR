@@ -5,6 +5,7 @@ import {
   Navigate,
   useNavigate,
   useLocation,
+  Link,
 } from "react-router-dom";
 
 import {
@@ -499,7 +500,7 @@ const Dashboard = ({ user, windowWidth }) => {
             title={language === "en" ? "IT Division" : "Divisi IT"}
             image="/images/IT Card.png"
             count={projek.filter(p => p.divisi === "IT").length}
-            onClick={() => navigate(`${basePath}/it`)}
+            to={`${basePath}/it`}
             isMobile={isMobile}
             language={language}
           />
@@ -508,7 +509,7 @@ const Dashboard = ({ user, windowWidth }) => {
             title={language === "en" ? "Service Division" : "Divisi Service"}
             image="/images/Card Service.png"
             count={projek.filter(p => p.divisi === "Service").length}
-            onClick={() => navigate(`${basePath}/service`)}
+            to={`${basePath}/service`}
             isMobile={isMobile}
             language={language}
           />
@@ -517,7 +518,7 @@ const Dashboard = ({ user, windowWidth }) => {
             title={language === "en" ? "Sales Division" : "Divisi Sales"}
             image="/images/Card Sales.png"
             count={projek.filter(p => p.divisi === "Sales").length}
-            onClick={() => navigate(`${basePath}/sales`)}
+            to={`${basePath}/sales`}
             isMobile={isMobile}
             language={language}
           />
@@ -526,7 +527,7 @@ const Dashboard = ({ user, windowWidth }) => {
             title={language === "en" ? "Contractor Division" : "Divisi Kontraktor"}
             image="/images/Kontraktor Card.png"
             count={projek.filter(p => p.divisi === "Kontraktor").length}
-            onClick={() => navigate(`${basePath}/kontraktor`)}
+            to={`${basePath}/kontraktor`}
             isMobile={isMobile}
             language={language}
           />
@@ -535,7 +536,7 @@ const Dashboard = ({ user, windowWidth }) => {
             title={language === "en" ? "Logistics Division" : "Divisi Logistik"}
             image="/images/logistik card.png"
             count={projek.filter(p => p.divisi === "Logistik").length}
-            onClick={() => navigate(`${basePath}/logistik`)}
+            to={`${basePath}/logistik`}
             isMobile={isMobile}
             language={language}
           />
@@ -544,7 +545,7 @@ const Dashboard = ({ user, windowWidth }) => {
             title={language === "en" ? "Purchasing Division" : "Divisi Purchasing"}
             image="/images/Purchasing Card.png"
             count={projek.filter(p => p.divisi === "Purchasing").length}
-            onClick={() => navigate(`${basePath}/purchasing`)}
+            to={`${basePath}/purchasing`}
             isMobile={isMobile}
             language={language}
           />
@@ -553,7 +554,7 @@ const Dashboard = ({ user, windowWidth }) => {
             title={language === "en" ? "SIPLAH Division" : "Divisi SIPLAH"}
             image="/images/Purchasing Card.png"
             count={projek.filter((p) => p.divisi === "SIPLAH").length}
-            onClick={() => navigate(`${basePath}/siplah`)}
+            to={`${basePath}/siplah`}
             isMobile={isMobile}
             language={language}
           />
@@ -736,13 +737,13 @@ const Dashboard = ({ user, windowWidth }) => {
                             <Download size={18} />
                           </a>
                         )}
-                        <button
-                          onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)}
+                        <Link
+                          to={`${basePath}/projek-kerja/foto/${item.id}`}
                           className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
                           title="Foto Projek"
                         >
                           <FileText size={18} />
-                        </button>
+                        </Link>
                         <button
                           onClick={() => handleDelete(item.id)}
                           className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
@@ -815,13 +816,13 @@ const Dashboard = ({ user, windowWidth }) => {
                     </a>
                   )}
 
-                  <button
-                    onClick={() => navigate(`${basePath}/projek-kerja/foto/${item.id}`)}
+                  <Link
+                    to={`${basePath}/projek-kerja/foto/${item.id}`}
                     className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
                     title="Foto Projek"
                   >
                     <FileText size={18} />
-                  </button>
+                  </Link>
 
                   <button
                     onClick={() => handleDelete(item.id)}
@@ -898,14 +899,11 @@ const Dashboard = ({ user, windowWidth }) => {
 };
 
 /* ================= DIVISI CARD ================= */
-const DivisiCard = ({ title, count, image, onClick, isMobile, language = "id" }) => {
+const DivisiCard = ({ title, count, image, to, onClick, isMobile, language = "id" }) => {
   const defaultImage = image || "https://via.placeholder.com/400x300?text=Divisi";
 
-  return (
-    <div
-      onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg ring-1 ring-slate-900/10 transition hover:-translate-y-1 hover:shadow-2xl sm:rounded-3xl sm:hover:-translate-y-2"
-    >
+  const innerContent = (
+    <>
       <img
         src={defaultImage}
         alt={title}
@@ -919,10 +917,30 @@ const DivisiCard = ({ title, count, image, onClick, isMobile, language = "id" })
         <p className="text-xs sm:text-xs md:text-sm mb-1 sm:mb-2">
           {language === "en" ? "Total" : "Total"} {count} {language === "en" ? "Tasks" : "Pekerjaan"}
         </p>
-        <button className="bg-white/20 backdrop-blur-md hover:bg-white/30 transition px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 rounded-lg sm:rounded-xl text-xs">
+        <span className="inline-block bg-white/20 backdrop-blur-md hover:bg-white/30 transition px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 md:py-2 rounded-lg sm:rounded-xl text-xs">
           {language === "en" ? "Open" : "Masuk"} →
-        </button>
+        </span>
       </div>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="group relative block cursor-pointer overflow-hidden rounded-2xl shadow-lg ring-1 ring-slate-900/10 transition hover:-translate-y-1 hover:shadow-2xl sm:rounded-3xl sm:hover:-translate-y-2"
+      >
+        {innerContent}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      onClick={onClick}
+      className="group relative cursor-pointer overflow-hidden rounded-2xl shadow-lg ring-1 ring-slate-900/10 transition hover:-translate-y-1 hover:shadow-2xl sm:rounded-3xl sm:hover:-translate-y-2"
+    >
+      {innerContent}
     </div>
   );
 };

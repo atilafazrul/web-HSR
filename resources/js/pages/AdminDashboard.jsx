@@ -4,7 +4,8 @@ import {
   Route,
   Navigate,
   useNavigate,
-  useLocation
+  useLocation,
+  Link
 } from "react-router-dom";
 import api from "../api/axiosConfig";
 
@@ -311,9 +312,7 @@ export default function AdminDashboard({ user, logout }) {
                     <DivisiCard
                       title={language === "en" ? `${currentDivisi} Division` : `Divisi ${currentDivisi}`}
                       count={filteredDashboardData.length}
-                      onClick={() =>
-                        navigate(`${basePath}/${currentDivisi.toLowerCase()}`)
-                      }
+                      to={`${basePath}/${currentDivisi.toLowerCase()}`}
                       image={getDivisiImage(currentDivisi)}
                       isMobile={isMobile}
                       countLabel={tr("Pekerjaan", "Tasks")}
@@ -726,33 +725,48 @@ export default function AdminDashboard({ user, logout }) {
 }
 
 /* ================= CARD DIVISI ================= */
-const DivisiCard = ({ title, count, onClick, image, isMobile, countLabel = "Pekerjaan", openLabel = "Masuk" }) => {
+const DivisiCard = ({ title, count, to, onClick, image, isMobile, countLabel = "Pekerjaan", openLabel = "Masuk" }) => {
+  const content = (
+    <div className="relative h-72 sm:h-80 md:h-96 w-full">
+      <img
+        src={image}
+        alt={title}
+        className="absolute inset-0 h-full w-full object-cover object-[center_45%] group-hover:scale-110 transition duration-500"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
+
+      <div className="absolute bottom-0 p-6 sm:p-8 text-white w-full">
+        <h3 className="text-3xl sm:text-4xl font-extrabold tracking-wide mb-1">
+        {title}
+        </h3>
+        <p className="text-sm sm:text-base text-gray-200 mb-4">
+          Total <span className="font-semibold">{count}</span> {countLabel}
+        </p>
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-6 py-3 text-sm font-medium transition hover:bg-white/30">
+          {openLabel}
+          <span className="group-hover:translate-x-1 transition">→</span>
+        </span>
+      </div>
+    </div>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="group relative block cursor-pointer overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-900/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl sm:hover:-translate-y-2"
+      >
+        {content}
+      </Link>
+    );
+  }
+
   return (
     <div
       onClick={onClick}
       className="group relative cursor-pointer overflow-hidden rounded-3xl shadow-xl ring-1 ring-slate-900/10 transition duration-300 hover:-translate-y-1 hover:shadow-2xl sm:hover:-translate-y-2"
     >
-      <div className="relative h-72 sm:h-80 md:h-96 w-full">
-        <img
-          src={image}
-          alt={title}
-          className="absolute inset-0 h-full w-full object-cover object-[center_45%] group-hover:scale-110 transition duration-500"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" />
-
-        <div className="absolute bottom-0 p-6 sm:p-8 text-white w-full">
-          <h3 className="text-3xl sm:text-4xl font-extrabold tracking-wide mb-1">
-          {title}
-          </h3>
-          <p className="text-sm sm:text-base text-gray-200 mb-4">
-            Total <span className="font-semibold">{count}</span> {countLabel}
-          </p>
-          <button className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-6 py-3 text-sm font-medium transition hover:bg-white/30">
-            {openLabel}
-            <span className="group-hover:translate-x-1 transition">→</span>
-          </button>
-        </div>
-      </div>
+      {content}
     </div>
   );
 };

@@ -1,6 +1,6 @@
 import React from "react";
 import { Menu } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import NotificationDropdown from "./NotificationDropdown.jsx";
 
 export default function Header({
@@ -41,10 +41,6 @@ export default function Header({
     }
   };
 
-  const handleProfileClick = () => {
-    navigate(rolePath);
-  };
-
   return (
     <header className="bg-white shadow-sm px-6 py-4 flex justify-between items-center relative z-40">
       <div className="flex items-center gap-4">
@@ -76,8 +72,8 @@ export default function Header({
           <NotificationDropdown user={user} />
         )}
 
-        <button
-          onClick={handleProfileClick}
+        <Link
+          to={rolePath}
           className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full cursor-pointer hover:bg-gray-200 transition flex-shrink-0 max-w-full"
           style={{ touchAction: "manipulation", minHeight: "44px" }}
           aria-label="Profile"
@@ -94,7 +90,7 @@ export default function Header({
             </div>
           )}
           <span className="font-medium hidden sm:block truncate max-w-[100px] md:max-w-[150px] lg:max-w-[200px]">{user?.name}</span>
-        </button>
+        </Link>
       </div>
     </header>
   );

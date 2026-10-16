@@ -21,7 +21,7 @@ import api from "../api/axiosConfig";
 import { digitsOnly, formatRibuanId, nominalApiToInput, parseRibuanId } from "../utils/formatRupiahInput";
 import { compressImage } from "../utils/imageCompress";
 import { assertNoDuplicateBiayaItems } from "../utils/biayaDuplicateValidation";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useI18n } from "../i18n/index.jsx";
 import { DashboardSurface, DashboardSectionHeading } from "../components/dashboard/DashboardPrimitives.jsx";
 import {
@@ -2280,14 +2280,13 @@ export default function ProjekKerjaPage() {
                           </select>
                         </td>
                         <td className="p-2.5">
-                          <button
-                            type="button"
-                            onClick={() => handleViewPhoto(item.id)}
-                            className="w-full truncate text-left font-medium text-slate-800 transition hover:text-indigo-600 hover:underline"
+                          <Link
+                            to={`${basePath}/projek-kerja/foto/${item.id}`}
+                            className="w-full truncate text-left font-medium text-slate-800 transition hover:text-indigo-600 hover:underline block"
                             title={tr("Buka halaman dokumen projek", "Open project document page")}
                           >
                             {item.jenis_pekerjaan}
-                          </button>
+                          </Link>
                         </td>
                         <td className="p-2.5">
                           {(() => {
@@ -2297,8 +2296,8 @@ export default function ProjekKerjaPage() {
                               const row = rows[0];
                               const label = row
                                 ? row.isInvite
-                                  ? `${row.display} (Invite)`
-                                  : row.display
+                                ? `${row.display} (Invite)`
+                                : row.display
                                 : currentName || "-";
                               return <span className="truncate block">{label}</span>;
                             }
@@ -2369,21 +2368,21 @@ export default function ProjekKerjaPage() {
                         </td>
                         <td className="p-2.5">
                           <div className="flex justify-center items-center gap-1">
-                            <button
-                              onClick={() => handleViewPhoto(item.id)}
+                            <Link
+                              to={`${basePath}/projek-kerja/foto/${item.id}`}
                               className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
                               title={tr("Lihat Foto", "View Photos")}
                             >
                               <FileText size={18} />
-                            </button>
+                            </Link>
                             {canManageProject && (
-                              <button
-                                onClick={() => handleBeritaAcara(item.id)}
+                              <Link
+                                to={`${basePath}/projek-kerja/berita-acara/${item.id}`}
                                 className={`${actionIconBtn} text-indigo-600 hover:bg-indigo-50`}
                                 title={tr("Berita Acara", "Minutes Report")}
                               >
                                 <ClipboardCheck size={18} />
-                              </button>
+                              </Link>
                             )}
                             {!isUserRole && item.file_url && (
                               <a
@@ -2399,13 +2398,21 @@ export default function ProjekKerjaPage() {
                             {canOpenBiayaAction(item) && (
                               <>
                                 {!isUserRole && !isArchiveContext && canEditProjectAction(item) ? (
-                                  <button
-                                    onClick={() => goToEditProjectPage(item)}
+                                  <Link
+                                    to={`${basePath}/projek-kerja/edit/${item.id}`}
+                                    onClick={() => {
+                                      try {
+                                        sessionStorage.setItem(
+                                          projekKerjaPaginationStorageKey(location.pathname),
+                                          String(currentPage)
+                                        );
+                                      } catch (_) {}
+                                    }}
                                     className={`${actionIconBtn} text-blue-600 hover:bg-blue-50`}
                                     title="Edit project & oper divisi"
                                   >
                                     <Edit3 size={18} />
-                                  </button>
+                                  </Link>
                                 ) : null}
                                 <button
                                   onClick={() => openUangModal(item)}

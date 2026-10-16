@@ -1,11 +1,10 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useI18n } from "../i18n/index.jsx";
 import { Package, ListTodo, Archive } from "lucide-react";
 
 const SIPLAHPage = () => {
   const { language } = useI18n();
-  const navigate = useNavigate();
 
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user?.role;
@@ -42,7 +41,7 @@ const SIPLAHPage = () => {
                 ? "Manage SIPLAH devices and stock"
                 : "Kelola perangkat dan stok barang SIPLAH"
             }
-            onClick={() => navigate(`${basePath}/siplah/inventory`)}
+            to={`${basePath}/siplah/inventory`}
           />
         )}
         <Card
@@ -53,7 +52,7 @@ const SIPLAHPage = () => {
               ? "Track SIPLAH work status and progress"
               : "Pantau status dan perkembangan pekerjaan SIPLAH"
           }
-          onClick={() => navigate(`${basePath}/siplah/projek`)}
+          to={`${basePath}/siplah/projek`}
         />
         {!isUserRole && (
           <Card
@@ -64,7 +63,7 @@ const SIPLAHPage = () => {
                 ? "View completed archived work"
                 : "Lihat pekerjaan selesai yang sudah di-archive"
             }
-            onClick={() => navigate(`${basePath}/siplah/projek/archive`)}
+            to={`${basePath}/siplah/projek/archive`}
           />
         )}
       </div>
@@ -72,17 +71,36 @@ const SIPLAHPage = () => {
   );
 };
 
-const Card = ({ icon, title, desc, onClick }) => (
-  <div
-    onClick={onClick}
-    className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
-  >
-    <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
-      {icon}
+const Card = ({ icon, title, desc, to, onClick }) => {
+  const content = (
+    <>
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-50">
+        {icon}
+      </div>
+      <h3 className="mb-2 text-xl font-semibold text-slate-800">{title}</h3>
+      <p className="text-sm text-slate-500">{desc}</p>
+    </>
+  );
+
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className="block cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <div
+      onClick={onClick}
+      className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md"
+    >
+      {content}
     </div>
-    <h3 className="mb-2 text-xl font-semibold text-slate-800">{title}</h3>
-    <p className="text-sm text-slate-500">{desc}</p>
-  </div>
-);
+  );
+};
 
 export default SIPLAHPage;
