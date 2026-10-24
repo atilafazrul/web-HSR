@@ -111,9 +111,18 @@ class ScheduledBeritaAcaraController extends Controller
         ], 201);
     }
 
-    public function destroy(int $id)
+    public function destroy(Request $request, int $id)
     {
+        $actor = $request->user();
+        $role = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+
         $schedule = ScheduledBeritaAcaraDocument::findOrFail($id);
+
+        if (!in_array($role, ['super_admin', 'admin'], true) && (int) $schedule->created_by !== (int) $actor?->id) {
+            return response()->json([
+                'message' => 'Anda tidak memiliki hak akses untuk membatalkan jadwal ini.',
+            ], 403);
+        }
 
         if ($schedule->status !== ScheduledBeritaAcaraDocument::STATUS_PENDING) {
             return response()->json([

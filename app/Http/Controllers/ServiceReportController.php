@@ -308,8 +308,17 @@ class ServiceReportController extends Controller
     /**
      * Delete service report
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $actor = $request->user();
+        $role = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+        if (!in_array($role, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya admin atau superadmin yang dapat menghapus service report'
+            ], 403);
+        }
+
         $report = ServiceReport::findOrFail($id);
         $report->delete();
 
@@ -326,11 +335,7 @@ class ServiceReportController extends Controller
     {
         $report = ServiceReport::with(['serviceTypes', 'parts', 'user'])->findOrFail($id);
 
-        // Verify user permissions
-        $userId = $request->query('user_id');
-        $userRole = $request->query('user_role');
-
-        $user = User::find($userId);
+        $user = $request->user() ?: User::find($request->query('user_id'));
 
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'User tidak ditemukan'], 404);
@@ -341,7 +346,7 @@ class ServiceReportController extends Controller
         // Generate PDF
         $options = new Options();
         $options->set('isHtml5ParserEnabled', true);
-        $options->set('isRemoteEnabled', true);
+        $options->set('isRemoteEnabled', false);
 
         $dompdf = new Dompdf($options);
 

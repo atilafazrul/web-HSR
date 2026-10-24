@@ -320,8 +320,17 @@ class SPPDController extends Controller
         return $this->generatePDFResponse($data);
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $actor = $request->user();
+        $role = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+        if (!in_array($role, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya admin atau superadmin yang dapat menghapus dokumen ini'
+            ], 403);
+        }
+
         try {
             $document = SppdDocument::findOrFail($id);
             $document->delete();
