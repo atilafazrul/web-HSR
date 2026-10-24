@@ -113,9 +113,20 @@ export const useAuth = () => {
 
             return { success: true, data };
         } catch (err) {
-            const errorMessage = err.response?.data?.message || 'Login gagal';
-            setError(errorMessage);
-            return { success: false, error: errorMessage };
+            const apiError = err.response?.data?.errors?.email?.[0]
+                || err.response?.data?.errors?.password?.[0]
+                || (err.response?.data?.errors && typeof err.response.data.errors === 'object' && Object.values(err.response.data.errors).flat()[0])
+                || err.response?.data?.message
+                || 'Email atau password yang Anda masukkan salah.';
+            const status = err.response?.status;
+            const retryAfter = err.response?.data?.retry_after ?? (err.response?.headers ? parseInt(err.response.headers['retry-after'] || 0, 10) : 0);
+            setError(apiError);
+            return {
+                success: false,
+                error: apiError,
+                status: status,
+                retryAfter: retryAfter,
+            };
         } finally {
             setIsLoading(false);
         }

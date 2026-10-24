@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Lock, Mail, Shield, Zap, Users, TrendingUp } from "lucide-react";
+import { Lock, Mail, Shield, Zap, Users, TrendingUp, AlertTriangle, ShieldAlert, Clock } from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
 
 export default function Login({ login, isLoading }) {
@@ -13,6 +13,37 @@ export default function Login({ login, isLoading }) {
   const [currentDivision, setCurrentDivision] = useState(0);
   const [animate, setAnimate] = useState(true);
 
+  /* ================= ERROR & COUNTDOWN STATE ================= */
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isBlocked, setIsBlocked] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+
+  /* ================= COUNTDOWN TIMER JIKA DIBLOKIR ================= */
+  useEffect(() => {
+    if (countdown <= 0) {
+      if (isBlocked) setIsBlocked(false);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setIsBlocked(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [countdown, isBlocked]);
+
+  const formatCountdown = (totalSeconds) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
 
   /* ================= ANIMATION coba-coba ================= */
   useEffect(() => {
@@ -42,19 +73,36 @@ export default function Login({ login, isLoading }) {
 
     // Cek flag infinite redirect loop
     if (localStorage.getItem(REDIRECTED_TO_LOGIN)) {
-      alert(t("tooManyRedirect", "Too many redirects. Please try again."));
+      setErrorMessage(t("tooManyRedirect", "Too many redirects. Please try again."));
       return;
     }
 
-    if (isLoading) return;
+    if (isLoading || (isBlocked && countdown > 0)) return;
 
-    const result = await login({ email, password });
+    setErrorMessage("");
 
-    if (result.success) {
-      // User sudah otomatis di-set oleh useAuth.login()
-    } else {
-      alert(result.error || t("loginFailed", "Login failed"));
-      setPassword("");
+    try {
+      const result = await login({ email, password });
+
+      if (result && result.success) {
+        // User sudah otomatis di-set oleh useAuth.login()
+      } else {
+        const errorText = result?.error || t("loginFailed", "Email atau password yang Anda masukkan salah.");
+        const blocked = result?.status === 429 || String(errorText).toLowerCase().includes('diblokir');
+        const waitSeconds = result?.retryAfter && Number(result.retryAfter) > 0 ? Number(result.retryAfter) : (blocked ? 300 : 0);
+
+        setErrorMessage(errorText);
+        setIsBlocked(blocked);
+
+        if (waitSeconds > 0) {
+          setCountdown(waitSeconds);
+        }
+
+        setPassword("");
+      }
+    } catch (err) {
+      console.error("Login unexpected error:", err);
+      setErrorMessage(err?.response?.data?.message || err?.message || "Terjadi kesalahan saat masuk. Silakan periksa kembali email dan kata sandi Anda.");
     }
   };
 
@@ -220,9 +268,16 @@ export default function Login({ login, isLoading }) {
                   </div>
                   <input
                     type="email"
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-3 pl-12 pr-4 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-500/30"
+                    className={`w-full rounded-xl border py-3 pl-12 pr-4 outline-none transition-all ${
+                      errorMessage
+                        ? "border-rose-300 bg-rose-50/20 text-slate-800 focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20"
+                        : "border-slate-200 bg-slate-50/60 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-500/30"
+                    }`}
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={e => {
+                      setEmail(e.target.value);
+                      if (errorMessage && !isBlocked) setErrorMessage("");
+                    }}
                     required
                     placeholder={t("emailPlaceholder", "Enter your email")}
                   />
@@ -236,13 +291,20 @@ export default function Login({ login, isLoading }) {
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Lock size={20} className="text-slate-400" />
+                    <Lock size={20} className={errorMessage ? "text-rose-400" : "text-slate-400"} />
                   </div>
                   <input
                     type={showPassword ? "text" : "password"}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 py-3 pl-12 pr-12 outline-none transition-all focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-500/30"
+                    className={`w-full rounded-xl border py-3 pl-12 pr-12 outline-none transition-all ${
+                      errorMessage
+                        ? "border-rose-300 bg-rose-50/20 text-slate-800 focus:border-rose-400 focus:ring-2 focus:ring-rose-400/20"
+                        : "border-slate-200 bg-slate-50/60 focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-500/30"
+                    }`}
                     value={password}
-                    onChange={e => setPassword(e.target.value)}
+                    onChange={e => {
+                      setPassword(e.target.value);
+                      if (errorMessage && !isBlocked) setErrorMessage("");
+                    }}
                     required
                     placeholder={t("passwordPlaceholder", "Enter your password")}
                   />
@@ -264,12 +326,36 @@ export default function Login({ login, isLoading }) {
                     )}
                   </button>
                 </div>
+
+                {/* Tulisan Peringatan Merah Tepat di Bawah Kata Sandi */}
+                {errorMessage && (
+                  <div className={`mt-2.5 flex items-start gap-2 text-sm transition-all animate-in fade-in duration-200 ${
+                    isBlocked
+                      ? "rounded-xl border border-rose-200 bg-rose-50/90 p-3 text-rose-700 shadow-sm"
+                      : "text-rose-600 font-medium px-0.5"
+                  }`}>
+                    {isBlocked ? (
+                      <ShieldAlert size={18} className="shrink-0 mt-0.5 text-rose-600 animate-pulse" />
+                    ) : (
+                      <AlertTriangle size={17} className="shrink-0 mt-0.5 text-rose-500" />
+                    )}
+                    <div className="flex-1 leading-snug">
+                      <span>{errorMessage}</span>
+                      {isBlocked && countdown > 0 && (
+                        <div className="mt-1.5 flex items-center gap-1.5 font-semibold text-rose-800">
+                          <Clock size={14} className="animate-pulse text-rose-600" />
+                          <span>Waktu tunggu: <span className="font-mono font-bold tracking-wider">{formatCountdown(countdown)}</span></span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Submit Button */}
               <button
                 type="submit"
-                disabled={isLoading}
+                disabled={isLoading || (isBlocked && countdown > 0)}
                 className="w-full rounded-xl bg-indigo-600 py-3.5 font-semibold text-white shadow-md shadow-indigo-900/20 transition-all hover:-translate-y-0.5 hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isLoading ? (
@@ -279,6 +365,11 @@ export default function Login({ login, isLoading }) {
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
                     {t("signingIn", "Signing in...")}
+                  </span>
+                ) : isBlocked && countdown > 0 ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Clock size={17} />
+                    <span>Tunggu {formatCountdown(countdown)}</span>
                   </span>
                 ) : (
                   t("signIn", "Sign In")

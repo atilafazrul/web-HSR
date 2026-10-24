@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
@@ -21,13 +23,36 @@ class AuthController extends Controller
             'remember_me' => 'boolean'
         ]);
 
+        // Key unik per email dan alamat IP
+        $throttleKey = Str::transliterate(Str::lower($request->email) . '|' . $request->ip());
+
+        // Cek apakah sudah 5 kali gagal dalam 5 menit terakhir
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+            $minutes = ceil($seconds / 60);
+
+            return response()->json([
+                'success' => false,
+                'message' => "Terlalu banyak percobaan login yang gagal. Akun diblokir sementara. Silakan coba lagi dalam {$minutes} menit.",
+                'retry_after' => $seconds,
+            ], 429);
+        }
+
         // Cari user
         $user = User::where('email', $request->email)->first();
 
         // Jika tidak ditemukan atau password salah
         if (!$user || !Hash::check($request->password, $user->password)) {
+            // Catat 1 kegagalan dengan decay 300 detik (5 menit)
+            RateLimiter::hit($throttleKey, 300);
+
+            $remaining = RateLimiter::remaining($throttleKey, 5);
+            $pesan = $remaining > 0
+                ? "Email atau password salah. Sisa percobaan: {$remaining} kali lagi."
+                : "Email atau password salah. Batas 5 kali percobaan tercapai, akun diblokir sementara selama 5 menit.";
+
             throw ValidationException::withMessages([
-                'email' => ['Email atau password salah'],
+                'email' => [$pesan],
             ]);
         }
 
@@ -36,6 +61,9 @@ class AuthController extends Controller
                 'email' => ['Akun Anda dinonaktifkan. Hubungi superadmin.'],
             ]);
         }
+
+        // Login berhasil, bersihkan riwayat percobaan gagal
+        RateLimiter::clear($throttleKey);
 
         // Cek remember_me untuk menentukan expiration
         $rememberMe = $request->boolean('remember_me', false);

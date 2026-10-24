@@ -40,7 +40,7 @@ use App\Http\Controllers\ActivityLogController;
 |--------------------------------------------------------------------------
 */
 
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:30,1')->name('login');
 
 
 /*

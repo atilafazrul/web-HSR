@@ -65,12 +65,7 @@ export default function App() {
     return paths[user.role] || "/";
   }, [user?.role]);
 
-  // Show loading state
-  if (isLoading) {
-    return <div className="p-10 text-center">{t("appLoading", "Loading...")}</div>;
-  }
-
-  // Not authenticated - show login
+  // Not authenticated - show login (jangan unmount saat isLoading berubah agar pop-up tetap tampil)
   if (!isAuthenticated || !user) {
     return (
       <>
@@ -83,6 +78,11 @@ export default function App() {
         />
       </>
     );
+  }
+
+  // Show loading state untuk user terotentikasi (misal saat logout atau perpindahan sesi)
+  if (isLoading) {
+    return <div className="p-10 text-center">{t("appLoading", "Loading...")}</div>;
   }
 
   // Authenticated - show appropriate dashboard based on role

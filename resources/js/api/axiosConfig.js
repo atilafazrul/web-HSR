@@ -40,6 +40,11 @@ apiClient.interceptors.response.use(
     (error) => {
         // Handle 401 Unauthorized
         if (error.response?.status === 401) {
+            // Jangan redirect jika error berasal dari request endpoint login
+            if (error.config?.url?.includes('/login')) {
+                return Promise.reject(error);
+            }
+
             const errorCode = error.response?.data?.code;
             const errorMessage = error.response?.data?.message;
 
