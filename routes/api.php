@@ -82,30 +82,36 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
     */
 
     Route::get('/profile', function (Request $request) {
+        $authUser = $request->user();
+        $targetUserId = (int) ($request->query('user_id') ?? $authUser->id);
 
-        $user = User::find($request->query('user_id'));
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($authUser->role ?? ''))));
+        if ($targetUserId !== (int) $authUser->id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk melihat profil ini'
+            ], 403);
+        }
+
+        $user = User::find($targetUserId);
 
         if (!$user) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'User tidak ditemukan'
             ], 404);
-
         }
 
         return response()->json([
             'success' => true,
             'user' => $user
         ]);
-
     });
 
 
     Route::put('/profile', function (Request $request) {
-
         $validated = $request->validate([
-            'user_id' => 'required|integer',
+            'user_id' => 'nullable|integer',
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
@@ -113,7 +119,18 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
             'alamat' => 'nullable|string'
         ]);
 
-        $user = User::find($validated['user_id']);
+        $authUser = $request->user();
+        $targetUserId = (int) ($validated['user_id'] ?? $authUser->id);
+
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($authUser->role ?? ''))));
+        if ($targetUserId !== (int) $authUser->id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah profil ini'
+            ], 403);
+        }
+
+        $user = User::find($targetUserId);
 
         if (!$user) {
             return response()->json([
@@ -138,26 +155,33 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
             'message' => 'Profile berhasil diupdate',
             'user' => $user
         ]);
-
     });
 
 
     Route::post('/profile/photo', function (Request $request) {
-
         $validated = $request->validate([
-            'user_id' => 'required|integer',
+            'user_id' => 'nullable|integer',
             'photo' => 'required|image|max:2048'
         ]);
 
-        $user = User::find($validated['user_id']);
+        $authUser = $request->user();
+        $targetUserId = (int) ($validated['user_id'] ?? $authUser->id);
+
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($authUser->role ?? ''))));
+        if ($targetUserId !== (int) $authUser->id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah foto profil ini'
+            ], 403);
+        }
+
+        $user = User::find($targetUserId);
 
         if (!$user) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'User tidak ditemukan'
             ], 404);
-
         }
 
         if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
@@ -173,21 +197,28 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
             'success' => true,
             'profile_photo' => $path
         ]);
-
     });
 
 
     Route::delete('/profile/photo', function (Request $request) {
+        $authUser = $request->user();
+        $targetUserId = (int) ($request->user_id ?? $authUser->id);
 
-        $user = User::find($request->user_id);
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($authUser->role ?? ''))));
+        if ($targetUserId !== (int) $authUser->id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk menghapus foto profil ini'
+            ], 403);
+        }
+
+        $user = User::find($targetUserId);
 
         if (!$user) {
-
             return response()->json([
                 'success' => false,
                 'message' => 'User tidak ditemukan'
             ], 404);
-
         }
 
         if ($user->profile_photo && Storage::disk('public')->exists($user->profile_photo)) {
@@ -201,7 +232,6 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
             'success' => true,
             'message' => 'Foto berhasil dihapus'
         ]);
-
     });
 
 

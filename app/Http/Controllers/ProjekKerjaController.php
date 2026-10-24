@@ -956,8 +956,17 @@ class ProjekKerjaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $actor = $request->user();
+        $normalizedRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+        if (!in_array($normalizedRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya admin atau superadmin yang dapat menghapus projek kerja'
+            ], 403);
+        }
+
         $projek = ProjekKerja::find($id);
 
         if (!$projek) {
@@ -965,6 +974,15 @@ class ProjekKerjaController extends Controller
                 'success' => false,
                 'message' => 'Projek kerja tidak ditemukan'
             ], 404);
+        }
+
+        if ($normalizedRole === 'admin' && $actor->divisi) {
+            if (strtolower(trim((string)$projek->divisi)) !== strtolower(trim((string)$actor->divisi))) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Anda tidak memiliki hak akses untuk menghapus projek divisi lain'
+                ], 403);
+            }
         }
 
         DB::beginTransaction();

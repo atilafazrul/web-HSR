@@ -316,9 +316,11 @@ class LogistikInventoryController extends Controller
     /* ================= DELETE ================= */
     public function destroy(Request $request, $id)
     {
-        $role = $request->header('role');
+        $user = $request->user();
+        $role = strtolower(str_replace([' ', '-'], '_', trim((string) ($user->role ?? ''))));
+        $divisi = strtolower(str_replace([' ', '-'], '_', trim((string) ($user->divisi ?? ''))));
 
-        if ($role !== 'super_admin' && $role !== 'admin' && $role !== 'logistik') {
+        if ($role !== 'super_admin' && $role !== 'admin' && $divisi !== 'logistik' && $role !== 'logistik') {
             return response()->json([
                 'success' => false,
                 'message' => 'Anda tidak memiliki akses menghapus barang'

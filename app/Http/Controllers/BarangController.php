@@ -435,8 +435,8 @@ class BarangController extends Controller
     /* ================= DELETE ================= */
     public function destroy(Request $request, $id)
     {
-        // 🔥 Ambil role dari header (dikirim dari React)
-        $role = $request->header('role');
+        $user = $request->user();
+        $role = strtolower(str_replace([' ', '-'], '_', trim((string) ($user->role ?? ''))));
 
         if ($role !== 'super_admin') {
             return response()->json([

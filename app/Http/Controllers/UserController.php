@@ -180,6 +180,15 @@ class UserController extends Controller
     // ================= CREATE =================
     public function store(Request $request)
     {
+        $actor = $request->user();
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+        if (!in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya admin atau superadmin yang dapat menambahkan karyawan'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users',
@@ -194,7 +203,25 @@ class UserController extends Controller
     // ================= UPDATE + UPLOAD =================
     public function update(Request $request, $id)
     {
+        $actor = $request->user();
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+
+        if ((int)$actor->id !== (int)$id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah data karyawan ini'
+            ], 403);
+        }
+
         $user = User::findOrFail($id);
+        $targetRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($user->role ?? ''))));
+
+        if ($targetRole === 'super_admin' && (int)$actor->id !== (int)$id && $actorRole !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun superadmin hanya dapat diubah oleh superadmin'
+            ], 403);
+        }
 
         $validated = $request->validate([
             'nik' => 'nullable|string|max:20',
@@ -592,9 +619,32 @@ class UserController extends Controller
     }
 
     // ================= DELETE =================
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
+        $actor = $request->user();
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+        if ($actorRole !== 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Hanya superadmin yang dapat menghapus karyawan'
+            ], 403);
+        }
+
         $user = User::findOrFail($id);
+
+        if ((int) $user->id === (int) $actor->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat menghapus akun sendiri'
+            ], 422);
+        }
+
+        if (($user->role ?? null) === 'super_admin') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akun superadmin tidak dapat dihapus'
+            ], 422);
+        }
 
         $fields = ['ktp', 'kk', 'akte', 'ijazah', 'sertifikat'];
 
