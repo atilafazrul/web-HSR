@@ -217,13 +217,13 @@ export default function KaryawanPage() {
     const nextActive = !Boolean(emp.is_active ?? true);
     const confirmText = nextActive
       ? trText(
-          `Aktifkan akun ${emp.name}? Karyawan/user ini bisa login lagi.`,
-          `Activate ${emp.name}'s account? This employee/user can log in again.`
-        )
+        `Aktifkan akun ${emp.name}? Karyawan/user ini bisa login lagi.`,
+        `Activate ${emp.name}'s account? This employee/user can log in again.`
+      )
       : trText(
-          `Nonaktifkan akun ${emp.name}? Karyawan/user ini tidak bisa login.`,
-          `Deactivate ${emp.name}'s account? This employee/user will not be able to log in.`
-        );
+        `Nonaktifkan akun ${emp.name}? Karyawan/user ini tidak bisa login.`,
+        `Deactivate ${emp.name}'s account? This employee/user will not be able to log in.`
+      );
     if (!window.confirm(confirmText)) return;
 
     try {
@@ -282,24 +282,31 @@ export default function KaryawanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/20">
-        <div className="text-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-50/20 to-purple-50/20 relative overflow-hidden">
+        <div className="pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-gradient-to-br from-indigo-400/20 to-purple-400/20 blur-3xl" />
+        <div className="relative text-center p-8 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/80 shadow-xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p className="text-gray-500">{trText("Memuat data karyawan...", "Loading employee data...")}</p>
+          <p className="text-slate-600 font-medium">{trText("Memuat data karyawan...", "Loading employee data...")}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-indigo-50/20">
-      <div className="p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-100/90 via-indigo-50/40 to-slate-100/90 -m-3 sm:-m-4 md:-m-5 lg:-m-6 xl:-m-8 p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8">
+      {/* Ambient Glass Glow Orbs */}
+      <div className="pointer-events-none absolute -top-32 -right-32 h-[550px] w-[550px] rounded-full bg-gradient-to-br from-indigo-500/25 via-purple-500/20 to-pink-500/15 blur-[100px]" />
+      <div className="pointer-events-none absolute top-1/4 -left-32 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-sky-400/25 via-blue-500/20 to-indigo-500/15 blur-[100px]" />
+      <div className="pointer-events-none absolute -bottom-32 right-1/4 h-[550px] w-[550px] rounded-full bg-gradient-to-tr from-violet-500/20 via-fuchsia-400/15 to-rose-300/15 blur-[100px]" />
+      <div className="pointer-events-none absolute top-2/3 left-1/3 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-teal-400/15 to-cyan-400/15 blur-[90px]" />
+
+      <div className="relative p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
         {/* Error Alert */}
         {error && (
-          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-xl flex items-center gap-3">
-            <AlertCircle size={20} className="text-red-500" />
-            <span className="text-red-700 flex-1">{error}</span>
-            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700">
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-300/60 backdrop-blur-xl rounded-2xl flex items-center gap-3 shadow-lg shadow-red-500/5">
+            <AlertCircle size={20} className="text-red-500 shrink-0" />
+            <span className="text-red-700 flex-1 text-sm font-medium">{error}</span>
+            <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 p-1 rounded-lg hover:bg-red-500/10 transition">
               <X size={18} />
             </button>
           </div>
@@ -308,19 +315,23 @@ export default function KaryawanPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-200/50 backdrop-blur-md text-xs font-semibold text-indigo-700 mb-2">
+              <Users size={12} />
+              {trText("", "Super Admin • HR Management")}
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
               {trText("Kelola Karyawan", "Manage Employees")}
             </h1>
-            <p className="text-gray-500 text-sm mt-1">
-              {trText("Kelola data lengkap seluruh karyawan perusahaan", "Manage complete company employee data")}
+            <p className="text-slate-500 text-sm mt-1">
+              {trText("Kelola data lengkap seluruh karyawan perusahaan dengan antarmuka glassmorphism", "Manage complete company employee data with glassmorphism interface")}
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto p-1.5 rounded-2xl bg-white/50 backdrop-blur-xl border border-white/80 shadow-lg shadow-indigo-950/5">
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2.5 border border-slate-200 rounded-xl text-sm bg-white shadow-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
+              className="px-3.5 py-2.5 border border-white/80 rounded-xl text-sm bg-white/70 backdrop-blur-md shadow-sm text-slate-700 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition cursor-pointer"
             >
               <option value="all">{trText("Semua Role", "All Roles")}</option>
               <option value="admin">Admin</option>
@@ -328,23 +339,23 @@ export default function KaryawanPage() {
             </select>
 
             <div className="relative flex-1 sm:flex-none">
-              <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search size={18} className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
                 placeholder={trText("Cari karyawan...", "Search employees...")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm w-full sm:w-[280px] bg-white shadow-sm focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
+                className="pl-10 pr-4 py-2.5 border border-white/80 rounded-xl text-sm w-full sm:w-[260px] bg-white/70 backdrop-blur-md shadow-sm text-slate-700 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-300 outline-none transition"
               />
             </div>
 
             <button
               onClick={() => setCreateData({ name: "", email: "", password: "", divisi: "", role: "user" })}
-              className="inline-flex shrink-0 items-center justify-center p-3 bg-indigo-600 text-white rounded-xl shadow-sm hover:bg-indigo-700 transition"
+              className="inline-flex shrink-0 items-center justify-center p-2.5 sm:p-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg shadow-indigo-600/30 backdrop-blur-md transition hover:scale-105 active:scale-95"
               title={trText("Tambah Karyawan", "Add Employee")}
               aria-label={trText("Tambah Karyawan", "Add Employee")}
             >
-              <UserPlus size={20} />
+              <UserPlus size={19} />
             </button>
           </div>
         </div>
@@ -381,10 +392,10 @@ export default function KaryawanPage() {
 
         {/* Employee Grid */}
         {filteredEmployees.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100">
-            <FolderOpen size={64} className="mx-auto mb-4 text-gray-300" />
-            <p className="text-gray-500 text-lg">{trText("Tidak ada data karyawan", "No employee data")}</p>
-            <p className="text-gray-400 text-sm mt-1">{trText('Klik "Tambah Karyawan" untuk menambahkan data', 'Click "Add Employee" to add data')}</p>
+          <div className="text-center py-16 bg-white/60 backdrop-blur-xl rounded-3xl border border-white/80 shadow-lg shadow-slate-900/5">
+            <FolderOpen size={64} className="mx-auto mb-4 text-indigo-300/80" />
+            <p className="text-slate-600 font-semibold text-lg">{trText("Tidak ada data karyawan", "No employee data")}</p>
+            <p className="text-slate-400 text-sm mt-1">{trText('Klik "Tambah Karyawan" untuk menambahkan data', 'Click "Add Employee" to add data')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -460,19 +471,19 @@ export default function KaryawanPage() {
 // ================= STAT CARD COMPONENT =================
 const StatCard = ({ title, value, icon, color }) => {
   const colors = {
-    purple: "bg-indigo-50 text-indigo-600",
-    blue: "bg-slate-100 text-slate-600",
-    green: "bg-emerald-50 text-emerald-600"
+    purple: "bg-indigo-500/15 text-indigo-700 border-indigo-200/60 shadow-indigo-500/10",
+    blue: "bg-blue-500/15 text-blue-700 border-blue-200/60 shadow-blue-500/10",
+    green: "bg-emerald-500/15 text-emerald-700 border-emerald-200/60 shadow-emerald-500/10"
   };
 
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm border border-slate-200/80 hover:shadow-md transition">
+    <div className="relative overflow-hidden rounded-2xl border border-white/80 bg-white/65 p-5 shadow-lg shadow-slate-900/5 backdrop-blur-xl hover:bg-white/80 hover:shadow-xl transition duration-300">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-slate-500 text-sm">{title}</p>
-          <p className="text-2xl font-bold text-slate-800 mt-1">{value}</p>
+          <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider">{title}</p>
+          <p className="text-3xl font-extrabold text-slate-800 mt-1.5 tracking-tight">{value}</p>
         </div>
-        <div className={`p-3 rounded-full ${colors[color]}`}>
+        <div className={`p-3.5 rounded-2xl border shadow-sm backdrop-blur-md ${colors[color]}`}>
           {icon}
         </div>
       </div>
@@ -480,77 +491,146 @@ const StatCard = ({ title, value, icon, color }) => {
   );
 };
 
+// Helper untuk gambar cover divisi/karyawan (persis Dashboard Divisi)
+const getEmployeeCoverUrl = (emp) => {
+  if (emp?.cover_photo) {
+    return emp.cover_photo.startsWith("http") ? emp.cover_photo : `/storage/${emp.cover_photo}`;
+  }
+  const imageMap = {
+    "IT": "/images/IT Card.png",
+    "Service": "/images/Card Service.png",
+    "Sales": "/images/Card Sales.png",
+    "Kontraktor": "/images/Kontraktor Card.png",
+    "Logistik": "/images/logistik card.png",
+    "Purchasing": "/images/Purchasing Card.png",
+    "SIPLAH": "/images/Purchasing Card.png",
+  };
+  return imageMap[emp?.divisi] || "/images/IT Card.png";
+};
+
+// Avatar dengan penanganan error gambar (fallback otomatis ke inisial jika file tidak ditemukan)
+const EmployeeAvatar = ({ photo, name }) => {
+  const [hasError, setHasError] = useState(false);
+  const getInitials = (n) => n?.charAt(0)?.toUpperCase() || "U";
+  const photoUrl = photo ? (photo.startsWith("http") ? photo : `/storage/${photo}`) : null;
+
+  if (photoUrl && !hasError) {
+    return (
+      <img
+        src={photoUrl}
+        onError={() => setHasError(true)}
+        className="h-20 w-20 rounded-full border-4 border-white object-cover shadow-xl ring-1 ring-slate-900/10 group-hover:scale-105 transition duration-300 bg-white"
+        alt={name}
+      />
+    );
+  }
+
+  return (
+    <div className="flex h-20 w-20 items-center justify-center rounded-full border-4 border-white bg-gradient-to-br from-indigo-600 via-indigo-700 to-purple-700 text-2xl font-black text-white shadow-xl ring-1 ring-slate-900/10 group-hover:scale-105 transition duration-300">
+      {getInitials(name)}
+    </div>
+  );
+};
+
 // ================= EMPLOYEE CARD =================
 const EmployeeCard = ({ employee, onView, onEdit, onDelete, onToggleActive, canToggleActive = false }) => {
-  const getInitials = (name) => name?.charAt(0)?.toUpperCase() || "U";
-
   const roleLabel = String(employee.role || "-").replace(/_/g, " ");
   const isAdmin = String(employee.role || "").toLowerCase().includes("admin");
   const isActive = Boolean(employee.is_active ?? true);
+  const coverUrl = getEmployeeCoverUrl(employee);
 
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm ring-1 ring-slate-900/[0.04] transition-all duration-300 hover:-translate-y-1.5 hover:border-slate-300/90 hover:shadow-xl hover:shadow-slate-900/10">
-      {/* Header gelap — avatar di tengah (seperti mockup) */}
-      <div className="relative px-4 pb-16 pt-8">
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-800 via-slate-900 to-slate-950" />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-indigo-500/10" />
+    <div className="group relative overflow-hidden rounded-3xl border border-white/80 bg-white/75 shadow-lg shadow-slate-900/5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1.5 hover:bg-white/90 hover:border-white hover:shadow-2xl hover:shadow-indigo-500/15">
+      {/* Header Background Banner — Gambar Divisi / Custom Cover dengan Glass Overlay */}
+      <div className="relative h-28 w-full overflow-hidden">
+        <img
+          src={coverUrl}
+          alt={employee.divisi || "Cover"}
+          className="absolute inset-0 h-full w-full object-cover object-[center_45%] transition duration-700 group-hover:scale-110"
+        />
+        {/* Soft Dark Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/30 to-black/20" />
 
-        <div className="relative flex justify-center">
-          <div className="relative w-fit">
-            {employee.profile_photo ? (
-              <img
-                src={`/storage/${employee.profile_photo}`}
-                className="relative h-24 w-24 rounded-full border-[3px] border-white object-cover shadow-lg transition duration-300 group-hover:scale-[1.02]"
-                alt={employee.name}
-              />
-            ) : (
-              <div className="relative flex h-24 w-24 items-center justify-center rounded-full border-[3px] border-white bg-white/15 text-3xl font-bold text-white backdrop-blur-sm">
-                {getInitials(employee.name)}
-              </div>
-            )}
+        {/* Divisi Badge Kaca di Pojok Kiri Atas */}
+        {employee.divisi && (
+          <div className="absolute top-2.5 left-2.5 z-10">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-black/40 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-semibold text-white shadow-sm border border-white/20">
+              <Building2 size={11} />
+              {employee.divisi}
+            </span>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Lembar putih — lengkung atas overlap header gelap */}
-      <div className="relative -mt-10 rounded-t-[1.75rem] bg-white px-4 pb-6 pt-9 text-center sm:rounded-t-[2rem]">
-        <h4 className="mx-auto max-w-full truncate text-xl font-bold leading-snug text-slate-900" title={employee.name}>
+      {/* Card Content Body — Bersih, Rapi, & Elegan tanpa lengkungan abu-abu yang menabrak avatar */}
+      <div className="relative px-4 pb-5 pt-0 text-center">
+        {/* Avatar melayang rapi di batas banner cover */}
+        <div className="-mt-11 mb-2.5 flex justify-center">
+          <div className="relative z-10">
+            <EmployeeAvatar photo={employee.profile_photo} name={employee.name} />
+          </div>
+        </div>
+
+        {/* Nama Karyawan */}
+        <h4 className="mx-auto max-w-full truncate text-lg font-bold leading-snug text-slate-800" title={employee.name}>
           {employee.name}
         </h4>
 
-        <div className="mx-auto mt-4 flex w-full max-w-[200px] flex-col items-center gap-2">
-          <span className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-slate-900/90 px-3 py-1.5 text-[11px] font-medium text-white shadow-sm">
-            <Building2 size={12} />
-            {employee.divisi || "-"}
-          </span>
-          <span
-            className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide ${
+        {/* =========================================================================
+            ICON-ONLY BADGES UNTUK DIVISI, ROLE, DAN AKUN AKTIF
+            "tulisam divisi role dan akun aktif hilangkan cukup icon nya saja yang di sisakan"
+            ========================================================================= */}
+        <div className="mx-auto mt-3 flex items-center justify-center gap-2">
+          {/* 1. Icon Divisi (Tanpa Tulisan) */}
+          <div
+            className="group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white text-slate-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
+            title={`Divisi: ${employee.divisi || "-"}`}
+          >
+            <Building2 size={15} />
+            <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-opacity group-hover/tooltip:opacity-100 z-30">
+              {employee.divisi || "-"}
+            </span>
+          </div>
+
+          {/* 2. Icon Role (Tanpa Tulisan) */}
+          <div
+            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${
               isAdmin
-                ? "bg-amber-400/20 text-amber-800 ring-1 ring-amber-300/60"
-                : "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200/70"
+                ? "border-amber-300/80 bg-amber-500/15 text-amber-700 hover:bg-amber-500/25"
+                : "border-indigo-200/80 bg-indigo-500/15 text-indigo-700 hover:bg-indigo-500/25"
             }`}
+            title={`Role: ${roleLabel}`}
           >
-            <Briefcase size={12} />
-            {roleLabel}
-          </span>
-          <span
-            className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-semibold ${
+            <Briefcase size={15} />
+            <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-opacity group-hover/tooltip:opacity-100 z-30">
+              {roleLabel}
+            </span>
+          </div>
+
+          {/* 3. Icon Status / Akun Aktif (Tanpa Tulisan) */}
+          <div
+            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${
               isActive
-                ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200/80"
-                : "bg-rose-50 text-rose-700 ring-1 ring-rose-200/80"
+                ? "border-emerald-300/80 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25"
+                : "border-rose-300/80 bg-rose-500/15 text-rose-700 hover:bg-rose-500/25"
             }`}
+            title={isActive ? trText("Status: Akun Aktif", "Status: Active") : trText("Status: Akun Nonaktif", "Status: Inactive")}
           >
-            <Power size={12} />
-            {isActive ? trText("Akun Aktif", "Active") : trText("Akun Nonaktif", "Inactive")}
-          </span>
+            <Power size={15} />
+            <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-opacity group-hover/tooltip:opacity-100 z-30">
+              {isActive ? trText("Akun Aktif", "Active") : trText("Akun Nonaktif", "Inactive")}
+            </span>
+          </div>
         </div>
 
-        <div className="mx-auto mt-4 flex max-w-full items-center justify-center gap-1.5 rounded-full border border-slate-200/80 bg-slate-50/90 px-3 py-1.5 text-xs text-slate-500">
+        {/* Email Pill */}
+        <div className="mx-auto mt-2.5 flex max-w-[230px] items-center justify-center gap-1.5 rounded-full border border-slate-200/60 bg-slate-100/80 px-3 py-1 text-[11px] font-medium text-slate-500 backdrop-blur-sm">
           <Mail size={12} className="shrink-0 text-slate-400" />
           <span className="truncate">{employee.email || "-"}</span>
         </div>
 
-        <div className="mx-auto mt-5 flex max-w-[220px] items-center justify-center gap-1 rounded-2xl border border-slate-200/70 bg-gradient-to-b from-white to-slate-50/90 p-1.5 shadow-inner">
+        {/* Action Buttons Glass Container */}
+        <div className="mx-auto mt-3.5 flex max-w-[210px] items-center justify-center gap-1 rounded-2xl border border-slate-200/60 bg-slate-100/70 p-1 shadow-inner backdrop-blur-md">
           <ActionButton icon={<Eye size={15} />} onClick={onView} variant="card-view" tooltip={trText("Lihat Detail", "View Detail")} />
           <ActionButton icon={<Pencil size={15} />} onClick={onEdit} variant="card-edit" tooltip="Edit" />
           {canToggleActive ? (
@@ -577,13 +657,13 @@ const ActionButton = ({ icon, onClick, color, variant = "default", tooltip }) =>
   };
 
   const variants = {
-    glass: "border border-slate-200/80 bg-slate-900/5 text-slate-700 backdrop-blur-sm hover:bg-slate-900/10",
-    "glass-danger": "border border-red-200/80 bg-red-500/10 text-red-600 backdrop-blur-sm hover:bg-red-500/15",
-    "card-view": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700",
-    "card-edit": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-violet-100 hover:text-violet-700",
-    "card-activate": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-emerald-100 hover:text-emerald-700",
-    "card-deactivate": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-amber-100 hover:text-amber-700",
-    "card-delete": "flex-1 rounded-xl bg-slate-100/80 text-slate-600 hover:bg-red-100 hover:text-red-600",
+    glass: "border border-white/80 bg-white/60 text-slate-700 backdrop-blur-sm hover:bg-white/90 shadow-sm",
+    "glass-danger": "border border-red-200/80 bg-red-500/10 text-red-600 backdrop-blur-sm hover:bg-red-500/20 shadow-sm",
+    "card-view": "flex-1 rounded-xl bg-white/70 text-slate-600 hover:bg-indigo-100 hover:text-indigo-700 border border-transparent hover:border-indigo-200/60 transition-all",
+    "card-edit": "flex-1 rounded-xl bg-white/70 text-slate-600 hover:bg-violet-100 hover:text-violet-700 border border-transparent hover:border-violet-200/60 transition-all",
+    "card-activate": "flex-1 rounded-xl bg-white/70 text-slate-600 hover:bg-emerald-100 hover:text-emerald-700 border border-transparent hover:border-emerald-200/60 transition-all",
+    "card-deactivate": "flex-1 rounded-xl bg-white/70 text-slate-600 hover:bg-amber-100 hover:text-amber-700 border border-transparent hover:border-amber-200/60 transition-all",
+    "card-delete": "flex-1 rounded-xl bg-white/70 text-slate-600 hover:bg-red-100 hover:text-red-600 border border-transparent hover:border-red-200/60 transition-all",
   };
 
   const className = variant !== "default" ? variants[variant] : colors[color];
@@ -592,9 +672,8 @@ const ActionButton = ({ icon, onClick, color, variant = "default", tooltip }) =>
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center transition-all duration-200 active:scale-95 ${
-        isCardVariant ? `h-9 ${className}` : `h-9 w-9 rounded-full ${className}`
-      }`}
+      className={`flex items-center justify-center transition-all duration-200 active:scale-95 ${isCardVariant ? `h-9 ${className}` : `h-9 w-9 rounded-full ${className}`
+        }`}
       title={tooltip}
     >
       {icon}
@@ -660,9 +739,8 @@ const EmployeeDetailModal = ({ employee, previewFile, expandedSections, toggleSe
           <span className="mt-2 inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-sm font-medium text-white backdrop-blur-md">
             {employee.divisi || "-"}
           </span>
-          <span className={`mt-2 ml-2 inline-flex items-center rounded-full px-3 py-1 text-sm font-medium backdrop-blur-md ${
-            Boolean(employee.is_active ?? true) ? "bg-emerald-500/30 text-emerald-50" : "bg-rose-500/30 text-rose-50"
-          }`}>
+          <span className={`mt-2 ml-2 inline-flex items-center rounded-full px-3 py-1 text-sm font-medium backdrop-blur-md ${Boolean(employee.is_active ?? true) ? "bg-emerald-500/30 text-emerald-50" : "bg-rose-500/30 text-rose-50"
+            }`}>
             {Boolean(employee.is_active ?? true) ? trText("Akun Aktif", "Active") : trText("Akun Nonaktif", "Inactive")}
           </span>
         </div>
@@ -837,7 +915,7 @@ const EditEmployeeForm = ({
                 ? URL.createObjectURL(filePhoto)
                 : editData.profile_photo
                   ? `/storage/${editData.profile_photo}`
-                : `https://ui-avatars.com/api/?name=${encodeURIComponent(editData.name || "User")}&background=4F46E5&color=fff&size=128`
+                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(editData.name || "User")}&background=4F46E5&color=fff&size=128`
             }
             className="w-16 h-16 rounded-full border-2 border-indigo-300 object-cover shadow-md"
             alt="Profile"
@@ -1146,22 +1224,22 @@ const Modal = ({ children, onClose, title, size = "default" }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-[80] p-4">
-      <div className={`bg-white rounded-2xl w-full ${sizeClasses[size]} relative shadow-2xl max-h-[90vh] flex flex-col`}>
-        <div className="p-4 border-b sticky top-0 bg-white rounded-t-2xl z-10">
+    <div className="fixed inset-0 bg-slate-950/60 backdrop-blur-md flex justify-center items-center z-[80] p-4">
+      <div className={`bg-white/95 backdrop-blur-2xl border border-white/80 rounded-3xl w-full ${sizeClasses[size]} relative shadow-2xl shadow-slate-950/25 max-h-[90vh] flex flex-col overflow-hidden`}>
+        <div className="p-4 sm:p-5 border-b border-slate-100/90 sticky top-0 bg-white/90 backdrop-blur-xl rounded-t-3xl z-10">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-bold text-slate-800">
               {title}
             </h3>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full transition"
+              className="text-gray-400 hover:text-gray-600 p-1.5 hover:bg-gray-100/80 rounded-full transition"
             >
               <X size={18} />
             </button>
           </div>
         </div>
-        <div className="p-5 overflow-y-auto flex-1">
+        <div className="p-5 sm:p-6 overflow-y-auto flex-1">
           {children}
         </div>
       </div>

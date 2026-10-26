@@ -236,6 +236,138 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
         ]);
     });
 
+    Route::post('/profile/cover', function (Request $request) {
+        $validated = $request->validate([
+            'user_id' => 'nullable|integer',
+            'cover' => 'required|image|max:6144'
+        ]);
+
+        $authUser = $request->user();
+        $targetUserId = (int) ($validated['user_id'] ?? $authUser->id);
+
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($authUser->role ?? ''))));
+        if ($targetUserId !== (int) $authUser->id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mengubah background profil ini'
+            ], 403);
+        }
+
+        $user = User::find($targetUserId);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        if ($user->cover_photo && Storage::disk('public')->exists($user->cover_photo)) {
+            Storage::disk('public')->delete($user->cover_photo);
+        }
+
+        $path = $request->file('cover')->store('cover-photos', 'public');
+
+        $user->cover_photo = $path;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'cover_photo' => $path
+        ]);
+    });
+
+    Route::delete('/profile/cover', function (Request $request) {
+        $authUser = $request->user();
+        $targetUserId = (int) ($request->user_id ?? $authUser->id);
+
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($authUser->role ?? ''))));
+        if ($targetUserId !== (int) $authUser->id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk menghapus background profil ini'
+            ], 403);
+        }
+
+        $user = User::find($targetUserId);
+
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        if ($user->cover_photo && Storage::disk('public')->exists($user->cover_photo)) {
+            Storage::disk('public')->delete($user->cover_photo);
+        }
+
+        $user->cover_photo = null;
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Background cover berhasil dihapus'
+        ]);
+    });
+
+    Route::put('/profile/password', function (Request $request) {
+        $authUser = $request->user();
+        $targetUserId = (int) ($request->input('user_id') ?? $authUser->id);
+
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($authUser->role ?? ''))));
+        $isSuperAdmin = $actorRole === 'super_admin';
+        $isOwnProfile = $targetUserId === (int) $authUser->id;
+
+        if (!$isOwnProfile && !$isSuperAdmin) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk mereset password akun ini'
+            ], 403);
+        }
+
+        $user = User::find($targetUserId);
+        if (!$user) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User tidak ditemukan'
+            ], 404);
+        }
+
+        $rules = [
+            'password' => 'required|string|min:6|confirmed',
+        ];
+
+        // Jika bukan superadmin, atau jika superadmin memasukkan current_password, lakukan verifikasi
+        if (!$isSuperAdmin || $request->filled('current_password')) {
+            $rules['current_password'] = 'required';
+        }
+
+        $validated = $request->validate($rules, [
+            'password.required' => 'Password baru wajib diisi',
+            'password.min' => 'Password baru minimal 6 karakter',
+            'password.confirmed' => 'Konfirmasi password baru tidak cocok',
+            'current_password.required' => 'Password saat ini wajib diisi',
+        ]);
+
+        if (isset($rules['current_password'])) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Password saat ini tidak sesuai'
+                ], 422);
+            }
+        }
+
+        $user->password = $validated['password'];
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password berhasil diperbarui'
+        ]);
+    });
+
 
     /*
     |--------------------------------------------------------------------------

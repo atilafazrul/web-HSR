@@ -24,6 +24,7 @@ class User extends Authenticatable
         'is_active',
         'divisi',
         'profile_photo',
+        'cover_photo',
         'nik',
         'tempat_lahir',
         'tanggal_lahir',
