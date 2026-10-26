@@ -51,11 +51,13 @@ Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:30
 | agar tidak redirect ke login saat preview file
 */
 
-Route::get('/karyawan/{id}/ktp', [UserController::class, 'downloadKtp']);
-Route::get('/karyawan/{id}/kk', [UserController::class, 'downloadKk']);
-Route::get('/karyawan/{id}/akte', [UserController::class, 'downloadAkte']);
-Route::get('/karyawan/{id}/ijazah', [UserController::class, 'downloadIjazah']);
-Route::get('/karyawan/{id}/sertifikat', [UserController::class, 'downloadSertifikat']);
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/karyawan/{id}/ktp', [UserController::class, 'downloadKtp']);
+    Route::get('/karyawan/{id}/kk', [UserController::class, 'downloadKk']);
+    Route::get('/karyawan/{id}/akte', [UserController::class, 'downloadAkte']);
+    Route::get('/karyawan/{id}/ijazah', [UserController::class, 'downloadIjazah']);
+    Route::get('/karyawan/{id}/sertifikat', [UserController::class, 'downloadSertifikat']);
+});
 
 
 /*

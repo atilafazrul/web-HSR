@@ -373,6 +373,16 @@ class UserController extends Controller
     // ================= DELETE FILE =================
     public function deleteFile(Request $request, $id)
     {
+        $actor = $request->user();
+        $actorRole = strtolower(str_replace([' ', '-'], '_', trim((string) ($actor->role ?? ''))));
+
+        if ((int) $actor->id !== (int) $id && !in_array($actorRole, ['super_admin', 'admin'], true)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk menghapus berkas karyawan ini'
+            ], 403);
+        }
+
         try {
             $user = User::findOrFail($id);
             $type = $request->type;

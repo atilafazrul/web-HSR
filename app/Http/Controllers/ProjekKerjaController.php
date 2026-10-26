@@ -2444,6 +2444,58 @@ class ProjekKerjaController extends Controller
     }
 
     /**
+     * Helper to verify if an authenticated user has permission to manage media (files/photos) of a project
+     */
+    protected function canUserManageProjectMedia($user, ?ProjekKerja $projek): bool
+    {
+        if (!$user || !$projek) {
+            return false;
+        }
+
+        $role = strtolower(str_replace([' ', '-'], '_', trim((string) ($user->role ?? ''))));
+        if ($role === 'super_admin') {
+            return true;
+        }
+
+        $userDivisi = strtolower(trim((string) ($user->divisi ?? '')));
+        $projekDivisi = strtolower(trim((string) ($projek->divisi ?? '')));
+
+        // Admin divisi yang sama (atau tanpa kunci divisi)
+        if ($role === 'admin' && ($userDivisi === '' || $userDivisi === $projekDivisi)) {
+            return true;
+        }
+
+        // User dari divisi yang sama
+        if ($userDivisi !== '' && $userDivisi === $projekDivisi) {
+            return true;
+        }
+
+        // User terdaftar dalam pic_karyawan, karyawan_terlibat, invitees, atau pembuat
+        $userName = strtolower(trim((string) ($user->name ?? '')));
+        $userId = (string) $user->id;
+
+        if (strtolower(trim((string) ($projek->pic_karyawan ?? ''))) === $userName) {
+            return true;
+        }
+
+        $terlibat = is_array($projek->karyawan_terlibat) ? $projek->karyawan_terlibat : (json_decode($projek->karyawan_terlibat ?? '', true) ?: []);
+        foreach ($terlibat as $item) {
+            if (is_string($item) && (strtolower(trim($item)) === $userName || trim($item) === $userId)) {
+                return true;
+            }
+        }
+
+        $invitees = is_array($projek->invitees) ? $projek->invitees : (json_decode($projek->invitees ?? '', true) ?: []);
+        foreach ($invitees as $inv) {
+            if (is_array($inv) && (isset($inv['id']) && (string) $inv['id'] === $userId || isset($inv['name']) && strtolower(trim($inv['name'])) === $userName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Add photo to a project
      */
     public function addPhoto(Request $request, $id)
@@ -2455,6 +2507,13 @@ class ProjekKerjaController extends Controller
                 'success' => false,
                 'message' => 'Projek kerja tidak ditemukan'
             ], 404);
+        }
+
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses pada projek ini'
+            ], 403);
         }
 
         $validated = $request->validate([
@@ -2488,7 +2547,7 @@ class ProjekKerjaController extends Controller
     /**
      * Delete a photo
      */
-    public function deletePhoto($id)
+    public function deletePhoto(Request $request, $id)
     {
         $photo = ProjekKerjaPhoto::find($id);
 
@@ -2497,6 +2556,14 @@ class ProjekKerjaController extends Controller
                 'success' => false,
                 'message' => 'Foto tidak ditemukan'
             ], 404);
+        }
+
+        $projek = ProjekKerja::find($photo->projek_kerja_id);
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk menghapus foto ini'
+            ], 403);
         }
 
         try {
@@ -2589,6 +2656,13 @@ class ProjekKerjaController extends Controller
             ], 404);
         }
 
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses pada projek ini'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'type' => 'required|string|in:file,photo',
             'folder_name' => 'required|string|max:100',
@@ -2626,6 +2700,13 @@ class ProjekKerjaController extends Controller
                 'success' => false,
                 'message' => 'Projek kerja tidak ditemukan',
             ], 404);
+        }
+
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses pada projek ini',
+            ], 403);
         }
 
         $validated = $request->validate([
@@ -2693,6 +2774,13 @@ class ProjekKerjaController extends Controller
                 'success' => false,
                 'message' => 'Projek kerja tidak ditemukan',
             ], 404);
+        }
+
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses pada projek ini',
+            ], 403);
         }
 
         $validated = $request->validate([
@@ -2792,6 +2880,13 @@ class ProjekKerjaController extends Controller
             ], 404);
         }
 
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses pada projek ini'
+            ], 403);
+        }
+
         $validated = $request->validate([
             'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,csv,txt|max:30720',
             'folder_name' => 'nullable|string|max:100',
@@ -2833,6 +2928,14 @@ class ProjekKerjaController extends Controller
                 'success' => false,
                 'message' => 'File tidak ditemukan'
             ], 404);
+        }
+
+        $projek = ProjekKerja::find($file->projek_kerja_id);
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses pada file projek ini'
+            ], 403);
         }
 
         $validated = $request->validate([
@@ -2901,7 +3004,7 @@ class ProjekKerjaController extends Controller
     /**
      * Delete a file
      */
-    public function deleteFile($id)
+    public function deleteFile(Request $request, $id)
     {
         $file = ProjekKerjaFile::find($id);
 
@@ -2910,6 +3013,14 @@ class ProjekKerjaController extends Controller
                 'success' => false,
                 'message' => 'File tidak ditemukan'
             ], 404);
+        }
+
+        $projek = ProjekKerja::find($file->projek_kerja_id);
+        if (!$this->canUserManageProjectMedia($request->user(), $projek)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Anda tidak memiliki hak akses untuk menghapus file ini'
+            ], 403);
         }
 
         try {
