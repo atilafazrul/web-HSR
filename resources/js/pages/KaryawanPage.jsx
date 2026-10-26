@@ -1146,7 +1146,7 @@ const Modal = ({ children, onClose, title, size = "default" }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-[80] p-4">
       <div className={`bg-white rounded-2xl w-full ${sizeClasses[size]} relative shadow-2xl max-h-[90vh] flex flex-col`}>
         <div className="p-4 border-b sticky top-0 bg-white rounded-t-2xl z-10">
           <div className="flex justify-between items-center">

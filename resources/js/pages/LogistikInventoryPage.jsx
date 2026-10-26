@@ -299,7 +299,7 @@ export default function LogistikInventoryPage() {
       {/* IMAGE PREVIEW MODAL */}
       {previewImages && previewImages.length > 0 && (
         <div
-          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-[80] p-4"
           onClick={() => {
             setPreviewImages(null);
             setPreviewIndex(0);

@@ -525,7 +525,7 @@ export default function FotoProjekPage() {
     <div className="relative min-h-screen bg-slate-50">
 
       {uploadBusy && (
-        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
+        <div className="fixed inset-0 z-[80] bg-black/40 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-lg px-8 py-6 flex flex-col items-center gap-2 text-gray-700">
             <span className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin" />
             <p className="text-sm font-medium">{tr("Mengompres & mengunggah...", "Compressing & uploading...")}</p>

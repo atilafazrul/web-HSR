@@ -145,7 +145,7 @@ export default function pdfHistory({
 
       {/* VIEW DETAIL MODAL */}
       {selectedItem && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[80] p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
 
             {/* MODAL HEADER */}

@@ -150,7 +150,7 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed z-[60] top-0 left-0 h-svh lg:h-full
+        className={`fixed z-[60] lg:z-30 top-0 left-0 h-svh lg:h-full
         ${expanded ? "w-64 md:w-72" : "w-20"}
         text-white flex flex-col justify-between
         transform transition-all duration-300 ease-in-out

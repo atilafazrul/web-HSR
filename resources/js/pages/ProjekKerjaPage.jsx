@@ -1865,7 +1865,7 @@ export default function ProjekKerjaPage() {
   };
 
   return (
-    <div className="w-full max-w-full space-y-6 overflow-x-hidden p-4 sm:space-y-8 sm:p-6 lg:p-8">
+    <div className="w-full max-w-full space-y-6 sm:space-y-8">
 
       {/* ================= FORM ================= */}
       {!isArchiveContext && canManageProject && (role === "super_admin" || divisiUser === "Sales") && (
@@ -2480,12 +2480,20 @@ export default function ProjekKerjaPage() {
 
       {/* ================= MODAL DESKRIPSI ================= */}
       {showDesc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl ring-1 ring-slate-900/5">
-            <h3 className="text-xl font-bold mb-4">Deskripsi Pekerjaan</h3>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xl ring-1 ring-slate-900/5">
+            <button
+              type="button"
+              onClick={() => setShowDesc(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors z-10"
+              aria-label={tr("Tutup", "Close")}
+            >
+              <X size={18} />
+            </button>
+            <h3 className="text-xl font-bold mb-4 pr-8">Deskripsi Pekerjaan</h3>
             {!editDesc ? (
               <>
-                <p className="text-gray-700 whitespace-pre-line">{descText || "-"}</p>
+                <p className="text-gray-700 whitespace-pre-line max-h-[60vh] overflow-y-auto">{descText || "-"}</p>
                 <div className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={() => setEditDesc(true)}
@@ -2495,7 +2503,7 @@ export default function ProjekKerjaPage() {
                   >
                     Edit
                   </button>
-                  <button onClick={() => setShowDesc(false)} className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg">Tutup</button>
+                  <button onClick={() => setShowDesc(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Tutup</button>
                 </div>
               </>
             ) : (
@@ -2509,7 +2517,7 @@ export default function ProjekKerjaPage() {
                   >
                     Simpan
                   </button>
-                  <button onClick={() => setEditDesc(false)} className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg">Batal</button>
+                  <button onClick={() => setEditDesc(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg">Batal</button>
                 </div>
               </>
             )}
@@ -2519,15 +2527,23 @@ export default function ProjekKerjaPage() {
 
       {/* ================= MODAL BARANG DIBELI ================= */}
       {showBarangModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl ring-1 ring-slate-900/5">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xl ring-1 ring-slate-900/5">
+            <button
+              type="button"
+              onClick={() => setShowBarangModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors z-10"
+              aria-label={tr("Tutup", "Close")}
+            >
+              <X size={18} />
+            </button>
+            <h3 className="text-xl font-bold mb-4 pr-8 flex items-center gap-2">
               <ShoppingCart className="text-blue-600" />
               Barang yang Dibeli
             </h3>
             {!editBarang ? (
               <>
-                <p className="text-gray-700 whitespace-pre-line">{barangText}</p>
+                <p className="text-gray-700 whitespace-pre-line max-h-[60vh] overflow-y-auto">{barangText}</p>
                 <div className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={() => {
@@ -2541,7 +2557,7 @@ export default function ProjekKerjaPage() {
                   </button>
                   <button
                     onClick={() => setShowBarangModal(false)}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
                   >
                     Tutup
                   </button>
@@ -2565,7 +2581,7 @@ export default function ProjekKerjaPage() {
                   </button>
                   <button
                     onClick={() => setEditBarang(false)}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
+                    className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg"
                   >
                     Batal
                   </button>
@@ -2578,20 +2594,28 @@ export default function ProjekKerjaPage() {
 
       {/* ================= MODAL TIMELINE STATUS ================= */}
       {showTimelineModal && selectedItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-6 shadow-xl ring-1 ring-slate-900/5">
-            <h3 className="mb-4 flex items-center gap-2 text-xl font-bold text-slate-900">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-md rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xl ring-1 ring-slate-900/5">
+            <button
+              type="button"
+              onClick={() => setShowTimelineModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors z-10"
+              aria-label={tr("Tutup", "Close")}
+            >
+              <X size={18} />
+            </button>
+            <h3 className="mb-4 pr-8 flex items-center gap-2 text-xl font-bold text-slate-900">
               <Clock className="text-indigo-600" />
               Timeline Status
             </h3>
-            <div className="mb-6 rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+            <div className="mb-6 rounded-xl border border-slate-100 bg-slate-50/80 p-4 max-h-[60vh] overflow-y-auto">
               {renderStatusHistoryTimeline(selectedItem)}
             </div>
             <div className="text-xs text-gray-500 text-center mb-4">
               Untuk mengubah status, silakan edit pekerjaan di halaman Edit
             </div>
             <div className="flex justify-end">
-              <button onClick={() => setShowTimelineModal(false)} className="bg-gray-300 hover:bg-gray-400 px-6 py-2 rounded-lg">
+              <button onClick={() => setShowTimelineModal(false)} className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition">
                 Tutup
               </button>
             </div>
@@ -2601,22 +2625,32 @@ export default function ProjekKerjaPage() {
 
       {/* ================= MODAL BIAYA ================= */}
       {showUangModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/40 p-4 backdrop-blur-sm">
-          <div className="relative my-8 max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-6 shadow-2xl ring-1 ring-slate-900/5">
-            <div className="mb-4 border-b border-slate-100 pb-4">
-              <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight text-slate-900">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/50 p-2 sm:p-4 md:p-6 backdrop-blur-sm">
+          <div className="relative my-auto sm:my-8 max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-6 shadow-2xl ring-1 ring-slate-900/5">
+            <button
+              type="button"
+              onClick={() => setShowUangModal(false)}
+              className="absolute top-4 right-4 sm:top-5 sm:right-5 p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors z-10"
+              aria-label={tr("Tutup", "Close")}
+            >
+              <X size={20} />
+            </button>
+            <div className="mb-4 border-b border-slate-100 pb-4 pr-10">
+              <h3 className="flex items-center gap-3 text-lg sm:text-xl font-bold tracking-tight text-slate-900">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 ring-1 ring-amber-500/25">
                   <DollarSign className="text-amber-700" size={22} />
                 </span>
-                {(() => {
-                  const currentProject = dataList.find((i) => i.id === currentId);
-                  const baseTitle = tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs");
-                  return currentProject?.jenis_pekerjaan
-                    ? `${baseTitle} - ${currentProject.jenis_pekerjaan}`
-                    : baseTitle;
-                })()}
+                <span className="min-w-0 flex-1 break-words">
+                  {(() => {
+                    const currentProject = dataList.find((i) => i.id === currentId);
+                    const baseTitle = tr("Biaya Jalan, Pengeluaran & Reimbursment", "Travel, Expense & Reimbursement Costs");
+                    return currentProject?.jenis_pekerjaan
+                      ? `${baseTitle} - ${currentProject.jenis_pekerjaan}`
+                      : baseTitle;
+                  })()}
+                </span>
               </h3>
-              <p className="mt-2 max-w-3xl text-sm text-slate-500">
+              <p className="mt-2 max-w-3xl text-xs sm:text-sm text-slate-500">
                 {role === "super_admin" && !restrictedInvitedBiayaView
                   ? tr(
                     "Tambah beberapa baris per kategori; total dihitung otomatis. Unduh ke Excel (CSV) untuk laporan.",
@@ -2810,14 +2844,14 @@ export default function ProjekKerjaPage() {
                     </>
                   );
                 })()}
-                <div className="flex flex-wrap justify-end gap-3 mt-6">
+                <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 mt-6">
                   {role === "super_admin" && (() => {
                     const item = dataList.find(i => i.id === currentId);
                     return (
                       <button
                         type="button"
                         onClick={() => item && handleSetLunas(item, !item.is_lunas)}
-                        className={`px-4 py-2 rounded-lg text-white ${item?.is_lunas ? "bg-slate-600 hover:bg-slate-700" : "bg-indigo-600 hover:bg-indigo-700"}`}
+                        className={`w-full sm:w-auto px-4 py-2 rounded-lg text-white font-medium transition ${item?.is_lunas ? "bg-slate-600 hover:bg-slate-700" : "bg-indigo-600 hover:bg-indigo-700"}`}
                       >
                         {item?.is_lunas ? tr("Batalkan Lunas", "Mark Unpaid") : tr("Tandai Lunas", "Mark Paid")}
                       </button>
@@ -2827,7 +2861,7 @@ export default function ProjekKerjaPage() {
                     <button
                       type="button"
                       onClick={handleExportBiaya}
-                      className="bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                      className="w-full sm:w-auto bg-slate-700 hover:bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 font-medium transition"
                     >
                       <Download size={18} />
                       {tr("Unduh Excel (CSV)", "Download Excel (CSV)")}
@@ -2844,7 +2878,7 @@ export default function ProjekKerjaPage() {
                         }));
                         setEditUang(true);
                       }}
-                      className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white"
+                      className="w-full sm:w-auto px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition"
                     >
                       {tr("Edit", "Edit")}
                     </button>
@@ -2852,7 +2886,7 @@ export default function ProjekKerjaPage() {
                   <button
                     type="button"
                     onClick={() => setShowUangModal(false)}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg"
+                    className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition"
                   >
                     {tr("Tutup", "Close")}
                   </button>
@@ -2980,12 +3014,12 @@ export default function ProjekKerjaPage() {
                     )}
                   </p>
                 </div>
-                <div className="flex flex-wrap justify-end gap-3 mt-6">
+                <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 mt-6">
                   <button
                     type="button"
                     onClick={handleUpdateUang}
                     disabled={!canEditCurrentBiayaProject || isSavingBiaya}
-                    className="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isSavingBiaya ? (
                       <>
@@ -3006,7 +3040,7 @@ export default function ProjekKerjaPage() {
                         setBiayaBuckets(loadBiayaBucketsFromProjek(item));
                       }
                     }}
-                    className="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-medium transition disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {tr("Batal", "Cancel")}
                   </button>

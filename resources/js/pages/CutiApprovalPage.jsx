@@ -630,7 +630,7 @@ const SummaryCard = ({ label, value, accent, glow, badge, icon: Icon, highlight 
 );
 
 const Modal = ({ title, onClose, children }) => (
-  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
+  <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4">
     <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} />
     <div className="relative bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-slate-900/20 max-h-[90vh] flex flex-col ring-1 ring-slate-900/5">
       <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100">
