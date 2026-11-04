@@ -31,7 +31,7 @@ export const InvoiceForm = ({
   onDpPersenChange,
   onDpNominalChange,
   isDuplicateNomor = null,
-  onSuggestNextNomor = () => {},
+  onSuggestNextNomor = () => { },
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -113,11 +113,10 @@ export const InvoiceForm = ({
                 }
               }}
               placeholder="001"
-              className={`w-full rounded-xl border px-4 py-3 font-mono font-semibold outline-none transition ${
-                isDuplicateNomor
-                  ? "border-red-400 bg-red-50/50 text-red-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
-                  : "border-gray-200 bg-gray-50 text-slate-800 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
-              }`}
+              className={`w-full rounded-xl border px-4 py-3 font-mono font-semibold outline-none transition ${isDuplicateNomor
+                ? "border-red-400 bg-red-50/50 text-red-900 focus:border-red-500 focus:ring-2 focus:ring-red-500/20"
+                : "border-gray-200 bg-gray-50 text-slate-800 focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
+                }`}
               required
             />
             {isDuplicateNomor ? (
@@ -195,15 +194,13 @@ export const InvoiceForm = ({
               <button
                 type="button"
                 onClick={() => onInputChange({ target: { name: "pakai_ttd", value: !formData.pakai_ttd } })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.pakai_ttd ? "bg-blue-600" : "bg-gray-300"
-                }`}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.pakai_ttd ? "bg-blue-600" : "bg-gray-300"
+                  }`}
                 aria-pressed={formData.pakai_ttd}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    formData.pakai_ttd ? "translate-x-5" : "translate-x-0"
-                  }`}
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.pakai_ttd ? "translate-x-5" : "translate-x-0"
+                    }`}
                 />
               </button>
             </div>
@@ -223,15 +220,13 @@ export const InvoiceForm = ({
               <button
                 type="button"
                 onClick={() => onInputChange({ target: { name: "pakai_cap", value: !formData.pakai_cap } })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                  formData.pakai_cap ? "bg-purple-600" : "bg-gray-300"
-                }`}
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.pakai_cap ? "bg-purple-600" : "bg-gray-300"
+                  }`}
                 aria-pressed={formData.pakai_cap}
               >
                 <span
-                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                    formData.pakai_cap ? "translate-x-5" : "translate-x-0"
-                  }`}
+                  className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.pakai_cap ? "translate-x-5" : "translate-x-0"
+                    }`}
                 />
               </button>
             </div>
@@ -282,17 +277,15 @@ export const InvoiceForm = ({
               <button
                 type="button"
                 onClick={() => onPaymentTypeChange("lunas")}
-                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${
-                  formData.tipe_pembayaran === "lunas"
-                    ? "border-emerald-500 bg-emerald-50/80 text-emerald-950 ring-2 ring-emerald-500/20 shadow-sm"
-                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${formData.tipe_pembayaran === "lunas"
+                  ? "border-emerald-500 bg-emerald-50/80 text-emerald-950 ring-2 ring-emerald-500/20 shadow-sm"
+                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
               >
-                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                  formData.tipe_pembayaran === "lunas"
-                    ? "border-emerald-600 bg-emerald-600 text-white"
-                    : "border-gray-300 bg-white"
-                }`}>
+                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${formData.tipe_pembayaran === "lunas"
+                  ? "border-emerald-600 bg-emerald-600 text-white"
+                  : "border-gray-300 bg-white"
+                  }`}>
                   {formData.tipe_pembayaran === "lunas" && <Check size={12} strokeWidth={3} />}
                 </div>
                 <div>
@@ -304,17 +297,15 @@ export const InvoiceForm = ({
               <button
                 type="button"
                 onClick={() => onPaymentTypeChange("dp")}
-                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${
-                  formData.tipe_pembayaran === "dp"
-                    ? "border-blue-500 bg-blue-50/80 text-blue-950 ring-2 ring-blue-500/20 shadow-sm"
-                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${formData.tipe_pembayaran === "dp"
+                  ? "border-blue-500 bg-blue-50/80 text-blue-950 ring-2 ring-blue-500/20 shadow-sm"
+                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  }`}
               >
-                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
-                  formData.tipe_pembayaran === "dp"
-                    ? "border-blue-600 bg-blue-600 text-white"
-                    : "border-gray-300 bg-white"
-                }`}>
+                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${formData.tipe_pembayaran === "dp"
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-gray-300 bg-white"
+                  }`}>
                   {formData.tipe_pembayaran === "dp" && <Check size={12} strokeWidth={3} />}
                 </div>
                 <div>
@@ -338,11 +329,10 @@ export const InvoiceForm = ({
                             key={pct}
                             type="button"
                             onClick={() => onDpPreset(pct)}
-                            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
-                              Number(formData.dp_persen) === pct
-                                ? "bg-blue-600 text-white"
-                                : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                            }`}
+                            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${Number(formData.dp_persen) === pct
+                              ? "bg-blue-600 text-white"
+                              : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                              }`}
                           >
                             {pct}%
                           </button>
@@ -542,11 +532,10 @@ export const InvoiceForm = ({
           <button
             type="submit"
             disabled={loading || Boolean(isDuplicateNomor)}
-            className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-medium text-white transition ${
-              loading || isDuplicateNomor
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-600 hover:bg-blue-700"
-            }`}
+            className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-medium text-white transition ${loading || isDuplicateNomor
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 hover:bg-blue-700"
+              }`}
             title={isDuplicateNomor ? tr("Nomor invoice sudah terdaftar", "Invoice number already registered") : undefined}
           >
             {loading ? (isEditing ? tr("Menyimpan...", "Saving...") : tr("Generating...", "Generating...")) : isEditing ? <><Save size={20} />{tr("Simpan Perubahan", "Save Changes")}</> : <><Download size={20} />{tr("Generate PDF", "Generate PDF")}</>}

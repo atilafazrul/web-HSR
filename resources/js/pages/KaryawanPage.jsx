@@ -594,11 +594,10 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete, onToggleActive, canT
 
           {/* 2. Icon Role (Tanpa Tulisan) */}
           <div
-            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${
-              isAdmin
+            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${isAdmin
                 ? "border-amber-300/80 bg-amber-500/15 text-amber-700 hover:bg-amber-500/25"
                 : "border-indigo-200/80 bg-indigo-500/15 text-indigo-700 hover:bg-indigo-500/25"
-            }`}
+              }`}
             title={`Role: ${roleLabel}`}
           >
             <Briefcase size={15} />
@@ -609,11 +608,10 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete, onToggleActive, canT
 
           {/* 3. Icon Status / Akun Aktif (Tanpa Tulisan) */}
           <div
-            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${
-              isActive
+            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${isActive
                 ? "border-emerald-300/80 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25"
                 : "border-rose-300/80 bg-rose-500/15 text-rose-700 hover:bg-rose-500/25"
-            }`}
+              }`}
             title={isActive ? trText("Status: Akun Aktif", "Status: Active") : trText("Status: Akun Nonaktif", "Status: Inactive")}
           >
             <Power size={15} />

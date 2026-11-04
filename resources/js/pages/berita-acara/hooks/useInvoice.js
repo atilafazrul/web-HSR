@@ -193,7 +193,7 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
           const d = String(p.divisi).toLowerCase();
           setFormData((prev) => ({ ...prev, divisi: d }));
         }
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }, [projekKerjaId]);
 
@@ -423,7 +423,7 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
             json?.errors?.nomor_urut?.[0] ||
             json?.errors?.nomor_surat?.[0] ||
             json?.message;
-        } catch (_) {}
+        } catch (_) { }
       } else if (typeof error?.response?.data === "object") {
         apiMsg =
           error?.response?.data?.errors?.nomor_urut?.[0] ||
@@ -434,8 +434,8 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
       const msg = apiMsg
         ? apiMsg
         : error?.response?.status === 403
-        ? tr("Hanya Super Admin yang dapat membuat Invoice.", "Only Super Admin can create invoices.")
-        : tr("Gagal generate PDF. Silakan coba lagi.", "Failed to generate PDF. Please try again.");
+          ? tr("Hanya Super Admin yang dapat membuat Invoice.", "Only Super Admin can create invoices.")
+          : tr("Gagal generate PDF. Silakan coba lagi.", "Failed to generate PDF. Please try again.");
       alert(msg);
     } finally {
       setLoading(false);
@@ -574,13 +574,13 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
 
   const estimatedDpNominal = formData.tipe_pembayaran === "dp"
     ? Math.min(
-        estimatedTotal,
-        formData.dp_nominal !== "" && formData.dp_nominal !== null && formData.dp_nominal !== undefined
-          ? parseRibuanId(formData.dp_nominal)
-          : (formData.dp_persen && Number(formData.dp_persen) > 0
-              ? Math.round(estimatedTotal * (Math.min(100, Math.max(0, Number(formData.dp_persen))) / 100))
-              : 0)
-      )
+      estimatedTotal,
+      formData.dp_nominal !== "" && formData.dp_nominal !== null && formData.dp_nominal !== undefined
+        ? parseRibuanId(formData.dp_nominal)
+        : (formData.dp_persen && Number(formData.dp_persen) > 0
+          ? Math.round(estimatedTotal * (Math.min(100, Math.max(0, Number(formData.dp_persen))) / 100))
+          : 0)
+    )
     : 0;
 
   const estimatedSisaPembayaran = formData.tipe_pembayaran === "dp"
