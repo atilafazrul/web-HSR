@@ -261,6 +261,17 @@
                         <td class="meta-val">{{ $no_po }}</td>
                     </tr>
                     @endif
+                    <tr>
+                        <td class="meta-key">PAYMENT</td>
+                        <td class="meta-gap">&nbsp;</td>
+                        <td class="meta-val">
+                            @if(($tipe_pembayaran ?? 'lunas') === 'dp')
+                                <strong style="color: #1d4ed8;">DOWN PAYMENT (DP){{ (!empty($has_dp_persen) && !empty($dp_persen_label)) ? ' ('.$dp_persen_label.'%)' : '' }}</strong>
+                            @else
+                                <strong style="color: #15803d;">LUNAS</strong>
+                            @endif
+                        </td>
+                    </tr>
                 </table>
             </td>
         </tr>
@@ -269,7 +280,7 @@
     @php
         $itemRows = $items ?? [];
         $hasDiskon = !empty($diskon_nominal);
-        $afterTotalPads = 2;
+        $afterTotalPads = (($tipe_pembayaran ?? 'lunas') === 'dp') ? 1 : 1;
         $ppnPersenLabel = rtrim(rtrim(number_format((float) ($ppn_persen ?? 11), 2, ',', '.'), '0'), ',');
         $rowIndex = 0;
     @endphp
@@ -381,6 +392,53 @@
                 </td>
             </tr>
             @php $rowIndex++; @endphp
+
+            @if(($tipe_pembayaran ?? 'lunas') === 'dp')
+                <tr class="total-row {{ $rowIndex % 2 === 0 ? 'row-odd' : 'row-even' }}">
+                    <td class="col-item">&nbsp;</td>
+                    <td class="col-unit total-label" colspan="2">DP{{ (!empty($has_dp_persen) && !empty($dp_persen_label)) ? ' ('.$dp_persen_label.'%)' : '' }}</td>
+                    <td class="col-price">&nbsp;</td>
+                    <td class="col-amount">
+                        <table class="money-table">
+                            <tr>
+                                <td class="money-rp"><strong>Rp</strong></td>
+                                <td class="money-num"><strong>{{ $dp_number ?? '' }}</strong></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                @php $rowIndex++; @endphp
+
+                <tr class="total-row {{ $rowIndex % 2 === 0 ? 'row-odd' : 'row-even' }}">
+                    <td class="col-item">&nbsp;</td>
+                    <td class="col-unit total-label" colspan="2">SISA PEMBAYARAN</td>
+                    <td class="col-price">&nbsp;</td>
+                    <td class="col-amount">
+                        <table class="money-table">
+                            <tr>
+                                <td class="money-rp"><strong>Rp</strong></td>
+                                <td class="money-num"><strong>{{ $sisa_pembayaran_number ?? '' }}</strong></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                @php $rowIndex++; @endphp
+            @else
+                <tr class="total-row {{ $rowIndex % 2 === 0 ? 'row-odd' : 'row-even' }}">
+                    <td class="col-item">&nbsp;</td>
+                    <td class="col-unit total-label" colspan="2">PEMBAYARAN</td>
+                    <td class="col-price">&nbsp;</td>
+                    <td class="col-amount">
+                        <table class="money-table">
+                            <tr>
+                                <td class="money-rp"><strong>&nbsp;</strong></td>
+                                <td class="money-num" style="color: #15803d;"><strong>LUNAS</strong></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                @php $rowIndex++; @endphp
+            @endif
 
             @for($i = 0; $i < $afterTotalPads; $i++)
                 <tr class="{{ $rowIndex % 2 === 0 ? 'row-odd' : 'row-even' }}">

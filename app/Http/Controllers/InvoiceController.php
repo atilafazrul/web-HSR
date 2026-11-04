@@ -345,6 +345,9 @@ class InvoiceController extends Controller
             'items.*.harga' => 'required|numeric|min:0',
             'diskon_nominal' => 'nullable|numeric|min:0',
             'ppn_persen' => 'nullable|numeric|min:0|max:100',
+            'tipe_pembayaran' => 'nullable|string|in:lunas,dp',
+            'dp_persen' => 'nullable|numeric|min:0|max:100',
+            'dp_nominal' => 'nullable|numeric|min:0',
             'catatan' => 'nullable|string|max:20000',
             'terms' => 'nullable|string|max:20000',
             'nama_penandatangan' => 'nullable|string|max:255',
@@ -364,6 +367,34 @@ class InvoiceController extends Controller
         $dpp = max(0, $subtotal - $diskonNominal);
         $ppnPersen = (float) ($validated['ppn_persen'] ?? 11);
         $ppnNominal = (int) round($dpp * ($ppnPersen / 100));
+        $totalHarga = $dpp + $ppnNominal;
+
+        $tipePembayaran = strtolower(trim((string) ($validated['tipe_pembayaran'] ?? 'lunas')));
+        if (!in_array($tipePembayaran, ['lunas', 'dp'], true)) {
+            $tipePembayaran = 'lunas';
+        }
+
+        $dpNominal = 0;
+        $dpPersen = 0.0;
+        $sisaPembayaran = 0;
+
+        if ($tipePembayaran === 'dp') {
+            $dpNominal = min($totalHarga, (int) round($validated['dp_nominal'] ?? 0));
+            $rawPersen = $validated['dp_persen'] ?? null;
+            $hasExplicitPersen = ($rawPersen !== null && $rawPersen !== '' && (float) $rawPersen > 0);
+
+            if ($dpNominal > 0 && $totalHarga > 0) {
+                // Persentase otomatis mengikuti nominal yang ditulis
+                $dpPersen = round(($dpNominal / $totalHarga) * 100, 2);
+            } elseif ($hasExplicitPersen) {
+                $dpPersen = min(100.0, max(0.0, (float) $rawPersen));
+                $dpNominal = (int) round($totalHarga * ($dpPersen / 100));
+            } else {
+                $dpPersen = 0.0;
+            }
+
+            $sisaPembayaran = max(0, $totalHarga - $dpNominal);
+        }
 
         $attrs = [
             'divisi' => trim((string) ($validated['divisi'] ?? '')) ?: null,
@@ -379,7 +410,11 @@ class InvoiceController extends Controller
             'diskon_nominal' => $diskonNominal,
             'ppn_persen' => $ppnPersen,
             'ppn_nominal' => $ppnNominal,
-            'total_harga' => $dpp + $ppnNominal,
+            'total_harga' => $totalHarga,
+            'tipe_pembayaran' => $tipePembayaran,
+            'dp_persen' => $dpPersen,
+            'dp_nominal' => $dpNominal,
+            'sisa_pembayaran' => $sisaPembayaran,
             'catatan' => trim((string) ($validated['catatan'] ?? '')) ?: ($ppnPersen > 0 ? self::DEFAULT_CATATAN : self::DEFAULT_CATATAN_NON_PPN),
             'terms' => trim((string) ($validated['terms'] ?? '')) ?: null,
             'nama_penandatangan' => trim((string) ($validated['nama_penandatangan'] ?? '')) ?: 'SYAHRUL ROJI',
@@ -410,6 +445,13 @@ class InvoiceController extends Controller
             ]);
         })->all();
 
+        $tipePembayaran = $document->tipe_pembayaran ?: 'lunas';
+        $dpPersen = (float) ($document->dp_persen ?? 0);
+        $hasDpPersen = $dpPersen > 0;
+        $dpNominal = (int) ($document->dp_nominal ?? 0);
+        $sisaPembayaran = (int) ($document->sisa_pembayaran ?? max(0, (int) $document->total_harga - $dpNominal));
+        $dpPersenLabel = $hasDpPersen ? rtrim(rtrim(number_format($dpPersen, 2, ',', '.'), '0'), ',') : '';
+
         return [
             'divisi' => $document->divisi,
             'nomor_surat' => $document->nomor_surat,
@@ -431,6 +473,16 @@ class InvoiceController extends Controller
             'total_harga' => $document->total_harga,
             'total_harga_formatted' => $this->formatRupiah((int) $document->total_harga),
             'total_number' => number_format((int) $document->total_harga, 0, ',', '.'),
+            'tipe_pembayaran' => $tipePembayaran,
+            'dp_persen' => $dpPersen,
+            'has_dp_persen' => $hasDpPersen,
+            'dp_persen_label' => $dpPersenLabel,
+            'dp_nominal' => $dpNominal,
+            'dp_number' => number_format($dpNominal, 0, ',', '.'),
+            'dp_formatted' => $this->formatRupiah($dpNominal),
+            'sisa_pembayaran' => $sisaPembayaran,
+            'sisa_pembayaran_number' => number_format($sisaPembayaran, 0, ',', '.'),
+            'sisa_pembayaran_formatted' => $this->formatRupiah($sisaPembayaran),
             'catatan' => $document->catatan ?: ((float) $document->ppn_persen > 0 ? self::DEFAULT_CATATAN : self::DEFAULT_CATATAN_NON_PPN),
             'terms' => $document->terms,
             'nama_penandatangan' => $document->nama_penandatangan ?: 'SYAHRUL ROJI',

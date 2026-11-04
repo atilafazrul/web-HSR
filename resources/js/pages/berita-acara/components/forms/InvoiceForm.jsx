@@ -1,5 +1,5 @@
 import React from "react";
-import { Plus, Download, Trash2, Calendar, FileSpreadsheet, Edit, X, Save, AlertCircle } from "lucide-react";
+import { Plus, Download, Trash2, Calendar, FileSpreadsheet, Edit, X, Save, AlertCircle, Check, CreditCard } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import { parseRibuanId } from "../../../../utils/formatRupiahInput";
 import { RichTextEditor } from "./RichTextEditor";
@@ -24,6 +24,12 @@ export const InvoiceForm = ({
   estimatedDiskon,
   estimatedPpn,
   estimatedTotal,
+  estimatedDpNominal,
+  estimatedSisaPembayaran,
+  onPaymentTypeChange,
+  onDpPreset,
+  onDpPersenChange,
+  onDpNominalChange,
   isDuplicateNomor = null,
   onSuggestNextNomor = () => {},
 }) => {
@@ -259,6 +265,135 @@ export const InvoiceForm = ({
             <label className="mb-2 block text-sm font-medium text-gray-700">PPN (%)</label>
             <input type="number" min="0" max="100" step="0.01" name="ppn_persen" value={formData.ppn_persen} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3" />
           </div>
+
+          {/* ── Sistem Pembayaran: Lunas vs DP ── */}
+          <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
+              <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+                <CreditCard size={18} className="text-blue-600" />
+                {tr("Sistem Pembayaran", "Payment Scheme")} *
+              </label>
+              <span className="text-xs font-medium text-gray-500">
+                {formData.tipe_pembayaran === "dp" ? tr("Mode Down Payment (DP)", "Down Payment (DP) Mode") : tr("Mode Lunas Penuh", "Full Payment Mode")}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => onPaymentTypeChange("lunas")}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${
+                  formData.tipe_pembayaran === "lunas"
+                    ? "border-emerald-500 bg-emerald-50/80 text-emerald-950 ring-2 ring-emerald-500/20 shadow-sm"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                  formData.tipe_pembayaran === "lunas"
+                    ? "border-emerald-600 bg-emerald-600 text-white"
+                    : "border-gray-300 bg-white"
+                }`}>
+                  {formData.tipe_pembayaran === "lunas" && <Check size={12} strokeWidth={3} />}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{tr("Pembayaran Lunas", "Full Payment")}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{tr("Tagihan langsung lunas (100% total harga)", "Full invoice payment (100% of total)")}</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onPaymentTypeChange("dp")}
+                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${
+                  formData.tipe_pembayaran === "dp"
+                    ? "border-blue-500 bg-blue-50/80 text-blue-950 ring-2 ring-blue-500/20 shadow-sm"
+                    : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                }`}
+              >
+                <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
+                  formData.tipe_pembayaran === "dp"
+                    ? "border-blue-600 bg-blue-600 text-white"
+                    : "border-gray-300 bg-white"
+                }`}>
+                  {formData.tipe_pembayaran === "dp" && <Check size={12} strokeWidth={3} />}
+                </div>
+                <div>
+                  <p className="font-semibold text-sm">{tr("DP (Down Payment / Uang Muka)", "DP (Down Payment)")}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">{tr("Pembayaran bertahap dengan DP & sisa pelunasan", "Split payment with DP & balance settlement")}</p>
+                </div>
+              </button>
+            </div>
+
+            {formData.tipe_pembayaran === "dp" && (
+              <div className="mt-4 rounded-xl border border-blue-200 bg-white p-4 animate-fadeIn">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
+                      <label className="text-xs font-semibold text-gray-700">
+                        {tr("Persentase DP (%) (Opsional)", "DP Percentage (%) (Optional)")}
+                      </label>
+                      <div className="flex gap-1">
+                        {[20, 30, 50, 70].map((pct) => (
+                          <button
+                            key={pct}
+                            type="button"
+                            onClick={() => onDpPreset(pct)}
+                            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${
+                              Number(formData.dp_persen) === pct
+                                ? "bg-blue-600 text-white"
+                                : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            }`}
+                          >
+                            {pct}%
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="1"
+                        max="99"
+                        step="0.01"
+                        name="dp_persen"
+                        value={formData.dp_persen}
+                        onChange={onDpPersenChange}
+                        placeholder={tr("Opsional (misal 50)", "Optional (e.g. 50)")}
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold outline-none focus:border-blue-500 focus:bg-white"
+                      />
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">%</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+                      {tr("Nominal DP (Rp) *", "DP Amount (Rp) *")}
+                    </label>
+                    <RupiahInput
+                      name="dp_nominal"
+                      value={formData.dp_nominal}
+                      onChange={onDpNominalChange}
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold outline-none focus:border-blue-500 focus:bg-white"
+                      placeholder="0"
+                      required={formData.tipe_pembayaran === "dp"}
+                    />
+                  </div>
+                </div>
+
+                <p className="mt-2 text-xs text-gray-500">
+                  {tr(
+                    "Saat nominal atau persentase diisi, nilai yang lainnya akan otomatis mengikuti dan saling sinkron.",
+                    "When either the amount or percentage is entered, the other will automatically follow and synchronize."
+                  )}
+                </p>
+
+                <div className="mt-3 flex items-center justify-between rounded-lg bg-blue-50/80 px-3.5 py-2.5 text-xs text-blue-900 border border-blue-100">
+                  <span className="font-medium">{tr("Sisa Tagihan / Pelunasan", "Remaining Balance / Settlement")}:</span>
+                  <span className="font-bold text-sm text-blue-800">{formatRupiah(estimatedSisaPembayaran)}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mb-8 rounded-2xl border border-slate-200 p-4">
@@ -354,6 +489,28 @@ export const InvoiceForm = ({
               <span className="shrink-0 text-base font-bold text-blue-700">{tr("Total", "Total")}</span>
               <span className="text-right text-base font-bold tabular-nums text-blue-700">{formatRupiah(estimatedTotal)}</span>
             </div>
+
+            {formData.tipe_pembayaran === "dp" ? (
+              <div className="mt-2 border-t border-blue-200/80 pt-2 space-y-1.5 animate-fadeIn">
+                <div className="flex items-start justify-between gap-4 text-sm">
+                  <span className="shrink-0 font-medium text-blue-900">
+                    {tr("DP (Uang Muka)", "Down Payment (DP)")}{formData.dp_persen && Number(formData.dp_persen) > 0 ? ` (${formData.dp_persen}%)` : ""}
+                  </span>
+                  <span className="text-right font-bold tabular-nums text-blue-800">{formatRupiah(estimatedDpNominal)}</span>
+                </div>
+                <div className="flex items-start justify-between gap-4 text-sm">
+                  <span className="shrink-0 font-medium text-amber-900">{tr("Sisa Pembayaran", "Remaining Balance")}</span>
+                  <span className="text-right font-bold tabular-nums text-amber-800">{formatRupiah(estimatedSisaPembayaran)}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 border-t border-blue-200/80 pt-2 flex items-center justify-between text-xs">
+                <span className="text-gray-600">{tr("Status Pembayaran", "Payment Status")}</span>
+                <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-md">
+                  <Check size={12} strokeWidth={3} /> {tr("Lunas (Penuh)", "Full Payment")}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

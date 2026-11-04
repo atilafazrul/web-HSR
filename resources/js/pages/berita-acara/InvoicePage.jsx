@@ -49,6 +49,12 @@ export default function InvoicePage() {
     estimatedDiskon,
     estimatedPpn,
     estimatedTotal,
+    estimatedDpNominal,
+    estimatedSisaPembayaran,
+    handlePaymentTypeChange,
+    handleDpPreset,
+    handleDpPersenChange,
+    handleDpNominalChange,
     isDuplicateNomor,
     handleSuggestNextNomor,
   } = useInvoice(projekId, defaultDivisi);
@@ -106,6 +112,12 @@ export default function InvoicePage() {
             estimatedDiskon={estimatedDiskon}
             estimatedPpn={estimatedPpn}
             estimatedTotal={estimatedTotal}
+            estimatedDpNominal={estimatedDpNominal}
+            estimatedSisaPembayaran={estimatedSisaPembayaran}
+            onPaymentTypeChange={handlePaymentTypeChange}
+            onDpPreset={handleDpPreset}
+            onDpPersenChange={handleDpPersenChange}
+            onDpNominalChange={handleDpNominalChange}
             isDuplicateNomor={isDuplicateNomor}
             onSuggestNextNomor={handleSuggestNextNomor}
           />

@@ -61,7 +61,18 @@ export const InvoiceHistory = ({
                   {item.no_po && (
                     <p className="mt-1 text-sm text-gray-500">NO. PO: <span className="font-medium text-gray-700">{item.no_po}</span></p>
                   )}
-                  <p className="mt-2 text-sm font-medium text-green-700">{formatRupiah(item.total_harga)}</p>
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-semibold text-slate-800">{formatRupiah(item.total_harga)}</span>
+                    {item.tipe_pembayaran === "dp" ? (
+                      <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
+                        DP: {formatRupiah(item.dp_nominal)}{item.dp_persen && Number(item.dp_persen) > 0 ? ` (${item.dp_persen}%)` : ""} · {tr("Sisa", "Remaining")}: {formatRupiah(item.sisa_pembayaran)}
+                      </span>
+                    ) : (
+                      <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-700">
+                        {tr("Lunas", "Full")}
+                      </span>
+                    )}
+                  </div>
                   <p className="mt-1 text-xs text-gray-400">{tr("Dibuat", "Created")}: {formatDate(item.created_at)}</p>
                 </div>
                 <div className="flex w-full gap-2 sm:w-auto">
@@ -101,6 +112,13 @@ export const InvoiceHistory = ({
               )}
               <p><strong>PPN ({selectedItem.ppn_persen}%):</strong> {formatRupiah(selectedItem.ppn_nominal)}</p>
               <p><strong>Total:</strong> {formatRupiah(selectedItem.total_harga)}</p>
+              <p><strong>{tr("Sistem Pembayaran", "Payment Scheme")}:</strong> {selectedItem.tipe_pembayaran === "dp" ? tr("Down Payment (DP)", "Down Payment (DP)") : tr("Lunas (Penuh)", "Full Payment")}</p>
+              {selectedItem.tipe_pembayaran === "dp" && (
+                <>
+                  <p><strong>{tr("Nominal DP", "DP Amount")}:</strong> {formatRupiah(selectedItem.dp_nominal)}{selectedItem.dp_persen && Number(selectedItem.dp_persen) > 0 ? ` (${selectedItem.dp_persen}%)` : ""}</p>
+                  <p><strong>{tr("Sisa Pembayaran", "Remaining Balance")}:</strong> {formatRupiah(selectedItem.sisa_pembayaran)}</p>
+                </>
+              )}
               <p><strong>{tr("Item", "Items")}:</strong> {selectedItem.items?.length || 0}</p>
             </div>
             <button onClick={onCloseViewModal} className="mt-6 w-full rounded-xl bg-gray-100 py-3 font-medium text-gray-700 hover:bg-gray-200">

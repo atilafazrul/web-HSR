@@ -105,6 +105,9 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
     items: [emptyItem()],
     diskon: "",
     ppn_persen: "11",
+    tipe_pembayaran: "lunas",
+    dp_persen: "",
+    dp_nominal: "",
     catatan: DEFAULT_CATATAN,
     terms: "",
     nama_penandatangan: "SYAHRUL ROJI",
@@ -170,6 +173,9 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
       })),
       diskon_nominal: parseRibuanId(formData.diskon),
       ppn_persen: Number(formData.ppn_persen || 11),
+      tipe_pembayaran: formData.tipe_pembayaran || "lunas",
+      dp_persen: formData.tipe_pembayaran === "dp" && formData.dp_persen !== "" && formData.dp_persen !== null && Number(formData.dp_persen) > 0 ? Number(formData.dp_persen) : null,
+      dp_nominal: formData.tipe_pembayaran === "dp" ? parseRibuanId(formData.dp_nominal) : 0,
       catatan: (formData.catatan || "").trim() || (Number(formData.ppn_persen || 0) > 0 ? DEFAULT_CATATAN : DEFAULT_CATATAN_NON_PPN),
       terms: (formData.terms || "").trim() || null,
       nama_penandatangan: (formData.nama_penandatangan || "").trim() || "SYAHRUL ROJI",
@@ -346,6 +352,9 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
       items: [emptyItem()],
       diskon: "",
       ppn_persen: "11",
+      tipe_pembayaran: "lunas",
+      dp_persen: "",
+      dp_nominal: "",
       catatan: DEFAULT_CATATAN,
       terms: "",
       nama_penandatangan: "SYAHRUL ROJI",
@@ -520,6 +529,9 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
         })),
         diskon: nominalApiToInput(data.diskon_nominal),
         ppn_persen: String(data.ppn_persen ?? 11),
+        tipe_pembayaran: data.tipe_pembayaran || "lunas",
+        dp_persen: data.dp_persen && Number(data.dp_persen) > 0 ? String(data.dp_persen) : "",
+        dp_nominal: nominalApiToInput(data.dp_nominal),
         catatan: data.catatan || DEFAULT_CATATAN,
         terms: data.terms || "",
         nama_penandatangan: data.nama_penandatangan || "SYAHRUL ROJI",
@@ -559,6 +571,91 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
   const estimatedDpp = Math.max(0, estimatedSubtotal - estimatedDiskon);
   const estimatedPpn = Math.round(estimatedDpp * (Number(formData.ppn_persen || 11) / 100));
   const estimatedTotal = estimatedDpp + estimatedPpn;
+
+  const estimatedDpNominal = formData.tipe_pembayaran === "dp"
+    ? Math.min(
+        estimatedTotal,
+        formData.dp_nominal !== "" && formData.dp_nominal !== null && formData.dp_nominal !== undefined
+          ? parseRibuanId(formData.dp_nominal)
+          : (formData.dp_persen && Number(formData.dp_persen) > 0
+              ? Math.round(estimatedTotal * (Math.min(100, Math.max(0, Number(formData.dp_persen))) / 100))
+              : 0)
+      )
+    : 0;
+
+  const estimatedSisaPembayaran = formData.tipe_pembayaran === "dp"
+    ? Math.max(0, estimatedTotal - estimatedDpNominal)
+    : 0;
+
+  const handlePaymentTypeChange = (type) => {
+    setFormData((prev) => {
+      const nextType = type === "dp" ? "dp" : "lunas";
+      if (nextType === "dp") {
+        const nom = parseRibuanId(prev.dp_nominal);
+        let pct = prev.dp_persen;
+        let nominalStr = prev.dp_nominal;
+        if (nom > 0 && estimatedTotal > 0) {
+          pct = String(Math.round(((nom / estimatedTotal) * 100) * 100) / 100);
+        } else if (pct && Number(pct) > 0 && estimatedTotal > 0) {
+          nominalStr = nominalApiToInput(Math.round(estimatedTotal * (Number(pct) / 100)));
+        }
+        return {
+          ...prev,
+          tipe_pembayaran: "dp",
+          dp_persen: pct || "",
+          dp_nominal: nominalStr || "",
+        };
+      }
+      return {
+        ...prev,
+        tipe_pembayaran: "lunas",
+      };
+    });
+  };
+
+  const handleDpPreset = (percent) => {
+    const pct = Math.min(100, Math.max(1, Number(percent) || 50));
+    const nominal = Math.round(estimatedTotal * (pct / 100));
+    setFormData((prev) => ({
+      ...prev,
+      tipe_pembayaran: "dp",
+      dp_persen: String(pct),
+      dp_nominal: nominalApiToInput(nominal),
+    }));
+  };
+
+  const handleDpPersenChange = (e) => {
+    const rawVal = e.target.value;
+    if (rawVal === "" || rawVal === null) {
+      setFormData((prev) => ({
+        ...prev,
+        dp_persen: "",
+        dp_nominal: "",
+      }));
+      return;
+    }
+    const num = Math.min(100, Math.max(0, parseFloat(rawVal) || 0));
+    const nominal = Math.round(estimatedTotal * (num / 100));
+    setFormData((prev) => ({
+      ...prev,
+      dp_persen: rawVal,
+      dp_nominal: num > 0 ? nominalApiToInput(nominal) : "",
+    }));
+  };
+
+  const handleDpNominalChange = (value) => {
+    const nominal = parseRibuanId(value);
+    let pctStr = "";
+    if (nominal > 0 && estimatedTotal > 0) {
+      const pct = Math.min(100, Math.max(0, (nominal / estimatedTotal) * 100));
+      pctStr = String(Math.round(pct * 100) / 100);
+    }
+    setFormData((prev) => ({
+      ...prev,
+      dp_nominal: value,
+      dp_persen: pctStr,
+    }));
+  };
 
   const { filteredHistory, historyAllCount, historyProjectCount } = scopeDocumentHistory(
     historyData,
@@ -604,6 +701,12 @@ export const useInvoice = (projekKerjaId = null, defaultDivisi = null) => {
     estimatedDiskon,
     estimatedPpn,
     estimatedTotal,
+    estimatedDpNominal,
+    estimatedSisaPembayaran,
+    handlePaymentTypeChange,
+    handleDpPreset,
+    handleDpPersenChange,
+    handleDpNominalChange,
     isDuplicateNomor,
     handleSuggestNextNomor,
   };
