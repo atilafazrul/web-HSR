@@ -308,10 +308,11 @@ export const BAMForm = ({
           <button
             type="button"
             onClick={onReset}
-            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition ${isEditing
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition ${
+              isEditing
                 ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
                 : "border border-gray-300 text-gray-600 hover:bg-gray-50"
-              }`}
+            }`}
           >
             {isEditing ? (
               <span className="flex items-center justify-center gap-2">
@@ -325,10 +326,11 @@ export const BAMForm = ({
           <button
             type="submit"
             disabled={loading}
-            className={`w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 ${loading
+            className={`w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-medium flex items-center justify-center gap-2 transition-all duration-200 ${
+              loading
                 ? "bg-gray-400 cursor-not-allowed text-white"
                 : "bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg"
-              }`}
+            }`}
           >
             {loading ? (
               <>

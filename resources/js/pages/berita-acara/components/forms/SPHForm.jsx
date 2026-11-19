@@ -114,8 +114,8 @@ export const SPHForm = ({
                   type="button"
                   onClick={() => onApplyPembukaTemplate("service")}
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${formData.divisi === "service"
-                      ? "border-slate-800 bg-slate-800 text-white font-semibold"
-                      : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
+                    ? "border-slate-800 bg-slate-800 text-white font-semibold"
+                    : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
                     }`}
                 >
                   Divisi Service
@@ -124,8 +124,8 @@ export const SPHForm = ({
                   type="button"
                   onClick={() => onApplyPembukaTemplate("kontraktor")}
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${formData.divisi === "kontraktor"
-                      ? "border-slate-800 bg-slate-800 text-white font-semibold"
-                      : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
+                    ? "border-slate-800 bg-slate-800 text-white font-semibold"
+                    : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
                     }`}
                 >
                   Divisi Kontraktor
@@ -134,8 +134,8 @@ export const SPHForm = ({
                   type="button"
                   onClick={() => onApplyPembukaTemplate("it")}
                   className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${formData.divisi === "it"
-                      ? "border-slate-800 bg-slate-800 text-white font-semibold"
-                      : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
+                    ? "border-slate-800 bg-slate-800 text-white font-semibold"
+                    : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
                     }`}
                 >
                   Divisi IT

@@ -133,8 +133,8 @@ export const ScheduleGenerateSection = ({
           onClick={onSchedule}
           disabled={loading || scheduling || !hasValidDate}
           className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium transition sm:w-auto ${loading || scheduling || !hasValidDate
-              ? "cursor-not-allowed bg-gray-300 text-gray-500"
-              : "bg-amber-600 text-white hover:bg-amber-700 hover:shadow-lg"
+            ? "cursor-not-allowed bg-gray-300 text-gray-500"
+            : "bg-amber-600 text-white hover:bg-amber-700 hover:shadow-lg"
             }`}
         >
           {scheduling ? (

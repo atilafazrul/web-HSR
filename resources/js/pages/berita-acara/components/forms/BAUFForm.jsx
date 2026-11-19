@@ -4,8 +4,8 @@ import { useI18n } from "../../../../i18n";
 import SignaturePad from "./SignaturePad";
 import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 
-export const BAUFForm = ({ 
-  formData, onInputChange, onSignatureChange, onItemChange, onAddItem, onRemoveItem, 
+export const BAUFForm = ({
+  formData, onInputChange, onSignatureChange, onItemChange, onAddItem, onRemoveItem,
   onSubmit, onReset, loading,
   isEditing = false,
   editNomorSurat = "",
@@ -33,7 +33,7 @@ export const BAUFForm = ({
             <FileText size={20} className="text-blue-600" />
             {isEditing ? tr("Edit Dokumen BAUF", "Edit BAUF Document") : tr("Informasi Dokumen", "Document Information")}
           </h3>
-          
+
           <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 [&>*]:min-w-0">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Hari (Otomatis)", "Day (Automatic)")}</label>

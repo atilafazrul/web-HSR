@@ -4,15 +4,15 @@ import { useI18n } from "../../../../i18n";
 import SignaturePad from "./SignaturePad";
 import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 
-export const BASTForm = ({ 
-  formData, 
-  onInputChange, 
+export const BASTForm = ({
+  formData,
+  onInputChange,
   onSignatureChange,
-  onItemChange, 
-  onAddItem, 
-  onRemoveItem, 
-  onSubmit, 
-  onReset, 
+  onItemChange,
+  onAddItem,
+  onRemoveItem,
+  onSubmit,
+  onReset,
   loading,
   isEditing = false,
   editNomorSurat = "",
@@ -44,7 +44,7 @@ export const BASTForm = ({
             <FileText size={20} className="text-blue-600" />
             {isEditing ? tr("Edit Dokumen BAST", "Edit BAST Document") : tr("Informasi Dokumen", "Document Information")}
           </h3>
-          
+
           <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 [&>*]:min-w-0">
             {/* Hari - Auto from date */}
             <div>
@@ -318,11 +318,10 @@ export const BASTForm = ({
           <button
             type="button"
             onClick={onReset}
-            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition ${
-              isEditing
-                ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
-                : "border border-gray-300 text-gray-600 hover:bg-gray-50"
-            }`}
+            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-medium transition ${isEditing
+              ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
+              : "border border-gray-300 text-gray-600 hover:bg-gray-50"
+              }`}
           >
             {isEditing ? (
               <span className="flex items-center justify-center gap-2">
@@ -340,7 +339,7 @@ export const BASTForm = ({
               w-full sm:w-auto px-6 sm:px-8 py-3 rounded-xl font-medium flex items-center justify-center gap-2
               transition-all duration-200
               ${loading
-                ? 'bg-gray-400 cursor-not-allowed text-white' 
+                ? 'bg-gray-400 cursor-not-allowed text-white'
                 : 'bg-blue-600 hover:bg-blue-700 text-white hover:shadow-lg'
               }
             `}
