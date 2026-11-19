@@ -35,7 +35,9 @@ import {
   Home,
   ChevronRight,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Check,
+  Copy
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -534,10 +536,46 @@ const EmployeeAvatar = ({ photo, name }) => {
 
 // ================= EMPLOYEE CARD =================
 const EmployeeCard = ({ employee, onView, onEdit, onDelete, onToggleActive, canToggleActive = false }) => {
+  const [copiedEmail, setCopiedEmail] = useState(false);
   const roleLabel = String(employee.role || "-").replace(/_/g, " ");
   const isAdmin = String(employee.role || "").toLowerCase().includes("admin");
   const isActive = Boolean(employee.is_active ?? true);
   const coverUrl = getEmployeeCoverUrl(employee);
+
+  const handleCopyEmail = async (e) => {
+    e.stopPropagation();
+    if (!employee.email) return;
+
+    let successful = false;
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(employee.email);
+        successful = true;
+      }
+    } catch {
+      successful = false;
+    }
+
+    if (!successful) {
+      try {
+        const textarea = document.createElement("textarea");
+        textarea.value = employee.email;
+        textarea.style.position = "fixed";
+        textarea.style.left = "-9999px";
+        textarea.style.top = "-9999px";
+        textarea.setAttribute("readonly", "");
+        document.body.appendChild(textarea);
+        textarea.select();
+        successful = document.execCommand("copy");
+        document.body.removeChild(textarea);
+      } catch (err) {
+        console.error("Gagal menyalin email:", err);
+      }
+    }
+
+    setCopiedEmail(true);
+    setTimeout(() => setCopiedEmail(false), 1800);
+  };
 
   return (
     <div className="group relative overflow-hidden rounded-3xl border border-white/80 bg-white/75 shadow-lg shadow-slate-900/5 backdrop-blur-2xl transition-all duration-300 hover:-translate-y-1.5 hover:bg-white/90 hover:border-white hover:shadow-2xl hover:shadow-indigo-500/15">
@@ -562,7 +600,7 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete, onToggleActive, canT
         )}
       </div>
 
-      {/* Card Content Body — Bersih, Rapi, & Elegan tanpa lengkungan abu-abu yang menabrak avatar */}
+      {/* Card Content Body — Bersih, Rapi, & Elegan */}
       <div className="relative px-4 pb-5 pt-0 text-center">
         {/* Avatar melayang rapi di batas banner cover */}
         <div className="-mt-11 mb-2.5 flex justify-center">
@@ -578,53 +616,86 @@ const EmployeeCard = ({ employee, onView, onEdit, onDelete, onToggleActive, canT
 
         {/* =========================================================================
             ICON-ONLY BADGES UNTUK DIVISI, ROLE, DAN AKUN AKTIF
-            "tulisam divisi role dan akun aktif hilangkan cukup icon nya saja yang di sisakan"
+            Tooltip melayang rapi di atas icon (hover:z-50) sehingga tidak tertutup elemen lain
             ========================================================================= */}
         <div className="mx-auto mt-3 flex items-center justify-center gap-2">
           {/* 1. Icon Divisi (Tanpa Tulisan) */}
           <div
-            className="group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white text-slate-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600"
-            title={`Divisi: ${employee.divisi || "-"}`}
+            className="group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border border-slate-200/80 bg-white text-slate-700 shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600 hover:z-50 cursor-default"
           >
             <Building2 size={15} />
-            <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-opacity group-hover/tooltip:opacity-100 z-30">
-              {employee.divisi || "-"}
+            <span className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-all duration-150 group-hover/tooltip:opacity-100 group-hover/tooltip:-translate-y-0.5 z-50">
+              {employee.divisi ? `Divisi: ${employee.divisi}` : trText("Divisi: -", "Division: -")}
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-4 border-t-4 border-b-0 border-x-transparent border-t-slate-900/95" />
             </span>
           </div>
 
           {/* 2. Icon Role (Tanpa Tulisan) */}
           <div
-            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${isAdmin
+            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 hover:z-50 cursor-default ${
+              isAdmin
                 ? "border-amber-300/80 bg-amber-500/15 text-amber-700 hover:bg-amber-500/25"
                 : "border-indigo-200/80 bg-indigo-500/15 text-indigo-700 hover:bg-indigo-500/25"
-              }`}
-            title={`Role: ${roleLabel}`}
+            }`}
           >
             <Briefcase size={15} />
-            <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-opacity group-hover/tooltip:opacity-100 z-30">
-              {roleLabel}
+            <span className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-all duration-150 group-hover/tooltip:opacity-100 group-hover/tooltip:-translate-y-0.5 z-50">
+              {`Role: ${roleLabel}`}
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-4 border-t-4 border-b-0 border-x-transparent border-t-slate-900/95" />
             </span>
           </div>
 
           {/* 3. Icon Status / Akun Aktif (Tanpa Tulisan) */}
           <div
-            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 ${isActive
+            className={`group/tooltip relative flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all duration-200 hover:scale-110 hover:z-50 cursor-default ${
+              isActive
                 ? "border-emerald-300/80 bg-emerald-500/15 text-emerald-700 hover:bg-emerald-500/25"
                 : "border-rose-300/80 bg-rose-500/15 text-rose-700 hover:bg-rose-500/25"
-              }`}
-            title={isActive ? trText("Status: Akun Aktif", "Status: Active") : trText("Status: Akun Nonaktif", "Status: Inactive")}
+            }`}
           >
             <Power size={15} />
-            <span className="pointer-events-none absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[10px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-opacity group-hover/tooltip:opacity-100 z-30">
-              {isActive ? trText("Akun Aktif", "Active") : trText("Akun Nonaktif", "Inactive")}
+            <span className="pointer-events-none absolute bottom-full mb-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-slate-900/95 px-2.5 py-1 text-[11px] font-semibold text-white opacity-0 shadow-xl backdrop-blur-md transition-all duration-150 group-hover/tooltip:opacity-100 group-hover/tooltip:-translate-y-0.5 z-50">
+              {isActive ? trText("Status: Akun Aktif", "Status: Active") : trText("Status: Akun Nonaktif", "Status: Inactive")}
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-4 border-t-4 border-b-0 border-x-transparent border-t-slate-900/95" />
             </span>
           </div>
         </div>
 
-        {/* Email Pill */}
-        <div className="mx-auto mt-2.5 flex max-w-[230px] items-center justify-center gap-1.5 rounded-full border border-slate-200/60 bg-slate-100/80 px-3 py-1 text-[11px] font-medium text-slate-500 backdrop-blur-sm">
-          <Mail size={12} className="shrink-0 text-slate-400" />
-          <span className="truncate">{employee.email || "-"}</span>
+        {/* Email Pill dengan Fitur Salin / Copy Email */}
+        <div className="mx-auto mt-2.5 flex max-w-[240px] items-center justify-center">
+          <button
+            type="button"
+            onClick={handleCopyEmail}
+            className={`group/email relative flex w-full items-center justify-center gap-1.5 rounded-full border px-3 py-1.5 text-[11px] font-medium transition-all duration-200 cursor-pointer select-all ${
+              copiedEmail
+                ? "border-emerald-300 bg-emerald-50 text-emerald-700 shadow-xs"
+                : "border-slate-200/70 bg-slate-100/80 text-slate-600 hover:bg-slate-200/70 hover:text-slate-800 hover:border-slate-300 shadow-2xs"
+            }`}
+          >
+            {copiedEmail ? (
+              <>
+                <Check size={12} className="shrink-0 text-emerald-600 animate-in fade-in zoom-in-75 duration-150" />
+                <span className="font-semibold text-emerald-700">{trText("Email Tersalin!", "Copied!")}</span>
+              </>
+            ) : (
+              <>
+                <Mail size={12} className="shrink-0 text-slate-400 group-hover/email:text-slate-600 transition-colors" />
+                <span className="truncate">{employee.email || "-"}</span>
+                {employee.email && (
+                  <Copy
+                    size={11}
+                    className="shrink-0 text-slate-400 opacity-60 group-hover/email:opacity-100 group-hover/email:text-slate-600 transition-all"
+                  />
+                )}
+              </>
+            )}
+
+            {/* Tooltip Floating Copy */}
+            <span className="pointer-events-none absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-0.5 text-[9px] font-semibold text-white opacity-0 shadow-lg backdrop-blur-md transition-opacity group-hover/email:opacity-100 z-50">
+              {copiedEmail ? trText("Tersalin ke clipboard!", "Copied to clipboard!") : trText("Klik untuk salin email", "Click to copy email")}
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-3 border-t-3 border-b-0 border-x-transparent border-t-slate-900/95" />
+            </span>
+          </button>
         </div>
 
         {/* Action Buttons Glass Container */}
@@ -669,12 +740,19 @@ const ActionButton = ({ icon, onClick, color, variant = "default", tooltip }) =>
 
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`flex items-center justify-center transition-all duration-200 active:scale-95 ${isCardVariant ? `h-9 ${className}` : `h-9 w-9 rounded-full ${className}`
-        }`}
-      title={tooltip}
+      className={`group/actbtn relative flex items-center justify-center transition-all duration-200 active:scale-95 hover:z-40 ${
+        isCardVariant ? `h-9 ${className}` : `h-9 w-9 rounded-full ${className}`
+      }`}
     >
       {icon}
+      {tooltip && (
+        <span className="pointer-events-none absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900/95 px-2 py-0.5 text-[9px] font-semibold text-white opacity-0 shadow-lg backdrop-blur-md transition-all duration-150 group-hover/actbtn:opacity-100 group-hover/actbtn:-translate-y-0.5 z-50">
+          {tooltip}
+          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-x-3 border-t-3 border-b-0 border-x-transparent border-t-slate-900/95" />
+        </span>
+      )}
     </button>
   );
 };
