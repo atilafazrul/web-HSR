@@ -59,16 +59,16 @@ export const InvoiceForm = ({
         )}
 
         {!isEditing && (
-          <div className="mb-6 rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 flex items-center justify-between flex-wrap gap-2">
+          <div className="mb-6 rounded-2xl border border-slate-200/80 bg-slate-50/60 backdrop-blur-sm px-4 py-3 flex items-center justify-between flex-wrap gap-2">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 {tr("Preview Nomor Invoice", "Invoice Number Preview")}
               </p>
               <p className="text-lg font-semibold text-slate-800 font-mono">
                 {fetchingNomor ? tr("Memuat...", "Loading...") : nextNomorSurat}
               </p>
             </div>
-            <span className="text-xs text-blue-700 bg-blue-100/80 font-medium px-2.5 py-1 rounded-lg">
+            <span className="text-xs text-slate-600 bg-white/80 border border-slate-200/70 font-medium px-2.5 py-1 rounded-lg backdrop-blur-sm">
               {tr("No. Urut (001) dapat diedit di kolom bawah", "Sequence No. (001) can be edited below")}
             </span>
           </div>
@@ -137,7 +137,7 @@ export const InvoiceForm = ({
                       <button
                         type="button"
                         onClick={onSuggestNextNomor}
-                        className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-red-100 px-2.5 py-1 text-xs font-semibold text-red-800 hover:bg-red-200 transition cursor-pointer"
+                        className="mt-2 inline-flex items-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50/70 backdrop-blur-sm px-2.5 py-1 text-xs font-semibold text-red-700 hover:bg-red-100/80 hover:border-red-300 transition cursor-pointer"
                       >
                         {tr("Gunakan nomor berikutnya otomatis", "Use next available number")}
                       </button>
@@ -194,7 +194,7 @@ export const InvoiceForm = ({
               <button
                 type="button"
                 onClick={() => onInputChange({ target: { name: "pakai_ttd", value: !formData.pakai_ttd } })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.pakai_ttd ? "bg-blue-600" : "bg-gray-300"
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.pakai_ttd ? "bg-slate-800" : "bg-slate-300"
                   }`}
                 aria-pressed={formData.pakai_ttd}
               >
@@ -220,7 +220,7 @@ export const InvoiceForm = ({
               <button
                 type="button"
                 onClick={() => onInputChange({ target: { name: "pakai_cap", value: !formData.pakai_cap } })}
-                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.pakai_cap ? "bg-purple-600" : "bg-gray-300"
+                className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formData.pakai_cap ? "bg-slate-800" : "bg-slate-300"
                   }`}
                 aria-pressed={formData.pakai_cap}
               >
@@ -265,10 +265,10 @@ export const InvoiceForm = ({
           <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
             <div className="mb-3 flex items-center justify-between flex-wrap gap-2">
               <label className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-                <CreditCard size={18} className="text-blue-600" />
+                <CreditCard size={18} className="text-slate-600" />
                 {tr("Sistem Pembayaran", "Payment Scheme")} *
               </label>
-              <span className="text-xs font-medium text-gray-500">
+              <span className="text-xs font-medium text-slate-500">
                 {formData.tipe_pembayaran === "dp" ? tr("Mode Down Payment (DP)", "Down Payment (DP) Mode") : tr("Mode Lunas Penuh", "Full Payment Mode")}
               </span>
             </div>
@@ -277,61 +277,61 @@ export const InvoiceForm = ({
               <button
                 type="button"
                 onClick={() => onPaymentTypeChange("lunas")}
-                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${formData.tipe_pembayaran === "lunas"
-                  ? "border-emerald-500 bg-emerald-50/80 text-emerald-950 ring-2 ring-emerald-500/20 shadow-sm"
-                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                className={`flex items-start gap-3 p-3.5 rounded-2xl border text-left transition cursor-pointer backdrop-blur-sm ${formData.tipe_pembayaran === "lunas"
+                  ? "border-slate-400 bg-white text-slate-900 shadow-sm ring-2 ring-slate-400/20"
+                  : "border-slate-200/80 bg-white/60 text-slate-600 hover:bg-white hover:border-slate-300"
                   }`}
               >
                 <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${formData.tipe_pembayaran === "lunas"
-                  ? "border-emerald-600 bg-emerald-600 text-white"
-                  : "border-gray-300 bg-white"
+                  ? "border-slate-800 bg-slate-800 text-white"
+                  : "border-slate-300 bg-white"
                   }`}>
                   {formData.tipe_pembayaran === "lunas" && <Check size={12} strokeWidth={3} />}
                 </div>
                 <div>
                   <p className="font-semibold text-sm">{tr("Pembayaran Lunas", "Full Payment")}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{tr("Tagihan langsung lunas (100% total harga)", "Full invoice payment (100% of total)")}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{tr("Tagihan langsung lunas (100% total harga)", "Full invoice payment (100% of total)")}</p>
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => onPaymentTypeChange("dp")}
-                className={`flex items-start gap-3 p-3.5 rounded-xl border text-left transition cursor-pointer ${formData.tipe_pembayaran === "dp"
-                  ? "border-blue-500 bg-blue-50/80 text-blue-950 ring-2 ring-blue-500/20 shadow-sm"
-                  : "border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                className={`flex items-start gap-3 p-3.5 rounded-2xl border text-left transition cursor-pointer backdrop-blur-sm ${formData.tipe_pembayaran === "dp"
+                  ? "border-slate-400 bg-white text-slate-900 shadow-sm ring-2 ring-slate-400/20"
+                  : "border-slate-200/80 bg-white/60 text-slate-600 hover:bg-white hover:border-slate-300"
                   }`}
               >
                 <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${formData.tipe_pembayaran === "dp"
-                  ? "border-blue-600 bg-blue-600 text-white"
-                  : "border-gray-300 bg-white"
+                  ? "border-slate-800 bg-slate-800 text-white"
+                  : "border-slate-300 bg-white"
                   }`}>
                   {formData.tipe_pembayaran === "dp" && <Check size={12} strokeWidth={3} />}
                 </div>
                 <div>
                   <p className="font-semibold text-sm">{tr("DP (Down Payment / Uang Muka)", "DP (Down Payment)")}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{tr("Pembayaran bertahap dengan DP & sisa pelunasan", "Split payment with DP & balance settlement")}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">{tr("Pembayaran bertahap dengan DP & sisa pelunasan", "Split payment with DP & balance settlement")}</p>
                 </div>
               </button>
             </div>
 
             {formData.tipe_pembayaran === "dp" && (
-              <div className="mt-4 rounded-xl border border-blue-200 bg-white p-4 animate-fadeIn">
+              <div className="mt-4 rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm p-4 animate-fadeIn shadow-xs">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <div className="flex items-center justify-between mb-1.5 flex-wrap gap-1">
-                      <label className="text-xs font-semibold text-gray-700">
+                      <label className="text-xs font-semibold text-slate-700">
                         {tr("Persentase DP (%) (Opsional)", "DP Percentage (%) (Optional)")}
                       </label>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1.5">
                         {[20, 30, 50, 70].map((pct) => (
                           <button
                             key={pct}
                             type="button"
                             onClick={() => onDpPreset(pct)}
-                            className={`rounded px-2 py-0.5 text-[11px] font-semibold transition cursor-pointer ${Number(formData.dp_persen) === pct
-                              ? "bg-blue-600 text-white"
-                              : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            className={`rounded-xl px-2.5 py-1 text-xs font-semibold transition cursor-pointer backdrop-blur-sm shadow-xs ${Number(formData.dp_persen) === pct
+                              ? "border border-slate-700 bg-slate-800 text-white"
+                              : "border border-slate-200/80 bg-white/80 text-slate-700 hover:bg-white hover:border-slate-300"
                               }`}
                           >
                             {pct}%
@@ -349,21 +349,21 @@ export const InvoiceForm = ({
                         value={formData.dp_persen}
                         onChange={onDpPersenChange}
                         placeholder={tr("Opsional (misal 50)", "Optional (e.g. 50)")}
-                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold outline-none focus:border-blue-500 focus:bg-white"
+                        className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold outline-none focus:border-slate-500 focus:bg-white"
                       />
                       <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm font-bold text-gray-400">%</span>
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold text-gray-700">
+                    <label className="mb-1.5 block text-xs font-semibold text-slate-700">
                       {tr("Nominal DP (Rp) *", "DP Amount (Rp) *")}
                     </label>
                     <RupiahInput
                       name="dp_nominal"
                       value={formData.dp_nominal}
                       onChange={onDpNominalChange}
-                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold outline-none focus:border-blue-500 focus:bg-white"
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold outline-none focus:border-slate-500 focus:bg-white"
                       placeholder="0"
                       required={formData.tipe_pembayaran === "dp"}
                     />
@@ -377,9 +377,9 @@ export const InvoiceForm = ({
                   )}
                 </p>
 
-                <div className="mt-3 flex items-center justify-between rounded-lg bg-blue-50/80 px-3.5 py-2.5 text-xs text-blue-900 border border-blue-100">
-                  <span className="font-medium">{tr("Sisa Tagihan / Pelunasan", "Remaining Balance / Settlement")}:</span>
-                  <span className="font-bold text-sm text-blue-800">{formatRupiah(estimatedSisaPembayaran)}</span>
+                <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50/80 px-3.5 py-2.5 text-xs text-slate-800 border border-slate-200/70">
+                  <span className="font-medium text-slate-600">{tr("Sisa Tagihan / Pelunasan", "Remaining Balance / Settlement")}:</span>
+                  <span className="font-bold text-sm text-slate-900">{formatRupiah(estimatedSisaPembayaran)}</span>
                 </div>
               </div>
             )}
@@ -408,13 +408,17 @@ export const InvoiceForm = ({
         </div>
 
         <div className="mb-8">
-          <div className="mb-4 flex items-center justify-between border-b pb-2">
-            <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-700">
-              <FileSpreadsheet size={20} className="text-blue-600" />
+          <div className="mb-4 flex items-center justify-between border-b border-slate-200/80 pb-2">
+            <h3 className="flex items-center gap-2 text-lg font-semibold text-slate-800">
+              <FileSpreadsheet size={20} className="text-slate-600" />
               {tr("Item Invoice", "Invoice Items")}
             </h3>
-            <button type="button" onClick={onAddItem} className="flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm text-white hover:bg-green-700">
-              <Plus size={16} />
+            <button
+              type="button"
+              onClick={onAddItem}
+              className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/80 backdrop-blur-sm px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm hover:bg-white hover:border-slate-300 hover:text-slate-900 transition cursor-pointer"
+            >
+              <Plus size={15} />
               {tr("Tambah Item", "Add Item")}
             </button>
           </div>
@@ -452,51 +456,55 @@ export const InvoiceForm = ({
                 </div>
               </div>
               {formData.items.length > 1 && (
-                <button type="button" onClick={() => onRemoveItem(index)} className="flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm text-white hover:bg-red-700">
-                  <Trash2 size={16} />
+                <button
+                  type="button"
+                  onClick={() => onRemoveItem(index)}
+                  className="flex items-center gap-1.5 rounded-xl border border-red-200/80 bg-red-50/60 backdrop-blur-sm px-3 py-2 text-xs font-medium text-red-600 shadow-xs hover:bg-red-100/80 hover:border-red-300 transition cursor-pointer"
+                >
+                  <Trash2 size={15} />
                   {tr("Hapus", "Delete")}
                 </button>
               )}
             </div>
           ))}
 
-          <div className="ml-auto w-full max-w-md space-y-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3">
+          <div className="ml-auto w-full max-w-md space-y-2 rounded-2xl border border-slate-200/80 bg-slate-50/70 backdrop-blur-sm p-4 transition shadow-xs">
             <div className="flex items-start justify-between gap-4 text-sm">
-              <span className="shrink-0 text-gray-600">{tr("Sub Total", "Sub Total")}</span>
+              <span className="shrink-0 text-slate-600">{tr("Sub Total", "Sub Total")}</span>
               <span className="text-right font-semibold tabular-nums text-slate-800">{formatRupiah(estimatedSubtotal)}</span>
             </div>
             {estimatedDiskon > 0 && (
               <div className="flex items-start justify-between gap-4 text-sm">
-                <span className="shrink-0 text-gray-600">{tr("Diskon", "Discount")}</span>
+                <span className="shrink-0 text-slate-600">{tr("Diskon", "Discount")}</span>
                 <span className="text-right font-semibold tabular-nums text-red-600">- {formatRupiah(estimatedDiskon)}</span>
               </div>
             )}
             <div className="flex items-start justify-between gap-4 text-sm">
-              <span className="shrink-0 text-gray-600">PPN ({formData.ppn_persen || 11}%)</span>
+              <span className="shrink-0 text-slate-600">PPN ({formData.ppn_persen || 11}%)</span>
               <span className="text-right font-semibold tabular-nums text-slate-800">{formatRupiah(estimatedPpn)}</span>
             </div>
-            <div className="flex items-start justify-between gap-4 border-t border-blue-100 pt-2">
-              <span className="shrink-0 text-base font-bold text-blue-700">{tr("Total", "Total")}</span>
-              <span className="text-right text-base font-bold tabular-nums text-blue-700">{formatRupiah(estimatedTotal)}</span>
+            <div className="flex items-start justify-between gap-4 border-t border-slate-200 pt-2">
+              <span className="shrink-0 text-base font-bold text-slate-800">{tr("Total", "Total")}</span>
+              <span className="text-right text-base font-bold tabular-nums text-slate-900">{formatRupiah(estimatedTotal)}</span>
             </div>
 
             {formData.tipe_pembayaran === "dp" ? (
-              <div className="mt-2 border-t border-blue-200/80 pt-2 space-y-1.5 animate-fadeIn">
+              <div className="mt-2 border-t border-slate-200 pt-2 space-y-1.5 animate-fadeIn">
                 <div className="flex items-start justify-between gap-4 text-sm">
-                  <span className="shrink-0 font-medium text-blue-900">
+                  <span className="shrink-0 font-medium text-slate-800">
                     {tr("DP (Uang Muka)", "Down Payment (DP)")}{formData.dp_persen && Number(formData.dp_persen) > 0 ? ` (${formData.dp_persen}%)` : ""}
                   </span>
-                  <span className="text-right font-bold tabular-nums text-blue-800">{formatRupiah(estimatedDpNominal)}</span>
+                  <span className="text-right font-bold tabular-nums text-slate-900">{formatRupiah(estimatedDpNominal)}</span>
                 </div>
                 <div className="flex items-start justify-between gap-4 text-sm">
-                  <span className="shrink-0 font-medium text-amber-900">{tr("Sisa Pembayaran", "Remaining Balance")}</span>
-                  <span className="text-right font-bold tabular-nums text-amber-800">{formatRupiah(estimatedSisaPembayaran)}</span>
+                  <span className="shrink-0 font-medium text-slate-600">{tr("Sisa Pembayaran", "Remaining Balance")}</span>
+                  <span className="text-right font-bold tabular-nums text-slate-900">{formatRupiah(estimatedSisaPembayaran)}</span>
                 </div>
               </div>
             ) : (
-              <div className="mt-2 border-t border-blue-200/80 pt-2 flex items-center justify-between text-xs">
-                <span className="text-gray-600">{tr("Status Pembayaran", "Payment Status")}</span>
-                <span className="inline-flex items-center gap-1 font-bold text-emerald-700 bg-emerald-100/90 px-2.5 py-0.5 rounded-md">
+              <div className="mt-2 border-t border-slate-200 pt-2 flex items-center justify-between text-xs">
+                <span className="text-slate-600">{tr("Status Pembayaran", "Payment Status")}</span>
+                <span className="inline-flex items-center gap-1 font-semibold text-slate-800 bg-white/90 border border-slate-200 px-2.5 py-0.5 rounded-lg shadow-xs backdrop-blur-sm">
                   <Check size={12} strokeWidth={3} /> {tr("Lunas (Penuh)", "Full Payment")}
                 </span>
               </div>
@@ -526,15 +534,19 @@ export const InvoiceForm = ({
         </div>
 
         <div className="flex flex-col justify-end gap-3 sm:flex-row">
-          <button type="button" onClick={onReset} className={`rounded-xl px-6 py-3 font-medium ${isEditing ? "bg-orange-100 text-orange-700 hover:bg-orange-200" : "border border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
+          <button
+            type="button"
+            onClick={onReset}
+            className={`rounded-xl border border-slate-200/90 bg-white/80 backdrop-blur-sm px-6 py-3 font-medium text-slate-700 shadow-sm hover:bg-white hover:border-slate-300 hover:text-slate-900 transition cursor-pointer ${isEditing ? "border-orange-200/80 bg-orange-50/60 text-orange-700 hover:bg-orange-100/80" : ""}`}
+          >
             {isEditing ? <span className="flex items-center justify-center gap-2"><X size={18} />{tr("Batal Edit", "Cancel Edit")}</span> : tr("Reset", "Reset")}
           </button>
           <button
             type="submit"
             disabled={loading || Boolean(isDuplicateNomor)}
-            className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-medium text-white transition ${loading || isDuplicateNomor
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
+            className={`flex items-center justify-center gap-2 rounded-xl px-8 py-3 font-medium text-white shadow-sm backdrop-blur-sm transition cursor-pointer ${loading || isDuplicateNomor
+              ? "bg-slate-400 cursor-not-allowed"
+              : "bg-slate-900 hover:bg-slate-800 border border-slate-800"
               }`}
             title={isDuplicateNomor ? tr("Nomor invoice sudah terdaftar", "Invoice number already registered") : undefined}
           >

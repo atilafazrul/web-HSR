@@ -45,7 +45,19 @@ export const SPHHistory = ({
             <div key={item.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4 sm:p-6 transition hover:shadow-md">
               <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
                 <div className="flex-1">
-                  <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{item.nomor_surat}</span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">{item.nomor_surat}</span>
+                    {item.divisi && (
+                      <span className="rounded bg-gray-200 px-2 py-0.5 text-xs font-medium uppercase text-gray-700">
+                        {item.divisi}
+                      </span>
+                    )}
+                    {Boolean(item.pakai_rekapitulasi) && (
+                      <span className="rounded bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
+                        + Rekapitulasi
+                      </span>
+                    )}
+                  </div>
                   <h4 className="mt-2 text-lg font-semibold text-gray-800">{item.penerima_nama}</h4>
                   <p className="mt-1 text-sm text-gray-500">{item.perihal || "Penawaran Harga"}</p>
                   <p className="mt-2 text-sm font-medium text-green-700">
@@ -92,6 +104,12 @@ export const SPHHistory = ({
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-xl">
             <h3 className="mb-4 text-xl font-bold">{selectedItem.nomor_surat}</h3>
             <div className="space-y-2 text-sm text-gray-700">
+              {selectedItem.divisi && (
+                <p><strong>{tr("Divisi", "Division")}:</strong> <span className="uppercase font-semibold">{selectedItem.divisi}</span></p>
+              )}
+              {Boolean(selectedItem.pakai_rekapitulasi) && (
+                <p><strong>{tr("Halaman Rekapitulasi", "Rekapitulasi Page")}:</strong> <span className="text-purple-700 font-semibold">{tr("Aktif", "Active")}</span></p>
+              )}
               <p><strong>{tr("Penerima", "Recipient")}:</strong> {selectedItem.penerima_nama}</p>
               <p><strong>{tr("Perihal", "Subject")}:</strong> {selectedItem.perihal}</p>
               {(Boolean(selectedItem.pakai_ppn) || Boolean(selectedItem.pakai_diskon ?? (Number(selectedItem.diskon_nominal || 0) > 0))) && (

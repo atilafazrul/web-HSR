@@ -1,5 +1,5 @@
 import React from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation } from "react-router-dom";
 import { useSPH } from "./hooks/useSPH";
 import { SPHForm } from "./components/forms/SPHForm";
 import { SPHHistory } from "./components/history/SPHHistory";
@@ -8,8 +8,13 @@ import { useI18n } from "../../i18n";
 
 export default function SPHPage() {
   const { projekId } = useParams();
+  const location = useLocation();
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
+
+  const divisiMatch = location.pathname.match(/\/(it|service|sales|kontraktor|logistik|purchasing|siplah)\//);
+  const defaultDivisi = divisiMatch ? divisiMatch[1] : "it";
+
   const {
     activeTab,
     setActiveTab,
@@ -46,7 +51,20 @@ export default function SPHPage() {
     estimatedDiskon,
     estimatedPpn,
     estimatedTotal,
-  } = useSPH(projekId);
+    applyPembukaTemplate,
+    addRekapCategory,
+    removeRekapCategory,
+    updateRekapCategory,
+    updateRekapCategoryMeta,
+    addRekapItem,
+    removeRekapItem,
+    updateRekapItem,
+    syncRekapToMainItems,
+    rekapCategorySubtotals,
+    rekapSubtotal,
+    rekapVat,
+    rekapGrandTotal,
+  } = useSPH(projekId, defaultDivisi);
 
   const handleTabChange = (tab) => {
     if (isEditing) {
@@ -103,6 +121,19 @@ export default function SPHPage() {
             estimatedTotal={estimatedTotal}
             scheduleSectionProps={scheduleSectionProps}
             onScheduleGenerate={handleScheduleGenerate}
+            onApplyPembukaTemplate={applyPembukaTemplate}
+            onAddRekapCategory={addRekapCategory}
+            onRemoveRekapCategory={removeRekapCategory}
+            onUpdateRekapCategory={updateRekapCategory}
+            onUpdateRekapCategoryMeta={updateRekapCategoryMeta}
+            onAddRekapItem={addRekapItem}
+            onRemoveRekapItem={removeRekapItem}
+            onUpdateRekapItem={updateRekapItem}
+            onSyncRekapToMainItems={syncRekapToMainItems}
+            rekapCategorySubtotals={rekapCategorySubtotals}
+            rekapSubtotal={rekapSubtotal}
+            rekapVat={rekapVat}
+            rekapGrandTotal={rekapGrandTotal}
           />
         ) : (
           <SPHHistory

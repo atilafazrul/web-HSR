@@ -11,6 +11,7 @@ class SphDocument extends Model
 
     protected $fillable = [
         'projek_kerja_id',
+        'divisi',
         'nomor_surat',
         'lampiran',
         'perihal',
@@ -32,6 +33,9 @@ class SphDocument extends Model
         'jabatan_penandatangan',
         'syarat_ketentuan',
         'paragraf_penutup',
+        'pakai_rekapitulasi',
+        'rekapitulasi_judul',
+        'rekapitulasi_data',
         'nomor_urut',
         'bulan',
         'tahun',
@@ -48,5 +52,7 @@ class SphDocument extends Model
         'pakai_ppn' => 'boolean',
         'ppn_persen' => 'float',
         'ppn_nominal' => 'integer',
+        'pakai_rekapitulasi' => 'boolean',
+        'rekapitulasi_data' => 'array',
     ];
 }

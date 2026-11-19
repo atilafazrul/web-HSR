@@ -49,6 +49,7 @@ export function mapKlientDocToForm(data, tanggalField, includeKota = false) {
 
 export function mapSphDocToForm(data, defaults = {}) {
   return {
+    divisi: data.divisi || defaults.divisi || "",
     lampiran: data.lampiran || "-",
     perihal: data.perihal || "Penawaran Harga",
     penerima_nama: data.penerima_nama || "",
@@ -59,9 +60,10 @@ export function mapSphDocToForm(data, defaults = {}) {
             nama_item: item.nama_item || "",
             deskripsi: deskripsiToEditorHtml(item.deskripsi),
             qty: item.qty || "1",
+            unit: item.unit || "Ls",
             harga: nominalApiToInput(item.harga),
           }))
-        : [{ nama_item: "", deskripsi: "", qty: "1", harga: "" }],
+        : [{ nama_item: "", deskripsi: "", qty: "1", unit: "Ls", harga: "" }],
     show_total: data.show_total !== undefined && data.show_total !== null ? Boolean(data.show_total) : true,
     pakai_diskon: Boolean(data.pakai_diskon ?? (Number(data.diskon_nominal || 0) > 0)),
     diskon_persen: String(data.diskon_persen ?? 0),
@@ -74,5 +76,36 @@ export function mapSphDocToForm(data, defaults = {}) {
     jabatan_penandatangan: data.jabatan_penandatangan || defaults.jabatan_penandatangan || "Direktur",
     syarat_ketentuan: data.syarat_ketentuan || defaults.syarat_ketentuan || "",
     paragraf_penutup: data.paragraf_penutup || defaults.paragraf_penutup || "",
+    pakai_rekapitulasi: Boolean(data.pakai_rekapitulasi),
+    rekapitulasi_judul: data.rekapitulasi_judul || "",
+    rekapitulasi_data:
+      Array.isArray(data.rekapitulasi_data) && data.rekapitulasi_data.length > 0
+        ? data.rekapitulasi_data.map((cat, catIdx) => ({
+            nomor_romawi: cat.nomor_romawi || "",
+            judul_kategori: cat.judul_kategori || "",
+            qty: cat.qty || "1",
+            unit: cat.unit || "Ls",
+            items:
+              Array.isArray(cat.items) && cat.items.length > 0
+                ? cat.items.map((item, itmIdx) => ({
+                    nomor: item.nomor ?? itmIdx + 1,
+                    deskripsi: item.deskripsi || "",
+                    satuan: item.satuan || "",
+                    vol: item.vol !== undefined ? String(item.vol) : "1",
+                    material: nominalApiToInput(item.material),
+                    jasa: nominalApiToInput(item.jasa),
+                  }))
+                : [
+                    {
+                      nomor: 1,
+                      deskripsi: "",
+                      satuan: "ls",
+                      vol: "1",
+                      material: "",
+                      jasa: "",
+                    },
+                  ],
+          }))
+        : [],
   };
 }
