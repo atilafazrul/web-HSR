@@ -147,8 +147,8 @@ export default function pdfForm({
           type="button"
           onClick={onReset}
           className={`px-6 py-3 rounded-xl font-medium transition flex items-center gap-2 ${isEditing
-              ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
-              : "text-gray-700 bg-gray-200 hover:bg-gray-300"
+            ? "text-orange-700 bg-orange-100 hover:bg-orange-200"
+            : "text-gray-700 bg-gray-200 hover:bg-gray-300"
             }`}
         >
           {isEditing ? (
@@ -341,15 +341,15 @@ function EquipmentSection({ formData, onInputChange }) {
         </div>
 
         {/* Start Date */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
-          <div className="relative">
-            <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative min-w-0">
+            <Calendar size={18} className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" />
             <input
               type="date"
               value={formData.start_date}
               onChange={(e) => onInputChange("start_date", e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="projek-kerja-date-input min-w-0 max-w-full w-full p-3 pl-10 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -366,15 +366,15 @@ function EquipmentSection({ formData, onInputChange }) {
         </div>
 
         {/* Completed Date */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-gray-700 mb-2">Completed Date</label>
-          <div className="relative">
-            <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative min-w-0">
+            <Calendar size={18} className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" />
             <input
               type="date"
               value={formData.completed_date}
               onChange={(e) => onInputChange("completed_date", e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="projek-kerja-date-input min-w-0 max-w-full w-full p-3 pl-10 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -636,15 +636,15 @@ function AdministrationSection({ formData, onInputChange, user }) {
         </div>
 
         {/* Tanggal */}
-        <div>
+        <div className="min-w-0">
           <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Tanggal", "Date")}</label>
-          <div className="relative">
-            <Calendar size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <div className="relative min-w-0">
+            <Calendar size={18} className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" />
             <input
               type="date"
               value={formData.tanggal}
               onChange={(e) => onInputChange("tanggal", e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              className="projek-kerja-date-input min-w-0 max-w-full w-full p-3 pl-10 pr-3 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
         </div>

@@ -272,6 +272,8 @@ textarea::placeholder {
     box-sizing: border-box;
     -webkit-appearance: none;
     appearance: none;
+    min-width: 0;
+    max-width: 100%;
     min-height: 0;
     height: 3rem; /* same visual row as pl-10 p-3 text inputs */
     color-scheme: light;

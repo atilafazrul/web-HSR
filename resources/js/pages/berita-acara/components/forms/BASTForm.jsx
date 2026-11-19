@@ -22,8 +22,8 @@ export const BASTForm = ({
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
   return (
-    <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
-      <form id="bast-form" onSubmit={onSubmit}>
+    <div className="min-w-0 overflow-x-hidden bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
+      <form id="bast-form" onSubmit={onSubmit} className="min-w-0">
         {isEditing && (
           <div className="mb-6 p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-center gap-3">
             <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
@@ -45,7 +45,7 @@ export const BASTForm = ({
             {isEditing ? tr("Edit Dokumen BAST", "Edit BAST Document") : tr("Informasi Dokumen", "Document Information")}
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+          <div className="grid min-w-0 grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 [&>*]:min-w-0">
             {/* Hari - Auto from date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -63,18 +63,18 @@ export const BASTForm = ({
             </div>
 
             {/* Tanggal Pelaksanaan - Date Picker */}
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {tr("Tanggal Pelaksanaan", "Execution Date")} <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <div className="relative min-w-0">
+                <Calendar className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="date"
                   name="tanggal_bast"
                   value={formData.tanggal_bast}
                   onChange={onInputChange}
-                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  className="projek-kerja-date-input min-w-0 max-w-full w-full p-3 pl-10 pr-3 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                   required
                 />
               </div>
@@ -86,18 +86,18 @@ export const BASTForm = ({
             </div>
 
             {/* Tanggal Tanda Tangan - Date Picker */}
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 {tr("Tanggal Tanda Tangan", "Signature Date")} <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <div className="relative min-w-0">
+                <Calendar className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" size={18} />
                 <input
                   type="date"
                   name="tanggal_tanda_tangan"
                   value={formData.tanggal_tanda_tangan}
                   onChange={onInputChange}
-                  className="w-full pl-9 sm:pl-10 pr-3 sm:pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
+                  className="projek-kerja-date-input min-w-0 max-w-full w-full p-3 pl-10 pr-3 text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50"
                   required
                 />
               </div>

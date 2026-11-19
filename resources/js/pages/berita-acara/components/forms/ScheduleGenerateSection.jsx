@@ -60,15 +60,15 @@ export const ScheduleGenerateSection = ({
           </label>
           <div className="space-y-3">
             {scheduledDates.map((dateValue, index) => (
-              <div key={index} className="flex gap-2">
-                <div className="relative flex-1">
-                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-600" size={18} />
+              <div key={index} className="flex min-w-0 gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <Clock className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-amber-600" size={18} />
                   <input
                     type="datetime-local"
                     value={dateValue}
                     min={minDateTime()}
                     onChange={(e) => onScheduledDateChange?.(index, e.target.value)}
-                    className="w-full rounded-xl border border-amber-200 bg-white py-2.5 pl-10 pr-4 focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
+                    className="projek-kerja-date-input min-w-0 max-w-full w-full rounded-xl border border-amber-200 bg-white p-3 pl-10 pr-3 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
                   />
                 </div>
                 {scheduledDates.length > 1 && (
@@ -94,7 +94,7 @@ export const ScheduleGenerateSection = ({
           </button>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid min-w-0 gap-4 sm:grid-cols-2 [&>*]:min-w-0">
           <div>
             <label className="mb-2 block text-sm font-medium text-amber-900">
               {tr("Pengulangan", "Recurrence")}
@@ -113,7 +113,7 @@ export const ScheduleGenerateSection = ({
           </div>
 
           {recurrenceType !== "once" && (
-            <div>
+            <div className="min-w-0">
               <label className="mb-2 block text-sm font-medium text-amber-900">
                 {tr("Berakhir pada (opsional)", "End on (optional)")}
               </label>
@@ -122,7 +122,7 @@ export const ScheduleGenerateSection = ({
                 value={recurrenceEndAt}
                 min={minDateTime()}
                 onChange={(e) => onRecurrenceEndAtChange?.(e.target.value)}
-                className="w-full rounded-xl border border-amber-200 bg-white px-4 py-2.5 focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
+                className="projek-kerja-date-input min-w-0 max-w-full w-full rounded-xl border border-amber-200 bg-white p-3 text-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-300"
               />
             </div>
           )}
@@ -132,11 +132,10 @@ export const ScheduleGenerateSection = ({
           type="button"
           onClick={onSchedule}
           disabled={loading || scheduling || !hasValidDate}
-          className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium transition sm:w-auto ${
-            loading || scheduling || !hasValidDate
+          className={`flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 font-medium transition sm:w-auto ${loading || scheduling || !hasValidDate
               ? "cursor-not-allowed bg-gray-300 text-gray-500"
               : "bg-amber-600 text-white hover:bg-amber-700 hover:shadow-lg"
-          }`}
+            }`}
         >
           {scheduling ? (
             <>

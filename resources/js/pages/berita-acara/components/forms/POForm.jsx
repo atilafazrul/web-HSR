@@ -29,7 +29,7 @@ export const POForm = ({
   const tr = (id, en) => (language === "en" ? en : id);
 
   return (
-    <div className="min-w-0 overflow-x-auto rounded-3xl bg-white p-4 shadow-md sm:p-6 lg:p-8">
+    <div className="min-w-0 overflow-x-hidden rounded-3xl bg-white p-4 shadow-md sm:p-6 lg:p-8">
       <form id="po-form" onSubmit={onSubmit} className="min-w-0">
         {isEditing && (
           <div className="mb-6 flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
@@ -54,12 +54,12 @@ export const POForm = ({
           </div>
         )}
 
-        <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2">
-          <div>
+        <div className="mb-8 grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2 [&>*]:min-w-0">
+          <div className="min-w-0">
             <label className="mb-2 block text-sm font-medium text-gray-700">{tr("Tanggal PO", "PO Date")} *</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input type="date" name="tanggal_po" value={formData.tanggal_po} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4" required={!formData.tanggal_po_display} />
+            <div className="relative min-w-0">
+              <Calendar className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" size={18} />
+              <input type="date" name="tanggal_po" value={formData.tanggal_po} onChange={onInputChange} className="projek-kerja-date-input min-w-0 max-w-full w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-10 pr-3 text-sm" required={!formData.tanggal_po_display} />
             </div>
             {formData.tanggal_po_display && <p className="mt-1 text-sm text-gray-600">{formData.tanggal_po_display}</p>}
           </div>

@@ -47,8 +47,8 @@ export const SPHForm = ({
   const isRekapActive = isKontraktor && Boolean(formData.pakai_rekapitulasi);
 
   return (
-    <div className="bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
-      <form id="sph-form" onSubmit={onSubmit}>
+    <div className="min-w-0 overflow-x-hidden bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
+      <form id="sph-form" onSubmit={onSubmit} className="min-w-0">
         {isEditing && (
           <div className="mb-6 flex items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-orange-100">
@@ -61,14 +61,14 @@ export const SPHForm = ({
           </div>
         )}
         {!isEditing && (
-        <div className="mb-6 rounded-2xl border border-slate-200/80 bg-slate-50/60 backdrop-blur-sm px-4 py-3">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            {tr("Preview Nomor Surat", "Letter Number Preview")}
-          </p>
-          <p className="text-lg font-semibold font-mono text-slate-800">
-            {fetchingNomor ? tr("Memuat...", "Loading...") : nextNomorSurat}
-          </p>
-        </div>
+          <div className="mb-6 rounded-2xl border border-slate-200/80 bg-slate-50/60 backdrop-blur-sm px-4 py-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              {tr("Preview Nomor Surat", "Letter Number Preview")}
+            </p>
+            <p className="text-lg font-semibold font-mono text-slate-800">
+              {fetchingNomor ? tr("Memuat...", "Loading...") : nextNomorSurat}
+            </p>
+          </div>
         )}
 
         <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -113,33 +113,30 @@ export const SPHForm = ({
                 <button
                   type="button"
                   onClick={() => onApplyPembukaTemplate("service")}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${
-                    formData.divisi === "service"
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${formData.divisi === "service"
                       ? "border-slate-800 bg-slate-800 text-white font-semibold"
                       : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   Divisi Service
                 </button>
                 <button
                   type="button"
                   onClick={() => onApplyPembukaTemplate("kontraktor")}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${
-                    formData.divisi === "kontraktor"
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${formData.divisi === "kontraktor"
                       ? "border-slate-800 bg-slate-800 text-white font-semibold"
                       : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   Divisi Kontraktor
                 </button>
                 <button
                   type="button"
                   onClick={() => onApplyPembukaTemplate("it")}
-                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${
-                    formData.divisi === "it"
+                  className={`rounded-xl border px-3 py-1.5 text-xs font-medium shadow-xs transition cursor-pointer ${formData.divisi === "it"
                       ? "border-slate-800 bg-slate-800 text-white font-semibold"
                       : "border-slate-200/80 bg-white/70 backdrop-blur-sm text-slate-700 hover:bg-white hover:border-slate-300"
-                  }`}
+                    }`}
                 >
                   Divisi IT
                 </button>
@@ -490,270 +487,270 @@ export const SPHForm = ({
         {/* ================= SECTION REKAPITULASI (OPSIONAL - KHUSUS DIVISI KONTRAKTOR) ================= */}
         {isKontraktor && (
           <div className="mb-8 rounded-3xl border border-slate-200/80 bg-slate-50/50 backdrop-blur-sm p-4 sm:p-6 transition shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
-            <div className="flex items-center gap-3">
-              <label className="flex cursor-pointer items-center gap-3 select-none">
-                <input
-                  type="checkbox"
-                  name="pakai_rekapitulasi"
-                  checked={Boolean(formData.pakai_rekapitulasi)}
-                  onChange={onInputChange}
-                  className="h-5 w-5 rounded border-slate-300 text-slate-800 focus:ring-slate-400 cursor-pointer"
-                />
-                <div>
-                  <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                    {tr("Halaman 2: Rekapitulasi Rincian Pekerjaan (Detail & Breakdown)", "Page 2: Work Details Recapitulation (Detail & Breakdown)")}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {tr(
-                      "Format Kontraktor: rincian material & jasa per kategori pekerjaan. Setiap kategori di bawah otomatis menjadi baris pada Tabel Halaman 1.",
-                      "Contractor format: material & labor details per category. Each category below automatically forms a row on Page 1 Table."
-                    )}
-                  </p>
-                </div>
-              </label>
-            </div>
-            {Boolean(formData.pakai_rekapitulasi) && onSyncRekapToMainItems && (
-              <button
-                type="button"
-                onClick={onSyncRekapToMainItems}
-                className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/80 backdrop-blur-sm px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-white hover:border-slate-300 hover:text-slate-900 transition cursor-pointer"
-                title={tr("Refresh atau paksa sinkronisasi subtotal kategori ke Halaman 1", "Refresh or force sync category subtotals to Page 1")}
-              >
-                <RefreshCw size={14} className="text-slate-600" />
-                {tr("Refresh Sinkronisasi Halaman 1", "Refresh Page 1 Sync")}
-              </button>
-            )}
-          </div>
-
-          {Boolean(formData.pakai_rekapitulasi) && (
-            <div className="mt-4 space-y-5 animate-fadeIn">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                  {tr("Judul / Proyek Rekapitulasi (Banner Rekapitulasi)", "Recapitulation / Project Title")}
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+              <div className="flex items-center gap-3">
+                <label className="flex cursor-pointer items-center gap-3 select-none">
+                  <input
+                    type="checkbox"
+                    name="pakai_rekapitulasi"
+                    checked={Boolean(formData.pakai_rekapitulasi)}
+                    onChange={onInputChange}
+                    className="h-5 w-5 rounded border-slate-300 text-slate-800 focus:ring-slate-400 cursor-pointer"
+                  />
+                  <div>
+                    <h3 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                      {tr("Halaman 2: Rekapitulasi Rincian Pekerjaan (Detail & Breakdown)", "Page 2: Work Details Recapitulation (Detail & Breakdown)")}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {tr(
+                        "Format Kontraktor: rincian material & jasa per kategori pekerjaan. Setiap kategori di bawah otomatis menjadi baris pada Tabel Halaman 1.",
+                        "Contractor format: material & labor details per category. Each category below automatically forms a row on Page 1 Table."
+                      )}
+                    </p>
+                  </div>
                 </label>
-                <input
-                  type="text"
-                  name="rekapitulasi_judul"
-                  value={formData.rekapitulasi_judul || ""}
-                  onChange={onInputChange}
-                  placeholder={formData.perihal || tr("Contoh: RENOVASI GEDUNG UTAMA KLINIK RAWAT INAP HIDUP BARU", "Example: CLINIC RENOVATION PROJECT")}
-                  className="w-full rounded-xl border border-slate-200 bg-white/90 backdrop-blur-sm px-4 py-2.5 text-sm uppercase font-semibold text-slate-800 placeholder-slate-400 focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                />
               </div>
+              {Boolean(formData.pakai_rekapitulasi) && onSyncRekapToMainItems && (
+                <button
+                  type="button"
+                  onClick={onSyncRekapToMainItems}
+                  className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/80 backdrop-blur-sm px-3 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-white hover:border-slate-300 hover:text-slate-900 transition cursor-pointer"
+                  title={tr("Refresh atau paksa sinkronisasi subtotal kategori ke Halaman 1", "Refresh or force sync category subtotals to Page 1")}
+                >
+                  <RefreshCw size={14} className="text-slate-600" />
+                  {tr("Refresh Sinkronisasi Halaman 1", "Refresh Page 1 Sync")}
+                </button>
+              )}
+            </div>
 
-              {/* DAFTAR KATEGORI PEKERJAAN */}
-              <div className="space-y-4">
-                {(formData.rekapitulasi_data || []).map((cat, catIdx) => (
-                  <div
-                    key={catIdx}
-                    className="rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm p-4 shadow-xs"
-                  >
-                    {/* Header Kategori */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
-                      <div className="flex flex-wrap flex-1 items-center gap-2">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-700 text-xs font-bold text-white shadow-xs">
-                          {cat.nomor_romawi || catIdx + 1}
-                        </span>
-                        <input
-                          type="text"
-                          value={cat.judul_kategori || ""}
-                          onChange={(e) => onUpdateRekapCategory && onUpdateRekapCategory(catIdx, "judul_kategori", e.target.value)}
-                          placeholder={tr(`Nama Kategori ${cat.nomor_romawi || catIdx + 1} (cth: PEKERJAAN PERSIAPAN)`, `Category ${cat.nomor_romawi || catIdx + 1} Name`)}
-                          className="w-full max-w-sm rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold uppercase text-slate-800 focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                          required
-                        />
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <label className="flex items-center gap-1">
-                            <span className="text-[11px] font-medium text-slate-400">QTY:</span>
-                            <input
-                              type="text"
-                              value={cat.qty || "1"}
-                              onChange={(e) => onUpdateRekapCategoryMeta && onUpdateRekapCategoryMeta(catIdx, "qty", e.target.value)}
-                              className="w-12 rounded border border-slate-200 bg-white px-1.5 py-1 text-center font-medium text-slate-700"
-                              placeholder="1"
-                            />
-                          </label>
-                          <label className="flex items-center gap-1">
-                            <span className="text-[11px] font-medium text-slate-400">Unit:</span>
-                            <input
-                              type="text"
-                              value={cat.unit || "Ls"}
-                              onChange={(e) => onUpdateRekapCategoryMeta && onUpdateRekapCategoryMeta(catIdx, "unit", e.target.value)}
-                              className="w-14 rounded border border-slate-200 bg-white px-1.5 py-1 text-center font-medium text-slate-700"
-                              placeholder="Ls"
-                            />
-                          </label>
+            {Boolean(formData.pakai_rekapitulasi) && (
+              <div className="mt-4 space-y-5 animate-fadeIn">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                    {tr("Judul / Proyek Rekapitulasi (Banner Rekapitulasi)", "Recapitulation / Project Title")}
+                  </label>
+                  <input
+                    type="text"
+                    name="rekapitulasi_judul"
+                    value={formData.rekapitulasi_judul || ""}
+                    onChange={onInputChange}
+                    placeholder={formData.perihal || tr("Contoh: RENOVASI GEDUNG UTAMA KLINIK RAWAT INAP HIDUP BARU", "Example: CLINIC RENOVATION PROJECT")}
+                    className="w-full rounded-xl border border-slate-200 bg-white/90 backdrop-blur-sm px-4 py-2.5 text-sm uppercase font-semibold text-slate-800 placeholder-slate-400 focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                  />
+                </div>
+
+                {/* DAFTAR KATEGORI PEKERJAAN */}
+                <div className="space-y-4">
+                  {(formData.rekapitulasi_data || []).map((cat, catIdx) => (
+                    <div
+                      key={catIdx}
+                      className="rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm p-4 shadow-xs"
+                    >
+                      {/* Header Kategori */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3 mb-3">
+                        <div className="flex flex-wrap flex-1 items-center gap-2">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-700 text-xs font-bold text-white shadow-xs">
+                            {cat.nomor_romawi || catIdx + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={cat.judul_kategori || ""}
+                            onChange={(e) => onUpdateRekapCategory && onUpdateRekapCategory(catIdx, "judul_kategori", e.target.value)}
+                            placeholder={tr(`Nama Kategori ${cat.nomor_romawi || catIdx + 1} (cth: PEKERJAAN PERSIAPAN)`, `Category ${cat.nomor_romawi || catIdx + 1} Name`)}
+                            className="w-full max-w-sm rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-bold uppercase text-slate-800 focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                            required
+                          />
+                          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                            <label className="flex items-center gap-1">
+                              <span className="text-[11px] font-medium text-slate-400">QTY:</span>
+                              <input
+                                type="text"
+                                value={cat.qty || "1"}
+                                onChange={(e) => onUpdateRekapCategoryMeta && onUpdateRekapCategoryMeta(catIdx, "qty", e.target.value)}
+                                className="w-12 rounded border border-slate-200 bg-white px-1.5 py-1 text-center font-medium text-slate-700"
+                                placeholder="1"
+                              />
+                            </label>
+                            <label className="flex items-center gap-1">
+                              <span className="text-[11px] font-medium text-slate-400">Unit:</span>
+                              <input
+                                type="text"
+                                value={cat.unit || "Ls"}
+                                onChange={(e) => onUpdateRekapCategoryMeta && onUpdateRekapCategoryMeta(catIdx, "unit", e.target.value)}
+                                className="w-14 rounded border border-slate-200 bg-white px-1.5 py-1 text-center font-medium text-slate-700"
+                                placeholder="Ls"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-xs font-semibold text-slate-600 bg-slate-100/80 border border-slate-200/60 px-2.5 py-1 rounded-lg">
+                            Sub Total: <strong className="text-slate-900 font-bold">{formatRupiah(rekapCategorySubtotals[catIdx] || 0)}</strong>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => onRemoveRekapCategory && onRemoveRekapCategory(catIdx)}
+                            className="flex items-center gap-1 rounded-lg border border-red-200/70 bg-red-50/50 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100/70 hover:border-red-300 transition cursor-pointer"
+                            title={tr("Hapus Kategori", "Delete Category")}
+                          >
+                            <Trash2 size={13} />
+                            {tr("Hapus Kategori", "Delete")}
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs font-semibold text-slate-600 bg-slate-100/80 border border-slate-200/60 px-2.5 py-1 rounded-lg">
-                          Sub Total: <strong className="text-slate-900 font-bold">{formatRupiah(rekapCategorySubtotals[catIdx] || 0)}</strong>
-                        </span>
+
+                      {/* Tabel Rincian Item Pekerjaan */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs">
+                          <thead>
+                            <tr className="border-b border-slate-200/80 text-slate-500 uppercase tracking-wider">
+                              <th className="py-2 px-1 w-8 text-center">No</th>
+                              <th className="py-2 px-2 min-w-[200px]">{tr("Deskripsi Pekerjaan", "Work Description")} *</th>
+                              <th className="py-2 px-2 w-20 text-center">{tr("Satuan", "Unit")}</th>
+                              <th className="py-2 px-2 w-16 text-center">Vol</th>
+                              <th className="py-2 px-2 w-32 text-right">{tr("Material (Rp)", "Material (Rp)")}</th>
+                              <th className="py-2 px-2 w-32 text-right">{tr("Jasa (Rp)", "Labor (Rp)")}</th>
+                              <th className="py-2 px-2 w-32 text-right font-bold">{tr("Total Item", "Item Total")}</th>
+                              <th className="py-2 px-1 w-10 text-center"></th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {(cat.items || []).map((item, itemIdx) => {
+                              const volNum = Math.max(0, Number(item.vol) || 1);
+                              const matNum = parseRibuanId(item.material);
+                              const jasaNum = parseRibuanId(item.jasa);
+                              const itemTotal = Math.round(volNum * (matNum + jasaNum));
+
+                              return (
+                                <tr key={itemIdx} className="hover:bg-slate-50/60">
+                                  <td className="py-2 px-1 text-center font-medium text-slate-500">
+                                    {item.nomor ?? itemIdx + 1}
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <input
+                                      type="text"
+                                      value={item.deskripsi || ""}
+                                      onChange={(e) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "deskripsi", e.target.value)}
+                                      placeholder={tr("Uraian pekerjaan...", "Work description...")}
+                                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                                      required
+                                    />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <input
+                                      type="text"
+                                      value={item.satuan || ""}
+                                      onChange={(e) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "satuan", e.target.value)}
+                                      placeholder="ls / m2 / unit"
+                                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="any"
+                                      value={item.vol ?? "1"}
+                                      onChange={(e) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "vol", e.target.value)}
+                                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <RupiahInput
+                                      value={item.material}
+                                      onChange={(val) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "material", val)}
+                                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-right focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                                      placeholder="0"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-2">
+                                    <RupiahInput
+                                      value={item.jasa}
+                                      onChange={(val) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "jasa", val)}
+                                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-right focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
+                                      placeholder="0"
+                                    />
+                                  </td>
+                                  <td className="py-2 px-2 text-right font-semibold text-slate-800 tabular-nums">
+                                    {formatRupiah(itemTotal)}
+                                  </td>
+                                  <td className="py-2 px-1 text-center">
+                                    {(cat.items || []).length > 1 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => onRemoveRekapItem && onRemoveRekapItem(catIdx, itemIdx)}
+                                        className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                                        title={tr("Hapus Baris", "Delete Row")}
+                                      >
+                                        <Trash2 size={13} />
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      <div className="mt-3 pt-2 border-t border-slate-100">
                         <button
                           type="button"
-                          onClick={() => onRemoveRekapCategory && onRemoveRekapCategory(catIdx)}
-                          className="flex items-center gap-1 rounded-lg border border-red-200/70 bg-red-50/50 backdrop-blur-sm px-2.5 py-1 text-xs font-medium text-red-600 hover:bg-red-100/70 hover:border-red-300 transition cursor-pointer"
-                          title={tr("Hapus Kategori", "Delete Category")}
+                          onClick={() => onAddRekapItem && onAddRekapItem(catIdx)}
+                          className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/80 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-white hover:border-slate-300 hover:text-slate-900 transition cursor-pointer"
                         >
-                          <Trash2 size={13} />
-                          {tr("Hapus Kategori", "Delete")}
+                          <Plus size={13} />
+                          {tr("Tambah Item ke Kategori Ini", "Add Item to this Category")}
                         </button>
                       </div>
                     </div>
+                  ))}
+                </div>
 
-                    {/* Tabel Rincian Item Pekerjaan */}
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
-                        <thead>
-                          <tr className="border-b border-slate-200/80 text-slate-500 uppercase tracking-wider">
-                            <th className="py-2 px-1 w-8 text-center">No</th>
-                            <th className="py-2 px-2 min-w-[200px]">{tr("Deskripsi Pekerjaan", "Work Description")} *</th>
-                            <th className="py-2 px-2 w-20 text-center">{tr("Satuan", "Unit")}</th>
-                            <th className="py-2 px-2 w-16 text-center">Vol</th>
-                            <th className="py-2 px-2 w-32 text-right">{tr("Material (Rp)", "Material (Rp)")}</th>
-                            <th className="py-2 px-2 w-32 text-right">{tr("Jasa (Rp)", "Labor (Rp)")}</th>
-                            <th className="py-2 px-2 w-32 text-right font-bold">{tr("Total Item", "Item Total")}</th>
-                            <th className="py-2 px-1 w-10 text-center"></th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100">
-                          {(cat.items || []).map((item, itemIdx) => {
-                            const volNum = Math.max(0, Number(item.vol) || 1);
-                            const matNum = parseRibuanId(item.material);
-                            const jasaNum = parseRibuanId(item.jasa);
-                            const itemTotal = Math.round(volNum * (matNum + jasaNum));
+                {/* Tambah Kategori Baru & Ringkasan */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={onAddRekapCategory}
+                    className="flex items-center gap-2 rounded-xl border border-slate-300/90 bg-white/90 backdrop-blur-sm px-4 py-2.5 text-xs font-semibold text-slate-800 shadow-sm hover:bg-white hover:border-slate-400 hover:text-slate-900 transition cursor-pointer"
+                  >
+                    <Plus size={15} />
+                    {tr("Tambah Kategori Pekerjaan Baru", "Add New Work Category")}
+                  </button>
 
-                            return (
-                              <tr key={itemIdx} className="hover:bg-slate-50/60">
-                                <td className="py-2 px-1 text-center font-medium text-slate-500">
-                                  {item.nomor ?? itemIdx + 1}
-                                </td>
-                                <td className="py-2 px-2">
-                                  <input
-                                    type="text"
-                                    value={item.deskripsi || ""}
-                                    onChange={(e) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "deskripsi", e.target.value)}
-                                    placeholder={tr("Uraian pekerjaan...", "Work description...")}
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                                    required
-                                  />
-                                </td>
-                                <td className="py-2 px-2">
-                                  <input
-                                    type="text"
-                                    value={item.satuan || ""}
-                                    onChange={(e) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "satuan", e.target.value)}
-                                    placeholder="ls / m2 / unit"
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                                  />
-                                </td>
-                                <td className="py-2 px-2">
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    step="any"
-                                    value={item.vol ?? "1"}
-                                    onChange={(e) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "vol", e.target.value)}
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-center focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                                  />
-                                </td>
-                                <td className="py-2 px-2">
-                                  <RupiahInput
-                                    value={item.material}
-                                    onChange={(val) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "material", val)}
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-right focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                                    placeholder="0"
-                                  />
-                                </td>
-                                <td className="py-2 px-2">
-                                  <RupiahInput
-                                    value={item.jasa}
-                                    onChange={(val) => onUpdateRekapItem && onUpdateRekapItem(catIdx, itemIdx, "jasa", val)}
-                                    className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-right focus:border-slate-400 focus:ring-1 focus:ring-slate-400"
-                                    placeholder="0"
-                                  />
-                                </td>
-                                <td className="py-2 px-2 text-right font-semibold text-slate-800 tabular-nums">
-                                  {formatRupiah(itemTotal)}
-                                </td>
-                                <td className="py-2 px-1 text-center">
-                                  {(cat.items || []).length > 1 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => onRemoveRekapItem && onRemoveRekapItem(catIdx, itemIdx)}
-                                      className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
-                                      title={tr("Hapus Baris", "Delete Row")}
-                                    >
-                                      <Trash2 size={13} />
-                                    </button>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="mt-3 pt-2 border-t border-slate-100">
-                      <button
-                        type="button"
-                        onClick={() => onAddRekapItem && onAddRekapItem(catIdx)}
-                        className="flex items-center gap-1.5 rounded-xl border border-slate-200/90 bg-white/80 backdrop-blur-sm px-3 py-1.5 text-xs font-medium text-slate-700 shadow-xs hover:bg-white hover:border-slate-300 hover:text-slate-900 transition cursor-pointer"
-                      >
-                        <Plus size={13} />
-                        {tr("Tambah Item ke Kategori Ini", "Add Item to this Category")}
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Tambah Kategori Baru & Ringkasan */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={onAddRekapCategory}
-                  className="flex items-center gap-2 rounded-xl border border-slate-300/90 bg-white/90 backdrop-blur-sm px-4 py-2.5 text-xs font-semibold text-slate-800 shadow-sm hover:bg-white hover:border-slate-400 hover:text-slate-900 transition cursor-pointer"
-                >
-                  <Plus size={15} />
-                  {tr("Tambah Kategori Pekerjaan Baru", "Add New Work Category")}
-                </button>
-
-                {/* Ringkasan Rekapitulasi */}
-                <div className="w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm p-3.5 space-y-1.5 text-xs shadow-xs">
-                  <div className="flex justify-between text-slate-600">
-                    <span>{tr("Total Rekapitulasi:", "Rekapitulasi Total:")}</span>
-                    <span className="font-semibold tabular-nums text-slate-800">{formatRupiah(rekapSubtotal)}</span>
-                  </div>
-                  {Boolean(formData.pakai_ppn) && (
+                  {/* Ringkasan Rekapitulasi */}
+                  <div className="w-full max-w-sm rounded-2xl border border-slate-200/80 bg-white/90 backdrop-blur-sm p-3.5 space-y-1.5 text-xs shadow-xs">
                     <div className="flex justify-between text-slate-600">
-                      <span>VAT / PPN ({formData.ppn_persen || 11}%):</span>
-                      <span className="font-semibold tabular-nums text-slate-800">{formatRupiah(rekapVat)}</span>
+                      <span>{tr("Total Rekapitulasi:", "Rekapitulasi Total:")}</span>
+                      <span className="font-semibold tabular-nums text-slate-800">{formatRupiah(rekapSubtotal)}</span>
                     </div>
-                  )}
-                  <div className="flex justify-between border-t border-slate-200 pt-1 text-sm font-bold text-slate-900">
-                    <span>{tr("Grand Total Rekapitulasi:", "Grand Total:")}</span>
-                    <span className="tabular-nums">{formatRupiah(rekapGrandTotal)}</span>
+                    {Boolean(formData.pakai_ppn) && (
+                      <div className="flex justify-between text-slate-600">
+                        <span>VAT / PPN ({formData.ppn_persen || 11}%):</span>
+                        <span className="font-semibold tabular-nums text-slate-800">{formatRupiah(rekapVat)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-slate-200 pt-1 text-sm font-bold text-slate-900">
+                      <span>{tr("Grand Total Rekapitulasi:", "Grand Total:")}</span>
+                      <span className="tabular-nums">{formatRupiah(rekapGrandTotal)}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         )}
 
-        <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mb-8 grid min-w-0 grid-cols-1 md:grid-cols-2 gap-4 [&>*]:min-w-0">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Kota Tanda Tangan", "Signature City")}</label>
             <input type="text" name="kota_tanda_tangan" value={formData.kota_tanda_tangan} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 px-4 py-3 bg-gray-50" />
           </div>
-          <div>
+          <div className="min-w-0">
             <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Tanggal Tanda Tangan", "Signature Date")} *</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input type="date" name="tanggal_tanda_tangan" value={formData.tanggal_tanda_tangan} onChange={onInputChange} className="w-full rounded-xl border border-gray-200 bg-gray-50 py-3 pl-10 pr-4" required />
+            <div className="relative min-w-0">
+              <Calendar className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400" size={18} />
+              <input type="date" name="tanggal_tanda_tangan" value={formData.tanggal_tanda_tangan} onChange={onInputChange} className="projek-kerja-date-input min-w-0 max-w-full w-full rounded-xl border border-gray-200 bg-gray-50 p-3 pl-10 pr-3 text-sm" required />
             </div>
             {formData.tanggal_tanda_tangan_display && (
               <p className="mt-1 text-sm text-gray-600">{formData.tanggal_tanda_tangan_display}</p>
