@@ -32,6 +32,7 @@ use App\Http\Controllers\RfiController;
 use App\Http\Controllers\WorkChecklistController;
 use App\Http\Controllers\DailyReportController;
 use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\DivisiController;
 
 
 /*
@@ -114,11 +115,23 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
     Route::put('/profile', function (Request $request) {
         $validated = $request->validate([
             'user_id' => 'nullable|integer',
+            'nik' => 'nullable|string|max:20',
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'no_telepon' => 'nullable|string|max:20',
-            'alamat' => 'nullable|string'
+            'alamat' => 'nullable|string',
+            'tempat_lahir' => 'nullable|string',
+            'tanggal_lahir' => 'nullable|date',
+            'jenis_kelamin' => 'nullable|string',
+            'agama' => 'nullable|string',
+            'status_perkawinan' => 'nullable|string',
+            'pekerjaan' => 'nullable|string',
+            'golongan_darah' => 'nullable|string',
+            'kontak_darurat_nama' => 'nullable|string',
+            'kontak_darurat_hubungan' => 'nullable|string',
+            'kontak_darurat_telepon' => 'nullable|string|max:20',
+            'kontak_darurat_alamat' => 'nullable|string',
         ]);
 
         $authUser = $request->user();
@@ -142,8 +155,15 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
         }
 
         // Siapkan data untuk update (hapus user_id dari array)
-        $updateData = array_filter($validated, function($key) {
-            return in_array($key, ['name', 'email', 'phone', 'no_telepon', 'alamat']);
+        $allowedKeys = [
+            'nik', 'name', 'email', 'phone', 'no_telepon', 'alamat',
+            'tempat_lahir', 'tanggal_lahir', 'jenis_kelamin', 'agama',
+            'status_perkawinan', 'pekerjaan', 'golongan_darah',
+            'kontak_darurat_nama', 'kontak_darurat_hubungan',
+            'kontak_darurat_telepon', 'kontak_darurat_alamat',
+        ];
+        $updateData = array_filter($validated, function($key) use ($allowedKeys) {
+            return in_array($key, $allowedKeys, true);
         }, ARRAY_FILTER_USE_KEY);
 
         // Update user
@@ -1048,5 +1068,16 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
     Route::get('/activity-logs/summary', [ActivityLogController::class, 'summary']);
     Route::get('/activity-logs/filters', [ActivityLogController::class, 'filters']);
     Route::get('/activity-logs', [ActivityLogController::class, 'index']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | DIVISI & MODUL MANAGEMENT
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/divisis', [DivisiController::class, 'index']);
+    Route::post('/divisis', [DivisiController::class, 'store']);
+    Route::put('/divisis/{id}', [DivisiController::class, 'update']);
+    Route::post('/divisis/{id}', [DivisiController::class, 'update']);
+    Route::delete('/divisis/{id}', [DivisiController::class, 'destroy']);
 
 });

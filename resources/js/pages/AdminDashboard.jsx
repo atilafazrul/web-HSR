@@ -54,6 +54,9 @@ import BAMPage from "./berita-acara/BAMPage";
 import SPPDPage from "./berita-acara/SPPDPage";
 import SPHPage from "./berita-acara/SPHPage";
 import POPage from "./berita-acara/POPage";
+import InvoicePage from "./berita-acara/InvoicePage";
+import DynamicDivisiPage from "./DynamicDivisiPage.jsx";
+import { useDivisis } from "../utils/divisiConfig.jsx";
 
 /* INVENTORY */
 import InventoryPage from "./InventoryPage";
@@ -85,6 +88,7 @@ import { useI18n } from "../i18n/index.jsx";
 export default function AdminDashboard({ user, logout }) {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
+  const { divisis } = useDivisis();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarExpanded, setSidebarExpanded] = useState(true);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -251,6 +255,12 @@ export default function AdminDashboard({ user, logout }) {
 
   // Fungsi untuk mendapatkan gambar berdasarkan divisi
   const getDivisiImage = (divisi) => {
+    const found = divisis.find(
+      (d) =>
+        String(d.name || "").toLowerCase() === String(divisi || "").toLowerCase() ||
+        String(d.slug || "").toLowerCase() === String(divisi || "").toLowerCase()
+    );
+    if (found?.card_image) return found.card_image;
     const imageMap = {
       "IT": "/images/IT Card.png",
       "Service": "/images/Card Service.png",
@@ -402,13 +412,11 @@ export default function AdminDashboard({ user, logout }) {
                             className="border border-gray-200 px-3 py-2 rounded-xl w-full sm:w-36 text-sm"
                           >
                             <option value="">{language === "en" ? "All Divisions" : "Semua Divisi"}</option>
-                            <option value="IT">IT</option>
-                            <option value="Service">Service</option>
-                            <option value="Sales">Sales</option>
-                            <option value="Kontraktor">Kontraktor</option>
-                            <option value="Logistik">Logistik</option>
-                            <option value="Purchasing">Purchasing</option>
-                            <option value="SIPLAH">SIPLAH</option>
+                            {divisis.map((d) => (
+                              <option key={d.slug} value={d.name}>
+                                {d.name}
+                              </option>
+                            ))}
                           </select>
                         )}
 
@@ -684,6 +692,37 @@ export default function AdminDashboard({ user, logout }) {
             <Route path="logistik/inventory" element={<LogistikInventoryPage />} />
             <Route path="logistik/inventory/tambah" element={<LogistikFormBarangPage />} />
             <Route path="logistik/inventory/edit/:id" element={<LogistikEditBarangPage />} />
+
+            {/* UNIVERSAL DYNAMIC DIVISI & MODULES ROUTES */}
+            <Route path=":divisiSlug">
+              <Route index element={<DynamicDivisiPage />} />
+              <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="inventory/tambah" element={<FormBarangPage />} />
+              <Route path="inventory/edit/:id" element={<EditBarangPage />} />
+              <Route path="inventory-umum" element={<InventoryPage />} />
+              <Route path="inventory-umum/tambah" element={<FormBarangPage />} />
+              <Route path="inventory-umum/edit/:id" element={<EditBarangPage />} />
+              <Route path="logistik-inventory" element={<LogistikInventoryPage />} />
+              <Route path="logistik-inventory/tambah" element={<LogistikFormBarangPage />} />
+              <Route path="logistik-inventory/edit/:id" element={<LogistikEditBarangPage />} />
+              <Route path="berita-acara" element={<BeritaAcaraPage />} />
+              <Route path="berita-acara/bam" element={<BAMPage />} />
+              <Route path="berita-acara/bauf" element={<BAUFPage />} />
+              <Route path="berita-acara/bast" element={<BASTPage />} />
+              <Route path="berita-acara/sppd" element={<SPPDPage />} />
+              <Route path="berita-acara/sph" element={<SPHPage />} />
+              <Route path="berita-acara/po" element={<POPage />} />
+              <Route path="berita-acara/invoice" element={<InvoicePage />} />
+              <Route path="berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
+              <Route path="target" element={<TargetPage />} />
+              <Route path="pembelian" element={<PembelianPage />} />
+              <Route path="rfi" element={<RfiFormPage />} />
+              <Route path="work-checklist/:type" element={<WorkChecklistFormPage />} />
+              <Route path="daily-report" element={<DailyReportFormPage />} />
+              <Route path="buat-pdf" element={<Navigate to={`${basePath}/berita-acara/service-report`} replace />} />
+            </Route>
 
             {/* ================= PENGAJUAN CUTI ================= */}
             <Route path="cuti" element={<CutiPage />} />

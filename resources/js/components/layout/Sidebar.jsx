@@ -25,6 +25,9 @@ import {
 
 import { useLocation, Link } from "react-router-dom";
 import { useI18n } from "../../i18n/index.jsx";
+import { useDivisis, getDivisiIcon } from "../../utils/divisiConfig.jsx";
+import DivisiModuleModal from "../divisi/DivisiModuleModal.jsx";
+import { Plus, Settings2 } from "lucide-react";
 
 export default function Sidebar({
   user,
@@ -36,7 +39,13 @@ export default function Sidebar({
   navigate,
   role = "admin",
 }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
+  const { divisis, refreshDivisis } = useDivisis();
+  const [divisiModalState, setDivisiModalState] = useState({
+    open: false,
+    mode: "create",
+    divisi: null,
+  });
 
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -106,15 +115,12 @@ export default function Sidebar({
         ? "/user"
         : "/admin";
 
-  const allDivisis = [
-    { name: "IT", path: "it", icon: <Monitor size={18} /> },
-    { name: "Service", path: "service", icon: <Wrench size={18} /> },
-    { name: "Kontraktor", path: "kontraktor", icon: <Hammer size={18} /> },
-    { name: "Sales", path: "sales", icon: <BarChart3 size={18} /> },
-    { name: "Logistik", path: "logistik", icon: <Truck size={18} /> },
-    { name: "Purchasing", path: "purchasing", icon: <ShoppingCart size={18} /> },
-    { name: "SIPLAH", path: "siplah", icon: <GraduationCap size={18} /> },
-  ];
+  const allDivisis = divisis.map((d) => ({
+    ...d,
+    name: d.name,
+    path: String(d.slug || d.name || "").toLowerCase(),
+    icon: getDivisiIcon(d.icon_key, 18),
+  }));
 
   const go = (path) => {
     navigate(path);
@@ -328,6 +334,24 @@ export default function Sidebar({
                         />
                       </Link>
                     ))}
+                    {isSuperAdmin && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setDivisiModalState({ open: true, mode: "create", divisi: null })
+                        }
+                        className="w-full text-left block"
+                      >
+                        <SidebarItem
+                          icon={<Plus size={16} className="text-indigo-400" />}
+                          text={language === "en" ? "+ Add / Edit Division" : "+ Tambah / Atur Divisi"}
+                          active={false}
+                          expanded={expanded}
+                          isMobile={isMobile}
+                          indented
+                        />
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -451,6 +475,17 @@ export default function Sidebar({
             </div>
           </div>
         </div>
+      )}
+
+      {isSuperAdmin && (
+        <DivisiModuleModal
+          isOpen={divisiModalState.open}
+          onClose={() => setDivisiModalState((s) => ({ ...s, open: false }))}
+          mode={divisiModalState.mode}
+          initialDivisi={divisiModalState.divisi}
+          divisis={divisis}
+          onSuccess={() => refreshDivisis()}
+        />
       )}
     </>
   );

@@ -21,9 +21,10 @@ export default function BeritaAcaraPage() {
       ? "/super_admin"
       : "/admin";
 
-  // Detect if accessed from a divisi context (e.g. /super_admin/service/berita-acara)
-  const divisiMatch = location.pathname.match(/\/(it|service|sales|kontraktor|logistik|purchasing|siplah)\/berita-acara/);
-  const divisiContext = divisiMatch ? divisiMatch[1] : null;
+  // Detect if accessed from a divisi context (e.g. /super_admin/service/berita-acara or any custom divisi)
+  const divisiMatch = location.pathname.match(/\/(?:super_admin|admin|user)\/([^/]+)\/berita-acara/);
+  const divisiContext =
+    divisiMatch && divisiMatch[1] !== "projek-kerja" ? divisiMatch[1] : null;
 
   const beritaAcaraBase = projekId
     ? `${basePath}/projek-kerja/berita-acara/${projekId}`

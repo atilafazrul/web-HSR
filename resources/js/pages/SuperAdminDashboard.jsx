@@ -25,9 +25,14 @@ import {
   Activity,
   Settings,
   Package,
+  Plus,
+  Settings2,
 } from "lucide-react";
 
 import axios from "../api/axiosConfig";
+import { useDivisis } from "../utils/divisiConfig.jsx";
+import DivisiModuleModal from "../components/divisi/DivisiModuleModal.jsx";
+import DynamicDivisiPage from "./DynamicDivisiPage.jsx";
 
 /* REKAP PER AKUN */
 import RekapPerAkun from "../components/RekapPerAkun";
@@ -277,6 +282,37 @@ export default function SuperAdminDashboard({ user, logout }) {
               <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
             </Route>
 
+            {/* UNIVERSAL DYNAMIC DIVISI & MODULES ROUTES */}
+            <Route path=":divisiSlug">
+              <Route index element={<DynamicDivisiPage />} />
+              <Route path="projek" element={<ProjekKerjaPage />} />
+              <Route path="projek/archive" element={<ProjekKerjaPage />} />
+              <Route path="inventory" element={<InventoryPage />} />
+              <Route path="inventory/tambah" element={<FormBarangPage />} />
+              <Route path="inventory/edit/:id" element={<EditBarangPage />} />
+              <Route path="inventory-umum" element={<InventoryPage />} />
+              <Route path="inventory-umum/tambah" element={<FormBarangPage />} />
+              <Route path="inventory-umum/edit/:id" element={<EditBarangPage />} />
+              <Route path="logistik-inventory" element={<LogistikInventoryPage />} />
+              <Route path="logistik-inventory/tambah" element={<LogistikFormBarangPage />} />
+              <Route path="logistik-inventory/edit/:id" element={<LogistikEditBarangPage />} />
+              <Route path="berita-acara" element={<BeritaAcaraPage />} />
+              <Route path="berita-acara/bam" element={<BAMPage />} />
+              <Route path="berita-acara/bauf" element={<BAUFPage />} />
+              <Route path="berita-acara/bast" element={<BASTPage />} />
+              <Route path="berita-acara/sppd" element={<SPPDPage />} />
+              <Route path="berita-acara/sph" element={<SPHPage />} />
+              <Route path="berita-acara/po" element={<POPage />} />
+              <Route path="berita-acara/invoice" element={<InvoicePage />} />
+              <Route path="berita-acara/service-report" element={<GeneratePDFPage user={user} />} />
+              <Route path="target" element={<TargetPage />} />
+              <Route path="pembelian" element={<PembelianPage />} />
+              <Route path="rfi" element={<RfiFormPage />} />
+              <Route path="work-checklist/:type" element={<WorkChecklistFormPage />} />
+              <Route path="daily-report" element={<DailyReportFormPage />} />
+              <Route path="buat-pdf" element={<Navigate to="/super_admin/berita-acara/service-report" replace />} />
+            </Route>
+
             <Route path="projek-kerja" element={<ProjekKerjaPage />} />
             <Route path="projek-kerja/foto/:id/*" element={<FotoProjekPage />} />
             <Route path="projek-kerja/edit/:id" element={<EditProjekKerjaPage />} />
@@ -311,6 +347,12 @@ export default function SuperAdminDashboard({ user, logout }) {
 const Dashboard = ({ user, windowWidth }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
+  const { divisis, refreshDivisis } = useDivisis();
+  const [divisiModal, setDivisiModal] = useState({
+    open: false,
+    mode: "create",
+    divisi: null,
+  });
   const [projek, setProjek] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -494,70 +536,56 @@ const Dashboard = ({ user, windowWidth }) => {
       />
 
       <DashboardSurface className="p-4 sm:p-5 md:p-6 lg:p-8">
-        <DashboardSectionHeading title={language === "en" ? "Divisions" : "Divisi"} />
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <DashboardSectionHeading
+            className="!mb-0"
+            title={language === "en" ? "Divisions" : "Divisi"}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() =>
+                setDivisiModal({ open: true, mode: "edit", divisi: divisis[0] || null })
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-2xs transition hover:border-indigo-200 hover:bg-indigo-50/60 hover:text-indigo-700 cursor-pointer"
+            >
+              <Settings2 size={15} className="text-indigo-600" />
+              <span>{tr("Atur Modul Divisi", "Configure Modules")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                setDivisiModal({ open: true, mode: "create", divisi: null })
+              }
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-slate-800 cursor-pointer"
+            >
+              <Plus size={15} />
+              <span>{tr("Tambah Divisi Baru", "Add New Division")}</span>
+            </button>
+          </div>
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-          <DivisiCard
-            title={language === "en" ? "IT Division" : "Divisi IT"}
-            image="/images/IT Card.png"
-            count={projek.filter(p => p.divisi === "IT").length}
-            to={`${basePath}/it`}
-            isMobile={isMobile}
-            language={language}
-          />
-
-          <DivisiCard
-            title={language === "en" ? "Service Division" : "Divisi Service"}
-            image="/images/Card Service.png"
-            count={projek.filter(p => p.divisi === "Service").length}
-            to={`${basePath}/service`}
-            isMobile={isMobile}
-            language={language}
-          />
-
-          <DivisiCard
-            title={language === "en" ? "Sales Division" : "Divisi Sales"}
-            image="/images/Card Sales.png"
-            count={projek.filter(p => p.divisi === "Sales").length}
-            to={`${basePath}/sales`}
-            isMobile={isMobile}
-            language={language}
-          />
-
-          <DivisiCard
-            title={language === "en" ? "Contractor Division" : "Divisi Kontraktor"}
-            image="/images/Kontraktor Card.png"
-            count={projek.filter(p => p.divisi === "Kontraktor").length}
-            to={`${basePath}/kontraktor`}
-            isMobile={isMobile}
-            language={language}
-          />
-
-          <DivisiCard
-            title={language === "en" ? "Logistics Division" : "Divisi Logistik"}
-            image="/images/logistik card.png"
-            count={projek.filter(p => p.divisi === "Logistik").length}
-            to={`${basePath}/logistik`}
-            isMobile={isMobile}
-            language={language}
-          />
-
-          <DivisiCard
-            title={language === "en" ? "Purchasing Division" : "Divisi Purchasing"}
-            image="/images/Purchasing Card.png"
-            count={projek.filter(p => p.divisi === "Purchasing").length}
-            to={`${basePath}/purchasing`}
-            isMobile={isMobile}
-            language={language}
-          />
-
-          <DivisiCard
-            title={language === "en" ? "SIPLAH Division" : "Divisi SIPLAH"}
-            image="/images/Purchasing Card.png"
-            count={projek.filter((p) => p.divisi === "SIPLAH").length}
-            to={`${basePath}/siplah`}
-            isMobile={isMobile}
-            language={language}
-          />
+          {divisis.map((div) => (
+            <DivisiCard
+              key={div.slug}
+              title={language === "en" ? `${div.name} Division` : `Divisi ${div.name}`}
+              image={div.card_image || "/images/IT Card.png"}
+              count={
+                projek.filter(
+                  (p) =>
+                    String(p.divisi || "").toLowerCase().trim() ===
+                    String(div.name || "").toLowerCase().trim()
+                ).length
+              }
+              moduleCount={Array.isArray(div.modules) ? div.modules.length : 0}
+              to={`${basePath}/${div.slug}`}
+              onEditModules={() =>
+                setDivisiModal({ open: true, mode: "edit", divisi: div })
+              }
+              isMobile={isMobile}
+              language={language}
+            />
+          ))}
         </div>
       </DashboardSurface>
 
@@ -615,13 +643,11 @@ const Dashboard = ({ user, windowWidth }) => {
               className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-500/20 sm:w-36 md:w-40 sm:px-4"
             >
               <option value="">Semua Divisi</option>
-              <option value="IT">IT</option>
-              <option value="Service">Service</option>
-              <option value="Sales">Sales</option>
-              <option value="Kontraktor">Kontraktor</option>
-              <option value="Logistik">Logistik</option>
-              <option value="Purchasing">Purchasing</option>
-              <option value="SIPLAH">SIPLAH</option>
+              {divisis.map((d) => (
+                <option key={d.slug} value={d.name}>
+                  {d.name}
+                </option>
+              ))}
             </select>
 
             <select
@@ -894,13 +920,32 @@ const Dashboard = ({ user, windowWidth }) => {
         handleUpdateDesc={handleUpdateDesc}
         isMobile={isMobile}
       />
+
+      <DivisiModuleModal
+        isOpen={divisiModal.open}
+        onClose={() => setDivisiModal((s) => ({ ...s, open: false }))}
+        mode={divisiModal.mode}
+        initialDivisi={divisiModal.divisi}
+        divisis={divisis}
+        onSuccess={() => refreshDivisis()}
+      />
     </div>
   );
 };
 
 /* ================= DIVISI CARD ================= */
-const DivisiCard = ({ title, count, image, to, onClick, isMobile, language = "id" }) => {
-  const defaultImage = image || "https://via.placeholder.com/400x300?text=Divisi";
+const DivisiCard = ({
+  title,
+  count,
+  moduleCount,
+  image,
+  to,
+  onClick,
+  onEditModules,
+  isMobile,
+  language = "id",
+}) => {
+  const defaultImage = image || "/images/IT Card.png";
 
   const innerContent = (
     <>
@@ -910,7 +955,26 @@ const DivisiCard = ({ title, count, image, to, onClick, isMobile, language = "id
         className="h-36 sm:h-40 md:h-44 lg:h-48 xl:h-56 w-full object-cover group-hover:scale-110 transition duration-500"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent"></div>
+
+      {onEditModules && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEditModules();
+          }}
+          title={language === "en" ? "Edit division modules" : "Edit modul divisi"}
+          className="absolute top-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-black/45 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-md transition hover:bg-black/70 cursor-pointer"
+        >
+          <Settings2 size={12} />
+          <span>
+            {language === "en" ? "Modules" : "Modul"}
+            {typeof moduleCount === "number" ? ` (${moduleCount})` : ""}
+          </span>
+        </button>
+      )}
 
       <div className="absolute bottom-0 p-3 sm:p-4 md:p-5 lg:p-6 text-white">
         <h3 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold">{title}</h3>

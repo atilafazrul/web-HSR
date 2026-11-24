@@ -33,6 +33,12 @@ import {
   KeyRound,
   EyeOff,
   ShieldCheck,
+  Heart,
+  Calendar,
+  MapPin,
+  CreditCard,
+  Droplets,
+  Users,
 } from "lucide-react";
 
 export default function Profile({ user, logout, onProfileUpdate }) {
@@ -71,39 +77,49 @@ export default function Profile({ user, logout, onProfileUpdate }) {
   const [previewIjazah, setPreviewIjazah] = useState([]);
   const [previewSertifikat, setPreviewSertifikat] = useState([]);
 
-  // Form Data
-  const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    no_telepon: user?.no_telepon || "",
-    alamat: user?.alamat || ""
-  });
+  const normalizeUserProfile = (u) => ({
+      name: u?.name || "",
+      nik: u?.nik || "",
+      email: u?.email || "",
+      no_telepon: u?.no_telepon || u?.phone || "",
+      phone: u?.phone || u?.no_telepon || "",
+      tempat_lahir: u?.tempat_lahir || "",
+      tanggal_lahir: u?.tanggal_lahir ? String(u.tanggal_lahir).slice(0, 10) : "",
+      jenis_kelamin: u?.jenis_kelamin || "",
+      agama: u?.agama || "",
+      status_perkawinan: u?.status_perkawinan || "",
+      pekerjaan: u?.pekerjaan || "",
+      golongan_darah: u?.golongan_darah || "",
+      alamat: u?.alamat || u?.address || "",
+      kontak_darurat_nama: u?.kontak_darurat_nama || "",
+      kontak_darurat_hubungan: u?.kontak_darurat_hubungan || "",
+      kontak_darurat_telepon: u?.kontak_darurat_telepon || "",
+      kontak_darurat_alamat: u?.kontak_darurat_alamat || "",
+      profile_photo: u?.profile_photo || null,
+      cover_photo: u?.cover_photo || null,
+      divisi: u?.divisi || "",
+      role: u?.role || "",
+      ktp: u?.ktp || null,
+      kk: u?.kk || null,
+      akte: u?.akte || null,
+      ijazah: u?.ijazah || [],
+      sertifikat: u?.sertifikat || [],
+    });
 
-  const [profileData, setProfileData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    no_telepon: user?.no_telepon || "",
-    alamat: user?.alamat || "",
-    profile_photo: user?.profile_photo || null,
-    cover_photo: user?.cover_photo || null,
-    divisi: user?.divisi || "",
-    role: user?.role || "",
-    ktp: user?.ktp || null,
-    kk: user?.kk || null,
-    akte: user?.akte || null,
-    ijazah: user?.ijazah || [],
-    sertifikat: user?.sertifikat || []
-  });
+    // Form Data
+    const [formData, setFormData] = useState(() => normalizeUserProfile(user));
 
-  const getFileName = (file) => {
-    if (!file) return '-';
-    if (typeof file === 'string') return file.split('/').pop();
-    if (Array.isArray(file) && file.length > 0) return getFileName(file[0]);
-    return 'File';
-  };
+    const [profileData, setProfileData] = useState(() => normalizeUserProfile(user));
 
-  // Fetch Profile
-  useEffect(() => {
+    const getFileName = (file) => {
+      if (!file) return '-';
+      if (typeof file === 'string') return file.split('/').pop();
+      if (Array.isArray(file) && file.length > 0) return getFileName(file[0]);
+      return 'File';
+    };
+
+    // Fetch Profile
+    useEffect(() => {
     const fetchProfile = async () => {
       if (!effectiveUserId) return;
       try {
@@ -120,21 +136,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
         }
 
         if (profileUser) {
-          const newData = {
-            name: profileUser.name || "",
-            email: profileUser.email || "",
-            no_telepon: profileUser.no_telepon || "",
-            alamat: profileUser.alamat || profileUser.address || "",
-            profile_photo: profileUser.profile_photo || null,
-            cover_photo: profileUser.cover_photo || null,
-            divisi: profileUser.divisi || "",
-            role: profileUser.role || "",
-            ktp: profileUser.ktp || null,
-            kk: profileUser.kk || null,
-            akte: profileUser.akte || null,
-            ijazah: profileUser.ijazah || [],
-            sertifikat: profileUser.sertifikat || []
-          };
+          const newData = normalizeUserProfile(profileUser);
           setProfileData(newData);
           setFormData(newData);
         } else {
@@ -289,24 +291,9 @@ export default function Profile({ user, logout, onProfileUpdate }) {
         const refresh = await api.get(`/profile?user_id=${effectiveUserId}`);
         const result = refresh.data;
         if (result.success) {
-          setProfileData({
-            name: result.user.name || "",
-            email: result.user.email || "",
-            no_telepon: result.user.no_telepon || "",
-            alamat: result.user.alamat || "",
-            profile_photo: result.user.profile_photo || null,
-            ktp: result.user.ktp || null,
-            kk: result.user.kk || null,
-            akte: result.user.akte || null,
-            ijazah: result.user.ijazah || [],
-            sertifikat: result.user.sertifikat || []
-          });
-          setFormData({
-            name: result.user.name || "",
-            email: result.user.email || "",
-            no_telepon: result.user.no_telepon || "",
-            alamat: result.user.alamat || ""
-          });
+          const refreshed = normalizeUserProfile(result.user);
+          setProfileData(refreshed);
+          setFormData(refreshed);
         }
         setTimeout(() => setSuccess(null), 3000);
       } else {
@@ -325,10 +312,25 @@ export default function Profile({ user, logout, onProfileUpdate }) {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("user_id", effectiveUserId);
-      formDataToSend.append("name", formData.name);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("no_telepon", formData.no_telepon);
-      formDataToSend.append("alamat", formData.alamat);
+      formDataToSend.append("name", formData.name || "");
+      formDataToSend.append("nik", formData.nik || "");
+      formDataToSend.append("email", formData.email || "");
+      formDataToSend.append("no_telepon", formData.no_telepon || "");
+      formDataToSend.append("phone", formData.no_telepon || "");
+      formDataToSend.append("tempat_lahir", formData.tempat_lahir || "");
+      if (formData.tanggal_lahir) {
+        formDataToSend.append("tanggal_lahir", formData.tanggal_lahir);
+      }
+      formDataToSend.append("jenis_kelamin", formData.jenis_kelamin || "");
+      formDataToSend.append("agama", formData.agama || "");
+      formDataToSend.append("status_perkawinan", formData.status_perkawinan || "");
+      formDataToSend.append("pekerjaan", formData.pekerjaan || "");
+      formDataToSend.append("golongan_darah", formData.golongan_darah || "");
+      formDataToSend.append("alamat", formData.alamat || "");
+      formDataToSend.append("kontak_darurat_nama", formData.kontak_darurat_nama || "");
+      formDataToSend.append("kontak_darurat_hubungan", formData.kontak_darurat_hubungan || "");
+      formDataToSend.append("kontak_darurat_telepon", formData.kontak_darurat_telepon || "");
+      formDataToSend.append("kontak_darurat_alamat", formData.kontak_darurat_alamat || "");
       formDataToSend.append("_method", "PUT");
 
       if (files.ktp) formDataToSend.append("ktp", files.ktp);
@@ -345,18 +347,7 @@ export default function Profile({ user, logout, onProfileUpdate }) {
         const verify = await api.get(`/profile?user_id=${effectiveUserId}`);
         const verifyData = verify.data;
         if (verifyData.success) {
-          const verified = {
-            name: verifyData.user.name || "",
-            email: verifyData.user.email || "",
-            no_telepon: verifyData.user.no_telepon || "",
-            alamat: verifyData.user.alamat || "",
-            profile_photo: verifyData.user.profile_photo || null,
-            ktp: verifyData.user.ktp || null,
-            kk: verifyData.user.kk || null,
-            akte: verifyData.user.akte || null,
-            ijazah: verifyData.user.ijazah || [],
-            sertifikat: verifyData.user.sertifikat || []
-          };
+          const verified = normalizeUserProfile(verifyData.user);
           setProfileData(verified);
           setFormData(verified);
           setIsEditing(false);
@@ -724,11 +715,10 @@ export default function Profile({ user, logout, onProfileUpdate }) {
                       </button>
                       <button
                         onClick={() => setActiveTab("security")}
-                        className={`inline-flex flex-1 md:flex-initial items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold backdrop-blur-md border transition active:scale-95 ${
-                          activeTab === "security"
+                        className={`inline-flex flex-1 md:flex-initial items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold backdrop-blur-md border transition active:scale-95 ${activeTab === "security"
                             ? "bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-600/40"
                             : "bg-white/20 hover:bg-white/30 border-white/25 text-white shadow-lg"
-                        }`}
+                          }`}
                       >
                         <KeyRound size={16} />
                         {tr("Reset Password", "Reset Password")}
@@ -776,513 +766,700 @@ export default function Profile({ user, logout, onProfileUpdate }) {
           {/* Tab Content */}
           <div className="p-6 md:p-8">
             {activeTab === "personal" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <InfoField
-                  icon={<User size={18} />}
-                  label={tr("Nama Lengkap", "Full Name")}
-                  value={formData.name}
-                  display={profileData.name}
-                  editing={isEditing}
-                  onChange={(v) => handleChange("name", v)}
-                />
-                <InfoField
-                  icon={<Mail size={18} />}
-                  label="Email"
-                  value={formData.email}
-                  display={profileData.email}
-                  editing={isEditing}
-                  onChange={(v) => handleChange("email", v)}
-                  type="email"
-                />
-                <InfoField
-                  icon={<Smartphone size={18} />}
-                  label={tr("Nomor Telepon", "Phone Number")}
-                  value={formData.no_telepon}
-                  display={profileData.no_telepon}
-                  editing={isEditing}
-                  onChange={(v) => handleChange("no_telepon", v)}
-                  type="tel"
-                />
-                <InfoField
-                  icon={<Home size={18} />}
-                  label={tr("Alamat", "Address")}
-                  value={formData.alamat}
-                  display={profileData.alamat}
-                  editing={isEditing}
-                  onChange={(v) => handleChange("alamat", v)}
-                  isTextarea
-                />
-              </div>
-            )}
-
-            {activeTab === "documents" && (
-              <div className="space-y-8">
-                {isEditing ? (
-                  <>
-                    {/* Dokumen Identitas - KTP, KK, Akte Kelahiran */}
-                    <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                        <UploadCard
-                          label="KTP"
-                          file={files.ktp}
-                          onFileChange={(f) => handleDocFilePick("ktp", f)}
-                          existingFile={profileData.ktp}
-                          required
-                        />
-                        <UploadCard
-                          label={tr("Kartu Keluarga (KK)", "Family Card (KK)")}
-                          file={files.kk}
-                          onFileChange={(f) => handleDocFilePick("kk", f)}
-                          existingFile={profileData.kk}
-                        />
-                        <UploadCard
-                          label={tr("Akte Kelahiran", "Birth Certificate")}
-                          file={files.akte}
-                          onFileChange={(f) => handleDocFilePick("akte", f)}
-                          existingFile={profileData.akte}
-                        />
+                <div className="space-y-8">
+                  {/* SECTION 1: DATA PRIBADI */}
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xs">
+                    <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-50 text-purple-600">
+                        <User size={17} />
                       </div>
-                    </DocumentSection>
-
-                    {/* Ijazah */}
-                    <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-purple-600" />}>
-                      <MultiUploadCard
-                        type="ijazah"
-                        files={ijazahFiles}
-                        onFileSelect={(f) => handleMultipleFiles(f, setIjazahFiles, setPreviewIjazah)}
-                        onRemoveFile={(idx) => removeFile(idx, ijazahFiles, setIjazahFiles, previewIjazah, setPreviewIjazah)}
-                        existingFiles={profileData.ijazah}
-                        userId={effectiveUserId}
-                        onDeleteFile={handleDeleteExistingFile}
-                        acceptedFormats="PDF, JPG, PNG"
-                      />
-                    </DocumentSection>
-
-                    {/* Sertifikat */}
-                    <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
-                      <MultiUploadCard
-                        type="sertifikat"
-                        files={sertifikatFiles}
-                        onFileSelect={(f) => handleMultipleFiles(f, setSertifikatFiles, setPreviewSertifikat)}
-                        onRemoveFile={(idx) => removeFile(idx, sertifikatFiles, setSertifikatFiles, previewSertifikat, setPreviewSertifikat)}
-                        existingFiles={profileData.sertifikat}
-                        userId={effectiveUserId}
-                        onDeleteFile={handleDeleteExistingFile}
-                        acceptedFormats="PDF, JPG, PNG"
-                      />
-                    </DocumentSection>
-
-                    <p className="text-xs text-gray-400 text-center flex items-center justify-center gap-1 pt-2 border-t border-gray-100">
-                      <Shield size={10} /> {tr("File akan dienkripsi untuk keamanan data", "Files will be encrypted for data security")}
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    {/* View Mode - Dokumen Identitas */}
-                    {(profileData.ktp || profileData.kk || profileData.akte) && (
-                      <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {profileData.ktp && <DocCard label="KTP" filename={getFileName(profileData.ktp)} onPreview={() => previewFile('ktp')} />}
-                          {profileData.kk && <DocCard label={tr("Kartu Keluarga (KK)", "Family Card (KK)")} filename={getFileName(profileData.kk)} onPreview={() => previewFile('kk')} />}
-                          {profileData.akte && <DocCard label={tr("Akte Kelahiran", "Birth Certificate")} filename={getFileName(profileData.akte)} onPreview={() => previewFile('akte')} />}
-                        </div>
-                      </DocumentSection>
-                    )}
-
-                    {/* View Mode - Ijazah */}
-                    {profileData.ijazah?.length > 0 && (
-                      <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-purple-600" />}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {profileData.ijazah.map((f, i) => (
-                            <DocCard
-                              key={`ijazah-${i}`}
-                              label={`Ijazah ${i + 1}`}
-                              filename={getFileName(f)}
-                              onPreview={() => previewFile('ijazah', i)}
-                            />
-                          ))}
-                        </div>
-                      </DocumentSection>
-                    )}
-
-                    {/* View Mode - Sertifikat */}
-                    {profileData.sertifikat?.length > 0 && (
-                      <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {profileData.sertifikat.map((f, i) => (
-                            <DocCard
-                              key={`sertifikat-${i}`}
-                              label={`${tr("Sertifikat", "Certificate")} ${i + 1}`}
-                              filename={getFileName(f)}
-                              onPreview={() => previewFile('sertifikat', i)}
-                            />
-                          ))}
-                        </div>
-                      </DocumentSection>
-                    )}
-
-                    {totalDocuments === 0 && (
-                      <div className="text-center py-12 text-gray-400">
-                        <FolderOpen size={48} className="mx-auto mb-3 opacity-50" />
-                        <p>{tr("Belum ada dokumen", "No documents yet")}</p>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
-
-            {activeTab === "security" && (
-              <div className="max-w-2xl mx-auto py-2">
-                <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/70 to-white p-6 sm:p-8 shadow-sm">
-                  <div className="flex items-start gap-4 mb-6 pb-6 border-b border-slate-100">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 ring-1 ring-purple-100">
-                      <KeyRound size={24} />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-slate-800">
-                        {tr("Reset Password", "Reset Password")}
+                      <h3 className="text-base font-bold text-slate-800">
+                        {tr("Data Pribadi", "Personal Data")}
                       </h3>
-                      <p className="text-xs sm:text-sm text-slate-500 mt-1">
-                        {isSuperAdmin
-                          ? tr(
-                              "Sebagai Super Admin, Anda dapat langsung mengatur password baru untuk akun ini.",
-                              "As Super Admin, you can set a new password directly for this account."
-                            )
-                          : tr(
-                              "Masukkan password saat ini dan password baru Anda untuk memperbarui keamanan akun.",
-                              "Enter your current and new password to update account security."
-                            )}
-                      </p>
+                    </div>
+
+                    <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 [&>*]:min-w-0">
+                      <InfoField
+                        icon={<User size={18} />}
+                        label={tr("Nama Lengkap", "Full Name")}
+                        required
+                        value={formData.name}
+                        display={profileData.name}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("name", v)}
+                      />
+                      <InfoField
+                        icon={<CreditCard size={18} />}
+                        label="NIK"
+                        value={formData.nik}
+                        display={profileData.nik}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("nik", v)}
+                      />
+                      <InfoField
+                        icon={<Mail size={18} />}
+                        label="Email"
+                        required
+                        value={formData.email}
+                        display={profileData.email}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("email", v)}
+                        type="email"
+                      />
+                      <InfoField
+                        icon={<Smartphone size={18} />}
+                        label={tr("Nomor Telepon", "Phone Number")}
+                        value={formData.no_telepon}
+                        display={profileData.no_telepon}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("no_telepon", v)}
+                        type="tel"
+                      />
+                      <InfoField
+                        icon={<MapPin size={18} />}
+                        label={tr("Tempat Lahir", "Place of Birth")}
+                        value={formData.tempat_lahir}
+                        display={profileData.tempat_lahir}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("tempat_lahir", v)}
+                      />
+                      <InfoField
+                        icon={<Calendar size={18} />}
+                        label={tr("Tanggal Lahir", "Date of Birth")}
+                        value={formData.tanggal_lahir}
+                        display={
+                          profileData.tanggal_lahir
+                            ? new Date(profileData.tanggal_lahir).toLocaleDateString("id-ID")
+                            : "-"
+                        }
+                        editing={isEditing}
+                        onChange={(v) => handleChange("tanggal_lahir", v)}
+                        type="date"
+                      />
+                      <InfoField
+                        icon={<Users size={18} />}
+                        label={tr("Jenis Kelamin", "Gender")}
+                        value={formData.jenis_kelamin}
+                        display={profileData.jenis_kelamin}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("jenis_kelamin", v)}
+                        type="select"
+                        placeholder={tr("Pilih Jenis Kelamin", "Select Gender")}
+                        options={[tr("Laki-laki", "Male"), tr("Perempuan", "Female")]}
+                      />
+                      <InfoField
+                        icon={<ShieldCheck size={18} />}
+                        label={tr("Agama", "Religion")}
+                        value={formData.agama}
+                        display={profileData.agama}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("agama", v)}
+                      />
+                      <InfoField
+                        icon={<Heart size={18} />}
+                        label={tr("Status Perkawinan", "Marital Status")}
+                        value={formData.status_perkawinan}
+                        display={profileData.status_perkawinan}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("status_perkawinan", v)}
+                        type="select"
+                        placeholder={tr("Pilih Status Perkawinan", "Select Marital Status")}
+                        options={[
+                          tr("Belum Kawin", "Single"),
+                          tr("Kawin", "Married"),
+                          tr("Cerai", "Divorced"),
+                          tr("Cerai Mati", "Widowed"),
+                        ]}
+                      />
+                      <InfoField
+                        icon={<Briefcase size={18} />}
+                        label={tr("Pekerjaan", "Occupation")}
+                        value={formData.pekerjaan}
+                        display={profileData.pekerjaan}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("pekerjaan", v)}
+                      />
+                      <InfoField
+                        icon={<Droplets size={18} />}
+                        label={tr("Golongan Darah", "Blood Type")}
+                        value={formData.golongan_darah}
+                        display={profileData.golongan_darah}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("golongan_darah", v)}
+                        type="select"
+                        placeholder={tr("Pilih Golongan Darah", "Select Blood Type")}
+                        options={["A", "B", "AB", "O"]}
+                      />
+                      <div className="md:col-span-2">
+                        <InfoField
+                          icon={<Home size={18} />}
+                          label={tr("Alamat", "Address")}
+                          value={formData.alamat}
+                          display={profileData.alamat}
+                          editing={isEditing}
+                          onChange={(v) => handleChange("alamat", v)}
+                          isTextarea
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {passwordError && (
-                    <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs sm:text-sm text-red-700">
-                      <AlertCircle size={18} className="shrink-0 text-red-500" />
-                      <span className="flex-1">{passwordError}</span>
-                      <button type="button" onClick={() => setPasswordError(null)} className="text-red-400 hover:text-red-600">
-                        <X size={16} />
-                      </button>
+                  {/* SECTION 2: KONTAK DARURAT */}
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-2xs">
+                    <div className="mb-5 flex items-center gap-2.5 border-b border-slate-100 pb-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-50 text-rose-600">
+                        <Heart size={17} />
+                      </div>
+                      <h3 className="text-base font-bold text-slate-800">
+                        {tr("Kontak Darurat", "Emergency Contact")}
+                      </h3>
                     </div>
-                  )}
 
-                  {passwordSuccess && (
-                    <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs sm:text-sm text-emerald-800">
-                      <CheckCircle size={18} className="shrink-0 text-emerald-600" />
-                      <span className="flex-1">{passwordSuccess}</span>
-                      <button type="button" onClick={() => setPasswordSuccess(null)} className="text-emerald-400 hover:text-emerald-600">
-                        <X size={16} />
-                      </button>
+                    <div className="grid min-w-0 grid-cols-1 gap-5 md:grid-cols-2 [&>*]:min-w-0">
+                      <InfoField
+                        icon={<User size={18} />}
+                        label={tr("Nama Kontak Darurat", "Emergency Contact Name")}
+                        value={formData.kontak_darurat_nama}
+                        display={profileData.kontak_darurat_nama}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("kontak_darurat_nama", v)}
+                      />
+                      <InfoField
+                        icon={<Users size={18} />}
+                        label={tr("Hubungan", "Relationship")}
+                        value={formData.kontak_darurat_hubungan}
+                        display={profileData.kontak_darurat_hubungan}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("kontak_darurat_hubungan", v)}
+                      />
+                      <InfoField
+                        icon={<Phone size={18} />}
+                        label={tr("Telepon Kontak Darurat", "Emergency Contact Phone")}
+                        value={formData.kontak_darurat_telepon}
+                        display={profileData.kontak_darurat_telepon}
+                        editing={isEditing}
+                        onChange={(v) => handleChange("kontak_darurat_telepon", v)}
+                        type="tel"
+                      />
+                      <div className="md:col-span-2">
+                        <InfoField
+                          icon={<Home size={18} />}
+                          label={tr("Alamat Kontak Darurat", "Emergency Contact Address")}
+                          value={formData.kontak_darurat_alamat}
+                          display={profileData.kontak_darurat_alamat}
+                          editing={isEditing}
+                          onChange={(v) => handleChange("kontak_darurat_alamat", v)}
+                          isTextarea
+                        />
+                      </div>
                     </div>
-                  )}
+                  </div>
+                </div>
+            )}
 
-                  <form onSubmit={handleResetPassword} className="space-y-5">
-                    {/* Current Password Field (for non-superadmin) */}
-                    {!isSuperAdmin ? (
-                      <div>
-                        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                          {tr("Password Saat Ini", "Current Password")} <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                          <input
-                            type={showCurrentPassword ? "text" : "password"}
-                            value={passwordData.current_password}
-                            onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
-                            placeholder={tr("Masukkan password saat ini", "Enter current password")}
-                            className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
-                            required
+                {activeTab === "documents" && (
+                  <div className="space-y-8">
+                    {isEditing ? (
+                      <>
+                        {/* Dokumen Identitas - KTP, KK, Akte Kelahiran */}
+                        <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <UploadCard
+                              label="KTP"
+                              file={files.ktp}
+                              onFileChange={(f) => handleDocFilePick("ktp", f)}
+                              existingFile={profileData.ktp}
+                              required
+                            />
+                            <UploadCard
+                              label={tr("Kartu Keluarga (KK)", "Family Card (KK)")}
+                              file={files.kk}
+                              onFileChange={(f) => handleDocFilePick("kk", f)}
+                              existingFile={profileData.kk}
+                            />
+                            <UploadCard
+                              label={tr("Akte Kelahiran", "Birth Certificate")}
+                              file={files.akte}
+                              onFileChange={(f) => handleDocFilePick("akte", f)}
+                              existingFile={profileData.akte}
+                            />
+                          </div>
+                        </DocumentSection>
+
+                        {/* Ijazah */}
+                        <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-purple-600" />}>
+                          <MultiUploadCard
+                            type="ijazah"
+                            files={ijazahFiles}
+                            onFileSelect={(f) => handleMultipleFiles(f, setIjazahFiles, setPreviewIjazah)}
+                            onRemoveFile={(idx) => removeFile(idx, ijazahFiles, setIjazahFiles, previewIjazah, setPreviewIjazah)}
+                            existingFiles={profileData.ijazah}
+                            userId={effectiveUserId}
+                            onDeleteFile={handleDeleteExistingFile}
+                            acceptedFormats="PDF, JPG, PNG"
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
-                          >
-                            {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                          </button>
+                        </DocumentSection>
+
+                        {/* Sertifikat */}
+                        <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
+                          <MultiUploadCard
+                            type="sertifikat"
+                            files={sertifikatFiles}
+                            onFileSelect={(f) => handleMultipleFiles(f, setSertifikatFiles, setPreviewSertifikat)}
+                            onRemoveFile={(idx) => removeFile(idx, sertifikatFiles, setSertifikatFiles, previewSertifikat, setPreviewSertifikat)}
+                            existingFiles={profileData.sertifikat}
+                            userId={effectiveUserId}
+                            onDeleteFile={handleDeleteExistingFile}
+                            acceptedFormats="PDF, JPG, PNG"
+                          />
+                        </DocumentSection>
+
+                        <p className="text-xs text-gray-400 text-center flex items-center justify-center gap-1 pt-2 border-t border-gray-100">
+                          <Shield size={10} /> {tr("File akan dienkripsi untuk keamanan data", "Files will be encrypted for data security")}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        {/* View Mode - Dokumen Identitas */}
+                        {(profileData.ktp || profileData.kk || profileData.akte) && (
+                          <DocumentSection title={tr("Dokumen Identitas", "Identity Documents")} icon={<FileSignature size={18} className="text-purple-600" />}>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {profileData.ktp && <DocCard label="KTP" filename={getFileName(profileData.ktp)} onPreview={() => previewFile('ktp')} />}
+                              {profileData.kk && <DocCard label={tr("Kartu Keluarga (KK)", "Family Card (KK)")} filename={getFileName(profileData.kk)} onPreview={() => previewFile('kk')} />}
+                              {profileData.akte && <DocCard label={tr("Akte Kelahiran", "Birth Certificate")} filename={getFileName(profileData.akte)} onPreview={() => previewFile('akte')} />}
+                            </div>
+                          </DocumentSection>
+                        )}
+
+                        {/* View Mode - Ijazah */}
+                        {profileData.ijazah?.length > 0 && (
+                          <DocumentSection title="Ijazah" icon={<GraduationCap size={18} className="text-purple-600" />}>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {profileData.ijazah.map((f, i) => (
+                                <DocCard
+                                  key={`ijazah-${i}`}
+                                  label={`Ijazah ${i + 1}`}
+                                  filename={getFileName(f)}
+                                  onPreview={() => previewFile('ijazah', i)}
+                                />
+                              ))}
+                            </div>
+                          </DocumentSection>
+                        )}
+
+                        {/* View Mode - Sertifikat */}
+                        {profileData.sertifikat?.length > 0 && (
+                          <DocumentSection title={tr("Sertifikat", "Certificates")} icon={<Award size={18} className="text-purple-600" />}>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {profileData.sertifikat.map((f, i) => (
+                                <DocCard
+                                  key={`sertifikat-${i}`}
+                                  label={`${tr("Sertifikat", "Certificate")} ${i + 1}`}
+                                  filename={getFileName(f)}
+                                  onPreview={() => previewFile('sertifikat', i)}
+                                />
+                              ))}
+                            </div>
+                          </DocumentSection>
+                        )}
+
+                        {totalDocuments === 0 && (
+                          <div className="text-center py-12 text-gray-400">
+                            <FolderOpen size={48} className="mx-auto mb-3 opacity-50" />
+                            <p>{tr("Belum ada dokumen", "No documents yet")}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {activeTab === "security" && (
+                  <div className="max-w-2xl mx-auto py-2">
+                    <div className="rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/70 to-white p-6 sm:p-8 shadow-sm">
+                      <div className="flex items-start gap-4 mb-6 pb-6 border-b border-slate-100">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-purple-50 text-purple-600 ring-1 ring-purple-100">
+                          <KeyRound size={24} />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-800">
+                            {tr("Reset Password", "Reset Password")}
+                          </h3>
+                          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                            {isSuperAdmin
+                              ? tr(
+                                "Sebagai Super Admin, Anda dapat langsung mengatur password baru untuk akun ini.",
+                                "As Super Admin, you can set a new password directly for this account."
+                              )
+                              : tr(
+                                "Masukkan password saat ini dan password baru Anda untuk memperbarui keamanan akun.",
+                                "Enter your current and new password to update account security."
+                              )}
+                          </p>
                         </div>
                       </div>
-                    ) : null}
 
-                    {/* New Password Field */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        {tr("Password Baru", "New Password")} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showNewPassword ? "text" : "password"}
-                          value={passwordData.password}
-                          onChange={(e) => setPasswordData(prev => ({ ...prev, password: e.target.value }))}
-                          placeholder={tr("Masukkan password baru (minimal 6 karakter)", "Enter new password (min. 6 characters)")}
-                          className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
-                          minLength={6}
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowNewPassword(!showNewPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
-                        >
-                          {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                      <p className="mt-1 text-[11px] text-slate-500">
-                        {tr("Panjang minimal 6 karakter. Gunakan kombinasi huruf dan angka.", "Minimum 6 characters. Use letters and numbers.")}
-                      </p>
-                    </div>
-
-                    {/* Password Confirmation Field */}
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                        {tr("Konfirmasi Password Baru", "Confirm New Password")} <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type={showConfirmPassword ? "text" : "password"}
-                          value={passwordData.password_confirmation}
-                          onChange={(e) => setPasswordData(prev => ({ ...prev, password_confirmation: e.target.value }))}
-                          placeholder={tr("Ulangi password baru", "Repeat new password")}
-                          className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
-                          required
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
-                        >
-                          {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
-                      </div>
-                      {passwordData.password && passwordData.password_confirmation && (
-                        <p className={`mt-1 text-[11px] font-medium flex items-center gap-1 ${
-                          passwordData.password === passwordData.password_confirmation ? "text-emerald-600" : "text-red-500"
-                        }`}>
-                          {passwordData.password === passwordData.password_confirmation ? (
-                            <><CheckCircle size={12} /> {tr("Password cocok", "Passwords match")}</>
-                          ) : (
-                            <><AlertCircle size={12} /> {tr("Password tidak cocok", "Passwords do not match")}</>
-                          )}
-                        </p>
+                      {passwordError && (
+                        <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-xl flex items-center gap-2 text-xs sm:text-sm text-red-700">
+                          <AlertCircle size={18} className="shrink-0 text-red-500" />
+                          <span className="flex-1">{passwordError}</span>
+                          <button type="button" onClick={() => setPasswordError(null)} className="text-red-400 hover:text-red-600">
+                            <X size={16} />
+                          </button>
+                        </div>
                       )}
-                    </div>
 
-                    <div className="pt-3 flex flex-wrap items-center justify-end gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setPasswordData({ current_password: "", password: "", password_confirmation: "" });
-                          setPasswordError(null);
-                        }}
-                        className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition"
-                      >
-                        {tr("Reset Form", "Reset Form")}
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={updatingPassword}
-                        className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium shadow-md shadow-purple-600/20 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                      >
-                        {updatingPassword ? (
-                          <>
-                            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                            {tr("Memperbarui...", "Updating...")}
-                          </>
-                        ) : (
-                          <>
-                            <KeyRound size={16} />
-                            {tr("Simpan Password Baru", "Save New Password")}
-                          </>
-                        )}
-                      </button>
+                      {passwordSuccess && (
+                        <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-2 text-xs sm:text-sm text-emerald-800">
+                          <CheckCircle size={18} className="shrink-0 text-emerald-600" />
+                          <span className="flex-1">{passwordSuccess}</span>
+                          <button type="button" onClick={() => setPasswordSuccess(null)} className="text-emerald-400 hover:text-emerald-600">
+                            <X size={16} />
+                          </button>
+                        </div>
+                      )}
+
+                      <form onSubmit={handleResetPassword} className="space-y-5">
+                        {/* Current Password Field (for non-superadmin) */}
+                        {!isSuperAdmin ? (
+                          <div>
+                            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                              {tr("Password Saat Ini", "Current Password")} <span className="text-red-500">*</span>
+                            </label>
+                            <div className="relative">
+                              <input
+                                type={showCurrentPassword ? "text" : "password"}
+                                value={passwordData.current_password}
+                                onChange={(e) => setPasswordData(prev => ({ ...prev, current_password: e.target.value }))}
+                                placeholder={tr("Masukkan password saat ini", "Enter current password")}
+                                className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
+                                required
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
+                              >
+                                {showCurrentPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                            </div>
+                          </div>
+                        ) : null}
+
+                        {/* New Password Field */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            {tr("Password Baru", "New Password")} <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showNewPassword ? "text" : "password"}
+                              value={passwordData.password}
+                              onChange={(e) => setPasswordData(prev => ({ ...prev, password: e.target.value }))}
+                              placeholder={tr("Masukkan password baru (minimal 6 karakter)", "Enter new password (min. 6 characters)")}
+                              className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
+                              minLength={6}
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
+                            >
+                              {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
+                          <p className="mt-1 text-[11px] text-slate-500">
+                            {tr("Panjang minimal 6 karakter. Gunakan kombinasi huruf dan angka.", "Minimum 6 characters. Use letters and numbers.")}
+                          </p>
+                        </div>
+
+                        {/* Password Confirmation Field */}
+                        <div>
+                          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                            {tr("Konfirmasi Password Baru", "Confirm New Password")} <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <input
+                              type={showConfirmPassword ? "text" : "password"}
+                              value={passwordData.password_confirmation}
+                              onChange={(e) => setPasswordData(prev => ({ ...prev, password_confirmation: e.target.value }))}
+                              placeholder={tr("Ulangi password baru", "Repeat new password")}
+                              className="w-full pl-4 pr-11 py-2.5 rounded-xl border border-slate-200 bg-white text-sm focus:border-purple-500 focus:ring-2 focus:ring-purple-200 outline-none transition"
+                              required
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                              className="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-600"
+                            >
+                              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                          </div>
+                          {passwordData.password && passwordData.password_confirmation && (
+                            <p className={`mt-1 text-[11px] font-medium flex items-center gap-1 ${passwordData.password === passwordData.password_confirmation ? "text-emerald-600" : "text-red-500"
+                              }`}>
+                              {passwordData.password === passwordData.password_confirmation ? (
+                                <><CheckCircle size={12} /> {tr("Password cocok", "Passwords match")}</>
+                              ) : (
+                                <><AlertCircle size={12} /> {tr("Password tidak cocok", "Passwords do not match")}</>
+                              )}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="pt-3 flex flex-wrap items-center justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPasswordData({ current_password: "", password: "", password_confirmation: "" });
+                              setPasswordError(null);
+                            }}
+                            className="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-sm font-medium transition"
+                          >
+                            {tr("Reset Form", "Reset Form")}
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={updatingPassword}
+                            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium shadow-md shadow-purple-600/20 transition disabled:opacity-60 disabled:cursor-not-allowed"
+                          >
+                            {updatingPassword ? (
+                              <>
+                                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                {tr("Memperbarui...", "Updating...")}
+                              </>
+                            ) : (
+                              <>
+                                <KeyRound size={16} />
+                                {tr("Simpan Password Baru", "Save New Password")}
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </form>
                     </div>
-                  </form>
-                </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
           {/* Logout Button - REMOVED as requested */}
-        </div>
+          </div>
 
+        </div>
       </div>
-    </div>
-  );
+      );
 }
 
-// ================= COMPONENTS =================
+      // ================= COMPONENTS =================
 
-const InfoField = ({ icon, label, value, display, editing, onChange, type = "text", isTextarea = false }) => (
-  <div className="group">
-    <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-    <div className="relative">
-      <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</div>
-      {editing ? (
-        isTextarea ? (
-          <textarea
-            value={value}
-            rows={2}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition text-sm"
-          />
-        ) : (
-          <input
-            type={type}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition text-sm"
-          />
-        )
-      ) : (
-        <div className="w-full pl-9 pr-3 py-2 bg-gray-50 rounded-xl border border-gray-100">
-          <p className="text-gray-800 text-sm">{display || "-"}</p>
-        </div>
+          const InfoField = ({
+            icon,
+            label,
+            value,
+            display,
+            editing,
+            onChange,
+            type = "text",
+            isTextarea = false,
+            options = [],
+            placeholder = "",
+            required = false,
+}) => (
+          <div className="group min-w-0">
+            <label className="block text-xs font-medium text-gray-500 mb-1">
+              {label} {required && editing && <span className="text-red-500">*</span>}
+            </label>
+            <div className="relative min-w-0">
+              <div className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-gray-400">
+                {icon}
+              </div>
+              {editing ? (
+                isTextarea ? (
+                  <textarea
+                    value={value || ""}
+                    rows={2}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition text-sm bg-white"
+                  />
+                ) : type === "select" ? (
+                  <select
+                    value={value || ""}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition text-sm bg-white"
+                  >
+                    <option value="">{placeholder || `Pilih ${label}`}</option>
+                    {options.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : type === "date" ? (
+                  <input
+                    type="date"
+                    value={value || ""}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="projek-kerja-date-input min-w-0 max-w-full w-full pl-10 pr-3 p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition text-sm bg-white"
+                  />
+                ) : (
+                  <input
+                    type={type}
+                    value={value || ""}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition text-sm bg-white"
+                  />
+                )
+              ) : (
+                  <div className="w-full pl-9 pr-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
+                    <p className="text-gray-800 text-sm break-words">{display || "-"}</p>
+                  </div>
       )}
-    </div>
+                </div>
   </div>
-);
+            );
 
-// New Component for Document Sections
-const DocumentSection = ({ title, icon, children }) => (
-  <div className="bg-gray-50/50 rounded-xl p-5 border border-gray-100">
-    <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-      {icon}
-      {title}
-    </h3>
-    {children}
-  </div>
-);
+            // New Component for Document Sections
+            const DocumentSection = ({title, icon, children}) => (
+            <div className="bg-gray-50/50 rounded-xl p-5 border border-gray-100">
+              <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                {icon}
+                {title}
+              </h3>
+              {children}
+            </div>
+            );
 
-const UploadCard = ({ label, file, onFileChange, existingFile, required = false }) => {
+            const UploadCard = ({label, file, onFileChange, existingFile, required = false}) => {
   const language = localStorage.getItem("app_language") || "id";
   const tr = (id, en) => (language === "en" ? en : id);
-  const [isDragging, setIsDragging] = useState(false);
-  const inputId = `upload-${label.replace(/\s/g, '-')}`;
+            const [isDragging, setIsDragging] = useState(false);
+            const inputId = `upload-${label.replace(/\s/g, '-')}`;
 
-  return (
-    <div>
-      <p className="text-xs text-gray-500 mb-1">
-        {label} {required && <span className="text-red-500">*</span>}
-      </p>
-      <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          const dropped = e.dataTransfer.files[0];
-          if (dropped) onFileChange(dropped);
-        }}
-        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
-          } ${file ? 'bg-purple-50 border-purple-500' : 'bg-gray-50'}`}
-      >
-        <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileChange(e.target.files[0])} className="hidden" id={inputId} />
-        <label htmlFor={inputId} className="cursor-pointer block">
-          <div className="flex flex-col items-center gap-2">
-            <Upload size={24} className="text-gray-400" />
-            <span className="text-xs text-gray-500">
-              {file ? file.name : tr("Klik atau drag file di sini", "Click or drag file here")}
-            </span>
-            <span className="text-[10px] text-gray-400">PDF, JPG, PNG ({tr("max", "max")} 2MB)</span>
-          </div>
-        </label>
-      </div>
-      {existingFile && !file && (
-        <div className="mt-2 flex items-center gap-1 text-xs text-green-600 bg-green-50 p-1.5 rounded-lg">
-          <CheckCircle size={12} />
-          <span className="truncate flex-1">{tr("File tersimpan", "Saved file")}: {existingFile.split('/').pop()}</span>
-        </div>
-      )}
-    </div>
-  );
+            return (
+            <div>
+              <p className="text-xs text-gray-500 mb-1">
+                {label} {required && <span className="text-red-500">*</span>}
+              </p>
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const dropped = e.dataTransfer.files[0];
+                  if (dropped) onFileChange(dropped);
+                }}
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
+                  } ${file ? 'bg-purple-50 border-purple-500' : 'bg-gray-50'}`}
+              >
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileChange(e.target.files[0])} className="hidden" id={inputId} />
+                <label htmlFor={inputId} className="cursor-pointer block">
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload size={24} className="text-gray-400" />
+                    <span className="text-xs text-gray-500">
+                      {file ? file.name : tr("Klik atau drag file di sini", "Click or drag file here")}
+                    </span>
+                    <span className="text-[10px] text-gray-400">PDF, JPG, PNG ({tr("max", "max")} 2MB)</span>
+                  </div>
+                </label>
+              </div>
+              {existingFile && !file && (
+                <div className="mt-2 flex items-center gap-1 text-xs text-green-600 bg-green-50 p-1.5 rounded-lg">
+                  <CheckCircle size={12} />
+                  <span className="truncate flex-1">{tr("File tersimpan", "Saved file")}: {existingFile.split('/').pop()}</span>
+                </div>
+              )}
+            </div>
+            );
 };
 
-const MultiUploadCard = ({ type, files, onFileSelect, onRemoveFile, existingFiles, userId, onDeleteFile, acceptedFormats = "PDF, JPG, PNG" }) => {
+            const MultiUploadCard = ({type, files, onFileSelect, onRemoveFile, existingFiles, userId, onDeleteFile, acceptedFormats = "PDF, JPG, PNG"}) => {
   const language = localStorage.getItem("app_language") || "id";
   const tr = (id, en) => (language === "en" ? en : id);
-  const [isDragging, setIsDragging] = useState(false);
-  const inputId = `multi-${type}`;
-  const total = (existingFiles?.length || 0) + files.length;
+            const [isDragging, setIsDragging] = useState(false);
+            const inputId = `multi-${type}`;
+            const total = (existingFiles?.length || 0) + files.length;
 
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-gray-400">{total} {tr("file", "files")}</span>
-        <span className="text-[10px] text-gray-400">{acceptedFormats}</span>
-      </div>
-      <div
-        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setIsDragging(false);
-          const dropped = Array.from(e.dataTransfer.files);
-          if (dropped.length) onFileSelect(dropped);
-        }}
-        className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
-          }`}
-      >
-        <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileSelect(Array.from(e.target.files))} className="hidden" id={inputId} multiple />
-        <label htmlFor={inputId} className="cursor-pointer block">
-          <div className="flex flex-col items-center gap-2">
-            <Upload size={24} className="text-gray-400" />
-            <span className="text-xs text-gray-500">{tr("Klik atau drag untuk tambah file", "Click or drag to add files")}</span>
-          </div>
-        </label>
-      </div>
+            return (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-gray-400">{total} {tr("file", "files")}</span>
+                <span className="text-[10px] text-gray-400">{acceptedFormats}</span>
+              </div>
+              <div
+                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  const dropped = Array.from(e.dataTransfer.files);
+                  if (dropped.length) onFileSelect(dropped);
+                }}
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition cursor-pointer ${isDragging ? 'border-purple-500 bg-purple-50' : 'border-gray-200 hover:border-purple-400'
+                  }`}
+              >
+                <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => onFileSelect(Array.from(e.target.files))} className="hidden" id={inputId} multiple />
+                <label htmlFor={inputId} className="cursor-pointer block">
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload size={24} className="text-gray-400" />
+                    <span className="text-xs text-gray-500">{tr("Klik atau drag untuk tambah file", "Click or drag to add files")}</span>
+                  </div>
+                </label>
+              </div>
 
-      <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
-        {/* Existing Files */}
-        {existingFiles?.map((file, idx) => (
-          <div key={`existing-${idx}`} className="flex items-center justify-between p-2 bg-gray-100 rounded-lg text-xs">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <FileText size={12} className="text-purple-500 flex-shrink-0" />
-              <span className="truncate flex-1">{file.split('/').pop()}</span>
+              <div className="mt-3 space-y-2 max-h-48 overflow-y-auto">
+                {/* Existing Files */}
+                {existingFiles?.map((file, idx) => (
+                  <div key={`existing-${idx}`} className="flex items-center justify-between p-2 bg-gray-100 rounded-lg text-xs">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText size={12} className="text-purple-500 flex-shrink-0" />
+                      <span className="truncate flex-1">{file.split('/').pop()}</span>
+                    </div>
+                    <div className="flex gap-1">
+                      <button onClick={() => window.open(buildPreviewUrl(type, idx), "_blank")} className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition" title={tr("Lihat", "View")}>
+                        <Eye size={12} />
+                      </button>
+                      <button onClick={() => onDeleteFile(type, idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Hapus", "Delete")}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+                {/* New Files to Upload */}
+                {files.map((file, idx) => (
+                  <div key={`new-${idx}`} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg text-xs">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText size={12} className="text-purple-500 flex-shrink-0" />
+                      <span className="truncate flex-1">{file.name}</span>
+                    </div>
+                    <button onClick={() => onRemoveFile(idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Batal", "Cancel")}>
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="flex gap-1">
-              <button onClick={() => window.open(buildPreviewUrl(type, idx), "_blank")} className="p-1 text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition" title={tr("Lihat", "View")}>
-                <Eye size={12} />
-              </button>
-              <button onClick={() => onDeleteFile(type, idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Hapus", "Delete")}>
-                <Trash2 size={12} />
-              </button>
-            </div>
-          </div>
-        ))}
-        {/* New Files to Upload */}
-        {files.map((file, idx) => (
-          <div key={`new-${idx}`} className="flex items-center justify-between p-2 bg-purple-50 rounded-lg text-xs">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <FileText size={12} className="text-purple-500 flex-shrink-0" />
-              <span className="truncate flex-1">{file.name}</span>
-            </div>
-            <button onClick={() => onRemoveFile(idx)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition" title={tr("Batal", "Cancel")}>
-              <X size={12} />
-            </button>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+            );
 };
 
-const DocCard = ({ label, filename, onPreview }) => (
-  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-sm transition group">
-    <div className="flex items-center gap-3 flex-1 min-w-0">
-      <div className="p-2 bg-purple-50 rounded-lg">
-        <FileText size={16} className="text-purple-500" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-gray-400">{label}</p>
-        <p className="text-sm font-medium text-gray-700 truncate">{filename}</p>
-      </div>
-    </div>
-    <button
-      onClick={onPreview}
-      className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition opacity-100 md:opacity-60 md:group-hover:opacity-100"
-      title={(localStorage.getItem("app_language") || "id") === "en" ? "View Document" : "Lihat Dokumen"}
-    >
-      <Eye size={16} />
-    </button>
-  </div>
-);
+            const DocCard = ({label, filename, onPreview}) => (
+            <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 hover:border-purple-200 hover:shadow-sm transition group">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="p-2 bg-purple-50 rounded-lg">
+                  <FileText size={16} className="text-purple-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-400">{label}</p>
+                  <p className="text-sm font-medium text-gray-700 truncate">{filename}</p>
+                </div>
+              </div>
+              <button
+                onClick={onPreview}
+                className="p-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition opacity-100 md:opacity-60 md:group-hover:opacity-100"
+                title={(localStorage.getItem("app_language") || "id") === "en" ? "View Document" : "Lihat Dokumen"}
+              >
+                <Eye size={16} />
+              </button>
+            </div>
+            );

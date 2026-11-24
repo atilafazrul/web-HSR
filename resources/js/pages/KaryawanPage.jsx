@@ -40,6 +40,7 @@ import {
   Copy
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDivisis } from "../utils/divisiConfig.jsx";
 
 const trText = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -1123,6 +1124,8 @@ const AccordionSection = ({ title, icon, children, expanded, onToggle, badge }) 
 
 // ================= CREATE FORM =================
 const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, onCancel }) => {
+  const { divisis } = useDivisis();
+  const divisiOptions = divisis.map((d) => d.name);
   return (
     <div className="space-y-5">
       <FormField
@@ -1154,7 +1157,7 @@ const CreateEmployeeForm = ({ createData, setCreateData, handleCreate, saving, o
         value={createData.divisi}
         onChange={(v) => setCreateData({ ...createData, divisi: v })}
         type="select"
-        options={["IT", "Service", "Sales", "Kontraktor", "Logistik", "Purchasing", "SIPLAH"]}
+        options={divisiOptions.length > 0 ? divisiOptions : ["IT", "Service", "Sales", "Kontraktor", "Logistik", "Purchasing", "SIPLAH"]}
       />
       <FormField
         label={trText("Role Akun", "Account Role")}

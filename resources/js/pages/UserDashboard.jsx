@@ -36,6 +36,8 @@ import ProjekKerjaPage from "./ProjekKerjaPage";
 import FotoProjekPage from "./FotoProjekPage";
 import Profile from "./Profile";
 import SettingsPage from "./SettingsPage";
+import DynamicDivisiPage from "./DynamicDivisiPage.jsx";
+import { useDivisis } from "../utils/divisiConfig.jsx";
 import { useI18n } from "../i18n/index.jsx";
 
 const DIVISI_TO_PATH = {
@@ -61,6 +63,7 @@ const DIVISI_PAGE = {
 export default function UserDashboard({ user, logout }) {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
+  const { divisis } = useDivisis();
   const navigate = useNavigate();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -73,10 +76,16 @@ export default function UserDashboard({ user, logout }) {
   const itemsPerPage = 5;
 
   const currentDivisi = user?.divisi || "Service";
-  const divisiPath = DIVISI_TO_PATH[currentDivisi] || "service";
-  const CurrentDivisiPage = DIVISI_PAGE[divisiPath] || ServicePage;
+  const matchedDivisi = divisis.find(
+    (d) =>
+      String(d.name || "").toLowerCase() === String(currentDivisi).toLowerCase() ||
+      String(d.slug || "").toLowerCase() === String(currentDivisi).toLowerCase()
+  );
+  const divisiPath = matchedDivisi?.slug || DIVISI_TO_PATH[currentDivisi] || String(currentDivisi).toLowerCase() || "service";
+  const CurrentDivisiPage = DIVISI_PAGE[divisiPath] || DynamicDivisiPage;
 
   const getDivisiImage = (divisi) => {
+    if (matchedDivisi?.card_image) return matchedDivisi.card_image;
     const imageMap = {
       IT: "/images/IT Card.png",
       Service: "/images/Card Service.png",
@@ -377,6 +386,9 @@ export default function UserDashboard({ user, logout }) {
             <Route path={divisiPath} element={<CurrentDivisiPage user={user} />} />
             <Route path={`${divisiPath}/projek`} element={<ProjekKerjaPage />} />
             <Route path={`${divisiPath}/projek/archive`} element={<ProjekKerjaPage />} />
+            <Route path=":divisiSlug" element={<DynamicDivisiPage />} />
+            <Route path=":divisiSlug/projek" element={<ProjekKerjaPage />} />
+            <Route path=":divisiSlug/projek/archive" element={<ProjekKerjaPage />} />
             <Route path="projek-kerja/foto/:id/*" element={<FotoProjekPage />} />
             <Route path="profile" element={<Profile user={user} logout={logout} />} />
             <Route path="settings" element={<SettingsPage />} />

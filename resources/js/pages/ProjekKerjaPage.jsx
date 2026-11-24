@@ -23,6 +23,7 @@ import { compressImage } from "../utils/imageCompress";
 import { assertNoDuplicateBiayaItems } from "../utils/biayaDuplicateValidation";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useI18n } from "../i18n/index.jsx";
+import { useDivisis } from "../utils/divisiConfig.jsx";
 import { DashboardSurface, DashboardSectionHeading } from "../components/dashboard/DashboardPrimitives.jsx";
 import {
   Download,
@@ -116,6 +117,7 @@ const projekFieldDisabled = "w-full rounded-xl border border-slate-200 bg-slate-
 
 export default function ProjekKerjaPage() {
   const { language } = useI18n();
+  const { divisis } = useDivisis();
   const navigate = useNavigate();
   const location = useLocation();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -299,6 +301,10 @@ export default function ProjekKerjaPage() {
     const ProjekIndex = pathSegments.findIndex(seg => seg === 'projek');
     if (ProjekIndex > 0) {
       const divisiFromPath = pathSegments[ProjekIndex - 1];
+      const matched = divisis.find(
+        (d) => String(d.slug || "").toLowerCase() === divisiFromPath.toLowerCase()
+      );
+      if (matched) return matched.name;
       const divisiMap = {
         it: "IT",
         service: "Service",
@@ -1912,13 +1918,11 @@ export default function ProjekKerjaPage() {
                   required
                 >
                   <option value="">{tr("Pilih Divisi", "Select Division")}</option>
-                  <option value="IT">IT</option>
-                  <option value="Service">Service</option>
-                  <option value="Kontraktor">Kontraktor</option>
-                  <option value="Sales">Sales</option>
-                  <option value="Logistik">Logistik</option>
-                  <option value="Purchasing">Purchasing</option>
-                  <option value="SIPLAH">SIPLAH</option>
+                  {divisis.map((d) => (
+                    <option key={d.slug} value={d.name}>
+                      {d.name}
+                    </option>
+                  ))}
                 </select>
               )
             ) : (

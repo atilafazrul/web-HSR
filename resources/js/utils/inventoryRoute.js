@@ -8,8 +8,11 @@ export function getBasePathFromRole(role) {
 }
 
 export function getInventoryDivisiFromPath(pathname) {
-  const match = pathname.match(/\/(it|service|kontraktor|purchasing|siplah)\/inventory/);
-  return match?.[1] || "it";
+  const match = pathname.match(/\/([^/]+)\/inventory/);
+  if (match && !["super_admin", "admin", "user"].includes(match[1])) {
+    return match[1];
+  }
+  return "it";
 }
 
 export function inventoryListPath(role, divisi) {
