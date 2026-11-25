@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   Wallet,
   Receipt,
@@ -718,24 +718,15 @@ const FilterSelect = ({ label, icon: Icon, value, onChange, children }) => (
   </div>
 );
 
-const DIVISI_TONE = {
-  IT:          "bg-sky-50 text-sky-700 ring-sky-200/70",
-  Service:     "bg-emerald-50 text-emerald-700 ring-emerald-200/70",
-  Sales:       "bg-indigo-50 text-indigo-700 ring-indigo-200/70",
-  Kontraktor:  "bg-amber-50 text-amber-800 ring-amber-200/70",
-  Logistik:    "bg-violet-50 text-violet-700 ring-violet-200/70",
-  Purchasing:  "bg-rose-50 text-rose-700 ring-rose-200/70",
-  SIPLAH:      "bg-teal-50 text-teal-700 ring-teal-200/70",
-};
+const DEFAULT_DIVISI_BADGE_TONE = "bg-slate-100 text-slate-700 ring-slate-200/80";
 
 const DivisiBadge = ({ divisi }) => {
   if (!divisi) return <span className="text-slate-400 text-xs">-</span>;
-  const tone = DIVISI_TONE[divisi] || "bg-slate-100 text-slate-700 ring-slate-200/70";
   return (
     <span
-      className={`inline-flex max-w-full shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${tone}`}
+      className={`inline-flex max-w-full shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ${DEFAULT_DIVISI_BADGE_TONE}`}
     >
-      <Building2 size={11} className="shrink-0" />
+      <Building2 size={11} className="shrink-0 text-slate-500" />
       {divisi}
     </span>
   );
@@ -945,13 +936,13 @@ const OutsideProjectBiayaCard = ({ data, loading, filterDivisi, tr }) => {
   const grandTotal = Number(data?.grand_total) || 0;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-violet-200/80 bg-gradient-to-br from-white to-violet-50/40 p-3 sm:p-4 shadow-sm h-full">
-      <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl bg-violet-300/15" />
-      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-violet-500 to-violet-600 opacity-90" />
+    <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white to-slate-50/90 p-3 sm:p-4 shadow-sm h-full">
+      <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-2xl bg-slate-300/15" />
+      <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-slate-500 to-slate-700 opacity-90" />
       <div className="relative">
         <div className="flex items-start justify-between gap-2 mb-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-600">
               {tr("Biaya di Luar Projek", "Off-Project Cost")}
             </p>
             <p className="mt-0.5 text-[10px] text-slate-500 leading-tight">
@@ -960,7 +951,7 @@ const OutsideProjectBiayaCard = ({ data, loading, filterDivisi, tr }) => {
                 : tr("Per divisi", "Per division")}
             </p>
           </div>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700 ring-1 ring-violet-200/70">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-700 ring-1 ring-slate-200/70">
             <Building2 size={16} />
           </div>
         </div>
@@ -975,31 +966,28 @@ const OutsideProjectBiayaCard = ({ data, loading, filterDivisi, tr }) => {
           </p>
         ) : (
           <div className="space-y-1.5 max-h-40 overflow-y-auto pr-0.5">
-            {rows.map((row) => {
-              const tone = DIVISI_TONE[row.divisi] || "bg-slate-100 text-slate-700 ring-slate-200/70";
-              return (
-                <div
-                  key={row.divisi}
-                  className="flex items-center justify-between gap-2 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-slate-200/70"
-                >
-                  <span className={`inline-flex max-w-[55%] items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${tone}`}>
-                    <Building2 size={10} className="shrink-0" />
-                    <span className="truncate">{row.divisi}</span>
-                  </span>
-                  <span className="shrink-0 text-xs font-bold tabular-nums text-slate-800" title={formatRupiah(row.total)}>
-                    {formatRupiahCompact(row.total)}
-                  </span>
-                </div>
-              );
-            })}
+            {rows.map((row) => (
+              <div
+                key={row.divisi}
+                className="flex items-center justify-between gap-2 rounded-lg bg-white/80 px-2.5 py-2 ring-1 ring-slate-200/70"
+              >
+                <span className={`inline-flex max-w-[55%] items-center gap-1 truncate rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ${DEFAULT_DIVISI_BADGE_TONE}`}>
+                  <Building2 size={10} className="shrink-0 text-slate-500" />
+                  <span className="truncate">{row.divisi}</span>
+                </span>
+                <span className="shrink-0 text-xs font-bold tabular-nums text-slate-800" title={formatRupiah(row.total)}>
+                  {formatRupiahCompact(row.total)}
+                </span>
+              </div>
+            ))}
           </div>
         )}
 
-        <div className="mt-3 flex items-center justify-between border-t border-violet-100 pt-2.5">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-violet-700">
+        <div className="mt-3 flex items-center justify-between border-t border-slate-200/80 pt-2.5">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-600">
             {tr("Total Luar Projek", "Total Off-Project")}
           </span>
-          <span className="text-sm font-bold tabular-nums text-violet-800" title={formatRupiah(grandTotal)}>
+          <span className="text-sm font-bold tabular-nums text-slate-800" title={formatRupiah(grandTotal)}>
             {loading ? "—" : formatRupiahCompact(grandTotal)}
           </span>
         </div>
@@ -1177,7 +1165,7 @@ const ProfitPanel = ({ summary, tr }) => {
             <BreakdownItem
               label={tr("Biaya Luar", "Off-Project")}
               value={formatRupiahCompact(totalBiayaLuar)}
-              color="violet"
+              color="slate"
             />
           </div>
           <p className="pt-1 text-[9px] leading-relaxed text-slate-400">

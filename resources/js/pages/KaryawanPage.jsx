@@ -294,9 +294,8 @@ export default function KaryawanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-indigo-50/20 to-purple-50/20 relative overflow-hidden">
-        <div className="pointer-events-none absolute -top-40 -right-40 h-[480px] w-[480px] rounded-full bg-gradient-to-br from-indigo-400/20 to-purple-400/20 blur-3xl" />
-        <div className="relative text-center p-8 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/80 shadow-xl">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden">
+        <div className="relative text-center p-8 rounded-3xl bg-white/80 backdrop-blur-xl border border-slate-200/80 shadow-xl">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
           <p className="text-slate-600 font-medium">{trText("Memuat data karyawan...", "Loading employee data...")}</p>
         </div>
@@ -305,13 +304,7 @@ export default function KaryawanPage() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-gradient-to-br from-slate-100/90 via-indigo-50/40 to-slate-100/90 -m-3 sm:-m-4 md:-m-5 lg:-m-6 xl:-m-8 p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8">
-      {/* Ambient Glass Glow Orbs */}
-      <div className="pointer-events-none absolute -top-32 -right-32 h-[550px] w-[550px] rounded-full bg-gradient-to-br from-indigo-500/25 via-purple-500/20 to-pink-500/15 blur-[100px]" />
-      <div className="pointer-events-none absolute top-1/4 -left-32 h-[500px] w-[500px] rounded-full bg-gradient-to-tr from-sky-400/25 via-blue-500/20 to-indigo-500/15 blur-[100px]" />
-      <div className="pointer-events-none absolute -bottom-32 right-1/4 h-[550px] w-[550px] rounded-full bg-gradient-to-tr from-violet-500/20 via-fuchsia-400/15 to-rose-300/15 blur-[100px]" />
-      <div className="pointer-events-none absolute top-2/3 left-1/3 h-[420px] w-[420px] rounded-full bg-gradient-to-br from-teal-400/15 to-cyan-400/15 blur-[90px]" />
-
+    <div className="min-h-screen relative overflow-hidden bg-slate-50/70 -m-3 sm:-m-4 md:-m-5 lg:-m-6 xl:-m-8 p-3 sm:p-4 md:p-5 lg:p-6 xl:p-8">
       <div className="relative p-4 sm:p-6 lg:p-8 max-w-[1600px] mx-auto">
         {/* Error Alert */}
         {error && (
@@ -327,10 +320,6 @@ export default function KaryawanPage() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-200/50 backdrop-blur-md text-xs font-semibold text-indigo-700 mb-2">
-              <Users size={12} />
-              {trText("", "Super Admin • HR Management")}
-            </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
               {trText("Kelola Karyawan", "Manage Employees")}
             </h1>

@@ -27,6 +27,7 @@ import {
   Package,
   Plus,
   Settings2,
+  ShoppingCart,
 } from "lucide-react";
 
 import axios from "../api/axiosConfig";
@@ -50,6 +51,8 @@ import {
   DashboardSectionHeading,
   DashboardSummaryCard,
   projekActivityStatusPillClass,
+  buildDashboardKaryawanRows,
+  getDashboardCurrentKaryawan,
 } from "../components/dashboard/DashboardPrimitives.jsx";
 import { useI18n } from "../i18n/index.jsx";
 
@@ -344,6 +347,8 @@ export default function SuperAdminDashboard({ user, logout }) {
 
 /* ================= DASHBOARD ================= */
 
+let cachedSuperAdminProjek = null;
+
 const Dashboard = ({ user, windowWidth }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
@@ -353,13 +358,15 @@ const Dashboard = ({ user, windowWidth }) => {
     mode: "create",
     divisi: null,
   });
-  const [projek, setProjek] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [projek, setProjek] = useState(() => cachedSuperAdminProjek || []);
+  const [loading, setLoading] = useState(() => cachedSuperAdminProjek === null);
 
   const [showDesc, setShowDesc] = useState(false);
   const [descText, setDescText] = useState("");
   const [editDesc, setEditDesc] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [showBarangModal, setShowBarangModal] = useState(false);
+  const [barangText, setBarangText] = useState("");
 
   const [search, setSearch] = useState("");
   const [filterDivisi, setFilterDivisi] = useState("");
@@ -393,11 +400,11 @@ const Dashboard = ({ user, windowWidth }) => {
         data = data.filter(p => p.divisi === user?.divisi);
       }
 
-      console.log("Dashboard loaded:", data.length, "projects");
+      cachedSuperAdminProjek = data;
       setProjek(data);
     } catch (err) {
       console.error("Dashboard load error:", err);
-      setProjek([]);
+      if (!cachedSuperAdminProjek) setProjek([]);
     } finally {
       setLoading(false);
     }
@@ -667,125 +674,195 @@ const Dashboard = ({ user, windowWidth }) => {
           </div>
         </div>
 
-        {/* TABLE - Tampilan Desktop (≥ 1024px) - TANPA UBAH APAPUN */}
+        {/* TABLE - Tampilan Desktop (≥ 1024px) - SAMA DENGAN TABEL PROJEK KERJA */}
         {isDesktop && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-separate border-spacing-y-2">
-              <thead className="text-gray-500 text-xs uppercase bg-gray-50">
-                <tr className="text-left">
-                  <th className="p-3 lg:p-4">
-                    <div className="flex items-center gap-2 opacity-80">
-                      <Building size={15} className="text-gray-400" />
-                      Divisi
-                    </div>
-                  </th>
-                  <th className="p-3 lg:p-4">
-                    <div className="flex items-center gap-2 opacity-80">
-                      <Briefcase size={15} className="text-gray-400" />
-                      Tugas
-                    </div>
-                  </th>
-                  <th className="p-3 lg:p-4">
-                    <div className="flex items-center gap-2 opacity-80">
-                      <User size={15} className="text-gray-400" />
-                      Karyawan
-                    </div>
-                  </th>
-                  <th className="p-3 lg:p-4">
-                    <div className="flex items-center gap-2 opacity-80">
-                      <MapPin size={15} className="text-gray-400" />
-                      Lokasi
-                    </div>
-                  </th>
-                  <th className="p-3 lg:p-4">
-                    <div className="flex items-center gap-2 opacity-80">
-                      <Calendar size={15} className="text-gray-400" />
-                      Tanggal
-                    </div>
-                  </th>
-                  <th className="p-3 lg:p-4">
-                    <div className="flex items-center gap-2 opacity-80">
-                      <FileText size={15} className="text-gray-400" />
-                      Deskripsi
-                    </div>
-                  </th>
-                  <th className="p-3 lg:p-4">
-                    <div className="flex items-center gap-2 opacity-80">
-                      <Activity size={15} className="text-gray-400" />
-                      Status
-                    </div>
-                  </th>
-                  <th className="p-3 lg:p-4 text-center">
-                    <div className="flex items-center justify-center gap-2 opacity-80">
-                      <Settings size={15} className="text-gray-400" />
-                      Aksi
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedProjek.map(item => (
-                  <tr key={item.id} className="bg-white shadow-sm hover:shadow-md transition">
-                    <td className="p-3 lg:p-4 text-left">{item.divisi}</td>
-                    <td className="p-3 lg:p-4 font-medium text-left">{item.jenis_pekerjaan}</td>
-                    <td className="p-3 lg:p-4 text-left">{item.karyawan}</td>
-                    <td className="p-3 lg:p-4 text-left">{item.alamat}</td>
-                    <td className="p-3 lg:p-4 text-left">
-                      {new Date(item.start_date).toLocaleDateString("id-ID")}
-                    </td>
-                    <td className="p-3 lg:p-4 text-left">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedId(item.id);
-                          setDescText(item.problem_description || "");
-                          setEditDesc(false);
-                          setShowDesc(true);
-                        }}
-                        className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                        title={language === "en" ? "View description" : "Lihat deskripsi"}
-                      >
-                        <Eye size={14} aria-hidden />
-                      </button>
-                    </td>
-                    <td className="p-3 lg:p-4 text-left whitespace-nowrap">
-                      <span className={projekActivityStatusPillClass(item.status)}>
-                        {displayStatus(item.status)}
-                      </span>
-                    </td>
-                    <td className="p-3 lg:p-4">
-                      <div className="flex items-center justify-center gap-1">
-                        {item.file_url && (
-                          <a
-                            href={item.file_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={`${actionIconBtn} text-sky-600 hover:bg-sky-50`}
-                            title="Download"
-                          >
-                            <Download size={18} />
-                          </a>
-                        )}
-                        <Link
-                          to={`${basePath}/projek-kerja/foto/${item.id}`}
-                          className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
-                          title="Foto Projek"
-                        >
-                          <FileText size={18} />
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
-                          title="Hapus"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
+          <div className="w-full overflow-x-auto rounded-xl border border-slate-200/80">
+            <div className="inline-block min-w-full align-middle">
+              <table className="min-w-full text-sm" style={{ minWidth: "1100px", tableLayout: "fixed" }}>
+                <thead className="border-b border-slate-200 bg-slate-50/95 text-slate-600">
+                  <tr className="text-left bg-slate-50/95">
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: "90px" }}>
+                      <Building size={16} className="inline mr-1 text-gray-400" /> {tr("Divisi", "Division")}
+                    </th>
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ minWidth: "220px" }}>
+                      <Briefcase size={16} className="inline mr-1 text-gray-400" /> {tr("Tugas", "Task")}
+                    </th>
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: "150px" }}>
+                      <User size={16} className="inline mr-1 text-gray-400" /> {tr("Karyawan", "Employee")}
+                    </th>
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: "180px" }}>
+                      <MapPin size={16} className="inline mr-1 text-gray-400" /> {tr("Lokasi", "Location")}
+                    </th>
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: "110px" }}>
+                      <Calendar size={16} className="inline mr-1 text-gray-400" /> {tr("Tanggal", "Date")}
+                    </th>
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: "110px" }}>
+                      <FileText size={16} className="inline mr-1 text-gray-400" /> {tr("Deskripsi", "Description")}
+                    </th>
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: "100px" }}>
+                      <ShoppingCart size={16} className="inline mr-1 text-gray-400" /> {tr("Barang", "Items")}
+                    </th>
+                    <th className="p-2.5 font-semibold whitespace-nowrap" style={{ width: "140px" }}>
+                      <Activity size={16} className="inline mr-1 text-gray-400" /> {tr("Status", "Status")}
+                    </th>
+                    <th className="p-2.5 font-semibold text-center whitespace-nowrap" style={{ width: "130px" }}>
+                      <Settings size={16} className="inline mr-1 text-gray-400" /> {tr("Aksi", "Actions")}
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedProjek.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="p-6 text-center text-sm text-slate-500">
+                        {tr("Tidak ada data yang ditemukan", "No data found")}
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedProjek.map((item) => {
+                      const divisiFlow = Array.isArray(item.divisi_flow) && item.divisi_flow.length > 0
+                        ? item.divisi_flow
+                        : [item.divisi || "-"];
+                      const currentDivVal = String(item.divisi || "").toLowerCase().trim();
+                      const karyawanRows = buildDashboardKaryawanRows(item);
+                      const currentKaryawan = getDashboardCurrentKaryawan(item);
+
+                      return (
+                        <tr
+                          key={item.id}
+                          className="border-b border-slate-100 bg-white transition hover:bg-slate-50/70"
+                        >
+                          <td className="p-2.5">
+                            <select
+                              className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
+                              value={currentDivVal}
+                              title={tr("Divisi yang pernah terlibat (klik untuk lihat)", "Divisions involved")}
+                              onChange={(e) => {
+                                e.target.value = currentDivVal;
+                              }}
+                            >
+                              {divisiFlow.map((d, idx) => (
+                                <option key={`${d}-${idx}`} value={String(d || "").toLowerCase().trim()}>
+                                  {d || "-"}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="p-2.5">
+                            <Link
+                              to={`${basePath}/projek-kerja/foto/${item.id}`}
+                              className="block w-full truncate text-left font-medium text-slate-800 transition hover:text-indigo-600 hover:underline"
+                              title={tr("Buka halaman dokumen projek", "Open project document page")}
+                            >
+                              {item.jenis_pekerjaan}
+                            </Link>
+                          </td>
+                          <td className="p-2.5">
+                            {karyawanRows.length <= 1 ? (
+                              <span className="block truncate">
+                                {karyawanRows[0]
+                                  ? karyawanRows[0].isInvite
+                                    ? `${karyawanRows[0].display} (Invite)`
+                                    : karyawanRows[0].display
+                                  : currentKaryawan || "-"}
+                              </span>
+                            ) : (
+                              <select
+                                className="w-full rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs shadow-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-500/20"
+                                value={currentKaryawan}
+                                onChange={(e) => {
+                                  e.target.value = currentKaryawan;
+                                }}
+                                title={tr("Karyawan yang terlibat di project", "Employees involved in project")}
+                              >
+                                {karyawanRows.map((row, idx) => (
+                                  <option key={`${row.display}-${idx}`} value={row.display}>
+                                    {row.isInvite ? `${row.display} (Invite)` : row.display}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                          </td>
+                          <td className="p-2.5 truncate">{item.alamat || "-"}</td>
+                          <td className="p-2.5 whitespace-nowrap">
+                            {item.start_date ? new Date(item.start_date).toLocaleDateString("id-ID") : "-"}
+                          </td>
+                          <td className="p-2.5">
+                            {item.problem_description ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedId(item.id);
+                                  setDescText(item.problem_description || "");
+                                  setEditDesc(false);
+                                  setShowDesc(true);
+                                }}
+                                className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                                title={language === "en" ? "View description" : "Lihat deskripsi"}
+                              >
+                                <Eye size={14} aria-hidden />
+                              </button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="p-2.5">
+                            {item.barang_dibeli ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setBarangText(item.barang_dibeli || "");
+                                  setShowBarangModal(true);
+                                }}
+                                className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+                                title={tr("Lihat barang dibeli", "View purchased items")}
+                              >
+                                <Eye size={14} aria-hidden />
+                              </button>
+                            ) : (
+                              "-"
+                            )}
+                          </td>
+                          <td className="p-2.5 whitespace-nowrap">
+                            <span className={projekActivityStatusPillClass(item.status)}>
+                              {displayStatus(item.status)}
+                            </span>
+                          </td>
+                          <td className="p-2.5">
+                            <div className="flex items-center justify-center gap-1">
+                              {item.file_url && (
+                                <a
+                                  href={item.file_url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={`${actionIconBtn} text-sky-600 hover:bg-sky-50`}
+                                  title="Download"
+                                >
+                                  <Download size={18} />
+                                </a>
+                              )}
+                              <Link
+                                to={`${basePath}/projek-kerja/foto/${item.id}`}
+                                className={`${actionIconBtn} text-slate-600 hover:bg-slate-50`}
+                                title="Foto Projek"
+                              >
+                                <FileText size={18} />
+                              </Link>
+                              <button
+                                onClick={() => handleDelete(item.id)}
+                                className={`${actionIconBtn} text-red-600 hover:bg-red-50`}
+                                title="Hapus"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -924,6 +1001,29 @@ const Dashboard = ({ user, windowWidth }) => {
         isMobile={isMobile}
       />
 
+      {showBarangModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-3 sm:p-4 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xl">
+            <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-800">
+              <ShoppingCart size={20} className="text-indigo-600" />
+              <span>{tr("Barang yang Dibeli", "Purchased Items")}</span>
+            </h3>
+            <p className="max-h-60 overflow-y-auto whitespace-pre-line text-sm text-slate-700">
+              {barangText || "-"}
+            </p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowBarangModal(false)}
+                className="rounded-xl bg-slate-200 px-4 py-2 text-sm font-medium text-slate-800 transition hover:bg-slate-300"
+              >
+                {tr("Tutup", "Close")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <DivisiModuleModal
         isOpen={divisiModal.open}
         onClose={() => setDivisiModal((s) => ({ ...s, open: false }))}
@@ -955,6 +1055,7 @@ const DivisiCard = ({
       <img
         src={defaultImage}
         alt={title}
+        decoding="async"
         className="h-36 sm:h-40 md:h-44 lg:h-48 xl:h-56 w-full object-cover group-hover:scale-110 transition duration-500"
       />
 

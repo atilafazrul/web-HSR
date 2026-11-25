@@ -14,6 +14,8 @@ const kategoriConfig = [
   { key: "reimbursment", label: "Biaya Reimbursment" },
 ];
 
+const biayaCacheByScope = new Map();
+
 const rupiah = (n) =>
   new Intl.NumberFormat("id-ID", {
     style: "currency",
@@ -52,13 +54,19 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   const [pendingHighlightId, setPendingHighlightId] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
 
-  const [summary, setSummary] = useState({
-    jalan: 0,
-    pengeluaran: 0,
-    reimbursment: 0,
-    total: 0,
-  });
-  const [items, setItems] = useState([]);
+  const cacheKey = String(scopeUserId || "global");
+  const initialCache = biayaCacheByScope.get(cacheKey);
+
+  const [summary, setSummary] = useState(
+    () =>
+      initialCache?.summary || {
+        jalan: 0,
+        pengeluaran: 0,
+        reimbursment: 0,
+        total: 0,
+      }
+  );
+  const [items, setItems] = useState(() => initialCache?.items || []);
   const [loading, setLoading] = useState(false);
   const [compressingKey, setCompressingKey] = useState(null);
   const [submittingKategori, setSubmittingKategori] = useState(null);
@@ -123,15 +131,20 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   });
 
   const fetchAll = async () => {
-    setLoading(true);
+    if (!biayaCacheByScope.has(cacheKey)) {
+      setLoading(true);
+    }
     try {
       const queryParams = isSuperAdmin && scopeUserId ? { user_id: scopeUserId } : undefined;
       const [sumRes, listRes] = await Promise.all([
         api.get("/dashboard-biaya/summary", { params: queryParams }),
         api.get("/dashboard-biaya", { params: queryParams }),
       ]);
-      setSummary(sumRes.data?.data || {});
-      setItems(listRes.data?.data || []);
+      const nextSummary = sumRes.data?.data || {};
+      const nextItems = listRes.data?.data || [];
+      biayaCacheByScope.set(cacheKey, { summary: nextSummary, items: nextItems });
+      setSummary(nextSummary);
+      setItems(nextItems);
     } catch (err) {
       console.error("Gagal load dashboard biaya", err);
     } finally {
@@ -416,11 +429,10 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
             ref={(el) => {
               rowRefs.current[String(row.id)] = el;
             }}
-            className={`rounded-lg border p-2.5 text-xs shadow-sm transition ${
-              String(highlightId) === String(row.id)
+            className={`rounded-lg border p-2.5 text-xs shadow-sm transition ${String(highlightId) === String(row.id)
                 ? "border-amber-300 bg-amber-50 ring-2 ring-amber-400/70"
                 : "border-slate-200/80 bg-slate-50/40 hover:border-slate-300/90 hover:bg-white"
-            }`}
+              }`}
           >
             {editingId === row.id ? (
               <div className="space-y-2">
@@ -551,332 +563,329 @@ export default function BiayaDashboardPanel({ user, showInput = true, scopeUserI
   return (
     <>
       <DashboardSurface ref={panelRef} className="mb-6 p-4 sm:mb-8 sm:p-5 md:mb-10 md:p-6 lg:p-8">
-      <div className="mb-6 flex flex-col gap-3 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-indigo-500/10 ring-1 ring-emerald-500/20">
-            <DollarSign size={22} className="text-emerald-700" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
-              {tr("Biaya Diluar Projek", "Non-Project Costs")}
-            </h3>
-            <p className="mt-0.5 max-w-xl text-xs text-slate-500 sm:text-sm">
-              {tr("Catat biaya per kategori; kelola status lunas di bawah.", "Record costs per category; manage paid status below.")}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {showInput && (
-        <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-          {kategoriConfig.map((k) => (
-            <div
-              key={k.key}
-              className="rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 p-4 shadow-sm ring-1 ring-slate-900/[0.02]"
-            >
-              <p className="mb-3 text-sm font-bold text-slate-800">
-                {tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}
-              </p>
-              <input
-                type="text"
-                inputMode="numeric"
-                autoComplete="off"
-                value={form[k.key].nominal}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    [k.key]: {
-                      ...p[k.key],
-                      nominal: formatRibuanId(digitsOnly(e.target.value)),
-                    },
-                  }))
-                }
-                placeholder={tr("Biaya", "Amount")}
-                className="mb-2 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
-              />
-              <textarea
-                value={form[k.key].keterangan}
-                onChange={(e) =>
-                  setForm((p) => ({
-                    ...p,
-                    [k.key]: { ...p[k.key], keterangan: e.target.value },
-                  }))
-                }
-                placeholder={tr("Keterangan", "Description")}
-                className="mb-2 min-h-[60px] w-full resize-y rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
-                rows="2"
-              />
-              {kategoriWithPhotos(k.key) ? (
-                <div className="mb-2">
-                  <label className="mb-1 block text-xs font-medium text-slate-600">{tr("Upload foto", "Upload photos")}</label>
-                  <input
-                    ref={
-                      k.key === "jalan"
-                        ? jalanPhotoInputRef
-                        : k.key === "pengeluaran"
-                          ? pengeluaranPhotoInputRef
-                          : reimbPhotoInputRef
-                    }
-                    type="file"
-                    multiple
-                    accept="image/jpeg,image/jpg,image/png,image/webp"
-                    onChange={(e) => handlePhotoSelection(k.key, e.target.files)}
-                    className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-indigo-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-indigo-700"
-                  />
-                  {isCompressingKategori(k.key) ? (
-                    <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
-                  ) : null}
-                  {form[k.key].photoFiles?.length > 0 ? (
-                    <p className="text-[11px] text-gray-500 mt-1">
-                      {form[k.key].photoFiles.length} {tr("file dipilih", "files selected")}
-                    </p>
-                  ) : null}
-                </div>
-              ) : null}
-              <button
-                type="button"
-                onClick={() => submitKategori(k.key)}
-                disabled={isCompressingKategori(k.key) || isSubmittingKategori(k.key)}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-900/10 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
-              >
-                {isCompressingKategori(k.key) ? (
-                  tr("Mengompres foto...", "Compressing photos...")
-                ) : isSubmittingKategori(k.key) ? (
-                  <>
-                    <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                    {tr("Menyimpan...", "Saving...")}
-                  </>
-                ) : (
-                  `${tr("Simpan", "Save")} ${tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}`
-                )}
-              </button>
+        <div className="mb-6 flex flex-col gap-3 border-b border-slate-100 pb-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-500/15 to-indigo-500/10 ring-1 ring-emerald-500/20">
+              <DollarSign size={22} className="text-emerald-700" />
             </div>
-          ))}
-        </div>
-      )}
-
-      <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-        <Summary title={tr("Biaya Jalan", "Travel Cost")} value={summary.jalan} tone="sky" />
-        <Summary title={tr("Pengeluaran", "Expenses")} value={summary.pengeluaran} tone="violet" />
-        <Summary title={tr("Reimbursment", "Reimbursement")} value={summary.reimbursment} tone="teal" />
-        <Summary title={tr("Total", "Total")} value={summary.total} highlight tone="amber" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-        <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50/70 to-white p-4 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-5">
-          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-            <span className="h-2 w-2 rounded-full bg-slate-400 shadow-sm shadow-slate-400/40" />
-            {tr("Belum Lunas", "Unpaid")}
-          </h4>
-          <div className="grid grid-cols-1 gap-3">
-            {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.belum[k.key]))}
+            <div>
+              <h3 className="text-lg font-bold tracking-tight text-slate-900 sm:text-xl">
+                {tr("Biaya Diluar Projek", "Non-Project Costs")}
+              </h3>
+              <p className="mt-0.5 max-w-xl text-xs text-slate-500 sm:text-sm">
+                {tr("Catat biaya per kategori; kelola status lunas di bawah.", "Record costs per category; manage paid status below.")}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-indigo-200/70 bg-gradient-to-b from-indigo-50/40 to-white p-4 shadow-sm ring-1 ring-indigo-900/[0.03] sm:p-5">
-          <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700">
-            <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/35" />
-            {tr("Sudah Lunas", "Paid")}
-          </h4>
-          <div className="grid grid-cols-1 gap-3">
-            {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.lunas[k.key]))}
-          </div>
-        </div>
-      </div>
 
-      {loading ? (
-        <p className="mt-4 flex items-center gap-2 text-xs text-slate-400">
-          <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
-          {tr("Memuat...", "Loading...")}
-        </p>
-      ) : null}
-    </DashboardSurface>
-
-    {/* Modal Konfirmasi */}
-    {showConfirmModal && confirmAction && (
-      <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
-        onClick={handleCancelConfirm}
-      >
-        <div
-          className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {confirmAction.type === "delete" ? (
-            <>
-              <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-rose-500 to-orange-400" />
-              <button
-                type="button"
-                onClick={handleCancelConfirm}
-                disabled={confirmProcessing}
-                className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
-                aria-label={tr("Batal", "Cancel")}
+        {showInput && (
+          <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+            {kategoriConfig.map((k) => (
+              <div
+                key={k.key}
+                className="rounded-xl border border-slate-200/90 bg-gradient-to-b from-white to-slate-50/90 p-4 shadow-sm ring-1 ring-slate-900/[0.02]"
               >
-                <X size={18} />
-              </button>
-              <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-rose-100 shadow-inner ring-1 ring-red-100">
-                  <Trash2 size={30} className="text-red-600" strokeWidth={2} />
-                </div>
-                <h3 className="text-lg font-bold text-slate-800">
-                  {tr("Hapus Data Biaya", "Delete Cost Data")}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">
-                  {tr(
-                    "Data biaya ini akan dihapus permanen dan tidak dapat dikembalikan.",
-                    "This cost entry will be permanently removed and cannot be restored."
-                  )}
+                <p className="mb-3 text-sm font-bold text-slate-800">
+                  {tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}
                 </p>
-              </div>
-              {confirmAction.row && (
-                <div className="px-6 pb-5">
-                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                      {kategoriLabel(confirmAction.row.kategori)}
-                    </p>
-                    <p className="mt-1 text-lg font-bold text-slate-800">
-                      {rupiah(confirmAction.row.nominal)}
-                    </p>
-                    {confirmAction.row.keterangan ? (
-                      <p className="mt-2 text-sm text-slate-600 line-clamp-2">
-                        {confirmAction.row.keterangan}
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  value={form[k.key].nominal}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      [k.key]: {
+                        ...p[k.key],
+                        nominal: formatRibuanId(digitsOnly(e.target.value)),
+                      },
+                    }))
+                  }
+                  placeholder={tr("Biaya", "Amount")}
+                  className="mb-2 w-full rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
+                />
+                <textarea
+                  value={form[k.key].keterangan}
+                  onChange={(e) =>
+                    setForm((p) => ({
+                      ...p,
+                      [k.key]: { ...p[k.key], keterangan: e.target.value },
+                    }))
+                  }
+                  placeholder={tr("Keterangan", "Description")}
+                  className="mb-2 min-h-[60px] w-full resize-y rounded-lg border border-slate-200 bg-white p-2.5 text-sm shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/15"
+                  rows="2"
+                />
+                {kategoriWithPhotos(k.key) ? (
+                  <div className="mb-2">
+                    <label className="mb-1 block text-xs font-medium text-slate-600">{tr("Upload foto", "Upload photos")}</label>
+                    <input
+                      ref={
+                        k.key === "jalan"
+                          ? jalanPhotoInputRef
+                          : k.key === "pengeluaran"
+                            ? pengeluaranPhotoInputRef
+                            : reimbPhotoInputRef
+                      }
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={(e) => handlePhotoSelection(k.key, e.target.files)}
+                      className="w-full rounded-lg border border-slate-200 bg-white p-2 text-xs file:mr-2 file:rounded file:border-0 file:bg-indigo-50 file:px-2 file:py-1 file:text-xs file:font-medium file:text-indigo-700"
+                    />
+                    {isCompressingKategori(k.key) ? (
+                      <p className="text-[11px] text-blue-600 mt-1">{tr("Sedang kompres foto...", "Compressing photos...")}</p>
+                    ) : null}
+                    {form[k.key].photoFiles?.length > 0 ? (
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        {form[k.key].photoFiles.length} {tr("file dipilih", "files selected")}
                       </p>
                     ) : null}
                   </div>
-                </div>
-              )}
-              <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+                ) : null}
                 <button
                   type="button"
-                  onClick={handleCancelConfirm}
-                  disabled={confirmProcessing}
-                  className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  onClick={() => submitKategori(k.key)}
+                  disabled={isCompressingKategori(k.key) || isSubmittingKategori(k.key)}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-900/10 transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-300"
                 >
-                  {tr("Batal", "Cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmAction}
-                  disabled={confirmProcessing}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-500/25 transition hover:from-red-700 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {confirmProcessing
-                    ? tr("Menghapus...", "Deleting...")
-                    : tr("Ya, Hapus", "Yes, Delete")}
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex flex-col items-center px-6 pb-2 pt-6">
-                <div
-                  className={`mb-3 flex h-16 w-16 items-center justify-center rounded-full ${
-                    confirmAction.newStatus ? "bg-emerald-100" : "bg-amber-100"
-                  }`}
-                >
-                  {confirmAction.newStatus ? (
-                    <CheckCircle size={32} className="text-emerald-600" />
+                  {isCompressingKategori(k.key) ? (
+                    tr("Mengompres foto...", "Compressing photos...")
+                  ) : isSubmittingKategori(k.key) ? (
+                    <>
+                      <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      {tr("Menyimpan...", "Saving...")}
+                    </>
                   ) : (
-                    <AlertCircle size={32} className="text-amber-600" />
+                    `${tr("Simpan", "Save")} ${tr(k.label, k.key === "jalan" ? "Travel Cost" : k.key === "pengeluaran" ? "Expense Cost" : "Reimbursement Cost")}`
                   )}
-                </div>
-                <h3 className="mb-1 text-lg font-bold text-gray-800">
-                  {tr("Ubah Status Biaya", "Change Cost Status")}
-                </h3>
-                <p className="text-center text-sm text-gray-500">
-                  {tr(
-                    "Apakah Anda yakin ingin mengubah status menjadi",
-                    "Are you sure you want to change status to"
-                  )}
-                </p>
-              </div>
-              <div className="px-6 pb-4">
-                <div
-                  className={`rounded-xl px-4 py-3 text-center font-semibold ${
-                    confirmAction.newStatus
-                      ? "border-2 border-emerald-200 bg-emerald-50 text-emerald-700"
-                      : "border-2 border-amber-200 bg-amber-50 text-amber-700"
-                  }`}
-                >
-                  {confirmAction.statusText}
-                </div>
-              </div>
-              {confirmAction.row && (
-                <div className="px-6 pb-4">
-                  <div className="rounded-lg bg-gray-50 p-3">
-                    <p className="mb-1 text-xs text-gray-500">{tr("Nominal", "Amount")}:</p>
-                    <p className="font-semibold text-gray-700">{rupiah(confirmAction.row.nominal)}</p>
-                    {confirmAction.row.keterangan && (
-                      <>
-                        <p className="mb-1 mt-2 text-xs text-gray-500">{tr("Keterangan", "Description")}:</p>
-                        <p className="truncate text-sm text-gray-700">{confirmAction.row.keterangan}</p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-              <div className="flex gap-3 px-6 pb-6">
-                <button
-                  type="button"
-                  onClick={handleCancelConfirm}
-                  disabled={confirmProcessing}
-                  className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
-                >
-                  {tr("Batal", "Cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirmAction}
-                  disabled={confirmProcessing}
-                  className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-70 ${
-                    confirmAction.newStatus
-                      ? "bg-emerald-600 hover:bg-emerald-700"
-                      : "bg-amber-600 hover:bg-amber-700"
-                  }`}
-                >
-                  {confirmProcessing
-                    ? tr("Memproses...", "Processing...")
-                    : tr("Ya, Ubah Status", "Yes, Change Status")}
                 </button>
               </div>
-            </>
-          )}
-        </div>
-      </div>
-    )}
+            ))}
+          </div>
+        )}
 
-    {photoPreview ? (
-      <div
-        className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-        onClick={() => setPhotoPreview(null)}
-      >
-        <div
-          className="relative max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            type="button"
-            onClick={() => setPhotoPreview(null)}
-            className="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white transition hover:bg-black/70"
-            aria-label={tr("Tutup", "Close")}
-          >
-            <X size={18} />
-          </button>
-          <img
-            src={photoPreview.url}
-            alt={tr("Lampiran biaya", "Expense attachment")}
-            className="max-h-[70vh] w-full object-contain bg-slate-100"
-          />
-          <div className="border-t border-slate-100 px-4 py-3 text-center">
-            <p className="text-xs text-slate-500">
-              {tr("Diupload", "Uploaded")}:{" "}
-              <span className="font-medium text-slate-700">
-                {formatDateTime(photoPreview.uploadedAt)}
-              </span>
-            </p>
+        <div className="mb-6 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
+          <Summary title={tr("Biaya Jalan", "Travel Cost")} value={summary.jalan} tone="sky" />
+          <Summary title={tr("Pengeluaran", "Expenses")} value={summary.pengeluaran} tone="violet" />
+          <Summary title={tr("Reimbursment", "Reimbursement")} value={summary.reimbursment} tone="teal" />
+          <Summary title={tr("Total", "Total")} value={summary.total} highlight tone="amber" />
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+          <div className="rounded-2xl border border-slate-200/80 bg-gradient-to-b from-slate-50/70 to-white p-4 shadow-sm ring-1 ring-slate-900/[0.03] sm:p-5">
+            <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
+              <span className="h-2 w-2 rounded-full bg-slate-400 shadow-sm shadow-slate-400/40" />
+              {tr("Belum Lunas", "Unpaid")}
+            </h4>
+            <div className="grid grid-cols-1 gap-3">
+              {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.belum[k.key]))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-indigo-200/70 bg-gradient-to-b from-indigo-50/40 to-white p-4 shadow-sm ring-1 ring-indigo-900/[0.03] sm:p-5">
+            <h4 className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-indigo-700">
+              <span className="h-2 w-2 rounded-full bg-indigo-500 shadow-sm shadow-indigo-500/35" />
+              {tr("Sudah Lunas", "Paid")}
+            </h4>
+            <div className="grid grid-cols-1 gap-3">
+              {kategoriConfig.map((k) => renderKategoriCard(k, groupedByLunas.lunas[k.key]))}
+            </div>
           </div>
         </div>
-      </div>
-    ) : null}
+
+        {loading ? (
+          <p className="mt-4 flex items-center gap-2 text-xs text-slate-400">
+            <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
+            {tr("Memuat...", "Loading...")}
+          </p>
+        ) : null}
+      </DashboardSurface>
+
+      {/* Modal Konfirmasi */}
+      {showConfirmModal && confirmAction && (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/45 p-4 backdrop-blur-sm"
+          onClick={handleCancelConfirm}
+        >
+          <div
+            className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-200/80"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {confirmAction.type === "delete" ? (
+              <>
+                <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-red-500 via-rose-500 to-orange-400" />
+                <button
+                  type="button"
+                  onClick={handleCancelConfirm}
+                  disabled={confirmProcessing}
+                  className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-50"
+                  aria-label={tr("Batal", "Cancel")}
+                >
+                  <X size={18} />
+                </button>
+                <div className="flex flex-col items-center px-6 pb-2 pt-7 text-center">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red-50 to-rose-100 shadow-inner ring-1 ring-red-100">
+                    <Trash2 size={30} className="text-red-600" strokeWidth={2} />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-800">
+                    {tr("Hapus Data Biaya", "Delete Cost Data")}
+                  </h3>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-500">
+                    {tr(
+                      "Data biaya ini akan dihapus permanen dan tidak dapat dikembalikan.",
+                      "This cost entry will be permanently removed and cannot be restored."
+                    )}
+                  </p>
+                </div>
+                {confirmAction.row && (
+                  <div className="px-6 pb-5">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left">
+                      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                        {kategoriLabel(confirmAction.row.kategori)}
+                      </p>
+                      <p className="mt-1 text-lg font-bold text-slate-800">
+                        {rupiah(confirmAction.row.nominal)}
+                      </p>
+                      {confirmAction.row.keterangan ? (
+                        <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                          {confirmAction.row.keterangan}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-3 border-t border-slate-100 bg-slate-50/80 px-6 py-4">
+                  <button
+                    type="button"
+                    onClick={handleCancelConfirm}
+                    disabled={confirmProcessing}
+                    className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {tr("Batal", "Cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmAction}
+                    disabled={confirmProcessing}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-500/25 transition hover:from-red-700 hover:to-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+                  >
+                    {confirmProcessing
+                      ? tr("Menghapus...", "Deleting...")
+                      : tr("Ya, Hapus", "Yes, Delete")}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex flex-col items-center px-6 pb-2 pt-6">
+                  <div
+                    className={`mb-3 flex h-16 w-16 items-center justify-center rounded-full ${confirmAction.newStatus ? "bg-emerald-100" : "bg-amber-100"
+                      }`}
+                  >
+                    {confirmAction.newStatus ? (
+                      <CheckCircle size={32} className="text-emerald-600" />
+                    ) : (
+                      <AlertCircle size={32} className="text-amber-600" />
+                    )}
+                  </div>
+                  <h3 className="mb-1 text-lg font-bold text-gray-800">
+                    {tr("Ubah Status Biaya", "Change Cost Status")}
+                  </h3>
+                  <p className="text-center text-sm text-gray-500">
+                    {tr(
+                      "Apakah Anda yakin ingin mengubah status menjadi",
+                      "Are you sure you want to change status to"
+                    )}
+                  </p>
+                </div>
+                <div className="px-6 pb-4">
+                  <div
+                    className={`rounded-xl px-4 py-3 text-center font-semibold ${confirmAction.newStatus
+                        ? "border-2 border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border-2 border-amber-200 bg-amber-50 text-amber-700"
+                      }`}
+                  >
+                    {confirmAction.statusText}
+                  </div>
+                </div>
+                {confirmAction.row && (
+                  <div className="px-6 pb-4">
+                    <div className="rounded-lg bg-gray-50 p-3">
+                      <p className="mb-1 text-xs text-gray-500">{tr("Nominal", "Amount")}:</p>
+                      <p className="font-semibold text-gray-700">{rupiah(confirmAction.row.nominal)}</p>
+                      {confirmAction.row.keterangan && (
+                        <>
+                          <p className="mb-1 mt-2 text-xs text-gray-500">{tr("Keterangan", "Description")}:</p>
+                          <p className="truncate text-sm text-gray-700">{confirmAction.row.keterangan}</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-3 px-6 pb-6">
+                  <button
+                    type="button"
+                    onClick={handleCancelConfirm}
+                    disabled={confirmProcessing}
+                    className="flex-1 rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 disabled:opacity-60"
+                  >
+                    {tr("Batal", "Cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmAction}
+                    disabled={confirmProcessing}
+                    className={`flex-1 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-70 ${confirmAction.newStatus
+                        ? "bg-emerald-600 hover:bg-emerald-700"
+                        : "bg-amber-600 hover:bg-amber-700"
+                      }`}
+                  >
+                    {confirmProcessing
+                      ? tr("Memproses...", "Processing...")
+                      : tr("Ya, Ubah Status", "Yes, Change Status")}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {photoPreview ? (
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          onClick={() => setPhotoPreview(null)}
+        >
+          <div
+            className="relative max-h-[90vh] w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setPhotoPreview(null)}
+              className="absolute right-3 top-3 z-10 rounded-full bg-black/50 p-1.5 text-white transition hover:bg-black/70"
+              aria-label={tr("Tutup", "Close")}
+            >
+              <X size={18} />
+            </button>
+            <img
+              src={photoPreview.url}
+              alt={tr("Lampiran biaya", "Expense attachment")}
+              className="max-h-[70vh] w-full object-contain bg-slate-100"
+            />
+            <div className="border-t border-slate-100 px-4 py-3 text-center">
+              <p className="text-xs text-slate-500">
+                {tr("Diupload", "Uploaded")}:{" "}
+                <span className="font-medium text-slate-700">
+                  {formatDateTime(photoPreview.uploadedAt)}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

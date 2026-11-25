@@ -296,6 +296,8 @@ export function getDivisiIcon(iconKey, size = 18) {
 }
 
 const STORAGE_KEY = "hsr_divisis_cache_v1";
+let inflightDivisiPromise = null;
+let lastDivisiFetchTime = 0;
 
 export function getCachedDivisis() {
   try {
@@ -314,6 +316,7 @@ export function getCachedDivisis() {
 export function setCachedDivisis(list) {
   try {
     if (Array.isArray(list) && list.length > 0) {
+      lastDivisiFetchTime = Date.now();
       localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
       window.dispatchEvent(new CustomEvent("hsr-divisis-updated", { detail: list }));
     }
@@ -326,41 +329,58 @@ export function useDivisis() {
   const [allDivisis, setAllDivisis] = useState(() => getCachedDivisis());
   const [loadingDivisis, setLoadingDivisis] = useState(false);
 
-  const fetchDivisis = useCallback(async () => {
-    try {
-      setLoadingDivisis(true);
-      const res = await api.get("/divisis");
-      const list = res.data?.data ?? res.data;
-      if (Array.isArray(list) && list.length > 0) {
-        setAllDivisis(list);
-        setCachedDivisis(list);
+    const fetchDivisis = useCallback(async (force = false) => {
+      const now = Date.now();
+      if (!force && now - lastDivisiFetchTime < 15000) {
+        return;
       }
-    } catch (err) {
-      console.error("Gagal memuat daftar divisi:", err);
-    } finally {
-      setLoadingDivisis(false);
-    }
-  }, []);
+      if (inflightDivisiPromise) {
+        try {
+          const list = await inflightDivisiPromise;
+          if (Array.isArray(list) && list.length > 0) {
+            setAllDivisis(list);
+          }
+        } catch {
+          // ignore
+        }
+        return;
+      }
 
-  useEffect(() => {
-    fetchDivisis();
-    const onUpdated = (e) => {
-      if (Array.isArray(e.detail) && e.detail.length > 0) {
-        setAllDivisis(e.detail);
-      } else {
-        setAllDivisis(getCachedDivisis());
+      try {
+        setLoadingDivisis(true);
+        inflightDivisiPromise = api.get("/divisis").then((res) => res.data?.data ?? res.data);
+        const list = await inflightDivisiPromise;
+        if (Array.isArray(list) && list.length > 0) {
+          setAllDivisis(list);
+          setCachedDivisis(list);
+        }
+      } catch (err) {
+        console.error("Gagal memuat daftar divisi:", err);
+      } finally {
+        inflightDivisiPromise = null;
+        setLoadingDivisis(false);
       }
+    }, []);
+
+    useEffect(() => {
+      fetchDivisis(false);
+      const onUpdated = (e) => {
+        if (Array.isArray(e.detail) && e.detail.length > 0) {
+          setAllDivisis(e.detail);
+        } else {
+          setAllDivisis(getCachedDivisis());
+        }
+      };
+      window.addEventListener("hsr-divisis-updated", onUpdated);
+      return () => window.removeEventListener("hsr-divisis-updated", onUpdated);
+    }, [fetchDivisis]);
+
+    const activeDivisis = allDivisis.filter((d) => d?.is_active !== false);
+
+    return {
+      divisis: activeDivisis.length > 0 ? activeDivisis : allDivisis,
+      allDivisis,
+      loadingDivisis,
+      refreshDivisis: () => fetchDivisis(true),
     };
-    window.addEventListener("hsr-divisis-updated", onUpdated);
-    return () => window.removeEventListener("hsr-divisis-updated", onUpdated);
-  }, [fetchDivisis]);
-
-  const activeDivisis = allDivisis.filter((d) => d?.is_active !== false);
-
-  return {
-    divisis: activeDivisis.length > 0 ? activeDivisis : allDivisis,
-    allDivisis,
-    loadingDivisis,
-    refreshDivisis: fetchDivisis,
-  };
-}
+  }

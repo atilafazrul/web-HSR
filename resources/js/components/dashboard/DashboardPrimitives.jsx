@@ -129,3 +129,52 @@ export function projekActivityStatusPillClass(status) {
       return `${base} bg-slate-100 text-slate-700 ring-1 ring-slate-200/60`;
   }
 }
+
+export function buildDashboardKaryawanRows(item) {
+  const invitedSet = new Set(
+    (Array.isArray(item?.invited_user_ids) ? item.invited_user_ids : [])
+      .map((v) => String(v || "").trim())
+      .filter(Boolean)
+  );
+  const karyawanFromString = String(item?.karyawan || "")
+    .split(",")
+    .map((v) => String(v || "").trim())
+    .filter(Boolean);
+  const invitedUsers = Array.from(invitedSet).filter((v) => !/^\d+$/.test(v));
+  const rawList = [
+    item?.pic_karyawan,
+    ...(Array.isArray(item?.karyawan_terlibat) ? item.karyawan_terlibat : []),
+    ...karyawanFromString,
+    ...invitedUsers,
+  ]
+    .map((v) => String(v || "").trim())
+    .filter((v) => v !== "" && !/^\d+$/.test(v));
+
+  const groups = new Map();
+  for (const name of rawList) {
+    const k = name.toLowerCase();
+    if (!groups.has(k)) {
+      groups.set(k, {
+        display: name,
+        isInvite: invitedSet.has(name),
+      });
+    }
+  }
+  return Array.from(groups.values());
+}
+
+export function getDashboardCurrentKaryawan(item) {
+  const pic = String(item?.pic_karyawan || "").trim();
+  if (pic && !/^\d+$/.test(pic)) return pic;
+
+  const terlibat = Array.isArray(item?.karyawan_terlibat)
+    ? item.karyawan_terlibat.map((v) => String(v || "").trim()).filter((v) => v && !/^\d+$/.test(v))
+    : [];
+  if (terlibat.length > 0) return terlibat[terlibat.length - 1];
+
+  const fromString = String(item?.karyawan || "")
+    .split(",")
+    .map((v) => String(v || "").trim())
+    .filter(Boolean);
+  return fromString.length > 0 ? fromString[fromString.length - 1] : "-";
+}
