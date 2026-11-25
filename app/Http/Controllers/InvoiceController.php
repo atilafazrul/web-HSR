@@ -32,17 +32,31 @@ class InvoiceController extends Controller
     public static function resolveDivisiCode(?string $divisi): string
     {
         $d = strtolower(trim((string) $divisi));
-        return match ($d) {
-            'it', 'divisi it', 'divit', 'inv-divit' => 'INV-DIVIT',
-            'sales', 'disal', 'divsal', 'divisi sales', 'inv-disal', 'inv-divsal' => 'INV-DIVSAL',
-            'service', 'divser', 'divisi service', 'inv-divser' => 'INV-DIVSER',
-            'bhp', 'barang habis pakai', 'barang habis pakai bhp', 'dipro', 'divpro', 'projek', 'divisi projek', 'inv-dipro', 'inv-divpro' => 'INV-DIVPRO',
-            'kontraktor', 'divisi kontraktor', 'dikon', 'divkon', 'inv-dikon', 'inv-divkon' => 'INV-DIVKON',
-            'logistik', 'divisi logistik', 'dilog', 'divlog', 'inv-dilog', 'inv-divlog' => 'INV-DIVLOG',
-            'purchasing', 'divisi purchasing', 'dipur', 'divpur', 'inv-dipur', 'inv-divpur' => 'INV-DIVPUR',
-            'siplah', 'divisi siplah', 'disip', 'divsip', 'inv-disip', 'inv-divsip' => 'INV-DIVSIP',
-            default => 'INV-DIVPRO',
+        $dClean = preg_replace('/^divisi\s+/i', '', $d) ?: $d;
+
+        $known = match ($dClean) {
+            'it', 'divit', 'inv-divit' => 'INV-DIVIT',
+            'sales', 'disal', 'divsal', 'inv-disal', 'inv-divsal' => 'INV-DIVSAL',
+            'service', 'divser', 'inv-divser' => 'INV-DIVSER',
+            'bhp', 'barang habis pakai', 'barang habis pakai bhp', 'dipro', 'divpro', 'projek', 'inv-dipro', 'inv-divpro' => 'INV-DIVPRO',
+            'kontraktor', 'dikon', 'divkon', 'inv-dikon', 'inv-divkon' => 'INV-DIVKON',
+            'logistik', 'dilog', 'divlog', 'inv-dilog', 'inv-divlog' => 'INV-DIVLOG',
+            'purchasing', 'dipur', 'divpur', 'inv-dipur', 'inv-divpur' => 'INV-DIVPUR',
+            'siplah', 'disip', 'divsip', 'inv-disip', 'inv-divsip' => 'INV-DIVSIP',
+            default => null,
         };
+
+        if ($known !== null) {
+            return $known;
+        }
+
+        $letters = strtoupper(preg_replace('/[^a-zA-Z0-9]/', '', $dClean) ?: '');
+        if ($letters !== '') {
+            $short = substr($letters, 0, 3);
+            return 'INV-DIV' . $short;
+        }
+
+        return 'INV-DIVPRO';
     }
 
     private function generateNomorSurat(?string $tanggalInvoice = null, ?string $divisi = null): array

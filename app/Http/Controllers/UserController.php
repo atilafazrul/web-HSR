@@ -227,6 +227,7 @@ class UserController extends Controller
             'nik' => 'nullable|string|max:20',
             'name' => 'nullable|string|max:255',
             'email' => 'nullable|email',
+            'divisi' => 'nullable|string|max:100',
             'phone' => 'nullable|string|max:20',
             'no_telepon' => 'nullable|string|max:20',
             'alamat' => 'nullable|string',

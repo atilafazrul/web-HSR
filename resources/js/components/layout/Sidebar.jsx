@@ -40,7 +40,7 @@ export default function Sidebar({
   role = "admin",
 }) {
   const { t, language } = useI18n();
-  const { divisis, refreshDivisis } = useDivisis();
+  const { divisis, allDivisis: allDivisisList, refreshDivisis } = useDivisis();
   const [divisiModalState, setDivisiModalState] = useState({
     open: false,
     mode: "create",
@@ -483,7 +483,7 @@ export default function Sidebar({
           onClose={() => setDivisiModalState((s) => ({ ...s, open: false }))}
           mode={divisiModalState.mode}
           initialDivisi={divisiModalState.divisi}
-          divisis={divisis}
+          divisis={allDivisisList}
           onSuccess={() => refreshDivisis()}
         />
       )}

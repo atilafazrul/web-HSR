@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Link, useParams, useLocation } from "react-router-dom";
+import { Link, useParams, useLocation, useNavigate } from "react-router-dom";
 import { Settings2, Layers } from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
 import {
@@ -13,7 +13,8 @@ export default function DynamicDivisiPage({ defaultSlug = null }) {
   const tr = (id, en) => (language === "en" ? en : id);
   const params = useParams();
   const location = useLocation();
-  const { divisis, refreshDivisis } = useDivisis();
+  const navigate = useNavigate();
+  const { divisis, allDivisis, refreshDivisis } = useDivisis();
   const [showManageModal, setShowManageModal] = useState(false);
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -36,7 +37,8 @@ export default function DynamicDivisiPage({ defaultSlug = null }) {
   }, [defaultSlug, params.divisiSlug, location.pathname]);
 
   const currentDivisi = useMemo(() => {
-    const found = divisis.find(
+    const listToSearch = allDivisis?.length > 0 ? allDivisis : divisis;
+    const found = listToSearch.find(
       (d) => String(d.slug || "").toLowerCase() === resolvedSlug
     );
     if (found) return found;
@@ -47,7 +49,7 @@ export default function DynamicDivisiPage({ defaultSlug = null }) {
       subtitle_en: `Manage assets and work progress for ${resolvedSlug.toUpperCase()} Division`,
       modules: ["inventory", "progres_pekerjaan", "archive_pekerjaan"],
     };
-  }, [divisis, resolvedSlug]);
+  }, [allDivisis, divisis, resolvedSlug]);
 
   const enabledModuleKeys = Array.isArray(currentDivisi.modules)
     ? currentDivisi.modules
@@ -141,8 +143,17 @@ export default function DynamicDivisiPage({ defaultSlug = null }) {
           onClose={() => setShowManageModal(false)}
           mode="edit"
           initialDivisi={currentDivisi}
-          divisis={divisis}
-          onSuccess={() => refreshDivisis()}
+          divisis={allDivisis}
+          onSuccess={(_freshList, resPayload) => {
+            refreshDivisis();
+            if (
+              resPayload?.renamed &&
+              resPayload?.new_slug &&
+              resPayload.new_slug !== resolvedSlug
+            ) {
+              navigate(`${basePath}/${resPayload.new_slug}`, { replace: true });
+            }
+          }}
         />
       )}
     </div>

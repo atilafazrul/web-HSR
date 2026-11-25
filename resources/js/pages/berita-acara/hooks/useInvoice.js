@@ -41,7 +41,7 @@ const formatDateEnglish = (dateString) => {
   return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 };
 
-const formatInvoiceNumber = (nomorUrut, divisi, tanggal) => {
+export const resolveInvoiceDivisiCode = (divisi) => {
   const codeMap = {
     it: "INV-DIVIT",
     sales: "INV-DIVSAL",
@@ -55,8 +55,18 @@ const formatInvoiceNumber = (nomorUrut, divisi, tanggal) => {
     purchasing: "INV-DIVPUR",
     siplah: "INV-DIVSIP",
   };
-  const d = String(divisi || "it").toLowerCase();
-  const code = codeMap[d] || "INV-DIVPRO";
+  const d = String(divisi || "it").toLowerCase().trim().replace(/^divisi\s+/i, "");
+  if (codeMap[d]) return codeMap[d];
+
+  const cleanLetters = d.replace(/[^a-z0-9]/gi, "").toUpperCase();
+  if (cleanLetters) {
+    return `INV-DIV${cleanLetters.slice(0, 3)}`;
+  }
+  return "INV-DIVPRO";
+};
+
+const formatInvoiceNumber = (nomorUrut, divisi, tanggal) => {
+  const code = resolveInvoiceDivisiCode(divisi);
 
   let numStr = String(nomorUrut ?? "").trim();
   if (numStr === "") {

@@ -40,7 +40,7 @@ import {
   Copy
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useDivisis } from "../utils/divisiConfig.jsx";
+import { useDivisis, getCachedDivisis } from "../utils/divisiConfig.jsx";
 
 const trText = (id, en) => {
   if (typeof window === "undefined") return id;
@@ -85,6 +85,15 @@ export default function KaryawanPage() {
 
   useEffect(() => {
     fetchData();
+    const handleDivisiRenamed = () => {
+      fetchData();
+    };
+    window.addEventListener("hsr-divisi-renamed", handleDivisiRenamed);
+    window.addEventListener("hsr-divisis-updated", handleDivisiRenamed);
+    return () => {
+      window.removeEventListener("hsr-divisi-renamed", handleDivisiRenamed);
+      window.removeEventListener("hsr-divisis-updated", handleDivisiRenamed);
+    };
   }, []);
 
   const fetchData = async () => {
@@ -498,6 +507,18 @@ const StatCard = ({ title, value, icon, color }) => {
 const getEmployeeCoverUrl = (emp) => {
   if (emp?.cover_photo) {
     return emp.cover_photo.startsWith("http") ? emp.cover_photo : `/storage/${emp.cover_photo}`;
+  }
+  const empDivisi = String(emp?.divisi || "").trim().toLowerCase();
+  if (empDivisi) {
+    const cachedDivisis = getCachedDivisis();
+    const matchedDivisi = cachedDivisis.find(
+      (d) =>
+        String(d.name || "").trim().toLowerCase() === empDivisi ||
+        String(d.slug || "").trim().toLowerCase() === empDivisi
+    );
+    if (matchedDivisi?.card_image) {
+      return matchedDivisi.card_image;
+    }
   }
   const imageMap = {
     "IT": "/images/IT Card.png",
@@ -951,11 +972,19 @@ const EditEmployeeForm = ({
   toggleSection
 }) => {
   const [newPassword, setNewPassword] = useState("");
+  const { divisis } = useDivisis();
+  const divisiOptions = Array.from(
+    new Set([
+      ...(divisis.map((d) => d.name).filter(Boolean)),
+      ...(editData?.divisi ? [editData.divisi] : []),
+    ])
+  );
 
   const personalFields = [
     { label: trText("Nama Lengkap", "Full Name"), key: "name", type: "text", required: true },
     { label: "NIK", key: "nik", type: "text" },
     { label: "Email", key: "email", type: "email", required: true },
+    { label: trText("Divisi", "Division"), key: "divisi", type: "select", options: divisiOptions.length > 0 ? divisiOptions : ["IT", "Service", "Sales", "Kontraktor", "Logistik", "Purchasing", "SIPLAH"] },
     { label: trText("Nomor Telepon", "Phone Number"), key: "phone", type: "tel", altKey: "no_telepon" },
     { label: trText("Tempat Lahir", "Place of Birth"), key: "tempat_lahir", type: "text" },
     { label: trText("Tanggal Lahir", "Date of Birth"), key: "tanggal_lahir", type: "date" },

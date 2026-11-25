@@ -347,7 +347,7 @@ export default function SuperAdminDashboard({ user, logout }) {
 const Dashboard = ({ user, windowWidth }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
-  const { divisis, refreshDivisis } = useDivisis();
+  const { divisis, allDivisis, refreshDivisis } = useDivisis();
   const [divisiModal, setDivisiModal] = useState({
     open: false,
     mode: "create",
@@ -405,6 +405,9 @@ const Dashboard = ({ user, windowWidth }) => {
 
   useEffect(() => {
     loadData();
+    const onDivisiRenamed = () => loadData();
+    window.addEventListener("hsr-divisi-renamed", onDivisiRenamed);
+    return () => window.removeEventListener("hsr-divisi-renamed", onDivisiRenamed);
   }, [user]);
 
   /* ================= DELETE ================= */
@@ -926,7 +929,7 @@ const Dashboard = ({ user, windowWidth }) => {
         onClose={() => setDivisiModal((s) => ({ ...s, open: false }))}
         mode={divisiModal.mode}
         initialDivisi={divisiModal.divisi}
-        divisis={divisis}
+        divisis={allDivisis}
         onSuccess={() => refreshDivisis()}
       />
     </div>

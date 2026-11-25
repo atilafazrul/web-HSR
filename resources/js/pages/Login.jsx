@@ -1,15 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Lock, Mail, Shield, Zap, Users, TrendingUp, AlertTriangle, ShieldAlert, Clock } from "lucide-react";
 import { useI18n } from "../i18n/index.jsx";
+import { useDivisis } from "../utils/divisiConfig.jsx";
 
 export default function Login({ login, isLoading }) {
   const { language, setLanguage, t } = useI18n();
+  const { divisis } = useDivisis();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const divisions = ["IT", "SERVICE", "KONTRAKTOR", "SALES", "LOGISTIK", "PURCHASING", "SIPLAH"];
+  const divisions = useMemo(() => {
+    const list = (divisis || [])
+      .filter((d) => d?.is_active !== false)
+      .map((d) => String(d?.name || "").trim().toUpperCase())
+      .filter(Boolean);
+    return list.length > 0
+      ? list
+      : ["IT", "SERVICE", "KONTRAKTOR", "SALES", "LOGISTIK", "PURCHASING", "SIPLAH"];
+  }, [divisis]);
   const [currentDivision, setCurrentDivision] = useState(0);
   const [animate, setAnimate] = useState(true);
 
@@ -45,23 +55,21 @@ export default function Login({ login, isLoading }) {
     return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
   };
 
-  /* ================= ANIMATION coba-coba ================= */
+  /* ================= ANIMATION DIVISI AKTIF ================= */
   useEffect(() => {
+    if (divisions.length === 0) return;
 
     const interval = setInterval(() => {
-
       setAnimate(false);
 
       setTimeout(() => {
-        setCurrentDivision(prev => (prev + 1) % divisions.length);
+        setCurrentDivision((prev) => (prev + 1) % divisions.length);
         setAnimate(true);
       }, 400);
-
     }, 2500);
 
     return () => clearInterval(interval);
-
-  }, []); // ⚠️ DEPENDENCY TETAP
+  }, [divisions.length]);
 
   /* ================= LOGIN ================= */
   // Cek flag untuk mencegah infinite redirect loop
@@ -180,7 +188,7 @@ export default function Login({ login, isLoading }) {
           {/* Stats */}
           <div className="mt-8 flex items-center gap-8 border-t border-slate-200 pt-8">
             <div>
-              <div className="text-2xl font-bold text-indigo-600">6+</div>
+              <div className="text-2xl font-bold text-indigo-600">{divisions.length}</div>
               <div className="text-sm text-slate-500">Divisions</div>
             </div>
             <div>
@@ -248,7 +256,7 @@ export default function Login({ login, isLoading }) {
                         : "opacity-0"
                       }`}
                   >
-                    {divisions[currentDivision]}
+                    {divisions[currentDivision % divisions.length]}
                   </span>
                 </div>
               </div>

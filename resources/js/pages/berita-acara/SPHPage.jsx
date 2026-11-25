@@ -12,8 +12,8 @@ export default function SPHPage() {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
 
-  const divisiMatch = location.pathname.match(/\/(it|service|sales|kontraktor|logistik|purchasing|siplah)\//);
-  const defaultDivisi = divisiMatch ? divisiMatch[1] : "it";
+  const divisiPathMatch = location.pathname.match(/^\/(?:super_admin|admin|user)\/([^/]+)\/projek-kerja\//);
+  const defaultDivisi = divisiPathMatch && divisiPathMatch[1] !== "projek-kerja" ? divisiPathMatch[1].toLowerCase() : "it";
 
   const {
     activeTab,

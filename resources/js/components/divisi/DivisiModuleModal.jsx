@@ -8,9 +8,8 @@ import {
   Settings2,
   Building2,
   Image as ImageIcon,
-  CheckSquare,
-  Square,
   Layers,
+  Power,
 } from "lucide-react";
 import api from "../../api/axiosConfig";
 import {
@@ -33,7 +32,9 @@ export default function DivisiModuleModal({
   const tr = (id, en) => (language === "en" ? en : id);
 
   const [activeMode, setActiveMode] = useState(mode);
-  const [selectedSlug, setSelectedSlug] = useState(initialDivisi?.slug || divisis[0]?.slug || "it");
+  const [selectedSlug, setSelectedSlug] = useState(
+    initialDivisi?.slug || divisis[0]?.slug || "it"
+  );
 
   const [name, setName] = useState("");
   const [subtitleId, setSubtitleId] = useState("");
@@ -42,19 +43,23 @@ export default function DivisiModuleModal({
   const [cardImage, setCardImage] = useState("/images/IT Card.png");
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isActive, setIsActive] = useState(true);
   const [checkedModules, setCheckedModules] = useState([
     "inventory",
     "progres_pekerjaan",
     "archive_pekerjaan",
   ]);
   const [saving, setSaving] = useState(false);
+  const [togglingActive, setTogglingActive] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
     setActiveMode(mode);
     setErrorMsg("");
+    setSuccessMsg("");
 
     if (mode === "create") {
       setName("");
@@ -64,6 +69,7 @@ export default function DivisiModuleModal({
       setCardImage("/images/IT Card.png");
       setImageFile(null);
       setImagePreview(null);
+      setIsActive(true);
       setCheckedModules(["inventory", "progres_pekerjaan", "archive_pekerjaan"]);
     } else {
       const target =
@@ -85,12 +91,14 @@ export default function DivisiModuleModal({
     setCardImage(div.card_image || "/images/IT Card.png");
     setImageFile(null);
     setImagePreview(null);
+    setIsActive(div.is_active !== false);
     setCheckedModules(
       Array.isArray(div.modules)
         ? div.modules
         : ["inventory", "progres_pekerjaan", "archive_pekerjaan"]
     );
     setErrorMsg("");
+    setSuccessMsg("");
   };
 
   const handleSelectDivisiTab = (div) => {
@@ -108,8 +116,10 @@ export default function DivisiModuleModal({
     setCardImage("/images/IT Card.png");
     setImageFile(null);
     setImagePreview(null);
+    setIsActive(true);
     setCheckedModules(["inventory", "progres_pekerjaan", "archive_pekerjaan"]);
     setErrorMsg("");
+    setSuccessMsg("");
   };
 
   const toggleModule = (modKey) => {
@@ -135,11 +145,58 @@ export default function DivisiModuleModal({
 
   const currentEditingDivisi = divisis.find((d) => d.slug === selectedSlug);
 
+  const handleQuickToggleActive = async () => {
+    if (activeMode === "create") {
+      setIsActive((prev) => !prev);
+      return;
+    }
+    if (!currentEditingDivisi || togglingActive) return;
+
+    const nextActive = !isActive;
+    setTogglingActive(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+    try {
+      const targetId = currentEditingDivisi.id || selectedSlug;
+      await api.patch(`/divisis/${targetId}/toggle-active`, {
+        is_active: nextActive,
+      });
+      setIsActive(nextActive);
+
+      const fresh = await api.get("/divisis");
+      const freshList = fresh.data?.data ?? fresh.data;
+      if (Array.isArray(freshList)) {
+        setCachedDivisis(freshList);
+      }
+      onSuccess?.(freshList);
+      setSuccessMsg(
+        nextActive
+          ? tr(
+            `Divisi ${currentEditingDivisi.name} diaktifkan`,
+            `${currentEditingDivisi.name} Division activated`
+          )
+          : tr(
+            `Divisi ${currentEditingDivisi.name} dinonaktifkan`,
+            `${currentEditingDivisi.name} Division deactivated`
+          )
+      );
+      setTimeout(() => setSuccessMsg(""), 2500);
+    } catch (err) {
+      setErrorMsg(
+        err.response?.data?.message ||
+        tr("Gagal mengubah status aktif divisi", "Failed to toggle division status")
+      );
+    } finally {
+      setTogglingActive(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
+    setSuccessMsg("");
 
-    if (activeMode === "create" && !name.trim()) {
+    if (!name.trim()) {
       setErrorMsg(tr("Nama divisi wajib diisi!", "Division name is required!"));
       return;
     }
@@ -147,9 +204,7 @@ export default function DivisiModuleModal({
     setSaving(true);
     try {
       const formData = new FormData();
-      if (activeMode === "create" || !currentEditingDivisi?.is_default) {
-        formData.append("name", name.trim());
-      }
+      formData.append("name", name.trim());
       formData.append(
         "subtitle_id",
         subtitleId.trim() || `Kelola operasional dan progres pekerjaan Divisi ${name.trim()}`
@@ -160,20 +215,42 @@ export default function DivisiModuleModal({
       );
       formData.append("icon_key", iconKey);
       formData.append("card_image", cardImage);
+      formData.append("is_active", isActive ? "1" : "0");
       if (imageFile) {
         formData.append("image_file", imageFile);
       }
       formData.append("modules", JSON.stringify(checkedModules));
 
+      let saveResponse = null;
       if (activeMode === "create") {
-        await api.post("/divisis", formData, {
+        saveResponse = await api.post("/divisis", formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
       } else {
         const targetId = currentEditingDivisi?.id || selectedSlug;
-        await api.post(`/divisis/${targetId}`, formData, {
+        saveResponse = await api.post(`/divisis/${targetId}`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
+      }
+
+      const resPayload = saveResponse?.data || {};
+      if (resPayload.renamed && resPayload.old_name && resPayload.new_name) {
+        try {
+          const rawUser = localStorage.getItem("user");
+          if (rawUser) {
+            const parsedUser = JSON.parse(rawUser);
+            const userDiv = String(parsedUser?.divisi || "").toLowerCase().trim();
+            if (
+              userDiv === String(resPayload.old_name).toLowerCase().trim() ||
+              userDiv === String(resPayload.old_slug || "").toLowerCase().trim()
+            ) {
+              parsedUser.divisi = resPayload.new_name;
+              localStorage.setItem("user", JSON.stringify(parsedUser));
+            }
+          }
+        } catch {
+          // ignore
+        }
       }
 
       const fresh = await api.get("/divisis");
@@ -181,8 +258,11 @@ export default function DivisiModuleModal({
       if (Array.isArray(freshList)) {
         setCachedDivisis(freshList);
       }
+      if (resPayload.renamed) {
+        window.dispatchEvent(new CustomEvent("hsr-divisi-renamed", { detail: resPayload }));
+      }
 
-      onSuccess?.(freshList);
+      onSuccess?.(freshList, resPayload);
       onClose?.();
     } catch (err) {
       const msg =
@@ -224,7 +304,7 @@ export default function DivisiModuleModal({
     } catch (err) {
       setErrorMsg(
         err.response?.data?.message ||
-          tr("Gagal menghapus divisi", "Failed to delete division")
+        tr("Gagal menghapus divisi", "Failed to delete division")
       );
     } finally {
       setDeleting(false);
@@ -236,15 +316,12 @@ export default function DivisiModuleModal({
   return (
     <div
       className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/50 p-3 sm:p-4 backdrop-blur-sm animate-fadeIn"
-      onClick={() => !saving && !deleting && onClose?.()}
+      onClick={() => !saving && !deleting && !togglingActive && onClose?.()}
     >
       <div
         className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border border-white/80 bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Top Accent Line */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-indigo-500 via-violet-500 to-sky-400" />
-
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
           <div className="flex items-center gap-3">
@@ -256,14 +333,14 @@ export default function DivisiModuleModal({
                 {activeMode === "create"
                   ? tr("Tambah Divisi Baru & Atur Modul", "Add New Division & Configure Modules")
                   : tr(
-                      `Atur Modul & Konfigurasi Divisi ${currentEditingDivisi?.name || ""}`,
-                      `Configure Modules & ${currentEditingDivisi?.name || ""} Division`
-                    )}
+                    `Atur Modul & Konfigurasi Divisi ${currentEditingDivisi?.name || ""}`,
+                    `Configure Modules & ${currentEditingDivisi?.name || ""} Division`
+                  )}
               </h3>
               <p className="text-xs text-slate-500">
                 {tr(
-                  "Ceklis modul yang ingin ditampilkan pada halaman divisi atau tambahkan divisi baru",
-                  "Check modules to display on the division page or add a new division"
+                  "Ceklis modul yang ingin ditampilkan, aktifkan/nonaktifkan divisi, atau tambahkan divisi baru",
+                  "Check modules to display, activate/deactivate divisions, or add a new division"
                 )}
               </p>
             </div>
@@ -283,22 +360,40 @@ export default function DivisiModuleModal({
           <div className="flex flex-wrap items-center gap-1.5">
             {divisis.map((div) => {
               const isSelected = activeMode === "edit" && selectedSlug === div.slug;
+              const divActive = div.is_active !== false;
               return (
                 <button
                   key={div.slug}
                   type="button"
                   onClick={() => handleSelectDivisiTab(div)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                    isSelected
+                  className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${isSelected
                       ? "bg-slate-900 text-white shadow-sm"
-                      : "border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-                  }`}
-                >
-                  <span>{div.name}</span>
-                  <span
-                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${
-                      isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                      : divActive
+                        ? "border border-slate-200/80 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                        : "border border-dashed border-slate-300 bg-slate-100/70 text-slate-400 hover:bg-slate-200/70 hover:text-slate-600"
                     }`}
+                >
+                  <span
+                    className={`h-2 w-2 rounded-full ${divActive ? "bg-emerald-500" : "bg-rose-400"
+                      }`}
+                    title={divActive ? tr("Aktif", "Active") : tr("Nonaktif", "Inactive")}
+                  />
+                  <span className={!divActive && !isSelected ? "line-through" : ""}>
+                    {div.name}
+                  </span>
+                  {!divActive && (
+                    <span
+                      className={`rounded px-1 py-0.2 text-[9px] font-bold uppercase ${isSelected
+                          ? "bg-rose-500/30 text-rose-200"
+                          : "bg-rose-100 text-rose-600"
+                        }`}
+                    >
+                      Off
+                    </span>
+                  )}
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] ${isSelected ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500"
+                      }`}
                   >
                     {Array.isArray(div.modules) ? div.modules.length : 0}
                   </span>
@@ -309,11 +404,10 @@ export default function DivisiModuleModal({
             <button
               type="button"
               onClick={handleSwitchToCreate}
-              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
-                activeMode === "create"
+              className={`inline-flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${activeMode === "create"
                   ? "bg-indigo-600 text-white shadow-sm"
                   : "border border-indigo-200 bg-indigo-50/80 text-indigo-700 hover:bg-indigo-100"
-              }`}
+                }`}
             >
               <Plus size={14} />
               <span>{tr("Tambah Divisi Baru", "Add New Division")}</span>
@@ -329,6 +423,80 @@ export default function DivisiModuleModal({
             </div>
           )}
 
+          {successMsg && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+              {successMsg}
+            </div>
+          )}
+
+          {/* ================= STATUS AKTIF / NONAKTIF DIVISI ================= */}
+          <div
+            className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 transition ${isActive
+                ? "border-emerald-200/80 bg-emerald-50/40"
+                : "border-rose-200/80 bg-rose-50/40"
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isActive
+                    ? "bg-emerald-100 text-emerald-700"
+                    : "bg-rose-100 text-rose-600"
+                  }`}
+              >
+                <Power size={18} />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-slate-800">
+                    {tr("Status Divisi:", "Division Status:")}
+                  </span>
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${isActive
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-rose-100 text-rose-700"
+                      }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-emerald-500" : "bg-rose-500"
+                        }`}
+                    />
+                    {isActive ? tr("Aktif", "Active") : tr("Nonaktif", "Inactive")}
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {isActive
+                    ? tr(
+                      "Divisi tampil di Sidebar, Dashboard, Halaman Login (Divisi Aktif), dan pilihan form.",
+                      "Division is visible in Sidebar, Dashboard, Login Page (Active Division), and form selects."
+                    )
+                    : tr(
+                      "Divisi disembunyikan dari Sidebar, Dashboard, Halaman Login, dan pilihan form.",
+                      "Division is hidden from Sidebar, Dashboard, Login Page, and form selects."
+                    )}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleQuickToggleActive}
+              disabled={togglingActive || saving}
+              className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold shadow-xs transition cursor-pointer disabled:opacity-50 ${isActive
+                  ? "border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700"
+                }`}
+            >
+              <Power size={14} />
+              <span>
+                {togglingActive
+                  ? tr("Memproses...", "Processing...")
+                  : isActive
+                    ? tr("Nonaktifkan Divisi", "Deactivate Division")
+                    : tr("Aktifkan Divisi", "Activate Division")}
+              </span>
+            </button>
+          </div>
+
           {/* Informasi Dasar Divisi */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
@@ -339,21 +507,21 @@ export default function DivisiModuleModal({
                 <Building2 size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
+                  disabled={false}
+                  readOnly={false}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  disabled={activeMode === "edit" && Boolean(currentEditingDivisi?.is_default)}
-                  placeholder={tr("Contoh: Marketing, HRD, Finance...", "e.g. Marketing, HRD, Finance...")}
-                  className={`w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3.5 text-sm outline-none transition ${
-                    activeMode === "edit" && currentEditingDivisi?.is_default
-                      ? "bg-slate-100 text-slate-500 cursor-not-allowed"
-                      : "bg-white text-slate-800 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/15"
-                  }`}
+                  placeholder={tr("Contoh: Engineering, Marketing, HRD...", "e.g. Engineering, Marketing, HRD...")}
+                  className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3.5 text-sm text-slate-800 outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/15"
                   required
                 />
               </div>
-              {activeMode === "edit" && currentEditingDivisi?.is_default && (
-                <p className="mt-1 text-[11px] text-slate-400">
-                  {tr("Nama divisi bawaan dikunci, namun modul di bawah bebas diatur.", "Default division name is locked, but modules below can be freely edited.")}
+              {activeMode === "edit" && (
+                <p className="mt-1 text-[11px] text-slate-500">
+                  {tr(
+                    "Jika nama divisi diubah, seluruh karyawan, projek kerja, biaya, & dokumen divisi ini otomatis ikut berubah.",
+                    "Renaming this division automatically updates all related employees, projects, expenses, and documents."
+                  )}
                 </p>
               )}
             </div>
@@ -385,11 +553,10 @@ export default function DivisiModuleModal({
                     type="button"
                     onClick={() => setIconKey(opt.key)}
                     title={opt.label}
-                    className={`flex h-9 w-full items-center justify-center rounded-xl border transition cursor-pointer ${
-                      iconKey === opt.key
+                    className={`flex h-9 w-full items-center justify-center rounded-xl border transition cursor-pointer ${iconKey === opt.key
                         ? "border-indigo-600 bg-indigo-600 text-white shadow-xs"
                         : "border-transparent bg-white text-slate-600 hover:border-slate-200 hover:text-slate-900"
-                    }`}
+                      }`}
                   >
                     {opt.render(16)}
                   </button>
@@ -482,11 +649,10 @@ export default function DivisiModuleModal({
                   <label
                     key={mod.key}
                     onClick={() => toggleModule(mod.key)}
-                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition-all select-none ${
-                      isChecked
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition-all select-none ${isChecked
                         ? "border-indigo-300 bg-indigo-50/50 shadow-2xs ring-1 ring-indigo-500/15"
                         : "border-slate-200/80 bg-white hover:border-slate-300 hover:bg-slate-50/50"
-                    }`}
+                      }`}
                   >
                     <button
                       type="button"
@@ -494,11 +660,10 @@ export default function DivisiModuleModal({
                         e.stopPropagation();
                         toggleModule(mod.key);
                       }}
-                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
-                        isChecked
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${isChecked
                           ? "border-indigo-600 bg-indigo-600 text-white"
                           : "border-slate-300 bg-white text-transparent"
-                      }`}
+                        }`}
                     >
                       <Check size={13} strokeWidth={3} />
                     </button>
@@ -523,7 +688,7 @@ export default function DivisiModuleModal({
 
           {/* Modal Footer */}
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-            <div>
+            <div className="flex flex-wrap items-center gap-2">
               {activeMode === "edit" && currentEditingDivisi && !currentEditingDivisi.is_default && (
                 <button
                   type="button"
@@ -557,7 +722,7 @@ export default function DivisiModuleModal({
                     ? tr("Menyimpan...", "Saving...")
                     : activeMode === "create"
                       ? tr("Simpan Divisi Baru", "Save New Division")
-                      : tr("Simpan Perubahan Modul", "Save Module Changes")}
+                      : tr("Simpan Perubahan Divisi", "Save Division Changes")}
                 </span>
               </button>
             </div>

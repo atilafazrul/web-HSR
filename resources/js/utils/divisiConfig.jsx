@@ -323,7 +323,7 @@ export function setCachedDivisis(list) {
 }
 
 export function useDivisis() {
-  const [divisis, setDivisis] = useState(() => getCachedDivisis());
+  const [allDivisis, setAllDivisis] = useState(() => getCachedDivisis());
   const [loadingDivisis, setLoadingDivisis] = useState(false);
 
   const fetchDivisis = useCallback(async () => {
@@ -332,7 +332,7 @@ export function useDivisis() {
       const res = await api.get("/divisis");
       const list = res.data?.data ?? res.data;
       if (Array.isArray(list) && list.length > 0) {
-        setDivisis(list);
+        setAllDivisis(list);
         setCachedDivisis(list);
       }
     } catch (err) {
@@ -346,17 +346,20 @@ export function useDivisis() {
     fetchDivisis();
     const onUpdated = (e) => {
       if (Array.isArray(e.detail) && e.detail.length > 0) {
-        setDivisis(e.detail);
+        setAllDivisis(e.detail);
       } else {
-        setDivisis(getCachedDivisis());
+        setAllDivisis(getCachedDivisis());
       }
     };
     window.addEventListener("hsr-divisis-updated", onUpdated);
     return () => window.removeEventListener("hsr-divisis-updated", onUpdated);
   }, [fetchDivisis]);
 
+  const activeDivisis = allDivisis.filter((d) => d?.is_active !== false);
+
   return {
-    divisis,
+    divisis: activeDivisis.length > 0 ? activeDivisis : allDivisis,
+    allDivisis,
     loadingDivisis,
     refreshDivisis: fetchDivisis,
   };

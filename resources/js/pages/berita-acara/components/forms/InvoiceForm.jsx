@@ -2,6 +2,8 @@ import React from "react";
 import { Plus, Download, Trash2, Calendar, FileSpreadsheet, Edit, X, Save, AlertCircle, Check, CreditCard } from "lucide-react";
 import { useI18n } from "../../../../i18n";
 import { parseRibuanId } from "../../../../utils/formatRupiahInput";
+import { useDivisis } from "../../../../utils/divisiConfig.jsx";
+import { resolveInvoiceDivisiCode } from "../../hooks/useInvoice";
 import { RichTextEditor } from "./RichTextEditor";
 import { RupiahInput } from "./RupiahInput";
 
@@ -35,6 +37,35 @@ export const InvoiceForm = ({
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
+  const { divisis } = useDivisis();
+
+  const currentVal = String(formData.divisi || divisis[0]?.slug || "it").toLowerCase();
+  const activeOptions = [
+    ...divisis.map((div) => {
+      const slug = String(div.slug || div.name || "").toLowerCase();
+      const upperName = String(div.name || div.slug || "").toUpperCase();
+      const invCode = resolveInvoiceDivisiCode(slug || div.name);
+      return {
+        value: slug,
+        label: `DIVISI ${upperName} (${invCode})`,
+      };
+    }),
+    {
+      value: "bhp",
+      label: "Barang Habis Pakai BHP (INV-DIVPRO)",
+    },
+  ];
+
+  // Jika dokumen lama menggunakan divisi yang saat ini nonaktif / belum ada di list, tetap tampilkan agar tidak hilang saat edit
+  if (
+    currentVal &&
+    !activeOptions.some((opt) => opt.value === currentVal)
+  ) {
+    activeOptions.push({
+      value: currentVal,
+      label: `DIVISI ${currentVal.toUpperCase()} (${resolveInvoiceDivisiCode(currentVal)})`,
+    });
+  }
 
   return (
     <div className="min-w-0 overflow-x-hidden rounded-3xl bg-white p-4 shadow-md sm:p-6 lg:p-8">
@@ -81,18 +112,15 @@ export const InvoiceForm = ({
             </label>
             <select
               name="divisi"
-              value={formData.divisi || "it"}
+              value={currentVal}
               onChange={onInputChange}
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-slate-700 outline-none focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20"
             >
-              <option value="it">DIVISI IT (INV-DIVIT)</option>
-              <option value="sales">DIVISI SALES (INV-DIVSAL)</option>
-              <option value="service">DIVISI SERVICE (INV-DIVSER)</option>
-              <option value="bhp">Barang Habis Pakai BHP (INV-DIVPRO)</option>
-              <option value="kontraktor">DIVISI KONTRAKTOR (INV-DIVKON)</option>
-              <option value="logistik">DIVISI LOGISTIK (INV-DIVLOG)</option>
-              <option value="purchasing">DIVISI PURCHASING (INV-DIVPUR)</option>
-              <option value="siplah">DIVISI SIPLAH (INV-DIVSIP)</option>
+              {activeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
 

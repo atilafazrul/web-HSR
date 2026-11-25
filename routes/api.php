@@ -42,6 +42,7 @@ use App\Http\Controllers\DivisiController;
 */
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:30,1')->name('login');
+Route::get('/divisis', [DivisiController::class, 'index'])->middleware('throttle:60,1');
 
 
 /*
@@ -1074,10 +1075,10 @@ Route::middleware(['auth:sanctum', 'active', 'log.activity'])->group(function ()
     | DIVISI & MODUL MANAGEMENT
     |--------------------------------------------------------------------------
     */
-    Route::get('/divisis', [DivisiController::class, 'index']);
     Route::post('/divisis', [DivisiController::class, 'store']);
     Route::put('/divisis/{id}', [DivisiController::class, 'update']);
     Route::post('/divisis/{id}', [DivisiController::class, 'update']);
+    Route::patch('/divisis/{id}/toggle-active', [DivisiController::class, 'toggleActive']);
     Route::delete('/divisis/{id}', [DivisiController::class, 'destroy']);
 
 });

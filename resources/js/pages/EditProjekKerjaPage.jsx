@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { Edit3, ArrowLeft } from "lucide-react";
 import { useI18n } from "../i18n";
+import { useDivisis } from "../utils/divisiConfig.jsx";
 import { DashboardSurface, DashboardSectionHeading } from "../components/dashboard/DashboardPrimitives.jsx";
 
 const projekField =
@@ -27,6 +28,7 @@ const dedupeNameList = (arr) => {
 export default function EditProjekKerjaPage() {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
+  const { divisis } = useDivisis();
   const navigate = useNavigate();
   const { id } = useParams();
 
@@ -369,13 +371,16 @@ export default function EditProjekKerjaPage() {
               required
             >
               <option value="">{tr("Pilih Divisi", "Select Division")}</option>
-              <option value="IT">IT</option>
-              <option value="Service">Service</option>
-              <option value="Kontraktor">Kontraktor</option>
-              <option value="Sales">Sales</option>
-              <option value="Logistik">Logistik</option>
-              <option value="Purchasing">Purchasing</option>
-              <option value="SIPLAH">SIPLAH</option>
+              {Array.from(
+                new Set([
+                  ...divisis.map((d) => d.name).filter(Boolean),
+                  ...(form.divisi ? [form.divisi] : []),
+                ])
+              ).map((divName) => (
+                <option key={divName} value={divName}>
+                  {divName}
+                </option>
+              ))}
             </select>
           </div>
 

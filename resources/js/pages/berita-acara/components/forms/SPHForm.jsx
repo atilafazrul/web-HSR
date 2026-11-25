@@ -1,6 +1,7 @@
 import React from "react";
 import { Plus, Download, Trash2, Calendar, Receipt, Edit, X, Save, RefreshCw } from "lucide-react";
 import { useI18n } from "../../../../i18n";
+import { useDivisis } from "../../../../utils/divisiConfig.jsx";
 import { RichTextEditor } from "./RichTextEditor";
 import { ScheduleGenerateSection } from "./ScheduleGenerateSection";
 import { RupiahInput } from "./RupiahInput";
@@ -43,8 +44,34 @@ export const SPHForm = ({
 }) => {
   const { language } = useI18n();
   const tr = (id, en) => (language === "en" ? en : id);
-  const isKontraktor = (formData.divisi || "it").toLowerCase() === "kontraktor";
+  const { divisis } = useDivisis();
+  const currentDivisi = String(formData.divisi || divisis[0]?.slug || "it").toLowerCase();
+  const isKontraktor = currentDivisi === "kontraktor";
   const isRekapActive = isKontraktor && Boolean(formData.pakai_rekapitulasi);
+
+  const labelSuffixMap = {
+    it: " & Sistem",
+    service: " & Alat Kesehatan",
+    kontraktor: " & Ruang Medis",
+  };
+  const sphDivisiOptions = divisis.map((div) => {
+    const slug = String(div.slug || div.name || "").toLowerCase();
+    const baseName = div.name || div.slug || "";
+    const suffix = labelSuffixMap[slug] || "";
+    return {
+      value: slug,
+      label: `${baseName}${suffix}`,
+    };
+  });
+  if (
+    currentDivisi &&
+    !sphDivisiOptions.some((opt) => opt.value === currentDivisi)
+  ) {
+    sphDivisiOptions.push({
+      value: currentDivisi,
+      label: currentDivisi.toUpperCase(),
+    });
+  }
 
   return (
     <div className="min-w-0 overflow-x-hidden bg-white rounded-3xl shadow-md p-4 sm:p-6 lg:p-8">
@@ -76,16 +103,15 @@ export const SPHForm = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">{tr("Divisi", "Division")}</label>
             <select
               name="divisi"
-              value={formData.divisi || "it"}
+              value={currentDivisi}
               onChange={onInputChange}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 bg-gray-50 capitalize font-medium text-gray-800 focus:bg-white"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 bg-gray-50 font-medium text-gray-800 focus:bg-white"
             >
-              <option value="it">IT & Sistem</option>
-              <option value="service">Service & Alat Kesehatan</option>
-              <option value="kontraktor">Kontraktor & Ruang Medis</option>
-              <option value="sales">Sales</option>
-              <option value="logistik">Logistik</option>
-              <option value="purchasing">Purchasing</option>
+              {sphDivisiOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
